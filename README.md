@@ -14,17 +14,54 @@ PWA (installable sur téléphone), fonctionne avec connexion requise pour valide
 
 ## 2. Rôles
 
+Tout le monde se connecte de la même façon : **nom affiché + code PIN à 4 chiffres**. Il n'y a plus de mot de passe/email pour personne, y compris les admins.
+
 | Rôle | Connexion | Peut faire |
 |---|---|---|
-| Admin | email + mot de passe | Tout : configuration, tables, invitations, exports, comptes équipe |
-| Placeur | nom + code PIN | Voir le plan de placement, gérer les débordements |
+| Admin | nom + code PIN | Tout : configuration, tables, invitations, exports, comptes équipe |
+| Placeur | nom + code PIN | Scanner, voir le plan de placement, gérer les débordements |
 | Agent d'accueil | nom + code PIN | Scanner / rechercher, cocher les arrivées |
 
-Comptes déjà créés dans la base réelle (à changer avant le jour J, voir section Sécurité) :
+Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + PIN (pour savoir qui a fait quoi le jour J). Les PIN peuvent être changés à tout moment par un admin depuis `/admin/users`.
 
-- **Admin** — `gersomdos@gmail.com` / `Mariage2026!`
-- **Agent Test 1** — nom `Agent Test 1`, PIN `1234`
-- **Placeur Test** — nom `Placeur Test`, PIN `5678`
+### Admins (6)
+
+| Nom (à taper tel quel) | PIN |
+|---|---|
+| Admin Principal | 1010 |
+| Gersom Dos | 2011 |
+| Remi Landu | 2012 |
+| Tuzola | 2013 |
+| Nelly Lukau | 2014 |
+| Sem Landu | 2015 |
+
+### Agents d'accueil (16)
+
+| Nom | PIN | | Nom | PIN |
+|---|---|---|---|---|
+| Agent001 | 3001 | | Agent009 | 3009 |
+| Agent002 | 3002 | | Agent010 | 3010 |
+| Agent003 | 3003 | | Agent011 | 3011 |
+| Agent004 | 3004 | | Agent012 | 3012 |
+| Agent005 | 3005 | | Agent013 | 3013 |
+| Agent006 | 3006 | | Agent014 | 3014 |
+| Agent007 | 3007 | | Agent015 | 3015 |
+| Agent008 | 3008 | | Agent016 | 3016 |
+
+### Placeurs (16)
+
+| Nom | PIN | | Nom | PIN |
+|---|---|---|---|---|
+| Placeur001 | 4001 | | Placeur009 | 4009 |
+| Placeur002 | 4002 | | Placeur010 | 4010 |
+| Placeur003 | 4003 | | Placeur011 | 4011 |
+| Placeur004 | 4004 | | Placeur012 | 4012 |
+| Placeur005 | 4005 | | Placeur013 | 4013 |
+| Placeur006 | 4006 | | Placeur014 | 4014 |
+| Placeur007 | 4007 | | Placeur015 | 4015 |
+| Placeur008 | 4008 | | Placeur016 | 4016 |
+
+Astuce pour le jour J : imprimez/partagez chaque ligne uniquement à la personne concernée (ex: une photo du tableau découpée), plutôt que la liste complète, pour limiter les risques si un téléphone est perdu. Les anciens comptes de test (`Agent Test 1`, `Placeur Test`) ont été désactivés.
 
 ## 3. Stack technique
 
