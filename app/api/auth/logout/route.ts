@@ -5,5 +5,6 @@ export async function POST() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0 });
   res.cookies.set('wc_role', '', { path: '/', maxAge: 0 });
+  res.cookies.set('wc_name', '', { path: '/', maxAge: 0 });
   return res;
 }

@@ -65,6 +65,7 @@ export async function verifySessionTokenEdge(
     return {
       id: payload.id,
       nom_affichage: payload.nom_affichage,
+      nom_complet: payload.nom_complet ?? null,
       role: payload.role,
       event_id: payload.event_id,
     };

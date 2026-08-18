@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, event_id, nom_affichage, role, password_hash, active')
+      .select('id, event_id, nom_affichage, nom_complet, role, password_hash, active')
       .eq('email', email)
       .maybeSingle();
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, event_id, nom_affichage, role, pin_hash, active')
+      .select('id, event_id, nom_affichage, nom_complet, role, pin_hash, active')
       .eq('nom_affichage', nom_affichage)
       .maybeSingle();
 
@@ -57,18 +57,22 @@ function setSessionAndRespond(user: {
   id: string;
   event_id: string;
   nom_affichage: string;
+  nom_complet: string | null;
   role: 'admin' | 'agent_checkin' | 'placeur';
 }) {
   const token = createSessionToken({
     id: user.id,
     event_id: user.event_id,
     nom_affichage: user.nom_affichage,
+    nom_complet: user.nom_complet,
     role: user.role,
   });
 
+  const displayName = user.nom_complet || user.nom_affichage;
+
   const res = NextResponse.json({
     ok: true,
-    user: { id: user.id, nom_affichage: user.nom_affichage, role: user.role },
+    user: { id: user.id, nom_affichage: user.nom_affichage, nom_complet: user.nom_complet, role: user.role },
   });
 
   res.cookies.set(SESSION_COOKIE_NAME, token, {
@@ -82,6 +86,15 @@ function setSessionAndRespond(user: {
   // Cookie NON httpOnly, lisible en JS, pour que l'UI cliente sache quel role
   // afficher (nav du bas, etc.) sans jamais exposer le jeton de session signe.
   res.cookies.set('wc_role', user.role, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    path: '/',
+  });
+
+  // Idem pour le nom complet a afficher (TopBar) : jamais le jeton signe.
+  res.cookies.set('wc_name', encodeURIComponent(displayName), {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

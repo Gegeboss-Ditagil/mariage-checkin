@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { QrScanner } from '@/components/QrScanner';
+import { UserMenu } from '@/components/UserMenu';
 import { createClient } from '@/lib/supabase/client';
 import { TableRow } from '@/lib/types';
+import { StarField } from '@/components/BrandMotif';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -79,12 +81,14 @@ export default function PlacementPage() {
 
   if (table) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-ink text-white">
-        <p className="text-2xl uppercase tracking-widest text-white/60">Table</p>
-        <p className="text-[9rem] font-bold leading-none">{table.number}</p>
-        {table.zone && <p className="text-2xl text-white/70">{table.zone}</p>}
+      <div className="relative flex min-h-dvh flex-col items-center justify-center gap-4 overflow-hidden bg-night-radial text-cream">
+        <UserMenu />
+        <StarField />
+        <p className="eyebrow relative">Table</p>
+        <p className="relative font-display text-[9rem] font-bold leading-none text-gold-200">{table.number}</p>
+        {table.zone && <p className="relative text-2xl text-cream/60">{table.zone}</p>}
         <button
-          className="btn-secondary mt-8 w-56 bg-white/10 text-white"
+          className="btn-secondary relative mt-8 w-56"
           onClick={() => {
             setTable(null);
             setQuery('');
@@ -98,19 +102,30 @@ export default function PlacementPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <UserMenu />
       <div className="px-4 pt-4">
-        <h1 className="font-display text-2xl">Placement</h1>
+        <h1 className="font-display text-2xl text-cream">Placement</h1>
       </div>
 
-      <div className="mb-4 mt-3 flex px-4">
+      <div className="mb-4 mt-3 flex gap-2 px-4">
         <button
-          className={'flex-1 rounded-l-xl2 border py-2.5 text-sm font-semibold ' + (mode === 'scan' ? 'bg-ink text-white' : 'bg-white')}
+          className={
+            'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
+            (mode === 'scan'
+              ? 'border-gold-400/70 bg-gold-400/15 text-gold-200'
+              : 'border-cream/10 bg-night-800 text-cream/50')
+          }
           onClick={() => setMode('scan')}
         >
           Scan QR
         </button>
         <button
-          className={'flex-1 rounded-r-xl2 border py-2.5 text-sm font-semibold ' + (mode === 'search' ? 'bg-ink text-white' : 'bg-white')}
+          className={
+            'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
+            (mode === 'search'
+              ? 'border-gold-400/70 bg-gold-400/15 text-gold-200'
+              : 'border-cream/10 bg-night-800 text-cream/50')
+          }
           onClick={() => setMode('search')}
         >
           Recherche
@@ -125,7 +140,7 @@ export default function PlacementPage() {
         <div className="space-y-3 px-4">
           <input
             autoFocus
-            className="w-full rounded-xl2 border border-black/10 px-4 py-3.5 text-lg"
+            className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
             placeholder="Nom ou n° de table"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
