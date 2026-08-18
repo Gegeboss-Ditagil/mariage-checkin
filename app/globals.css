@@ -18,7 +18,7 @@ body {
 
 /* Boutons tactiles larges, faciles a utiliser debout d'une seule main */
 .btn-tap {
-  @apply flex items-center justify-center min-h-tap rounded-xl2 font-semibold text-lg
+  @apply flex items-center justify-center min-h-tap px-6 py-3 rounded-xl2 font-semibold text-lg
     active:scale-[0.98] transition-transform select-none;
 }
 
