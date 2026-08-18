@@ -7,6 +7,12 @@ import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 
+function volCode(number: number): string | null {
+  if (number < 1 || number > 40) return null;
+  const padded = String(number).padStart(3, '0');
+  return number <= 7 ? 'Vol-F' + padded : 'Vol-T' + padded;
+}
+
 function extractPrenoms(notes: string | null): string | null {
   if (!notes) return null;
   const marker = 'Membres:';
@@ -74,9 +80,16 @@ export default function TableDetailPage() {
   const arrive = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
   const overflowTotal = overflow.reduce((s, o) => s + o.nombre_personnes, 0);
 
+  const titre = table
+    ? 'Table ' +
+      table.number +
+      (table.label ? ' — ' + table.label : '') +
+      (volCode(table.number) ? ' — ' + volCode(table.number) : '')
+    : 'Table';
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={table ? 'Table ' + table.number : 'Table'} backHref="/tables" />
+      <TopBar title={titre} backHref="/tables" />
 
       <div className="px-4 py-4">
         <div className="card mb-4 grid grid-cols-3 text-center">
