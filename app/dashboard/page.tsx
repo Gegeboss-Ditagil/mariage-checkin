@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
@@ -9,6 +10,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 
 export default function DashboardPage() {
   const role = useSessionRole();
+  const router = useRouter();
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
@@ -65,23 +67,42 @@ export default function DashboardPage() {
   const usageByTable = new Map<string, number>();
   overflow.forEach((o) => usageByTable.set(o.reserve_table_id, (usageByTable.get(o.reserve_table_id) || 0) + o.nombre_personnes));
 
+  function voir(type: string) {
+    router.push('/dashboard/liste?type=' + type);
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar title="Tableau de bord" />
 
       <div className="flex-1 space-y-6 px-4 py-4">
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Invités attendus" value={stats.attendus} />
-          <StatTile label="Arrivés" value={stats.arrives} accent="text-status-complete" />
-          <StatTile label="Restants" value={stats.restants} accent="text-status-partial" />
-          <StatTile label="Taux d'arrivée" value={`${stats.taux.toFixed(1)}%`} />
+          <StatTile label="Invités attendus" value={stats.attendus} onClick={() => voir('tous')} />
+          <StatTile
+            label="Arrivés"
+            value={stats.arrives}
+            accent="text-status-complete"
+            onClick={() => voir('arrives')}
+          />
+          <StatTile
+            label="Restants"
+            value={stats.restants}
+            accent="text-status-partial"
+            onClick={() => voir('restants')}
+          />
+          <StatTile label="Taux d'arrivée" value={stats.taux.toFixed(1) + '%'} />
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <MiniStat label="Complètes" value={stats.tablesCompletes} color="bg-status-complete" />
-          <MiniStat label="Partielles" value={stats.tablesPartielles} color="bg-status-partial" />
-          <MiniStat label="Non arrivées" value={stats.nonArrives} color="bg-status-none" />
-          <MiniStat label="Supplémentaires" value={stats.supplementaires} color="bg-status-over" />
+          <MiniStat label="Complètes" value={stats.tablesCompletes} color="bg-status-complete" onClick={() => voir('complet')} />
+          <MiniStat label="Partielles" value={stats.tablesPartielles} color="bg-status-partial" onClick={() => voir('partiel')} />
+          <MiniStat label="Non arrivées" value={stats.nonArrives} color="bg-status-none" onClick={() => voir('non_arrive')} />
+          <MiniStat
+            label="Supplémentaires"
+            value={stats.supplementaires}
+            color="bg-status-over"
+            onClick={() => voir('supplementaire')}
+          />
         </div>
 
         <div>
@@ -91,12 +112,17 @@ export default function DashboardPage() {
               const used = usageByTable.get(t.id) || 0;
               const full = used >= t.capacity;
               return (
-                <div key={t.id} className="card flex items-center justify-between py-3">
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => router.push('/tables/' + t.id)}
+                  className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+                >
                   <span className="font-semibold">Table {t.number}</span>
                   <span className={full ? 'font-bold text-status-over' : 'text-black/60'}>
-                    {full ? 'COMPLET' : `${used} / ${t.capacity} places utilisées`}
+                    {full ? 'COMPLET' : used + ' / ' + t.capacity + ' places utilisées'}
                   </span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -108,23 +134,67 @@ export default function DashboardPage() {
   );
 }
 
-function StatTile({ label, value, accent }: { label: string; value: number | string; accent?: string }) {
-  return (
-    <div className="card text-center">
+function StatTile({
+  label,
+  value,
+  accent,
+  onClick,
+}: {
+  label: string;
+  value: number | string;
+  accent?: string;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
       <p className="text-xs uppercase tracking-wide text-black/40">{label}</p>
-      <p className={`mt-1 text-4xl font-bold tabular-nums ${accent || ''}`}>{value}</p>
-    </div>
+      <p className={'mt-1 text-4xl font-bold tabular-nums ' + (accent || '')}>{value}</p>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className="card w-full text-center active:scale-[0.98] transition-transform">
+        {content}
+      </button>
+    );
+  }
+
+  return <div className="card text-center">{content}</div>;
 }
 
-function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex items-center justify-between rounded-xl2 bg-white p-3 shadow-card">
+function MiniStat({
+  label,
+  value,
+  color,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
       <span className="flex items-center gap-2">
-        <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
+        <span className={'h-2.5 w-2.5 rounded-full ' + color} />
         {label}
       </span>
       <span className="font-bold tabular-nums">{value}</span>
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center justify-between rounded-xl2 bg-white p-3 text-left shadow-card active:scale-[0.98] transition-transform"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className="flex items-center justify-between rounded-xl2 bg-white p-3 shadow-card">{content}</div>;
 }
