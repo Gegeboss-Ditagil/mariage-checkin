@@ -48,22 +48,16 @@ function LoginForm() {
   }
 
   return (
-    <div
-      className="relative flex min-h-dvh flex-col justify-end bg-[#1a2942] bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/images/login-bg.jpg')" }}
-    >
+    <div className="relative flex min-h-dvh flex-col justify-end bg-[#1a2942]">
       {/* Sceau dore, tout en haut de la page */}
-      <div className="flex justify-center bg-[#1a2942] pt-6 pb-2">
+      <div className="flex flex-1 items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/logo-seal.jpg"
           alt="Sceau Nelly & Gersom"
-          className="h-24 w-24 rounded-full object-cover shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
+          className="h-32 w-32 rounded-full object-cover shadow-[0_2px_20px_rgba(0,0,0,0.5)]"
         />
       </div>
-
-      {/* Voile degrade pour que la carte de connexion reste lisible sur l'image */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0f1a2e] via-[#0f1a2e]/80 to-transparent" />
 
       <div className="relative rounded-t-[2rem] bg-white px-6 pb-10 pt-8 shadow-[0_-12px_48px_rgba(0,0,0,0.45)]">
         <div className="mb-7 text-center">
