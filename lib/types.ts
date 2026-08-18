@@ -41,6 +41,19 @@ export interface InvitationRow {
   updated_at: string;
 }
 
+export interface GuestRow {
+  id: string;
+  event_id: string;
+  nom: string | null;
+  prenom: string | null;
+  nom_affichage: string;
+  telephone: string | null;
+  email: string | null;
+  vip: boolean;
+  notes: string | null;
+  created_at: string;
+}
+
 export interface QrCodeRow {
   id: string;
   event_id: string;
@@ -77,6 +90,7 @@ export interface UserRow {
   id: string;
   event_id: string;
   nom_affichage: string;
+  nom_complet: string | null;
   role: Role;
   email: string | null;
   active: boolean;
@@ -102,6 +116,7 @@ export interface AuditLogRow {
 export interface SessionUser {
   id: string;
   nom_affichage: string;
+  nom_complet: string | null;
   role: Role;
   event_id: string;
 }
