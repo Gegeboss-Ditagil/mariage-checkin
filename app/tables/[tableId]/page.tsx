@@ -1,14 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 
+function extractPrenoms(notes: string | null): string | null {
+  if (!notes) return null;
+  const marker = 'Membres:';
+  const idx = notes.indexOf(marker);
+  if (idx === -1) return null;
+  const after = notes.slice(idx + marker.length).trim();
+  if (!after) return null;
+  const noms = after
+    .split(',')
+    .map(function (part) {
+      const trimmed = part.trim();
+      const premierMot = trimmed.split(' ')[0];
+      return premierMot;
+    })
+    .filter(Boolean);
+  if (noms.length === 0) return null;
+  return noms.join(', ');
+}
+
 export default function TableDetailPage() {
   const { tableId } = useParams<{ tableId: string }>();
+  const router = useRouter();
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
@@ -31,9 +51,17 @@ export default function TableDetailPage() {
 
     load();
     const channel = supabase
-      .channel(`table-detail-${tableId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations', filter: `table_id=eq.${tableId}` }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments', filter: `reserve_table_id=eq.${tableId}` }, load)
+      .channel('table-detail-' + tableId)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId },
+        load
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'overflow_assignments', filter: 'reserve_table_id=eq.' + tableId },
+        load
+      )
       .subscribe();
 
     return () => {
@@ -48,7 +76,7 @@ export default function TableDetailPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={table ? `Table ${table.number}` : 'Table'} backHref="/tables" />
+      <TopBar title={table ? 'Table ' + table.number : 'Table'} backHref="/tables" />
 
       <div className="px-4 py-4">
         <div className="card mb-4 grid grid-cols-3 text-center">
@@ -73,15 +101,26 @@ export default function TableDetailPage() {
         )}
 
         <ul className="divide-y divide-black/5">
-          {invitations.map((inv) => (
-            <li key={inv.id} className="flex items-center justify-between py-3">
-              <span className="font-medium">{inv.nom_affichage}</span>
-              <span className="flex items-center gap-2 text-sm">
-                {inv.nombre_arrive}/{inv.nombre_prevu}
-                <StatusBadge statut={inv.statut} />
-              </span>
-            </li>
-          ))}
+          {invitations.map((inv) => {
+            const prenoms = extractPrenoms(inv.notes);
+            return (
+              <li key={inv.id}>
+                <button
+                  className="flex w-full items-center justify-between gap-3 py-3 text-left"
+                  onClick={() => router.push('/checkin/' + inv.id)}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{inv.nom_affichage}</p>
+                    {prenoms && <p className="truncate text-xs font-medium text-gold-700">{prenoms}</p>}
+                  </div>
+                  <span className="flex shrink-0 items-center gap-2 text-sm">
+                    {inv.nombre_arrive}/{inv.nombre_prevu}
+                    <StatusBadge statut={inv.statut} />
+                  </span>
+                </button>
+              </li>
+            );
+          })}
           {table?.is_reserve &&
             overflow.map((o) => (
               <li key={o.id} className="flex items-center justify-between py-3 text-black/60">
