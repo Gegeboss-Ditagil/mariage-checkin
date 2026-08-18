@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow, TableRow } from '@/lib/types';
+import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { CounterStepper } from '@/components/CounterStepper';
 import { TopBar } from '@/components/TopBar';
 import { proposeReserveTable, ReserveTableUsage } from '@/lib/overflow';
@@ -18,9 +18,6 @@ export default function CheckinPage() {
   const online = useOnline();
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
-  // Valeur affichee par le compteur +/- : represente directement le nombre
-  // de personnes arrivees (pas un nombre a ajouter). Initialisee au nombre
-  // deja enregistre, puis modifiee avec + ou - avant de confirmer.
   const [arriveValue, setArriveValue] = useState(0);
   const [step, setStep] = useState<Step>('confirm');
   const [submitting, setSubmitting] = useState(false);
@@ -30,6 +27,9 @@ export default function CheckinPage() {
   const [excedentCount, setExcedentCount] = useState(0);
   const [reserveUsages, setReserveUsages] = useState<ReserveTableUsage[]>([]);
   const [chosenReserveTable, setChosenReserveTable] = useState<string | null>(null);
+  const [existingAssignments, setExistingAssignments] = useState<
+    { assignment: OverflowAssignmentRow; table: TableRow | null }[]
+  >([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -51,22 +51,62 @@ export default function CheckinPage() {
 
   const delta = invitation ? arriveValue - invitation.nombre_arrive : 0;
 
-  async function loadReserveUsages(): Promise<ReserveTableUsage[]> {
+  async function loadAllTableUsages(): Promise<ReserveTableUsage[]> {
     const supabase = createClient();
-    const [{ data: reserveTables }, { data: assignments }] = await Promise.all([
-      supabase.from('tables').select('*').eq('is_reserve', true).order('number'),
+    const [{ data: tables }, { data: assignments }, { data: allInvs }] = await Promise.all([
+      supabase.from('tables').select('*').order('is_reserve', { ascending: false }).order('number'),
       supabase.from('overflow_assignments').select('reserve_table_id, nombre_personnes'),
+      supabase.from('invitations').select('table_id, nombre_prevu'),
     ]);
 
-    const usedByTable = new Map<string, number>();
+    const overflowByTable = new Map<string, number>();
     (assignments || []).forEach((a: any) => {
-      usedByTable.set(a.reserve_table_id, (usedByTable.get(a.reserve_table_id) || 0) + a.nombre_personnes);
+      overflowByTable.set(a.reserve_table_id, (overflowByTable.get(a.reserve_table_id) || 0) + a.nombre_personnes);
     });
 
-    return ((reserveTables as TableRow[]) || []).map((t) => {
-      const used = usedByTable.get(t.id) || 0;
+    const invByTable = new Map<string, number>();
+    (allInvs || []).forEach((i: any) => {
+      if (!i.table_id) return;
+      invByTable.set(i.table_id, (invByTable.get(i.table_id) || 0) + i.nombre_prevu);
+    });
+
+    return ((tables as TableRow[]) || []).map((t) => {
+      const used = (invByTable.get(t.id) || 0) + (overflowByTable.get(t.id) || 0);
       return { table: t, used, available: t.capacity - used };
     });
+  }
+
+  async function openOverflowFlow(totalExcedent: number) {
+    if (!invitation) return;
+    setExcedentCount(0);
+    setChosenReserveTable(null);
+    setExistingAssignments([]);
+
+    const supabase = createClient();
+    const [usages, { data: assignments }] = await Promise.all([
+      loadAllTableUsages(),
+      supabase
+        .from('overflow_assignments')
+        .select('*')
+        .eq('invitation_id', invitation.id),
+    ]);
+
+    const tableById = new Map(usages.map((u) => [u.table.id, u.table]));
+    const assigned = ((assignments as OverflowAssignmentRow[]) || []).map((a) => ({
+      assignment: a,
+      table: tableById.get(a.reserve_table_id) || null,
+    }));
+    const assignedSum = assigned.reduce((sum, a) => sum + a.assignment.nombre_personnes, 0);
+    const remaining = Math.max(0, totalExcedent - assignedSum);
+
+    setExistingAssignments(assigned);
+    setReserveUsages(usages);
+    setExcedentCount(remaining);
+    if (remaining > 0) {
+      const proposal = proposeReserveTable(usages, remaining);
+      setChosenReserveTable(proposal?.table.id ?? null);
+    }
+    setStep('overflow');
   }
 
   async function handleAdd(nombrePersonnes: number) {
@@ -97,12 +137,7 @@ export default function CheckinPage() {
       const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
 
       if (exc > 0) {
-        setExcedentCount(exc);
-        const usages = await loadReserveUsages();
-        setReserveUsages(usages);
-        const proposal = proposeReserveTable(usages, exc);
-        setChosenReserveTable(proposal?.table.id ?? null);
-        setStep('overflow');
+        await openOverflowFlow(exc);
       } else {
         setStep('success');
       }
@@ -188,8 +223,8 @@ export default function CheckinPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
-        <p className="text-sm text-black/50">Le lien utilisé ne correspond à aucune invitation.</p>
+        <p className="text-lg font-semibold text-cream/80">Invitation introuvable</p>
+        <p className="text-sm text-cream/50">Le lien utilisé ne correspond à aucune invitation.</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
           Retour au scan
         </button>
@@ -199,7 +234,7 @@ export default function CheckinPage() {
 
   if (!invitation) {
     return (
-      <div className="flex min-h-dvh items-center justify-center text-black/50">Chargement…</div>
+      <div className="flex min-h-dvh items-center justify-center text-cream/50">Chargement…</div>
     );
   }
 
@@ -233,60 +268,92 @@ export default function CheckinPage() {
   if (step === 'overflow') {
     return (
       <div className="flex min-h-dvh flex-col">
-        <TopBar title="Personnes supplémentaires" backHref="/scan" />
+        <TopBar title="Personnes supplémentaires" backHref={'/checkin/' + invitation.id} />
         <div className="flex-1 space-y-4 px-4 py-4">
           <div className="card border-2 border-status-over/30 bg-status-over/5">
             <p className="text-sm font-bold uppercase tracking-wide text-status-over">
-              ⚠️ {excedentCount} personne{excedentCount > 1 ? 's' : ''} supplémentaire{excedentCount > 1 ? 's' : ''}
+              ⚠️ {invitation.nombre_arrive - invitation.nombre_prevu} personne
+              {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''} supplémentaire
+              {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''}
             </p>
-            <p className="mt-1 text-black/60">
-              Prévu : {invitation.nombre_prevu} · Présents : {invitation.nombre_arrive} · Excédent : +{excedentCount}
+            <p className="mt-1 text-cream/60">
+              Prévu : {invitation.nombre_prevu} · Présents : {invitation.nombre_arrive}
             </p>
           </div>
 
-          <div>
-            <p className="mb-2 font-semibold">Tables de réserve</p>
-            <div className="space-y-2">
-              {reserveUsages.map((u) => {
-                const full = u.available < excedentCount;
-                const selected = chosenReserveTable === u.table.id;
-                return (
+          {existingAssignments.length > 0 && (
+            <div>
+              <p className="mb-2 font-semibold text-cream">Déjà assigné</p>
+              <div className="space-y-2">
+                {existingAssignments.map(({ assignment, table }) => (
                   <button
-                    key={u.table.id}
-                    disabled={full}
-                    onClick={() => setChosenReserveTable(u.table.id)}
-                    className={
-                      'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                      (full
-                        ? 'border-black/5 bg-black/5 text-black/30'
-                        : selected
-                        ? 'border-ink bg-ink/5'
-                        : 'border-black/10 bg-white')
-                    }
+                    key={assignment.id}
+                    onClick={() => router.push('/tables/overflow/' + assignment.id)}
+                    className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-400/20 bg-night-800 px-4 py-3 text-left text-cream"
                   >
-                    <span className="font-semibold">Table {u.table.number}</span>
-                    <span className="text-sm">
-                      {full ? 'COMPLET' : u.used + ' / ' + u.table.capacity + ' places utilisees'}
+                    <span className="font-semibold">
+                      +{assignment.nombre_personnes} · {table ? 'Table ' + table.number : 'Table inconnue'}
+                      {table?.is_reserve ? ' (réserve)' : ''}
                     </span>
+                    <span className="text-xs text-gold-300 underline">Gérer</span>
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {excedentCount > 0 && (
+            <div>
+              <p className="mb-2 font-semibold text-cream">
+                Assigner {existingAssignments.length > 0 ? 'le reste (' + excedentCount + ')' : 'à une table'}
+              </p>
+              <div className="space-y-2">
+                {reserveUsages.map((u) => {
+                  const full = u.available < excedentCount;
+                  const selected = chosenReserveTable === u.table.id;
+                  return (
+                    <button
+                      key={u.table.id}
+                      disabled={full}
+                      onClick={() => setChosenReserveTable(u.table.id)}
+                      className={
+                        'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
+                        (full
+                          ? 'border-cream/5 bg-cream/5 text-cream/30'
+                          : selected
+                          ? 'border-gold-400 bg-gold-400/10 text-cream'
+                          : 'border-gold-400/20 bg-night-800 text-cream')
+                      }
+                    >
+                      <span className="font-semibold">
+                        Table {u.table.number}
+                        {u.table.is_reserve ? ' (réserve)' : ''}
+                      </span>
+                      <span className="text-sm">
+                        {full ? 'COMPLET' : u.used + ' / ' + u.table.capacity + ' places utilisees'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {error && <p className="text-sm font-medium text-status-over">{error}</p>}
         </div>
 
         <div className="space-y-3 px-4 pb-6">
-          <button
-            className="btn-primary w-full"
-            disabled={!chosenReserveTable || submitting || !online}
-            onClick={() => chosenReserveTable && handleAssignOverflow(chosenReserveTable)}
-          >
-            {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER LES ' + excedentCount + ' A CETTE TABLE'}
-          </button>
-          <button className="btn-secondary w-full" onClick={() => router.push('/scan')}>
-            NE PAS ASSIGNER MAINTENANT
+          {excedentCount > 0 && (
+            <button
+              className="btn-primary w-full"
+              disabled={!chosenReserveTable || submitting || !online}
+              onClick={() => chosenReserveTable && handleAssignOverflow(chosenReserveTable)}
+            >
+              {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER LES ' + excedentCount + ' A CETTE TABLE'}
+            </button>
+          )}
+          <button className="btn-secondary w-full" onClick={() => router.push('/checkin/' + invitation.id)}>
+            {excedentCount > 0 ? 'NE PAS ASSIGNER MAINTENANT' : 'RETOUR'}
           </button>
         </div>
       </div>
@@ -309,17 +376,36 @@ export default function CheckinPage() {
       <TopBar title={invitation.nom_affichage} backHref="/scan" />
 
       <div className="flex-1 px-4 py-6">
-        <div className="card mb-6 space-y-1 text-center">
-          <p className="text-sm uppercase tracking-wide text-black/40">Personnes prévues</p>
-          <p className="text-4xl font-bold">{invitation.nombre_prevu}</p>
-          <p className="text-sm text-black/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
+        <div className="card mb-4 space-y-1 text-center">
+          <p className="text-sm uppercase tracking-wide text-cream/40">Personnes prévues</p>
+          <p className="font-display text-4xl font-bold text-cream">{invitation.nombre_prevu}</p>
+          <p className="text-sm text-cream/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
         </div>
 
-        <p className="mb-3 text-center font-semibold">Personnes arrivées</p>
+        <button
+          type="button"
+          className="mb-3 block w-full text-center text-sm font-medium text-gold-300 underline underline-offset-2"
+          onClick={() => router.push('/checkin/' + invitation.id + '/members')}
+        >
+          Gérer les membres du groupe (ajouter, retirer, nommer)
+        </button>
+
+        {invitation.nombre_arrive > invitation.nombre_prevu && (
+          <button
+            type="button"
+            className="mb-6 block w-full text-center text-sm font-medium text-status-over underline underline-offset-2"
+            onClick={() => openOverflowFlow(invitation.nombre_arrive - invitation.nombre_prevu)}
+          >
+            ⚠️ Gérer l’excédent ({invitation.nombre_arrive - invitation.nombre_prevu} personne
+            {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''})
+          </button>
+        )}
+
+        <p className="mb-3 text-center font-semibold text-cream">Personnes arrivées</p>
         <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
 
         {delta !== 0 && (
-          <p className="mt-3 text-center text-sm font-medium text-ink">
+          <p className="mt-3 text-center text-sm font-medium text-gold-200">
             {delta > 0 ? '+' : ''}
             {delta} par rapport à maintenant
           </p>
