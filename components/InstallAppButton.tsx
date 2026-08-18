@@ -71,10 +71,18 @@ export function InstallAppButton() {
           onClick={() => setShowHelp(false)}
         >
           <div
-            className="w-full max-w-sm rounded-xl3 border border-gold-400/25 bg-night-800 p-5 text-center shadow-card"
+            className="relative w-full max-w-sm rounded-xl3 border border-gold-400/25 bg-night-800 p-5 text-center shadow-card"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="font-display text-lg font-bold text-cream">Installer l'application</p>
+            <button
+              type="button"
+              onClick={() => setShowHelp(false)}
+              aria-label="Fermer"
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-cream/15 bg-night-900 text-lg leading-none text-cream active:scale-[0.95] transition-transform"
+            >
+              ×
+            </button>
+            <p className="pr-8 font-display text-lg font-bold text-cream">Installer l'application</p>
             {isIOS ? (
               <div className="mt-3 space-y-2 text-left text-sm text-cream/70">
                 <p>1. Touchez l'icône de partage (le carré avec une flèche vers le haut) en bas de Safari.</p>

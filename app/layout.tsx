@@ -1,7 +1,23 @@
 import type { Metadata, Viewport } from 'next';
+import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { OnlineIndicator } from '@/components/OnlineIndicator';
+import { InstallAppButton } from '@/components/InstallAppButton';
+
+const displayFont = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const sansFont = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_EVENT_NAME || 'Check-in Mariage',
@@ -26,15 +42,24 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#1a2942',
+  themeColor: '#0c1912',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={displayFont.variable + ' ' + sansFont.variable}>
       <body>
         <ServiceWorkerRegister />
         <OnlineIndicator />
+        {/*
+          Monte au niveau racine (et non sur une seule page) pour que
+          l'ecouteur "beforeinstallprompt" soit attache des le tout premier
+          affichage, quelle que soit la page d'entree (ex: un agent deja
+          connecte qui arrive directement sur /scan sans repasser par
+          /login). Sans ca, l'evenement peut se declencher avant que le
+          composant n'existe et etre perdu definitivement pour cette visite.
+        */}
+        <InstallAppButton />
         <div className="mx-auto min-h-dvh max-w-md safe-top safe-bottom">{children}</div>
       </body>
     </html>
