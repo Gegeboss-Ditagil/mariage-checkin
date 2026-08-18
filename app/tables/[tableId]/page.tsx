@@ -38,6 +38,7 @@ export default function TableDetailPage() {
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
+  const [overflowNoms, setOverflowNoms] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,7 +69,24 @@ export default function TableDetailPage() {
 
       setTable(t as TableRow | null);
       setInvitations((invs as InvitationRow[]) || []);
-      setOverflow((ov as OverflowAssignmentRow[]) || []);
+      const overflowRows = (ov as OverflowAssignmentRow[]) || [];
+      setOverflow(overflowRows);
+
+      // Noms des invitations en excedent, pour affichage (au lieu d'une
+      // ligne anonyme "Excedent affecte").
+      const invIds = Array.from(new Set(overflowRows.map((o) => o.invitation_id)));
+      if (invIds.length > 0) {
+        const { data: noms } = await supabase
+          .from('invitations')
+          .select('id, nom_affichage')
+          .in('id', invIds);
+        if (!active) return;
+        const map = new Map<string, string>();
+        (noms || []).forEach((n: any) => map.set(n.id, n.nom_affichage));
+        setOverflowNoms(map);
+      } else {
+        setOverflowNoms(new Map());
+      }
     }
 
     load();
@@ -110,26 +128,26 @@ export default function TableDetailPage() {
       <div className="px-4 py-4">
         <div className="card mb-4 grid grid-cols-3 text-center">
           <div>
-            <p className="text-xs uppercase text-black/40">Prévu</p>
+            <p className="text-xs uppercase text-cream/40">Prévu</p>
             <p className="text-2xl font-bold">{prevu}</p>
           </div>
           <div>
-            <p className="text-xs uppercase text-black/40">Arrivés</p>
+            <p className="text-xs uppercase text-cream/40">Arrivés</p>
             <p className="text-2xl font-bold text-status-complete">{arrive}</p>
           </div>
           <div>
-            <p className="text-xs uppercase text-black/40">Restants</p>
+            <p className="text-xs uppercase text-cream/40">Restants</p>
             <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
           </div>
         </div>
 
         {table?.is_reserve && (
-          <p className="mb-4 text-sm text-black/50">
+          <p className="mb-4 text-sm text-cream/50">
             {overflowTotal} / {table.capacity} places de réserve utilisées
           </p>
         )}
 
-        <ul className="divide-y divide-black/5">
+        <ul className="divide-y divide-gold-400/10">
           {invitations.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
             return (
@@ -140,7 +158,7 @@ export default function TableDetailPage() {
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{inv.nom_affichage}</p>
-                    {prenoms && <p className="truncate text-xs font-medium text-gold-700">{prenoms}</p>}
+                    {prenoms && <p className="truncate text-xs font-medium text-gold-300">{prenoms}</p>}
                   </div>
                   <span className="flex shrink-0 items-center gap-2 text-sm">
                     {inv.nombre_arrive}/{inv.nombre_prevu}
@@ -152,9 +170,21 @@ export default function TableDetailPage() {
           })}
           {table?.is_reserve &&
             overflow.map((o) => (
-              <li key={o.id} className="flex items-center justify-between py-3 text-black/60">
-                <span>Excédent affecté</span>
-                <span>+{o.nombre_personnes}</span>
+              <li key={o.id}>
+                <button
+                  className="flex w-full items-center justify-between gap-3 py-3 text-left active:scale-[0.98] transition-transform"
+                  onClick={() => router.push('/tables/overflow/' + o.id)}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-cream/80">
+                      {overflowNoms.get(o.invitation_id) || 'Excédent affecté'}
+                    </p>
+                    <p className="text-xs text-cream/40">Toucher pour retirer ou déplacer</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-status-over">
+                    +{o.nombre_personnes}
+                  </span>
+                </button>
               </li>
             ))}
         </ul>
