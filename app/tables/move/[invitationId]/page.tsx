@@ -110,7 +110,21 @@ export default function DeplacerInvitationPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Échec du déplacement');
+        if (data.error === 'invitation_not_found') {
+          // Quelqu'un d'autre a deja deplace/traite cette invitation entre
+          // temps (plusieurs agents actifs en meme temps) : on redirige au
+          // lieu de laisser la personne bloquee sur un ecran perime.
+          setError('Deja deplacee par quelqu\'un d\'autre entre-temps — retour aux tables…');
+          setTimeout(() => router.push('/tables'), 1200);
+          return;
+        }
+        setError(
+          data.error === 'table_not_found'
+            ? 'Cette table n\'existe plus — choisissez-en une autre'
+            : data.error === 'same_table'
+            ? 'Deja assignee a cette table'
+            : data.error || 'Échec du déplacement'
+        );
         return;
       }
       router.push('/tables/' + chosenTableId);
