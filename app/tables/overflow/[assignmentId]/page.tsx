@@ -99,9 +99,21 @@ export default function GererExcedentPage() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.error === 'assignment_not_found') {
+          // Un autre agent a deja retire/deplace cette affectation entre
+          // temps (plusieurs agents actifs en meme temps sur le meme groupe
+          // d'excedent) : on redirige au lieu de laisser la personne bloquee.
+          setError('Deja traite par quelqu\'un d\'autre entre-temps — retour aux tables…');
+          setTimeout(() => router.push('/tables'), 1200);
+          return;
+        }
         setError(
           data.error === 'reserve_table_full'
             ? 'Cette table est complète — choisissez-en une autre'
+            : data.error === 'reserve_table_not_found'
+            ? 'Cette table n\'existe plus — choisissez-en une autre'
+            : data.error === 'same_table'
+            ? 'Deja assignee a cette table'
             : data.error || 'Échec du déplacement'
         );
         return;
@@ -133,6 +145,11 @@ export default function GererExcedentPage() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.error === 'assignment_not_found') {
+          setError('Deja retire par quelqu\'un d\'autre entre-temps — retour aux tables…');
+          setTimeout(() => router.push('/tables'), 1200);
+          return;
+        }
         setError(data.error || 'Échec du retrait');
         return;
       }
