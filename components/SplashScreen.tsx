@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const SPLASH_DURATION_MS = 1700;
+const SPLASH_DURATION_MS = 5000;
 
 export function SplashScreen({ next }: { next: string }) {
   const router = useRouter();
