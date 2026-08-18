@@ -17,7 +17,7 @@ export function TopBar({
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
-    if (typeof window !== 'undefined' && !window.confirm('Se déconnecter ?')) {
+    if (typeof window !== 'undefined' && !window.confirm('Se deconnecter ?')) {
       return;
     }
     setLoggingOut(true);
@@ -54,8 +54,8 @@ export function TopBar({
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          aria-label="Se déconnecter"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-gold-400/25 text-base leading-none text-gold-300/80 active:scale-[0.95] transition-transform disabled:opacity-40"
+          aria-label="Se deconnecter"
+          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-status-over/60 bg-status-over/15 text-lg leading-none text-status-over active:scale-[0.95] transition-transform disabled:opacity-40"
         >
           ⏻
         </button>
