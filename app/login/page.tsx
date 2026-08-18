@@ -52,6 +52,16 @@ function LoginForm() {
       className="relative flex min-h-dvh flex-col justify-end bg-[#1a2942] bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/images/login-bg.jpg')" }}
     >
+      {/* Sceau dore, tout en haut de la page */}
+      <div className="flex justify-center bg-[#1a2942] pt-6 pb-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/logo-seal.jpg"
+          alt="Sceau Nelly & Gersom"
+          className="h-24 w-24 rounded-full object-cover shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
+        />
+      </div>
+
       {/* Voile degrade pour que la carte de connexion reste lisible sur l'image */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0f1a2e] via-[#0f1a2e]/80 to-transparent" />
 
