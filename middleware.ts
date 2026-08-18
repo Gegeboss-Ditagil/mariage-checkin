@@ -3,10 +3,26 @@ import { SESSION_COOKIE_NAME, verifySessionTokenEdge } from '@/lib/session-edge'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js'];
 
+// Tout le monde sauf admin a exactement le meme acces (agent ou placeur) :
+// seules les pages /admin restent reservees a l'admin.
+const STAFF_PREFIXES = [
+  '/',
+  '/scan',
+  '/table',
+  '/checkin',
+  '/search',
+  '/dashboard',
+  '/tables',
+  '/exceptions',
+  '/history',
+  '/placement',
+  '/api',
+];
+
 const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
   admin: ['/'], // acces total
-  agent_checkin: ['/', '/scan', '/table', '/checkin', '/search', '/dashboard', '/tables', '/exceptions', '/history', '/api'],
-  placeur: ['/', '/placement', '/scan', '/table', '/checkin', '/search', '/api'],
+  agent_checkin: STAFF_PREFIXES,
+  placeur: STAFF_PREFIXES,
 };
 
 function isPublic(pathname: string) {
