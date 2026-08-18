@@ -1,42 +1,47 @@
-import type { Metadata, Viewport } from 'next';
-import './globals.css';
-import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
-import { OnlineIndicator } from '@/components/OnlineIndicator';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_EVENT_NAME || 'Check-in Mariage',
-  description: "Application de check-in pour l'entree des invites",
-  manifest: '/manifest.json',
-  icons: {
-    icon: [
-      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-    ],
-    apple: '/icons/apple-touch-icon.png',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: process.env.NEXT_PUBLIC_EVENT_NAME || 'Check-in',
-  },
-};
+:root {
+  color-scheme: light;
+}
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#1c1c1e',
-};
+html, body {
+  height: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="fr">
-      <body>
-        <ServiceWorkerRegister />
-        <OnlineIndicator />
-        <div className="mx-auto min-h-dvh max-w-md safe-top safe-bottom">{children}</div>
-      </body>
-    </html>
-  );
+body {
+  @apply bg-parchment text-ink antialiased;
+}
+
+/* Boutons tactiles larges, faciles a utiliser debout d'une seule main */
+.btn-tap {
+  @apply flex items-center justify-center min-h-tap px-6 py-3 rounded-xl2 font-semibold text-lg
+    active:scale-[0.98] transition-transform select-none;
+}
+
+.btn-primary {
+  @apply btn-tap bg-ink text-white shadow-card;
+}
+
+.btn-secondary {
+  @apply btn-tap bg-white text-ink border border-black/10 shadow-card;
+}
+
+.btn-danger {
+  @apply btn-tap bg-status-over text-white shadow-card;
+}
+
+.card {
+  @apply bg-white rounded-xl2 shadow-card border border-black/5 p-4;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
 }
