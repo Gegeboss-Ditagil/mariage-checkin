@@ -253,7 +253,7 @@ export default function CheckinPage() {
 
       <div className="space-y-3 px-4 pb-6">
         <button className="btn-primary w-full" disabled={submitting || !online} onClick={handleConfirm}>
-          {submitting ? '…' : !online ? 'HORS LIGNE' : 'CONFIRMER L'ENTRÉE'}
+          {submitting ? '…' : !online ? 'HORS LIGNE' : 'CONFIRMER L’ENTRÉE'}
         </button>
         <CorrectionControls
           invitationId={invitation.id}
