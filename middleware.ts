@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
+import { SESSION_COOKIE_NAME, verifySessionTokenEdge } from '@/lib/session-edge';
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js'];
 
@@ -18,7 +18,7 @@ function isPublic(pathname: string) {
   );
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (isPublic(pathname)) {
@@ -26,7 +26,7 @@ export function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const user = verifySessionToken(token);
+  const user = await verifySessionTokenEdge(token);
 
   if (!user) {
     const loginUrl = new URL('/login', req.url);
