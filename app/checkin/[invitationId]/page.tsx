@@ -150,7 +150,7 @@ export default function CheckinPage() {
     return (
       <SuccessScreen
         title="✓ ENTRÉE CONFIRMÉE"
-        lines={[`${invitation.nombre_arrive} PERSONNE${invitation.nombre_arrive > 1 ? 'S' : ''}`]}
+        lines={[invitation.nombre_arrive + ' PERSONNE' + (invitation.nombre_arrive > 1 ? 'S' : '')]}
       />
     );
   }
@@ -159,7 +159,7 @@ export default function CheckinPage() {
     return (
       <SuccessScreen
         title="✓ AFFECTATION CONFIRMÉE"
-        lines={[`${excedentCount} personne${excedentCount > 1 ? 's' : ''} en table de réserve`]}
+        lines={[excedentCount + ' personne' + (excedentCount > 1 ? 's' : '') + ' en table de reserve']}
       />
     );
   }
@@ -189,17 +189,18 @@ export default function CheckinPage() {
                     key={u.table.id}
                     disabled={full}
                     onClick={() => setChosenReserveTable(u.table.id)}
-                    className={`flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ${
-                      full
+                    className={
+                      'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
+                      (full
                         ? 'border-black/5 bg-black/5 text-black/30'
                         : selected
                         ? 'border-ink bg-ink/5'
-                        : 'border-black/10 bg-white'
-                    }`}
+                        : 'border-black/10 bg-white')
+                    }
                   >
                     <span className="font-semibold">Table {u.table.number}</span>
                     <span className="text-sm">
-                      {full ? 'COMPLET' : `${u.used} / ${u.table.capacity} places utilisées`}
+                      {full ? 'COMPLET' : u.used + ' / ' + u.table.capacity + ' places utilisees'}
                     </span>
                   </button>
                 );
@@ -216,7 +217,7 @@ export default function CheckinPage() {
             disabled={!chosenReserveTable || submitting || !online}
             onClick={() => chosenReserveTable && handleAssignOverflow(chosenReserveTable)}
           >
-            {submitting ? '…' : !online ? 'HORS LIGNE' : `ASSIGNER LES ${excedentCount} À CETTE TABLE`}
+            {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER LES ' + excedentCount + ' A CETTE TABLE'}
           </button>
           <button className="btn-secondary w-full" onClick={() => router.push('/scan')}>
             NE PAS ASSIGNER MAINTENANT
@@ -228,4 +229,167 @@ export default function CheckinPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={invitation.nom_affichage} backHref={invitation.table_id ?
+      <TopBar title={invitation.nom_affichage} backHref={invitation.table_id ? '/table/' + invitation.table_id : '/scan'} />
+
+      <div className="flex-1 px-4 py-6">
+        <div className="card mb-6 space-y-1 text-center">
+          <p className="text-sm uppercase tracking-wide text-black/40">Personnes prévues</p>
+          <p className="text-4xl font-bold">{invitation.nombre_prevu}</p>
+          <p className="text-sm text-black/50">Déjà entrées : {invitation.nombre_arrive}</p>
+          {restants > 0 && <p className="text-sm text-black/50">{restants} restante{restants > 1 ? 's' : ''}</p>}
+        </div>
+
+        <p className="mb-3 text-center font-semibold">Combien entrent maintenant ?</p>
+        <CounterStepper value={count} min={1} max={30} onChange={setCount} />
+
+        {count > restants && restants >= 0 && (
+          <p className="mt-3 text-center text-sm font-medium text-status-over">
+            ⚠️ {count - Math.max(restants, 0)} personne{count - restants > 1 ? 's' : ''} de plus que prévu
+          </p>
+        )}
+
+        {error && <p className="mt-3 text-center text-sm font-medium text-status-over">{error}</p>}
+      </div>
+
+      <div className="space-y-3 px-4 pb-6">
+        <button className="btn-primary w-full" disabled={submitting || !online} onClick={handleConfirm}>
+          {submitting ? '…' : !online ? 'HORS LIGNE' : 'CONFIRMER L’ENTRÉE'}
+        </button>
+        {invitation.nombre_arrive > 0 && (
+          <CorrectionControls
+            invitationId={invitation.id}
+            currentTotal={invitation.nombre_arrive}
+            submitting={submitting}
+            online={online}
+            setSubmitting={setSubmitting}
+            onUpdated={(inv) => setInvitation(inv)}
+            setError={setError}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CorrectionControls({
+  invitationId,
+  currentTotal,
+  submitting,
+  online,
+  setSubmitting,
+  onUpdated,
+  setError,
+}: {
+  invitationId: string;
+  currentTotal: number;
+  submitting: boolean;
+  online: boolean;
+  setSubmitting: (v: boolean) => void;
+  onUpdated: (inv: InvitationRow) => void;
+  setError: (e: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(currentTotal);
+
+  async function cancelLast() {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/checkin/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitationId }),
+      });
+      const data = await res.json();
+      if (!res.ok) return setError(data.error);
+      onUpdated(data.invitation);
+      setOpen(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function applyCorrection() {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/checkin/correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitationId, nouveau_total: value }),
+      });
+      const data = await res.json();
+      if (!res.ok) return setError(data.error);
+      onUpdated(data.invitation);
+      setOpen(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="w-full text-center text-sm font-medium text-black/40 underline" onClick={() => setOpen(true)}>
+        Annuler / corriger le nombre de personnes
+      </button>
+    );
+  }
+
+  return (
+    <div className="card space-y-3">
+      {!online && <p className="text-center text-sm font-semibold text-status-over">HORS LIGNE — actions désactivées</p>}
+      <button className="btn-secondary w-full" disabled={submitting || !online} onClick={cancelLast}>
+        ANNULER LA DERNIÈRE ACTION
+      </button>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          className="w-full rounded-xl2 border border-black/10 px-3 py-2 text-lg"
+          value={value}
+          min={0}
+          onChange={(e) => setValue(Number(e.target.value))}
+        />
+        <button className="btn-secondary shrink-0 px-4" disabled={submitting || !online} onClick={applyCorrection}>
+          Corriger
+        </button>
+      </div>
+      <button className="w-full text-center text-sm text-black/40" onClick={() => setOpen(false)}>
+        Fermer
+      </button>
+    </div>
+  );
+}
+
+function SuccessScreen({ title, lines }: { title: string; lines: string[] }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => router.push('/scan'), 1800);
+    return () => clearTimeout(timer);
+  }, [router]);
+
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-status-complete text-white">
+      <p className="text-2xl font-bold">{title}</p>
+      {lines.map((l) => (
+        <p key={l} className="text-lg font-medium">
+          {l}
+        </p>
+      ))}
+      <button
+        className="mt-6 rounded-xl2 border-2 border-white/70 px-6 py-2.5 text-sm font-semibold"
+        onClick={() => router.push('/scan')}
+      >
+        Continuer →
+      </button>
+    </div>
+  );
+}
