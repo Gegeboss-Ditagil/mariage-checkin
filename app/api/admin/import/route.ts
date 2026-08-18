@@ -10,6 +10,8 @@ interface ImportRow {
   notes?: string;
   vip?: boolean;
   category?: string;
+  telephone?: string;
+  email?: string;
 }
 
 /**
@@ -39,6 +41,8 @@ export async function POST(req: NextRequest) {
     nombre_prevu: r.nombre_prevu && r.nombre_prevu > 0 ? r.nombre_prevu : 1,
     notes: r.notes || null,
     category: r.category || null,
+    telephone: r.telephone || null,
+    email: r.email || null,
   }));
 
   const { data, error } = await supabase.from('invitations').insert(toInsert).select('id');
