@@ -5,6 +5,16 @@ import { QrScanner } from '@/components/QrScanner';
 import { createClient } from '@/lib/supabase/client';
 import { TableRow } from '@/lib/types';
 
+// Enleve les accents, la casse et la ponctuation pour comparer des noms de
+// ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
+function normalize(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase();
+}
+
 export default function PlacementPage() {
   const [mode, setMode] = useState<'scan' | 'search'>('scan');
   const [query, setQuery] = useState('');
@@ -23,13 +33,24 @@ export default function PlacementPage() {
     }
 
     const supabase = createClient();
-    const { data: qr } = await supabase.from('qr_codes').select('table_id').eq('code', code).maybeSingle();
-    if (!qr) {
-      setError('QR non reconnu');
+    const { data: qr } = await supabase.from('qr_codes').select('table_id').ilike('code', code).maybeSingle();
+    if (qr) {
+      const { data: t } = await supabase.from('tables').select('*').eq('id', qr.table_id).maybeSingle();
+      setTable(t as TableRow | null);
       return;
     }
-    const { data: t } = await supabase.from('tables').select('*').eq('id', qr.table_id).maybeSingle();
-    setTable(t as TableRow | null);
+
+    // Repli : certaines cartes imprimees encodent le nom de la ville
+    // (accents/casse variables) plutot que le code vol-tXXX.
+    const { data: allTables } = await supabase.from('tables').select('*');
+    const normalizedCode = normalize(code);
+    const match = ((allTables as TableRow[]) || []).find((t) => t.label && normalize(t.label) === normalizedCode);
+    if (match) {
+      setTable(match);
+      return;
+    }
+
+    setError('QR non reconnu');
   }
 
   async function resolveBySearch() {
@@ -44,7 +65,7 @@ export default function PlacementPage() {
     const { data: inv } = await supabase
       .from('invitations')
       .select('table_id')
-      .ilike('nom_affichage', `%${query}%`)
+      .ilike('nom_affichage', '%' + query + '%')
       .limit(1)
       .maybeSingle();
 
@@ -83,13 +104,13 @@ export default function PlacementPage() {
 
       <div className="mb-4 mt-3 flex px-4">
         <button
-          className={`flex-1 rounded-l-xl2 border py-2.5 text-sm font-semibold ${mode === 'scan' ? 'bg-ink text-white' : 'bg-white'}`}
+          className={'flex-1 rounded-l-xl2 border py-2.5 text-sm font-semibold ' + (mode === 'scan' ? 'bg-ink text-white' : 'bg-white')}
           onClick={() => setMode('scan')}
         >
           Scan QR
         </button>
         <button
-          className={`flex-1 rounded-r-xl2 border py-2.5 text-sm font-semibold ${mode === 'search' ? 'bg-ink text-white' : 'bg-white'}`}
+          className={'flex-1 rounded-r-xl2 border py-2.5 text-sm font-semibold ' + (mode === 'search' ? 'bg-ink text-white' : 'bg-white')}
           onClick={() => setMode('search')}
         >
           Recherche
