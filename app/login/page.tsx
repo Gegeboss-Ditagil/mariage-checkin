@@ -61,13 +61,15 @@ function LoginForm() {
           <p className="mt-1 text-black/50">Connexion equipe d'accueil</p>
         </div>
 
-        <div className="mb-6 flex rounded-2xl bg-black/5 p-1">
+        <div className="mb-6 flex gap-3">
           <button
             type="button"
             onClick={() => setTab('equipe')}
             className={
-              'flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ' +
-              (tab === 'equipe' ? 'bg-ink text-white shadow-sm' : 'text-black/50')
+              'flex-1 rounded-xl2 border-2 py-3 text-sm font-semibold transition-colors ' +
+              (tab === 'equipe'
+                ? 'border-ink bg-ink text-white shadow-card'
+                : 'border-black/15 bg-white text-black/50')
             }
           >
             Equipe
@@ -76,8 +78,10 @@ function LoginForm() {
             type="button"
             onClick={() => setTab('admin')}
             className={
-              'flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ' +
-              (tab === 'admin' ? 'bg-ink text-white shadow-sm' : 'text-black/50')
+              'flex-1 rounded-xl2 border-2 py-3 text-sm font-semibold transition-colors ' +
+              (tab === 'admin'
+                ? 'border-ink bg-ink text-white shadow-card'
+                : 'border-black/15 bg-white text-black/50')
             }
           >
             Admin
