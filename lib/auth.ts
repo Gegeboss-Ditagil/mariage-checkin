@@ -8,7 +8,7 @@ import { SessionUser } from './types';
 export function hashSecret(secret: string): string {
   const salt = randomBytes(16).toString('hex');
   const hash = scryptSync(secret, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
+  return salt + ':' + hash;
 }
 
 export function verifySecret(secret: string, stored: string): boolean {
@@ -43,7 +43,7 @@ export function createSessionToken(user: SessionUser): string {
   const payload = JSON.stringify({ ...user, exp: Date.now() + SESSION_MAX_AGE_SECONDS * 1000 });
   const encoded = Buffer.from(payload).toString('base64url');
   const signature = sign(encoded);
-  return `${encoded}.${signature}`;
+  return encoded + '.' + signature;
 }
 
 export function verifySessionToken(token: string | undefined | null): SessionUser | null {
@@ -64,6 +64,7 @@ export function verifySessionToken(token: string | undefined | null): SessionUse
     return {
       id: payload.id,
       nom_affichage: payload.nom_affichage,
+      nom_complet: payload.nom_complet ?? null,
       role: payload.role,
       event_id: payload.event_id,
     };
