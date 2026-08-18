@@ -34,6 +34,9 @@ export interface InvitationRow {
   statut: InvitationStatut;
   category: string | null;
   notes: string | null;
+  telephone: string | null;
+  email: string | null;
+  telephone_digits?: string | null;
   created_at: string;
   updated_at: string;
 }
