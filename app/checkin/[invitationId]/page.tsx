@@ -167,7 +167,7 @@ export default function CheckinPage() {
   if (step === 'overflow') {
     return (
       <div className="flex min-h-dvh flex-col">
-        <TopBar title="Personnes supplémentaires" />
+        <TopBar title="Personnes supplémentaires" backHref="/scan" />
         <div className="flex-1 space-y-4 px-4 py-4">
           <div className="card border-2 border-status-over/30 bg-status-over/5">
             <p className="text-sm font-bold uppercase tracking-wide text-status-over">
@@ -229,7 +229,7 @@ export default function CheckinPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={invitation.nom_affichage} backHref={invitation.table_id ? '/table/' + invitation.table_id : '/scan'} />
+      <TopBar title={invitation.nom_affichage} backHref="/scan" />
 
       <div className="flex-1 px-4 py-6">
         <div className="card mb-6 space-y-1 text-center">
