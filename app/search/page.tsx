@@ -11,6 +11,25 @@ interface Result extends InvitationRow {
   table?: TableRow | null;
 }
 
+function extractPrenoms(notes: string | null): string | null {
+  if (!notes) return null;
+  const marker = 'Membres:';
+  const idx = notes.indexOf(marker);
+  if (idx === -1) return null;
+  const after = notes.slice(idx + marker.length).trim();
+  if (!after) return null;
+  const noms = after
+    .split(',')
+    .map(function (part) {
+      const trimmed = part.trim();
+      const premierMot = trimmed.split(' ')[0];
+      return premierMot;
+    })
+    .filter(Boolean);
+  if (noms.length === 0) return null;
+  return noms.join(', ');
+}
+
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -28,8 +47,9 @@ export default function SearchPage() {
       setLoading(true);
       const supabase = createClient();
 
-      // Recherche tolerante : nom_affichage OU groupe contient le texte,
-      // ou le numero de table (si l'utilisateur tape un chiffre).
+      // Recherche tolerante : nom_affichage, groupe OU les prenoms stockes
+      // dans notes ("Membres: ...") contiennent le texte, ou le numero de
+      // table si l'utilisateur tape un chiffre.
       const numeric = /^\d+$/.test(q);
 
       let invitationsQuery = supabase
@@ -43,7 +63,7 @@ export default function SearchPage() {
         invitationsQuery = invitationsQuery.in('table_id', tableIds.length ? tableIds : ['__none__']);
       } else {
         invitationsQuery = invitationsQuery.or(
-          `nom_affichage.ilike.%${q}%,groupe.ilike.%${q}%`
+          'nom_affichage.ilike.%' + q + '%,groupe.ilike.%' + q + '%,notes.ilike.%' + q + '%'
         );
       }
 
@@ -76,23 +96,27 @@ export default function SearchPage() {
       )}
 
       <ul className="mt-2 flex-1 divide-y divide-black/5 px-4">
-        {results.map((r) => (
-          <li key={r.id}>
-            <button
-              className="flex w-full items-center justify-between gap-3 py-4 text-left"
-              onClick={() => router.push(`/checkin/${r.id}`)}
-            >
-              <div className="min-w-0">
-                <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
-                <p className="text-sm text-black/50">
-                  {r.table ? `Table ${r.table.number}` : 'Sans table'} · {r.nombre_prevu} personne
-                  {r.nombre_prevu > 1 ? 's' : ''}
-                </p>
-              </div>
-              <StatusBadge statut={r.statut} />
-            </button>
-          </li>
-        ))}
+        {results.map((r) => {
+          const prenoms = extractPrenoms(r.notes);
+          return (
+            <li key={r.id}>
+              <button
+                className="flex w-full items-center justify-between gap-3 py-4 text-left"
+                onClick={() => router.push('/checkin/' + r.id)}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
+                  {prenoms && <p className="truncate text-xs font-medium text-gold-700">{prenoms}</p>}
+                  <p className="text-sm text-black/50">
+                    {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
+                    {r.nombre_prevu > 1 ? 's' : ''}
+                  </p>
+                </div>
+                <StatusBadge statut={r.statut} />
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
