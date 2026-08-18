@@ -50,6 +50,22 @@ export default function TableDetailPage() {
         supabase.from('overflow_assignments').select('*').eq('reserve_table_id', tableId),
       ]);
       if (!active) return;
+
+      // Filet de securite : si l'identifiant dans l'URL ne correspond a
+      // aucune table, c'est probablement en fait un identifiant d'invitation
+      // -- on redirige alors directement vers la fiche de cette invitation.
+      if (!t) {
+        const { data: inv } = await supabase
+          .from('invitations')
+          .select('id')
+          .eq('id', tableId)
+          .maybeSingle();
+        if (inv) {
+          router.replace('/checkin/' + tableId);
+          return;
+        }
+      }
+
       setTable(t as TableRow | null);
       setInvitations((invs as InvitationRow[]) || []);
       setOverflow((ov as OverflowAssignmentRow[]) || []);
