@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 
 export async function GET() {
   const user = getSessionUser();
-  if (!user || !['admin', 'agent_checkin'].includes(user.role)) {
+  if (!user || !['admin', 'agent_checkin', 'placeur'].includes(user.role)) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
@@ -12,9 +12,9 @@ export async function GET() {
   const { data, error } = await supabase
     .from('audit_logs')
     .select(
-      `id, action, created_at, nombre_personnes, ancien_total, nouveau_total, details,
-       table:table_id(number), reserve_table:reserve_table_id(number),
-       agent:agent_id(nom_affichage)`
+      'id, action, created_at, nombre_personnes, ancien_total, nouveau_total, details, ' +
+      'table:table_id(number), reserve_table:reserve_table_id(number), ' +
+      'agent:agent_id(nom_affichage)'
     )
     .order('created_at', { ascending: false })
     .limit(200);
