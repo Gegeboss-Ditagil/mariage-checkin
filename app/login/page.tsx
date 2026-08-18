@@ -14,6 +14,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const [tab, setTab] = useState<'equipe' | 'admin'>('equipe');
   const [nomAffichage, setNomAffichage] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -52,20 +53,43 @@ function LoginForm() {
       style={{ backgroundImage: "url('/images/login-bg.jpg')" }}
     >
       {/* Voile degrade pour que la carte de connexion reste lisible sur l'image */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#0f1a2e] via-[#0f1a2e]/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-[#0f1a2e] via-[#0f1a2e]/80 to-transparent" />
 
-      <div className="relative rounded-t-[2rem] bg-white/95 px-6 pb-10 pt-7 shadow-[0_-8px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm">
-        <div className="mb-6 text-center">
+      <div className="relative rounded-t-[2rem] bg-white px-6 pb-10 pt-8 shadow-[0_-12px_48px_rgba(0,0,0,0.45)]">
+        <div className="mb-7 text-center">
           <p className="font-display text-2xl">{process.env.NEXT_PUBLIC_EVENT_NAME || 'Check-in'}</p>
           <p className="mt-1 text-black/50">Connexion equipe d'accueil</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="mb-6 flex rounded-2xl bg-black/5 p-1">
+          <button
+            type="button"
+            onClick={() => setTab('equipe')}
+            className={
+              'flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ' +
+              (tab === 'equipe' ? 'bg-ink text-white shadow-sm' : 'text-black/50')
+            }
+          >
+            Equipe
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('admin')}
+            className={
+              'flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ' +
+              (tab === 'admin' ? 'bg-ink text-white shadow-sm' : 'text-black/50')
+            }
+          >
+            Admin
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-1 block text-sm font-medium text-black/60">Votre nom</label>
+            <label className="mb-2 block text-sm font-medium text-black/60">Votre nom</label>
             <input
-              className="w-full rounded-xl2 border border-black/10 px-4 py-3.5 text-lg"
-              placeholder="Ex: Gersom Dos"
+              className="w-full rounded-xl2 border-2 border-black/15 px-4 py-4 text-lg focus:border-ink focus:outline-none"
+              placeholder={tab === 'admin' ? 'Ex: Gersom Dos' : 'Ex: Agent001'}
               value={nomAffichage}
               onChange={(e) => setNomAffichage(e.target.value)}
               autoComplete="username"
@@ -73,9 +97,9 @@ function LoginForm() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-black/60">Code PIN</label>
+            <label className="mb-2 block text-sm font-medium text-black/60">Code PIN</label>
             <input
-              className="w-full rounded-xl2 border border-black/10 px-4 py-3.5 text-lg tracking-[0.5em]"
+              className="w-full rounded-xl2 border-2 border-black/15 px-4 py-4 text-lg tracking-[0.6em] focus:border-ink focus:outline-none"
               placeholder="****"
               inputMode="numeric"
               type="password"
