@@ -58,8 +58,16 @@ export function UserMenu() {
         </button>
 
         {open && (
-          <div className="absolute right-0 top-12 w-56 rounded-xl2 border border-gold-400/20 bg-night-800/95 p-3 shadow-card backdrop-blur">
-            <p className="truncate text-xs font-medium uppercase tracking-wide text-cream/40">
+          <div className="absolute right-0 top-12 w-56 rounded-xl2 border border-gold-400/20 bg-night-800 p-3 shadow-card">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Fermer"
+              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-cream/60 active:scale-[0.95] transition-transform"
+            >
+              ×
+            </button>
+            <p className="truncate pr-6 text-xs font-medium uppercase tracking-wide text-cream/40">
               Connecté
             </p>
             <p className="mt-0.5 truncate text-sm font-semibold text-cream">{name}</p>

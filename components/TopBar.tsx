@@ -41,8 +41,8 @@ export function TopBar({
           {backHref && (
             <Link
               href={backHref}
-              className="-ml-1 px-1 text-2xl leading-none text-gold-300"
               aria-label="Retour"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold-400/30 bg-night-800/80 text-2xl font-bold leading-none text-gold-200 shadow-card active:scale-[0.95] transition-transform"
             >
               ‹
             </Link>

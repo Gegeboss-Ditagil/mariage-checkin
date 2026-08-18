@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GoldSeal, FlightPath, StarField } from '@/components/BrandMotif';
-import { InstallAppButton } from '@/components/InstallAppButton';
 
 export default function LoginPage() {
   return (
@@ -138,8 +137,6 @@ function LoginForm() {
       <p className="relative mt-8 max-w-xs text-center text-sm text-cream/40">
         Merci pour vos efforts :) Vous êtes la meilleure équipe !
       </p>
-
-      <InstallAppButton />
     </div>
   );
 }
