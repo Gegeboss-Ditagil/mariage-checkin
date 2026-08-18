@@ -11,6 +11,8 @@ const TARGET_FIELDS = [
   { key: 'table_number', label: 'Numéro de table' },
   { key: 'nombre_prevu', label: 'Nombre prévu' },
   { key: 'category', label: 'Catégorie (F/T/M…)' },
+  { key: 'telephone', label: 'Téléphone' },
+  { key: 'email', label: 'Email' },
   { key: 'notes', label: 'Notes' },
 ] as const;
 
@@ -53,7 +55,7 @@ export default function ImportPage() {
 
   function autoMap(hdrs: string[]) {
     const guesses: Record<string, string> = {};
-    const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     for (const field of TARGET_FIELDS) {
       const match = hdrs.find((h) => normalize(h).includes(normalize(field.key).slice(0, 4)));
       if (match) guesses[field.key] = match;
@@ -71,6 +73,8 @@ export default function ImportPage() {
       table_number: mapping.table_number ? Number(row[mapping.table_number]) || undefined : undefined,
       nombre_prevu: mapping.nombre_prevu ? Number(row[mapping.nombre_prevu]) || undefined : undefined,
       category: mapping.category ? String(row[mapping.category] ?? '').trim() : undefined,
+      telephone: mapping.telephone ? String(row[mapping.telephone] ?? '').trim() : undefined,
+      email: mapping.email ? String(row[mapping.email] ?? '').trim() : undefined,
       notes: mapping.notes ? String(row[mapping.notes] ?? '').trim() : undefined,
     })).filter((r) => r.nom_affichage);
 
@@ -83,12 +87,12 @@ export default function ImportPage() {
     setImporting(false);
 
     if (!res.ok) {
-      setResult(`Erreur : ${data.error}`);
+      setResult('Erreur : ' + data.error);
       return;
     }
     setResult(
-      `${data.imported} invitations importées.` +
-        (data.unmatchedTables ? ` ${data.unmatchedTables} lignes avaient un numéro de table introuvable (non assignées).` : '')
+      data.imported + ' invitations importées.' +
+        (data.unmatchedTables ? ' ' + data.unmatchedTables + ' lignes avaient un numéro de table introuvable (non assignées).' : '')
     );
   }
 
@@ -102,17 +106,17 @@ export default function ImportPage() {
             {fileName || 'Choisir un fichier CSV ou XLSX'}
             <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFile} />
           </label>
-          <p className="mt-2 text-xs text-black/40">{rows.length > 0 && `${rows.length} lignes détectées`}</p>
+          <p className="mt-2 text-xs text-cream/40">{rows.length > 0 && rows.length + ' lignes détectées'}</p>
         </div>
 
         {headers.length > 0 && (
           <div className="space-y-3">
-            <p className="font-semibold">Associer les colonnes</p>
+            <p className="font-semibold text-cream">Associer les colonnes</p>
             {TARGET_FIELDS.map((f) => (
               <div key={f.key} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-black/60">{f.label}</span>
+                <span className="text-sm text-cream/60">{f.label}</span>
                 <select
-                  className="rounded-xl2 border border-black/10 px-3 py-2 text-sm"
+                  className="rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-3 py-2 text-sm text-cream focus:border-gold-400 focus:outline-none"
                   value={mapping[f.key] || ''}
                   onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value }))}
                 >
@@ -128,7 +132,7 @@ export default function ImportPage() {
           </div>
         )}
 
-        {result && <p className="rounded-xl2 bg-black/5 p-3 text-sm">{result}</p>}
+        {result && <p className="rounded-xl2 bg-night-800 p-3 text-sm text-cream/70">{result}</p>}
       </div>
 
       {rows.length > 0 && (
@@ -138,7 +142,7 @@ export default function ImportPage() {
             disabled={importing || !mapping.nom_affichage}
             onClick={handleImport}
           >
-            {importing ? 'Import en cours…' : `IMPORTER ${rows.length} LIGNES`}
+            {importing ? 'Import en cours…' : 'IMPORTER ' + rows.length + ' LIGNES'}
           </button>
         </div>
       )}
