@@ -151,9 +151,9 @@ export default function TableDetailPage() {
           {invitations.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
             return (
-              <li key={inv.id}>
+              <li key={inv.id} className="flex items-center gap-1">
                 <button
-                  className="flex w-full items-center justify-between gap-3 py-3 text-left"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
                   onClick={() => router.push('/checkin/' + inv.id)}
                 >
                   <div className="min-w-0">
@@ -164,6 +164,14 @@ export default function TableDetailPage() {
                     {inv.nombre_arrive}/{inv.nombre_prevu}
                     <StatusBadge statut={inv.statut} />
                   </span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Déplacer vers une autre table"
+                  onClick={() => router.push('/tables/move/' + inv.id)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-400/25 text-base text-gold-300/80 active:scale-[0.95] transition-transform"
+                >
+                  ⇄
                 </button>
               </li>
             );
