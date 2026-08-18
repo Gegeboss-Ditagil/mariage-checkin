@@ -31,19 +31,33 @@ export default function ScanPage() {
       const supabase = createClient();
       // ilike (insensible a la casse) : les QR imprimes peuvent encoder le code
       // en majuscules/minuscules differemment de ce qui est stocke en base.
-      const { data: qr, error } = await supabase
+      const { data: qr } = await supabase
         .from('qr_codes')
         .select('table_id')
         .ilike('code', code)
         .maybeSingle();
 
-      if (error || !qr) {
-        setStatus('error');
-        setMessage(`QR non reconnu (${code}). Essayez la recherche manuelle.`);
+      if (qr) {
+        router.push('/table/' + qr.table_id);
         return;
       }
 
-      router.push(`/table/${qr.table_id}`);
+      // Repli : certaines cartes imprimees encodent le nom de la ville
+      // (ex: "MIAMI") plutot que le code vol-tXXX stocke dans qr_codes.
+      // On retente en comparant directement au nom de la table.
+      const { data: table } = await supabase
+        .from('tables')
+        .select('id')
+        .ilike('label', code)
+        .maybeSingle();
+
+      if (table) {
+        router.push('/table/' + table.id);
+        return;
+      }
+
+      setStatus('error');
+      setMessage('QR non reconnu (' + code + '). Essayez la recherche manuelle.');
     },
     [router, status]
   );
