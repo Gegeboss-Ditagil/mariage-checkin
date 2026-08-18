@@ -5,23 +5,25 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { Role } from '@/lib/types';
 
+// Agent et placeur ont exactement le meme acces (voir middleware.ts) donc
+// la meme barre de navigation ; seul l'admin a un menu different (+Admin).
+const STAFF_ITEMS = [
+  { href: '/scan', label: 'Scan', icon: '▣' },
+  { href: '/search', label: 'Recherche', icon: '⌕' },
+  { href: '/tables', label: 'Tables', icon: '▦' },
+  { href: '/placement', label: 'Placement', icon: '▤' },
+  { href: '/dashboard', label: 'Bord', icon: '◔' },
+];
+
 const ITEMS: Record<string, { href: string; label: string; icon: string }[]> = {
-  agent_checkin: [
-    { href: '/scan', label: 'Scan', icon: '▣' },
-    { href: '/search', label: 'Recherche', icon: '⌕' },
-    { href: '/tables', label: 'Tables', icon: '▦' },
-    { href: '/dashboard', label: 'Bord', icon: '◔' },
-  ],
+  agent_checkin: STAFF_ITEMS,
+  placeur: STAFF_ITEMS,
   admin: [
     { href: '/scan', label: 'Scan', icon: '▣' },
     { href: '/dashboard', label: 'Bord', icon: '◔' },
     { href: '/tables', label: 'Tables', icon: '▦' },
     { href: '/history', label: 'Historique', icon: '≡' },
     { href: '/admin', label: 'Admin', icon: '⚙' },
-  ],
-  placeur: [
-    { href: '/placement', label: 'Placement', icon: '▣' },
-    { href: '/search', label: 'Recherche', icon: '⌕' },
   ],
 };
 
