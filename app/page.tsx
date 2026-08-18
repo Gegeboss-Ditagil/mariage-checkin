@@ -1,13 +1,10 @@
+import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/session';
-import { SplashScreen } from '@/components/SplashScreen';
 
 export default function Home() {
   const user = getSessionUser();
 
-  let next = '/login';
-  if (user) {
-    next = user.role === 'placeur' ? '/placement' : '/scan';
-  }
-
-  return <SplashScreen next={next} />;
+  if (!user) redirect('/login');
+  if (user.role === 'placeur') redirect('/placement');
+  redirect('/scan');
 }
