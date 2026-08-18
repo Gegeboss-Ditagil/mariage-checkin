@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow } from '@/lib/types';
 import { CounterStepper } from '@/components/CounterStepper';
 import { TopBar } from '@/components/TopBar';
-import { restants as computeRestants } from '@/lib/statusLogic';
 import { proposeReserveTable, ReserveTableUsage } from '@/lib/overflow';
 import { useOnline } from '@/hooks/useOnline';
 
-type Step = 'confirm' | 'success' | 'overflow' | 'overflow_done';
+type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
 export default function CheckinPage() {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -19,10 +18,14 @@ export default function CheckinPage() {
   const online = useOnline();
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [count, setCount] = useState(0);
+  // Valeur affichee par le compteur +/- : represente directement le nombre
+  // de personnes arrivees (pas un nombre a ajouter). Initialisee au nombre
+  // deja enregistre, puis modifiee avec + ou - avant de confirmer.
+  const [arriveValue, setArriveValue] = useState(0);
   const [step, setStep] = useState<Step>('confirm');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastDelta, setLastDelta] = useState(0);
 
   const [excedentCount, setExcedentCount] = useState(0);
   const [reserveUsages, setReserveUsages] = useState<ReserveTableUsage[]>([]);
@@ -39,18 +42,14 @@ export default function CheckinPage() {
         const inv = data as InvitationRow | null;
         setInvitation(inv);
         if (inv) {
-          const rest = computeRestants(inv.nombre_prevu, inv.nombre_arrive);
-          setCount(rest > 0 ? rest : 1);
+          setArriveValue(inv.nombre_arrive);
         } else {
           setNotFound(true);
         }
       });
   }, [invitationId]);
 
-  const restants = useMemo(
-    () => (invitation ? computeRestants(invitation.nombre_prevu, invitation.nombre_arrive) : 0),
-    [invitation]
-  );
+  const delta = invitation ? arriveValue - invitation.nombre_arrive : 0;
 
   async function loadReserveUsages(): Promise<ReserveTableUsage[]> {
     const supabase = createClient();
@@ -70,7 +69,7 @@ export default function CheckinPage() {
     });
   }
 
-  async function handleConfirm() {
+  async function handleAdd(nombrePersonnes: number) {
     if (!invitation) return;
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
@@ -83,7 +82,7 @@ export default function CheckinPage() {
       const res = await fetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invitation_id: invitation.id, nombre_personnes: count }),
+        body: JSON.stringify({ invitation_id: invitation.id, nombre_personnes: nombrePersonnes }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -93,6 +92,8 @@ export default function CheckinPage() {
 
       const updated = data.invitation as InvitationRow;
       setInvitation(updated);
+      setArriveValue(updated.nombre_arrive);
+      setLastDelta(nombrePersonnes);
       const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
 
       if (exc > 0) {
@@ -109,6 +110,47 @@ export default function CheckinPage() {
       setError('Erreur réseau — réessayez');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleRemove(nouveauTotal: number) {
+    if (!invitation) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/checkin/correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitation.id, nouveau_total: nouveauTotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Échec de la correction');
+        return;
+      }
+
+      const updated = data.invitation as InvitationRow;
+      setLastDelta(invitation.nombre_arrive - updated.nombre_arrive);
+      setInvitation(updated);
+      setArriveValue(updated.nombre_arrive);
+      setStep('success_retrait');
+    } catch {
+      setError('Erreur réseau — réessayez');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleConfirm() {
+    if (delta > 0) {
+      handleAdd(delta);
+    } else if (delta < 0) {
+      handleRemove(arriveValue);
     }
   }
 
@@ -165,7 +207,16 @@ export default function CheckinPage() {
     return (
       <SuccessScreen
         title="✓ ENTRÉE CONFIRMÉE"
-        lines={[invitation.nombre_arrive + ' PERSONNE' + (invitation.nombre_arrive > 1 ? 'S' : '')]}
+        lines={[lastDelta + ' PERSONNE' + (lastDelta > 1 ? 'S' : '') + ' AJOUTÉE' + (lastDelta > 1 ? 'S' : '')]}
+      />
+    );
+  }
+
+  if (step === 'success_retrait') {
+    return (
+      <SuccessScreen
+        title="✓ RETRAIT CONFIRMÉ"
+        lines={[lastDelta + ' PERSONNE' + (lastDelta > 1 ? 'S' : '') + ' RETIRÉE' + (lastDelta > 1 ? 'S' : '')]}
       />
     );
   }
@@ -242,6 +293,17 @@ export default function CheckinPage() {
     );
   }
 
+  let boutonLabel = 'AUCUN CHANGEMENT';
+  if (submitting) {
+    boutonLabel = '…';
+  } else if (!online) {
+    boutonLabel = 'HORS LIGNE';
+  } else if (delta > 0) {
+    boutonLabel = 'CONFIRMER L’ENTRÉE (+' + delta + ')';
+  } else if (delta < 0) {
+    boutonLabel = 'CONFIRMER LE RETRAIT (' + delta + ')';
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar title={invitation.nom_affichage} backHref="/scan" />
@@ -250,16 +312,22 @@ export default function CheckinPage() {
         <div className="card mb-6 space-y-1 text-center">
           <p className="text-sm uppercase tracking-wide text-black/40">Personnes prévues</p>
           <p className="text-4xl font-bold">{invitation.nombre_prevu}</p>
-          <p className="text-sm text-black/50">Déjà entrées : {invitation.nombre_arrive}</p>
-          {restants > 0 && <p className="text-sm text-black/50">{restants} restante{restants > 1 ? 's' : ''}</p>}
+          <p className="text-sm text-black/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
         </div>
 
-        <p className="mb-3 text-center font-semibold">Combien entrent maintenant ?</p>
-        <CounterStepper value={count} min={1} max={30} onChange={setCount} />
+        <p className="mb-3 text-center font-semibold">Personnes arrivées</p>
+        <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
 
-        {count > restants && restants >= 0 && (
+        {delta !== 0 && (
+          <p className="mt-3 text-center text-sm font-medium text-ink">
+            {delta > 0 ? '+' : ''}
+            {delta} par rapport à maintenant
+          </p>
+        )}
+
+        {arriveValue > invitation.nombre_prevu && (
           <p className="mt-3 text-center text-sm font-medium text-status-over">
-            ⚠️ {count - Math.max(restants, 0)} personne{count - restants > 1 ? 's' : ''} de plus que prévu
+            ⚠️ {arriveValue - invitation.nombre_prevu} personne{arriveValue - invitation.nombre_prevu > 1 ? 's' : ''} de plus que prévu
           </p>
         )}
 
@@ -267,118 +335,14 @@ export default function CheckinPage() {
       </div>
 
       <div className="space-y-3 px-4 pb-6">
-        <button className="btn-primary w-full" disabled={submitting || !online} onClick={handleConfirm}>
-          {submitting ? '…' : !online ? 'HORS LIGNE' : 'CONFIRMER L’ENTRÉE'}
-        </button>
-        <CorrectionControls
-          invitationId={invitation.id}
-          currentTotal={invitation.nombre_arrive}
-          submitting={submitting}
-          online={online}
-          setSubmitting={setSubmitting}
-          onUpdated={(inv) => setInvitation(inv)}
-          setError={setError}
-        />
-      </div>
-    </div>
-  );
-}
-
-function CorrectionControls({
-  invitationId,
-  currentTotal,
-  submitting,
-  online,
-  setSubmitting,
-  onUpdated,
-  setError,
-}: {
-  invitationId: string;
-  currentTotal: number;
-  submitting: boolean;
-  online: boolean;
-  setSubmitting: (v: boolean) => void;
-  onUpdated: (inv: InvitationRow) => void;
-  setError: (e: string | null) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(currentTotal);
-
-  async function cancelLast() {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/checkin/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invitation_id: invitationId }),
-      });
-      const data = await res.json();
-      if (!res.ok) return setError(data.error);
-      onUpdated(data.invitation);
-      setOpen(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function applyCorrection() {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/checkin/correct', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invitation_id: invitationId, nouveau_total: value }),
-      });
-      const data = await res.json();
-      if (!res.ok) return setError(data.error);
-      onUpdated(data.invitation);
-      setOpen(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <button className="w-full text-center text-sm font-semibold text-ink underline" onClick={() => setOpen(true)}>
-        Ajouter / retirer une personne arrivée
-      </button>
-    );
-  }
-
-  return (
-    <div className="card space-y-3">
-      {!online && <p className="text-center text-sm font-semibold text-status-over">HORS LIGNE — actions désactivées</p>}
-      {currentTotal > 0 && (
-        <button className="btn-secondary w-full" disabled={submitting || !online} onClick={cancelLast}>
-          ANNULER LA DERNIÈRE ACTION
-        </button>
-      )}
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          className="w-full rounded-xl2 border border-black/10 px-3 py-2 text-lg"
-          value={value}
-          min={0}
-          onChange={(e) => setValue(Number(e.target.value))}
-        />
-        <button className="btn-secondary shrink-0 px-4" disabled={submitting || !online} onClick={applyCorrection}>
-          Corriger
+        <button
+          className="btn-primary w-full"
+          disabled={delta === 0 || submitting || !online}
+          onClick={handleConfirm}
+        >
+          {boutonLabel}
         </button>
       </div>
-      <button className="w-full text-center text-sm text-black/40" onClick={() => setOpen(false)}>
-        Fermer
-      </button>
     </div>
   );
 }
