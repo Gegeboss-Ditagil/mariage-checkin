@@ -2,6 +2,8 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { GoldSeal, FlightPath, StarField } from '@/components/BrandMotif';
+import { InstallAppButton } from '@/components/InstallAppButton';
 
 export default function LoginPage() {
   return (
@@ -17,6 +19,8 @@ function LoginForm() {
   const [tab, setTab] = useState<'equipe' | 'admin'>('equipe');
   const [nomAffichage, setNomAffichage] = useState('');
   const [pin, setPin] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,10 +30,12 @@ function LoginForm() {
     setLoading(true);
 
     try {
+      const body =
+        tab === 'admin' ? { mode: 'password', email, password } : { mode: 'pin', nom_affichage: nomAffichage, pin };
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'pin', nom_affichage: nomAffichage, pin }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -48,33 +54,27 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col justify-end bg-[#1a2942]">
-      {/* Sceau dore, tout en haut de la page */}
-      <div className="flex flex-1 items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/logo-seal.jpg"
-          alt="Sceau Nelly & Gersom"
-          className="h-32 w-32 rounded-full object-cover shadow-[0_2px_20px_rgba(0,0,0,0.5)]"
-        />
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-night-radial px-6 py-10">
+      <StarField />
+      <FlightPath className="absolute left-1/2 top-6 h-20 w-56 -translate-x-1/2" />
+
+      <div className="relative flex flex-col items-center text-center">
+        <GoldSeal size={104} />
+        <p className="eyebrow mt-6">Check-in Staff</p>
+        <p className="mt-1 font-display text-2xl font-semibold text-cream">Nelly &amp; Gersom</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-cream/45">Dos Goncalves</p>
       </div>
 
-      <div className="relative rounded-t-[2rem] bg-white px-6 pb-10 pt-8 shadow-[0_-12px_48px_rgba(0,0,0,0.45)]">
-        <div className="mb-7 text-center">
-          <p className="font-display text-2xl">{process.env.NEXT_PUBLIC_EVENT_NAME || 'Check-in'}</p>
-          <p className="mt-1 text-sm uppercase tracking-wide text-black/50">Page de connexion pour le staff</p>
-          <p className="mt-3 text-black/70">Merci pour vos efforts :) Vous etes la meilleure equipe!</p>
-        </div>
-
-        <div className="mb-6 flex gap-3">
+      <div className="relative mt-10 w-full max-w-sm rounded-xl3 border border-gold-400/20 bg-night-800/80 p-6 shadow-card backdrop-blur">
+        <div className="mb-6 flex gap-2">
           <button
             type="button"
             onClick={() => setTab('equipe')}
             className={
-              'flex-1 rounded-xl2 border-2 py-3 text-sm font-semibold transition-colors ' +
+              'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors ' +
               (tab === 'equipe'
-                ? 'border-ink bg-ink text-white shadow-card'
-                : 'border-black/15 bg-white text-black/50')
+                ? 'border-gold-400/70 bg-gold-400/15 text-gold-200'
+                : 'border-cream/10 bg-transparent text-cream/40')
             }
           >
             Equipe
@@ -83,10 +83,10 @@ function LoginForm() {
             type="button"
             onClick={() => setTab('admin')}
             className={
-              'flex-1 rounded-xl2 border-2 py-3 text-sm font-semibold transition-colors ' +
+              'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors ' +
               (tab === 'admin'
-                ? 'border-ink bg-ink text-white shadow-card'
-                : 'border-black/15 bg-white text-black/50')
+                ? 'border-gold-400/70 bg-gold-400/15 text-gold-200'
+                : 'border-cream/10 bg-transparent text-cream/40')
             }
           >
             Admin
@@ -94,30 +94,69 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black/60">Votre nom</label>
-            <input
-              className="w-full rounded-xl2 border-2 border-black/15 px-4 py-4 text-lg focus:border-ink focus:outline-none"
-              placeholder={tab === 'admin' ? 'Ex: Gersom Dos' : 'Ex: Agent001'}
-              value={nomAffichage}
-              onChange={(e) => setNomAffichage(e.target.value)}
-              autoComplete="username"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black/60">Code PIN</label>
-            <input
-              className="w-full rounded-xl2 border-2 border-black/15 px-4 py-4 text-lg tracking-[0.6em] focus:border-ink focus:outline-none"
-              placeholder="****"
-              inputMode="numeric"
-              type="password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </div>
+          {tab === 'admin' ? (
+            <>
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-cream/50">
+                  Email
+                </label>
+                <input
+                  className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-900/70 px-4 py-4 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+                  placeholder="admin@example.com"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-cream/50">
+                  Mot de passe
+                </label>
+                <input
+                  className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-900/70 px-4 py-4 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+                  placeholder="........"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-cream/50">
+                  Votre nom
+                </label>
+                <input
+                  className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-900/70 px-4 py-4 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+                  placeholder="Ex: Agent001"
+                  value={nomAffichage}
+                  onChange={(e) => setNomAffichage(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-cream/50">
+                  Code PIN
+                </label>
+                <input
+                  className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-900/70 px-4 py-4 text-lg tracking-[0.6em] text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+                  placeholder="****"
+                  inputMode="numeric"
+                  type="password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+            </>
+          )}
 
           {error && <p className="text-sm font-medium text-status-over">{error}</p>}
 
@@ -126,6 +165,12 @@ function LoginForm() {
           </button>
         </form>
       </div>
+
+      <p className="relative mt-8 max-w-xs text-center text-sm text-cream/40">
+        Merci pour vos efforts :) Vous etes la meilleure equipe !
+      </p>
+
+      <InstallAppButton />
     </div>
   );
 }
