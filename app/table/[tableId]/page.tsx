@@ -8,6 +8,12 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { restants } from '@/lib/statusLogic';
 
+function volCode(number: number): string | null {
+  if (number < 1 || number > 40) return null;
+  const padded = String(number).padStart(3, '0');
+  return number <= 7 ? 'Vol-F' + padded : 'Vol-T' + padded;
+}
+
 function extractPrenoms(notes: string | null): string | null {
   if (!notes) return null;
   const marker = 'Membres:';
@@ -71,7 +77,10 @@ export default function TablePage() {
   }, [tableId]);
 
   const titre = table
-    ? 'Table ' + table.number + (table.label ? ' — ' + table.label : '')
+    ? 'Table ' +
+      table.number +
+      (table.label ? ' — ' + table.label : '') +
+      (volCode(table.number) ? ' — ' + volCode(table.number) : '')
     : 'Table';
 
   return (
