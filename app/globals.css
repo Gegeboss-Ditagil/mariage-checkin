@@ -35,7 +35,7 @@ body {
 }
 
 .card {
-  @apply bg-white rounded-xl2 shadow-card p-4;
+  @apply bg-white rounded-xl2 shadow-card border border-black/5 p-4;
 }
 
 .safe-bottom {
