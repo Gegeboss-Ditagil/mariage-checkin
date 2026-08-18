@@ -6,7 +6,7 @@ const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js'];
 const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
   admin: ['/'], // acces total
   agent_checkin: ['/scan', '/table', '/checkin', '/search', '/dashboard', '/tables', '/exceptions', '/history', '/api'],
-  placeur: ['/placement', '/search', '/api/auth'],
+  placeur: ['/placement', '/scan', '/table', '/checkin', '/search', '/api'],
 };
 
 function isPublic(pathname: string) {
