@@ -8,6 +8,25 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { restants } from '@/lib/statusLogic';
 
+function extractPrenoms(notes: string | null): string | null {
+  if (!notes) return null;
+  const marker = 'Membres:';
+  const idx = notes.indexOf(marker);
+  if (idx === -1) return null;
+  const after = notes.slice(idx + marker.length).trim();
+  if (!after) return null;
+  const noms = after
+    .split(',')
+    .map(function (part) {
+      const trimmed = part.trim();
+      const premierMot = trimmed.split(' ')[0];
+      return premierMot;
+    })
+    .filter(Boolean);
+  if (noms.length === 0) return null;
+  return noms.join(', ');
+}
+
 export default function TablePage() {
   const { tableId } = useParams<{ tableId: string }>();
   const router = useRouter();
@@ -37,10 +56,10 @@ export default function TablePage() {
     load();
 
     const channel = supabase
-      .channel(`table-${tableId}`)
+      .channel('table-' + tableId)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'invitations', filter: `table_id=eq.${tableId}` },
+        { event: '*', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId },
         () => load()
       )
       .subscribe();
@@ -51,12 +70,13 @@ export default function TablePage() {
     };
   }, [tableId]);
 
+  const titre = table
+    ? 'Table ' + table.number + (table.label ? ' — ' + table.label : '')
+    : 'Table';
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar
-        title={table ? `Table ${table.number}${table.label ? ' — ' + table.label : ''}` : 'Table'}
-        backHref="/scan"
-      />
+      <TopBar title={titre} backHref="/scan" />
 
       {loading && <p className="p-4 text-center text-black/50">Chargement…</p>}
 
@@ -65,23 +85,27 @@ export default function TablePage() {
       )}
 
       <ul className="flex-1 divide-y divide-black/5 px-4">
-        {invitations.map((inv) => (
-          <li key={inv.id}>
-            <button
-              className="flex w-full items-center justify-between gap-3 py-4 text-left"
-              onClick={() => router.push(`/checkin/${inv.id}`)}
-            >
-              <div className="min-w-0">
-                <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
-                <p className="text-sm text-black/50">
-                  {inv.nombre_arrive}/{inv.nombre_prevu} personnes
-                  {inv.statut === 'partiel' && ` · ${restants(inv.nombre_prevu, inv.nombre_arrive)} restantes`}
-                </p>
-              </div>
-              <StatusBadge statut={inv.statut} />
-            </button>
-          </li>
-        ))}
+        {invitations.map((inv) => {
+          const prenoms = extractPrenoms(inv.notes);
+          return (
+            <li key={inv.id}>
+              <button
+                className="flex w-full items-center justify-between gap-3 py-4 text-left"
+                onClick={() => router.push('/checkin/' + inv.id)}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
+                  {prenoms && <p className="truncate text-xs font-medium text-gold-700">{prenoms}</p>}
+                  <p className="text-sm text-black/50">
+                    {inv.nombre_arrive}/{inv.nombre_prevu} personnes
+                    {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
+                  </p>
+                </div>
+                <StatusBadge statut={inv.statut} />
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
