@@ -59,7 +59,7 @@ function LoginForm() {
         <div className="mb-7 text-center">
           <p className="font-display text-2xl">{process.env.NEXT_PUBLIC_EVENT_NAME || 'Check-in'}</p>
           <p className="mt-1 text-sm uppercase tracking-wide text-black/50">Page de connexion pour le staff</p>
-          <p className="mt-3 text-black/70">Merci pour vos efforts :) Vous etes la meilleure equipe</p>
+          <p className="mt-3 text-black/70">Merci pour vos efforts :) Vous etes la meilleure equipe!</p>
         </div>
 
         <div className="mb-6 flex gap-3">
