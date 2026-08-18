@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GoldSeal, FlightPath, StarField } from '@/components/BrandMotif';
 import { InstallAppButton } from '@/components/InstallAppButton';
@@ -13,6 +13,10 @@ export default function LoginPage() {
   );
 }
 
+function firstName(fullName: string): string {
+  return fullName.trim().split(' ')[0] || fullName;
+}
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -20,6 +24,17 @@ function LoginForm() {
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const [nextHref, setNextHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!welcomeName || !nextHref) return;
+    const timer = setTimeout(() => {
+      router.replace(nextHref);
+      router.refresh();
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [welcomeName, nextHref, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,13 +54,33 @@ function LoginForm() {
       }
       const next = params.get('next');
       const fallback = data.user.role === 'placeur' ? '/placement' : '/scan';
-      router.replace(next || fallback);
-      router.refresh();
+      setNextHref(next || fallback);
+      setWelcomeName(data.user.nom_complet || data.user.nom_affichage);
     } catch {
       setError('Erreur reseau - verifiez votre connexion');
     } finally {
       setLoading(false);
     }
+  }
+
+  if (welcomeName) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-status-complete px-6 text-center text-white">
+        <p className="font-display text-2xl font-bold">Bienvenue, {firstName(welcomeName)} !</p>
+        <p className="text-lg font-medium">Merci pour votre aide aujourd'hui 🙏</p>
+        <button
+          className="mt-6 rounded-xl2 border-2 border-white/70 px-6 py-2.5 text-sm font-semibold"
+          onClick={() => {
+            if (nextHref) {
+              router.replace(nextHref);
+              router.refresh();
+            }
+          }}
+        >
+          Continuer →
+        </button>
+      </div>
+    );
   }
 
   return (
