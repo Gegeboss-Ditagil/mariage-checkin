@@ -22,15 +22,12 @@ export async function POST(req: NextRequest) {
   const user = getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
-  const { nom_affichage, role, email, password, pin } = await req.json().catch(() => ({}));
+  const { nom_affichage, role, pin } = await req.json().catch(() => ({}));
   if (!nom_affichage || !role) {
     return NextResponse.json({ error: 'nom_affichage et role requis' }, { status: 400 });
   }
-  if (role === 'admin' && (!email || !password)) {
-    return NextResponse.json({ error: 'email et mot de passe requis pour un admin' }, { status: 400 });
-  }
-  if (role !== 'admin' && !pin) {
-    return NextResponse.json({ error: 'PIN requis pour un agent/placeur' }, { status: 400 });
+  if (!pin) {
+    return NextResponse.json({ error: 'PIN requis' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
@@ -40,9 +37,7 @@ export async function POST(req: NextRequest) {
       event_id: user.event_id,
       nom_affichage,
       role,
-      email: email || null,
-      password_hash: password ? hashSecret(password) : null,
-      pin_hash: pin ? hashSecret(pin) : null,
+      pin_hash: hashSecret(pin),
     })
     .select('id, nom_affichage, role, email, active')
     .single();
