@@ -253,19 +253,17 @@ export default function CheckinPage() {
 
       <div className="space-y-3 px-4 pb-6">
         <button className="btn-primary w-full" disabled={submitting || !online} onClick={handleConfirm}>
-          {submitting ? '…' : !online ? 'HORS LIGNE' : 'CONFIRMER L’ENTRÉE'}
+          {submitting ? '…' : !online ? 'HORS LIGNE' : 'CONFIRMER L'ENTRÉE'}
         </button>
-        {invitation.nombre_arrive > 0 && (
-          <CorrectionControls
-            invitationId={invitation.id}
-            currentTotal={invitation.nombre_arrive}
-            submitting={submitting}
-            online={online}
-            setSubmitting={setSubmitting}
-            onUpdated={(inv) => setInvitation(inv)}
-            setError={setError}
-          />
-        )}
+        <CorrectionControls
+          invitationId={invitation.id}
+          currentTotal={invitation.nombre_arrive}
+          submitting={submitting}
+          online={online}
+          setSubmitting={setSubmitting}
+          onUpdated={(inv) => setInvitation(inv)}
+          setError={setError}
+        />
       </div>
     </div>
   );
@@ -337,8 +335,8 @@ function CorrectionControls({
 
   if (!open) {
     return (
-      <button className="w-full text-center text-sm font-medium text-black/40 underline" onClick={() => setOpen(true)}>
-        Annuler / corriger le nombre de personnes
+      <button className="w-full text-center text-sm font-semibold text-ink underline" onClick={() => setOpen(true)}>
+        Ajouter / retirer une personne arrivée
       </button>
     );
   }
@@ -346,9 +344,11 @@ function CorrectionControls({
   return (
     <div className="card space-y-3">
       {!online && <p className="text-center text-sm font-semibold text-status-over">HORS LIGNE — actions désactivées</p>}
-      <button className="btn-secondary w-full" disabled={submitting || !online} onClick={cancelLast}>
-        ANNULER LA DERNIÈRE ACTION
-      </button>
+      {currentTotal > 0 && (
+        <button className="btn-secondary w-full" disabled={submitting || !online} onClick={cancelLast}>
+          ANNULER LA DERNIÈRE ACTION
+        </button>
+      )}
       <div className="flex items-center gap-2">
         <input
           type="number"
