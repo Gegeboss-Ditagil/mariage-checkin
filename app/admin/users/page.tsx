@@ -8,8 +8,6 @@ export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [nomAffichage, setNomAffichage] = useState('');
   const [role, setRole] = useState<'admin' | 'agent_checkin' | 'placeur'>('agent_checkin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -27,13 +25,11 @@ export default function UsersAdminPage() {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nom_affichage: nomAffichage, role, email, password, pin }),
+      body: JSON.stringify({ nom_affichage: nomAffichage, role, pin }),
     });
     const data = await res.json();
     if (!res.ok) return setError(data.error);
     setNomAffichage('');
-    setEmail('');
-    setPassword('');
     setPin('');
     load();
   }
@@ -49,14 +45,14 @@ export default function UsersAdminPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title="Comptes de l'équipe" backHref="/admin" />
+      <TopBar title="Comptes de l'equipe" backHref="/admin" />
 
       <div className="flex-1 space-y-6 px-4 py-4">
         <form onSubmit={add} className="card space-y-3">
           <p className="font-semibold">Ajouter un compte</p>
           <input
             className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
-            placeholder="Nom affiché (ex: Agent 1)"
+            placeholder="Nom affiche (ex: Gersom Dos)"
             value={nomAffichage}
             onChange={(e) => setNomAffichage(e.target.value)}
             required
@@ -71,36 +67,18 @@ export default function UsersAdminPage() {
             <option value="admin">Admin</option>
           </select>
 
-          {role === 'admin' ? (
-            <>
-              <input
-                className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
-                placeholder="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <input
-                className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
-                placeholder="Mot de passe"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </>
-          ) : (
-            <input
-              className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
-              placeholder="PIN (4 chiffres)"
-              inputMode="numeric"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-            />
-          )}
+          <input
+            className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
+            placeholder="PIN (4 chiffres)"
+            inputMode="numeric"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            required
+          />
 
           {error && <p className="text-sm text-status-over">{error}</p>}
           <button type="submit" className="btn-primary w-full">
-            Créer le compte
+            Creer le compte
           </button>
         </form>
 
@@ -112,12 +90,13 @@ export default function UsersAdminPage() {
                 <p className="text-sm text-black/50">{u.role}</p>
               </div>
               <button
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  u.active ? 'bg-status-complete/10 text-status-complete' : 'bg-status-over/10 text-status-over'
-                }`}
+                className={
+                  'rounded-full px-3 py-1 text-xs font-semibold ' +
+                  (u.active ? 'bg-status-complete/10 text-status-complete' : 'bg-status-over/10 text-status-over')
+                }
                 onClick={() => toggleActive(u)}
               >
-                {u.active ? 'Actif' : 'Désactivé'}
+                {u.active ? 'Actif' : 'Desactive'}
               </button>
             </li>
           ))}
