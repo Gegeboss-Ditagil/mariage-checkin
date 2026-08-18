@@ -19,10 +19,14 @@ function base64urlToBytes(str: string): Uint8Array {
   return bytes;
 }
 
-function hexToBytes(hex: string): Uint8Array {
+function hexToBytes(hex: string): ArrayBuffer {
   const bytes = new Uint8Array(Math.floor(hex.length / 2));
   for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-  return bytes;
+  return bytes.buffer;
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
 async function getKey(): Promise<CryptoKey> {
@@ -32,7 +36,7 @@ async function getKey(): Promise<CryptoKey> {
   }
   return crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(secret),
+    toArrayBuffer(new TextEncoder().encode(secret)),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['verify']
@@ -52,11 +56,11 @@ export async function verifySessionTokenEdge(
       'HMAC',
       key,
       hexToBytes(signature),
-      new TextEncoder().encode(encoded)
+      toArrayBuffer(new TextEncoder().encode(encoded))
     );
     if (!valid) return null;
 
-    const payload = JSON.parse(new TextDecoder().decode(base64urlToBytes(encoded)));
+    const payload = JSON.parse(new TextDecoder().decode(toArrayBuffer(base64urlToBytes(encoded))));
     if (typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
     return {
       id: payload.id,
