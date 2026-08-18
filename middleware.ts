@@ -15,6 +15,7 @@ function isPublic(pathname: string) {
     PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/icons') ||
+    pathname.startsWith('/images') ||
     pathname === '/favicon.ico'
   );
 }
@@ -52,5 +53,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|images).*)'],
 };
