@@ -54,6 +54,23 @@ export default function TablePage() {
           .order('nom_affichage'),
       ]);
       if (!active) return;
+
+      // Filet de securite : si l'identifiant dans l'URL ne correspond a
+      // aucune table, c'est probablement en fait un identifiant d'invitation
+      // (mauvais lien/bouton quelque part) -- on redirige alors directement
+      // vers la fiche de cette invitation plutot que d'afficher une page vide.
+      if (!t) {
+        const { data: inv } = await supabase
+          .from('invitations')
+          .select('id')
+          .eq('id', tableId)
+          .maybeSingle();
+        if (inv) {
+          router.replace('/checkin/' + tableId);
+          return;
+        }
+      }
+
       setTable(t as TableRow | null);
       setInvitations((invs as InvitationRow[]) || []);
       setLoading(false);
