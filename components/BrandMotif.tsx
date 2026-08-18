@@ -3,22 +3,16 @@
 // l'esprit "voyage" du sceau N&G sur toutes les pages de l'app.
 
 export function GoldSeal({ size = 128, className }: { size?: number; className?: string }) {
-  // Sceau autonome (pas d'image externe requise) : cercle dore avec
-  // monogramme, pour eviter toute dependance a un fichier image absent.
   return (
     <div
       className={
-        'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-gold-400/70 bg-night-800 shadow-gold ' +
+        'relative shrink-0 overflow-hidden rounded-full border-2 border-gold-400/70 shadow-gold ' +
         (className || '')
       }
       style={{ width: size, height: size }}
     >
-      <span
-        className="font-display font-semibold text-gold-200"
-        style={{ fontSize: size * 0.34 }}
-      >
-        N&amp;G
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/images/logo-seal.jpg" alt="Sceau Nelly &amp; Gersom" className="h-full w-full object-cover" />
     </div>
   );
 }
