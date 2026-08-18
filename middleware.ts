@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
+
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js'];
+
+const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
+  admin: ['/'], // acces total
+  agent_checkin: ['/scan', '/table', '/checkin', '/search', '/dashboard', '/tables', '/exceptions', '/history', '/api'],
+  placeur: ['/placement', '/search', '/api/auth'],
+};
+
+function isPublic(pathname: string) {
+  return (
+    PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p)) ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/icons') ||
+    pathname === '/favicon.ico'
+  );
+}
+
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  if (isPublic(pathname)) {
+    return NextResponse.next();
+  }
+
+  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const user = verifySessionToken(token);
+
+  if (!user) {
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (user.role === 'admin') {
+    return NextResponse.next();
+  }
+
+  const allowed = ROLE_ALLOWED_PREFIXES[user.role] ?? [];
+  const ok = allowed.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
+
+  if (!ok) {
+    // Redirige vers l'ecran par defaut du role plutot que d'afficher une erreur
+    const fallback = user.role === 'placeur' ? '/placement' : '/scan';
+    return NextResponse.redirect(new URL(fallback, req.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons).*)'],
+};
