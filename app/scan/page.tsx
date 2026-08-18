@@ -6,6 +6,16 @@ import Link from 'next/link';
 import { QrScanner } from '@/components/QrScanner';
 import { createClient } from '@/lib/supabase/client';
 
+// Enleve les accents, la casse et la ponctuation pour comparer des noms de
+// ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
+function normalize(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase();
+}
+
 export default function ScanPage() {
   const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'looking' | 'error'>('idle');
@@ -43,13 +53,12 @@ export default function ScanPage() {
       }
 
       // Repli : certaines cartes imprimees encodent le nom de la ville
-      // (ex: "MIAMI") plutot que le code vol-tXXX stocke dans qr_codes.
-      // On retente en comparant directement au nom de la table.
-      const { data: table } = await supabase
-        .from('tables')
-        .select('id')
-        .ilike('label', code)
-        .maybeSingle();
+      // (ex: "MIAMI") plutot que le code vol-tXXX stocke dans qr_codes, et
+      // parfois sans les accents (ex: "GENEVE" pour "Geneve"). On recupere
+      // toutes les tables et on compare en ignorant casse/accents/ponctuation.
+      const { data: allTables } = await supabase.from('tables').select('id, label');
+      const normalizedCode = normalize(code);
+      const table = (allTables || []).find((t) => t.label && normalize(t.label) === normalizedCode);
 
       if (table) {
         router.push('/table/' + table.id);
