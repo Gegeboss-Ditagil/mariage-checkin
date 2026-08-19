@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -15,6 +16,7 @@ type BeforeInstallPromptEvent = Event & {
  * si l'app tourne deja en mode installe (standalone).
  */
 export function InstallAppButton() {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [standalone, setStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -39,7 +41,12 @@ export function InstallAppButton() {
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
   }, []);
 
-  if (standalone) return null;
+  // Le listener beforeinstallprompt reste attache en permanence au niveau
+  // racine (ci-dessus) pour ne jamais rater l'evenement, mais le BOUTON lui-
+  // meme ne doit s'afficher que sur l'ecran de connexion (formulaire + message
+  // de bienvenue, qui partagent tous les deux l'URL /login) : ailleurs, il
+  // empietait en permanence sur la barre de navigation du bas.
+  if (standalone || pathname !== '/login') return null;
 
   async function handleClick() {
     if (deferredPrompt) {

@@ -209,19 +209,20 @@ export default function GererExcedentPage() {
               <p className="text-sm text-cream/40">Aucune autre table disponible.</p>
             )}
             {autresTables.map((u) => {
+              // "Complet" est un avertissement, pas un blocage : voir le
+              // commentaire equivalent dans checkin/[invitationId]/page.tsx.
               const full = u.available < assignment.nombre_personnes;
               const selected = chosenTableId === u.table.id;
               return (
                 <button
                   key={u.table.id}
-                  disabled={full}
                   onClick={() => setChosenTableId(u.table.id)}
                   className={
                     'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                    (full
-                      ? 'border-cream/5 bg-cream/5 text-cream/30'
-                      : selected
+                    (selected
                       ? 'border-gold-400 bg-gold-400/10 text-cream'
+                      : full
+                      ? 'border-status-over/30 bg-status-over/5 text-cream'
                       : 'border-gold-400/20 bg-night-800 text-cream')
                   }
                 >
@@ -229,13 +230,21 @@ export default function GererExcedentPage() {
                     Table {u.table.number}
                     {u.table.is_reserve ? ' (réserve)' : ''}
                   </span>
-                  <span className="text-sm">
-                    {full ? 'COMPLET' : u.used + ' / ' + u.table.capacity + ' places utilisées'}
+                  <span className={'text-sm ' + (full ? 'text-status-over' : '')}>
+                    {full ? 'COMPLET (prévu)' : u.used + ' / ' + u.table.capacity + ' places utilisées'}
                   </span>
                 </button>
               );
             })}
           </div>
+          {chosenTableId &&
+            autresTables.find((u) => u.table.id === chosenTableId) &&
+            autresTables.find((u) => u.table.id === chosenTableId)!.available < assignment.nombre_personnes && (
+              <p className="mt-2 text-sm text-status-over">
+                ⚠️ Cette table affiche complet d'après les personnes prévues. Ne confirmez que si vous savez que
+                des places seront réellement libres (invités prévus absents).
+              </p>
+            )}
         </div>
 
         {error && <p className="text-sm font-medium text-status-over">{error}</p>}

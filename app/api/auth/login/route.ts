@@ -94,7 +94,13 @@ function setSessionAndRespond(user: {
   });
 
   // Idem pour le nom complet a afficher (TopBar) : jamais le jeton signe.
-  res.cookies.set('wc_name', encodeURIComponent(displayName), {
+  // Valeur passee TELLE QUELLE (pas de encodeURIComponent manuel ici) : la
+  // serialisation des cookies de Next.js encode deja automatiquement la
+  // valeur (encodeURIComponent par defaut). Encoder une deuxieme fois ici
+  // provoquait un double encodage (ex: l'espace devenait %2520 au lieu de
+  // %20), que le decodeURIComponent unique cote client ne pouvait pas
+  // corriger entierement -- d'ou l'affichage casse "GERSOM%20MBIDI".
+  res.cookies.set('wc_name', displayName, {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

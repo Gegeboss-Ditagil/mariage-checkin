@@ -18,12 +18,19 @@ export default function CheckinPage() {
   const online = useOnline();
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
+  // Valeur affichee par le compteur +/- : represente directement le nombre
+  // de personnes arrivees (pas un nombre a ajouter). Initialisee au nombre
+  // deja enregistre, puis modifiee avec + ou - avant de confirmer.
   const [arriveValue, setArriveValue] = useState(0);
   const [step, setStep] = useState<Step>('confirm');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastDelta, setLastDelta] = useState(0);
 
+  // excedentCount = la part de l'excedent PAS ENCORE assignee a une table
+  // (ce qu'on propose d'assigner maintenant). existingAssignments = ce qui a
+  // deja ete assigne lors d'une visite precedente sur ce meme groupe — evite
+  // d'assigner deux fois le meme excedent si on rouvre cet ecran plus tard.
   const [excedentCount, setExcedentCount] = useState(0);
   const [reserveUsages, setReserveUsages] = useState<ReserveTableUsage[]>([]);
   const [chosenReserveTable, setChosenReserveTable] = useState<string | null>(null);
@@ -51,6 +58,11 @@ export default function CheckinPage() {
 
   const delta = invitation ? arriveValue - invitation.nombre_arrive : 0;
 
+  // Charge TOUTES les tables (reserve ET normales) avec leur occupation reelle,
+  // pour permettre d'assigner l'excedent n'importe ou (pas seulement en
+  // reserve). "used" combine les personnes prevues des invitations deja sur
+  // cette table + les excedents deja assignes dessus, pour ne jamais proposer
+  // une table normale deja pleine comme si elle etait libre.
   async function loadAllTableUsages(): Promise<ReserveTableUsage[]> {
     const supabase = createClient();
     const [{ data: tables }, { data: assignments }, { data: allInvs }] = await Promise.all([
@@ -76,6 +88,10 @@ export default function CheckinPage() {
     });
   }
 
+  // Ouvre l'ecran de gestion de l'excedent pour un total donne (calcule a
+  // partir de nombre_arrive - nombre_prevu). Verifie d'abord ce qui a deja
+  // ete assigne pour ce groupe (visites precedentes) afin de ne proposer
+  // d'assigner que la part RESTANTE, jamais de dupliquer une assignation.
   async function openOverflowFlow(totalExcedent: number) {
     if (!invitation) return;
     setExcedentCount(0);
@@ -309,19 +325,23 @@ export default function CheckinPage() {
               </p>
               <div className="space-y-2">
                 {reserveUsages.map((u) => {
+                  // "Complet" est un AVERTISSEMENT, pas un blocage : ce calcul
+                  // se base sur le nombre de personnes PREVUES a cette table,
+                  // pas sur qui est reellement arrive. Une table peut donc
+                  // avoir des places libres en pratique meme si elle affiche
+                  // complet (des invites prevus qui ne viendront pas).
                   const full = u.available < excedentCount;
                   const selected = chosenReserveTable === u.table.id;
                   return (
                     <button
                       key={u.table.id}
-                      disabled={full}
                       onClick={() => setChosenReserveTable(u.table.id)}
                       className={
                         'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                        (full
-                          ? 'border-cream/5 bg-cream/5 text-cream/30'
-                          : selected
+                        (selected
                           ? 'border-gold-400 bg-gold-400/10 text-cream'
+                          : full
+                          ? 'border-status-over/30 bg-status-over/5 text-cream'
                           : 'border-gold-400/20 bg-night-800 text-cream')
                       }
                     >
@@ -329,13 +349,21 @@ export default function CheckinPage() {
                         Table {u.table.number}
                         {u.table.is_reserve ? ' (réserve)' : ''}
                       </span>
-                      <span className="text-sm">
-                        {full ? 'COMPLET' : u.used + ' / ' + u.table.capacity + ' places utilisees'}
+                      <span className={'text-sm ' + (full ? 'text-status-over' : '')}>
+                        {full ? 'COMPLET (prévu)' : u.used + ' / ' + u.table.capacity + ' places utilisees'}
                       </span>
                     </button>
                   );
                 })}
               </div>
+              {chosenReserveTable &&
+                reserveUsages.find((u) => u.table.id === chosenReserveTable) &&
+                reserveUsages.find((u) => u.table.id === chosenReserveTable)!.available < excedentCount && (
+                  <p className="mt-2 text-sm text-status-over">
+                    ⚠️ Cette table affiche complet d'après les personnes prévues. Ne confirmez que si vous savez que
+                    des places seront réellement libres (invités prévus absents).
+                  </p>
+                )}
             </div>
           )}
 
