@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
@@ -30,6 +30,8 @@ export default function CheckinPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastDelta, setLastDelta] = useState(0);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   // excedentCount = la part de l'excedent PAS ENCORE assignee a une table
   // (ce qu'on propose d'assigner maintenant). existingAssignments = ce qui a
@@ -41,6 +43,7 @@ export default function CheckinPage() {
   const [existingAssignments, setExistingAssignments] = useState<
     { assignment: OverflowAssignmentRow; table: TableRow | null }[]
   >([]);
+  const [confirmFullTable, setConfirmFullTable] = useState(false);
   // Table a laquelle appartient cette invitation, pour l'afficher directement
   // sur la fiche (utile pour informer l'invite retrouve via une recherche
   // telephone/email de sa table, sans avoir a naviguer ailleurs).
@@ -71,6 +74,41 @@ export default function CheckinPage() {
           setNotFound(true);
         }
       });
+  }, [invitationId]);
+
+  const arriveValueRef = useRef(arriveValue);
+  useEffect(() => {
+    arriveValueRef.current = arriveValue;
+  }, [arriveValue]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('checkin-' + invitationId)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'invitations', filter: 'id=eq.' + invitationId },
+        (payload) => {
+          const updated = payload.new as InvitationRow;
+          setInvitation((prev) => {
+            if (prev && updated.nombre_arrive !== prev.nombre_arrive) {
+              if (arriveValueRef.current === prev.nombre_arrive) {
+                setArriveValue(updated.nombre_arrive);
+              } else {
+                setSyncNotice(
+                  "Cette fiche vient d'être modifiée par un autre agent — le total ci-dessus est à jour, vérifiez avant de confirmer."
+                );
+              }
+            }
+            return updated || prev;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [invitationId]);
 
   const delta = invitation ? arriveValue - invitation.nombre_arrive : 0;
@@ -105,6 +143,7 @@ export default function CheckinPage() {
     setExcedentCount(0);
     setChosenReserveTable(null);
     setExistingAssignments([]);
+    setConfirmFullTable(false);
 
     const supabase = createClient();
     const [usages, { data: assignments }] = await Promise.all([
@@ -158,6 +197,7 @@ export default function CheckinPage() {
       setInvitation(updated);
       setArriveValue(updated.nombre_arrive);
       setLastDelta(nombrePersonnes);
+      setSyncNotice(null);
       const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
 
       if (exc > 0) {
@@ -197,6 +237,7 @@ export default function CheckinPage() {
       setLastDelta(invitation.nombre_arrive - updated.nombre_arrive);
       setInvitation(updated);
       setArriveValue(updated.nombre_arrive);
+      setSyncNotice(null);
       setStep('success_retrait');
     } catch {
       setError('Erreur réseau — réessayez');
@@ -205,11 +246,67 @@ export default function CheckinPage() {
     }
   }
 
-  function handleConfirm() {
-    if (delta > 0) {
-      handleAdd(delta);
-    } else if (delta < 0) {
+  async function handleConfirm() {
+    if (!invitation) return;
+    const supabase = createClient();
+    const { data: fresh } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('id', invitation.id)
+      .maybeSingle();
+    const freshInv = (fresh as InvitationRow) || invitation;
+
+    if (freshInv.nombre_arrive !== invitation.nombre_arrive) {
+      setInvitation(freshInv);
+      if (arriveValue === invitation.nombre_arrive) {
+        setArriveValue(freshInv.nombre_arrive);
+        return;
+      }
+      setSyncNotice(
+        "Cette fiche vient d'être modifiée par un autre agent — le total ci-dessus est à jour, vérifiez avant de confirmer."
+      );
+    }
+
+    const freshDelta = arriveValue - freshInv.nombre_arrive;
+    if (freshDelta > 0) {
+      handleAdd(freshDelta);
+    } else if (freshDelta < 0) {
       handleRemove(arriveValue);
+    }
+  }
+
+  async function handleCancelLast() {
+    if (!invitation) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('CONNEXION REQUISE POUR ANNULER CETTE ENTRÉE');
+      return;
+    }
+    setCancelling(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/checkin/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitation.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(
+          data.error === 'no_checkin_to_cancel'
+            ? 'Aucune entrée récente à annuler pour cet invité.'
+            : data.error || "Échec de l'annulation"
+        );
+        return;
+      }
+      const updated = data.invitation as InvitationRow;
+      setInvitation(updated);
+      setArriveValue(updated.nombre_arrive);
+      setSyncNotice(null);
+      setStep('confirm');
+    } catch {
+      setError('Erreur réseau — réessayez');
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -288,7 +385,7 @@ export default function CheckinPage() {
 
   if (!invitation) {
     return (
-      <div className="flex min-h-dvh items-center justify-center/50">Chargement…</div>
+      <div className="flex min-h-dvh items-center justify-center text-black/50">Chargement…</div>
     );
   }
 
@@ -296,7 +393,12 @@ export default function CheckinPage() {
     return (
       <SuccessScreen
         title="✓ ENTRÉE CONFIRMÉE"
-        lines={[lastDelta + ' PERSONNE' + (lastDelta > 1 ? 'S' : '') + ' AJOUTÉE' + (lastDelta > 1 ? 'S' : '')]}
+        lines={[
+          lastDelta + ' PERSONNE' + (lastDelta > 1 ? 'S' : '') + ' AJOUTÉE' + (lastDelta > 1 ? 'S' : ''),
+          'Total : ' + invitation.nombre_arrive + ' / ' + invitation.nombre_prevu + ' prévues',
+        ]}
+        onCancelLast={handleCancelLast}
+        cancelling={cancelling}
       />
     );
   }
@@ -305,7 +407,12 @@ export default function CheckinPage() {
     return (
       <SuccessScreen
         title="✓ RETRAIT CONFIRMÉ"
-        lines={[lastDelta + ' PERSONNE' + (lastDelta > 1 ? 'S' : '') + ' RETIRÉE' + (lastDelta > 1 ? 'S' : '')]}
+        lines={[
+          lastDelta + ' PERSONNE' + (lastDelta > 1 ? 'S' : '') + ' RETIRÉE' + (lastDelta > 1 ? 'S' : ''),
+          'Total : ' + invitation.nombre_arrive + ' / ' + invitation.nombre_prevu + ' prévues',
+        ]}
+        onCancelLast={handleCancelLast}
+        cancelling={cancelling}
       />
     );
   }
@@ -377,7 +484,10 @@ export default function CheckinPage() {
                   return (
                     <button
                       key={u.table.id}
-                      onClick={() => setChosenReserveTable(u.table.id)}
+                      onClick={() => {
+                        setChosenReserveTable(u.table.id);
+                        setConfirmFullTable(false);
+                      }}
                       className={
                         'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
                         (selected
@@ -403,11 +513,15 @@ export default function CheckinPage() {
               {chosenReserveTable &&
                 reserveUsages.find((u) => u.table.id === chosenReserveTable) &&
                 reserveUsages.find((u) => u.table.id === chosenReserveTable)!.libresEstimees < excedentCount && (
-                  <p className="mt-2 text-sm text-status-over">
-                    ⚠️ Cette table affiche complet d'après les personnes prévues. Ne confirmez que si vous savez que
-                    des places seront réellement libres (invités prévus absents), ou marquez-les d'abord "ne viendra
-                    pas" depuis leur propre fiche pour une estimation plus fiable.
-                  </p>
+                  <label className="mt-2 flex items-start gap-2 rounded-xl2 border-2 border-status-over/30 bg-status-over/5 p-3 text-sm text-status-over">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                      checked={confirmFullTable}
+                      onChange={(e) => setConfirmFullTable(e.target.checked)}
+                    />
+                    <span>⚠️ Cette table affiche complet — je confirme que des places seront réellement libres.</span>
+                  </label>
                 )}
             </div>
           )}
@@ -419,7 +533,15 @@ export default function CheckinPage() {
           {excedentCount > 0 && (
             <button
               className="btn-primary w-full"
-              disabled={!chosenReserveTable || submitting || !online}
+              disabled={
+                !chosenReserveTable ||
+                submitting ||
+                !online ||
+                (!!chosenReserveTable &&
+                  !!reserveUsages.find((u) => u.table.id === chosenReserveTable) &&
+                  reserveUsages.find((u) => u.table.id === chosenReserveTable)!.libresEstimees < excedentCount &&
+                  !confirmFullTable)
+              }
               onClick={() => chosenReserveTable && handleAssignOverflow(chosenReserveTable)}
             >
               {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER LES ' + excedentCount + ' A CETTE TABLE'}
@@ -517,6 +639,12 @@ export default function CheckinPage() {
           </p>
         )}
 
+        {syncNotice && (
+          <p className="mt-3 rounded-xl2 border-2 border-gold-400/40 bg-gold-400/10 p-3 text-center text-sm font-medium text-gold-700">
+            {syncNotice}
+          </p>
+        )}
+
         {error && <p className="mt-3 text-center text-sm font-medium text-status-over">{error}</p>}
       </div>
 
@@ -533,16 +661,31 @@ export default function CheckinPage() {
   );
 }
 
-function SuccessScreen({ title, lines }: { title: string; lines: string[] }) {
+function SuccessScreen({
+  title,
+  lines,
+  onCancelLast,
+  cancelling,
+}: {
+  title: string;
+  lines: string[];
+  onCancelLast?: () => void;
+  cancelling?: boolean;
+}) {
   const router = useRouter();
+  const [autoRedirect, setAutoRedirect] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => router.push('/scan'), 1800);
+    if (!autoRedirect) return;
+    const timer = setTimeout(() => router.push('/scan'), 3000);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, autoRedirect]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-status-complete text-white">
+    <div
+      className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-status-complete px-6 text-center text-white"
+      onPointerDown={() => setAutoRedirect(false)}
+    >
       <p className="text-2xl font-bold">{title}</p>
       {lines.map((l) => (
         <p key={l} className="text-lg font-medium">
@@ -555,6 +698,16 @@ function SuccessScreen({ title, lines }: { title: string; lines: string[] }) {
       >
         Continuer →
       </button>
+      {onCancelLast && (
+        <button
+          type="button"
+          disabled={cancelling}
+          className="text-sm font-medium text-white/80 underline underline-offset-2 disabled:opacity-50"
+          onClick={onCancelLast}
+        >
+          {cancelling ? 'Annulation…' : 'Annuler cette entrée'}
+        </button>
+      )}
     </div>
   );
 }

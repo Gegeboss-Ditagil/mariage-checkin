@@ -22,6 +22,7 @@ export default function GererExcedentPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmFullTable, setConfirmFullTable] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -110,7 +111,7 @@ export default function GererExcedentPage() {
         );
         return;
       }
-      router.push('/tables/' + chosenTableId);
+      router.push('/tables/' + chosenTableId + '?deplace=1');
     } catch {
       setError('Erreur réseau — réessayez');
     } finally {
@@ -199,7 +200,10 @@ export default function GererExcedentPage() {
               return (
                 <button
                   key={u.table.id}
-                  onClick={() => setChosenTableId(u.table.id)}
+                  onClick={() => {
+                    setChosenTableId(u.table.id);
+                    setConfirmFullTable(false);
+                  }}
                   className={
                     'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
                     (selected
@@ -225,10 +229,15 @@ export default function GererExcedentPage() {
           {chosenTableId &&
             autresTables.find((u) => u.table.id === chosenTableId) &&
             autresTables.find((u) => u.table.id === chosenTableId)!.libresEstimees < assignment.nombre_personnes && (
-              <p className="mt-2 text-sm text-status-over">
-                ⚠️ Cette table affiche complet d'après les personnes prévues. Ne confirmez que si vous savez que
-                des places seront réellement libres (invités prévus absents).
-              </p>
+              <label className="mt-2 flex items-start gap-2 rounded-xl2 border-2 border-status-over/30 bg-status-over/5 p-3 text-sm text-status-over">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  checked={confirmFullTable}
+                  onChange={(e) => setConfirmFullTable(e.target.checked)}
+                />
+                <span>⚠️ Cette table affiche complet — je confirme que des places seront réellement libres.</span>
+              </label>
             )}
         </div>
 
@@ -238,7 +247,15 @@ export default function GererExcedentPage() {
       <div className="space-y-3 px-4 pb-6">
         <button
           className="btn-primary w-full"
-          disabled={!chosenTableId || submitting || !online}
+          disabled={
+            !chosenTableId ||
+            submitting ||
+            !online ||
+            (!!chosenTableId &&
+              !!autresTables.find((u) => u.table.id === chosenTableId) &&
+              autresTables.find((u) => u.table.id === chosenTableId)!.libresEstimees < assignment.nombre_personnes &&
+              !confirmFullTable)
+          }
           onClick={handleMove}
         >
           {submitting ? '…' : !online ? 'HORS LIGNE' : 'DÉPLACER VERS CETTE TABLE'}

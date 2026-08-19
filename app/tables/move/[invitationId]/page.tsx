@@ -72,16 +72,24 @@ export default function DeplacerInvitationPage() {
 
     load();
 
+    const channel = supabase
+      .channel('move-' + invitationId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, load)
+      .subscribe();
+
     return () => {
       active = false;
+      supabase.removeChannel(channel);
     };
   }, [invitationId]);
 
   const filtered = useMemo(() => {
     const list = usages.filter((u) => u.table.id !== invitation?.table_id);
     const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((u) => {
+    const sorted = [...list].sort((a, b) => b.libresMaintenant - a.libresMaintenant);
+    if (!q) return sorted;
+    return sorted.filter((u) => {
       const vol = volCode(u.table.number) || '';
       return (
         String(u.table.number).includes(q) ||
@@ -97,9 +105,34 @@ export default function DeplacerInvitationPage() {
       setError('CONNEXION REQUISE');
       return;
     }
+    const cible = usages.find((u) => u.table.id === chosenTableId);
+    const confirmMsg =
+      'Déplacer ' +
+      invitation.nom_affichage +
+      ' (' +
+      invitation.nombre_prevu +
+      ' personne' +
+      (invitation.nombre_prevu > 1 ? 's' : '') +
+      ') vers la table ' +
+      (cible ? cible.table.number : '?') +
+      ' ?';
+    if (typeof window !== 'undefined' && !window.confirm(confirmMsg)) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
+      const supabase = createClient();
+      const { data: freshTable } = await supabase
+        .from('tables')
+        .select('*')
+        .eq('id', chosenTableId)
+        .maybeSingle();
+      if (!freshTable) {
+        setError("Cette table n'existe plus — choisissez-en une autre");
+        setSubmitting(false);
+        return;
+      }
       const res = await fetch('/api/move-invitation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,7 +157,7 @@ export default function DeplacerInvitationPage() {
         );
         return;
       }
-      router.push('/tables/' + chosenTableId);
+      router.push('/tables/' + chosenTableId + '?deplace=1');
     } catch {
       setError('Erreur réseau — réessayez');
     } finally {

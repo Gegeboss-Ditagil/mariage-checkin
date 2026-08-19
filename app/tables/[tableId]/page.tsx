@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
@@ -34,8 +34,18 @@ function extractPrenoms(notes: string | null): string | null {
 }
 
 export default function TableDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <TableDetailInner />
+    </Suspense>
+  );
+}
+
+function TableDetailInner() {
   const { tableId } = useParams<{ tableId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [movedNotice, setMovedNotice] = useState(searchParams.get('deplace') === '1');
   const role = useSessionRole();
   const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
   const [table, setTable] = useState<TableRow | null>(null);
@@ -113,6 +123,12 @@ export default function TableDetailPage() {
     };
   }, [tableId]);
 
+  useEffect(() => {
+    if (!movedNotice) return;
+    const timer = setTimeout(() => setMovedNotice(false), 4000);
+    return () => clearTimeout(timer);
+  }, [movedNotice]);
+
   const prevu = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const arrive = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
   const overflowTotal = overflow.reduce((s, o) => s + o.nombre_personnes, 0);
@@ -129,6 +145,12 @@ export default function TableDetailPage() {
       <TopBar title={titre} backHref="/tables" />
 
       <div className="px-4 py-4">
+        {movedNotice && (
+          <p className="mb-4 rounded-xl2 border-2 border-status-complete/40 bg-status-complete/10 p-3 text-center text-sm font-semibold text-status-complete">
+            ✓ Invité déplacé vers cette table
+          </p>
+        )}
+
         <div className="card mb-4 grid grid-cols-3 text-center">
           <div>
             <p className="text-xs uppercase text-black/40">Prévu</p>
