@@ -105,11 +105,11 @@ export default function UsersAdminPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title="Comptes de l'equipe" backHref="/admin" />
 
       <div className="flex-1 space-y-6 px-4 py-4">
-        <form onSubmit={add} className="card space-y-3">
+        <form onSubmit={add} className="card-night space-y-3">
           <p className="font-semibold text-cream">Ajouter un compte</p>
           <input
             className={inputClass}

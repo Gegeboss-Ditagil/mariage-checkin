@@ -173,7 +173,7 @@ function SearchInner() {
   const hasQuery = query.trim().length >= (mode === 'telephone' ? 4 : 2);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title="Rechercher un invité" backHref="/scan" />
 
       <div className="px-4 pt-3">

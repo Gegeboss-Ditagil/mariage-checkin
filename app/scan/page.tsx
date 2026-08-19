@@ -73,7 +73,7 @@ export default function ScanPage() {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <UserMenu />
       <div className="px-4 pt-4">
         <p className="eyebrow">Staff</p>

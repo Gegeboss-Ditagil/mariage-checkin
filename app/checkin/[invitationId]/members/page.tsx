@@ -260,7 +260,7 @@ export default function MembresInvitationPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-radial px-6 text-center">
         <p className="text-lg font-semibold text-cream/80">Invitation introuvable</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
           Retour au scan
@@ -270,15 +270,15 @@ export default function MembresInvitationPage() {
   }
 
   if (loading || !invitation) {
-    return <div className="flex min-h-dvh items-center justify-center text-cream/50">Chargement…</div>;
+    return <div className="flex min-h-dvh items-center justify-center bg-night-radial text-cream/50">Chargement…</div>;
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title="Membres du groupe" backHref={'/checkin/' + invitation.id} />
 
       <div className="flex-1 space-y-4 px-4 py-4">
-        <div className="card">
+        <div className="card-night">
           <p className="text-sm font-bold uppercase tracking-wide text-gold-300">{invitation.nom_affichage}</p>
           <p className="mt-1 text-cream/60">{invitation.nombre_prevu} personne{invitation.nombre_prevu > 1 ? 's' : ''} prévue{invitation.nombre_prevu > 1 ? 's' : ''}</p>
         </div>

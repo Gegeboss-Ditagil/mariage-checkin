@@ -276,7 +276,7 @@ export default function CheckinPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-radial px-6 text-center">
         <p className="text-lg font-semibold text-cream/80">Invitation introuvable</p>
         <p className="text-sm text-cream/50">Le lien utilisé ne correspond à aucune invitation.</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
@@ -288,7 +288,7 @@ export default function CheckinPage() {
 
   if (!invitation) {
     return (
-      <div className="flex min-h-dvh items-center justify-center text-cream/50">Chargement…</div>
+      <div className="flex min-h-dvh items-center justify-center bg-night-radial text-cream/50">Chargement…</div>
     );
   }
 
@@ -321,10 +321,10 @@ export default function CheckinPage() {
 
   if (step === 'overflow') {
     return (
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
         <TopBar title="Personnes supplémentaires" backHref={'/checkin/' + invitation.id} />
         <div className="flex-1 space-y-4 px-4 py-4">
-          <div className="card border-2 border-status-over/30 bg-status-over/5">
+          <div className="card-night border-2 border-status-over/30 bg-status-over/5">
             <p className="text-sm font-bold uppercase tracking-wide text-status-over">
               ⚠️ {invitation.nombre_arrive - invitation.nombre_prevu} personne
               {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''} supplémentaire
@@ -445,11 +445,11 @@ export default function CheckinPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title={invitation.nom_affichage} backHref="/scan" />
 
       <div className="flex-1 px-4 py-6">
-        <div className="card mb-4 space-y-1 text-center">
+        <div className="card-night mb-4 space-y-1 text-center">
           {invitationTable && (
             <p className="text-sm font-semibold uppercase tracking-wide text-gold-300">
               Table {invitationTable.number}

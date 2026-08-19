@@ -125,11 +125,11 @@ export default function TableDetailPage() {
     : 'Table';
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title={titre} backHref="/tables" />
 
       <div className="px-4 py-4">
-        <div className="card mb-4 grid grid-cols-3 text-center">
+        <div className="card-night mb-4 grid grid-cols-3 text-center">
           <div>
             <p className="text-xs uppercase text-cream/40">Prévu</p>
             <p className="text-2xl font-bold">{prevu}</p>

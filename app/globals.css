@@ -38,6 +38,16 @@ body {
   @apply bg-white rounded-xl2 shadow-card border border-gold-300/50 p-4;
 }
 
+/* Variante sombre de .card, pour les ecrans staff sur fond nuit (tables,
+   scan, recherche, check-in, placement) -- .card (fond blanc) rendait le
+   texte clair (text-cream) illisible sur ces pages, car son fond blanc
+   passait au-dessus du fond sombre de la page. Purement additive : ne
+   modifie pas .card, n'affecte que les elements qui utilisent explicitement
+   cette nouvelle classe. */
+.card-night {
+  @apply rounded-xl2 border border-gold-400/20 bg-night-800/80 p-4 shadow-card backdrop-blur;
+}
+
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }

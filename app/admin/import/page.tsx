@@ -97,7 +97,7 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title="Importer les invités" backHref="/admin" />
 
       <div className="flex-1 space-y-5 px-4 py-4">
