@@ -174,7 +174,7 @@ function SearchInner() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title="Rechercher un invité" backHref="/scan" />
+      <TopBar title="Rechercher un invité" backHref={readOnly ? '/dashboard' : '/scan'} />
 
       <div className="px-4 pt-3">
         <div className="mb-3 flex gap-2">

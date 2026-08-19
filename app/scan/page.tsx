@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { QrScanner } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';
 import { createClient } from '@/lib/supabase/client';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -19,8 +20,19 @@ function normalize(s: string): string {
 
 export default function ScanPage() {
   const router = useRouter();
+  const role = useSessionRole();
   const [status, setStatus] = useState<'idle' | 'looking' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
+
+  // Filet de securite cote client : le role "visibilite" ne doit jamais
+  // pouvoir scanner. Le middleware bloque deja /scan pour ce role, mais un
+  // bouton "retour" mal cible (ou le cache du service worker en PWA) peut
+  // faire atterrir un compte visibilite ici quand meme -- ce garde-fou
+  // renvoie aussitot vers le tableau de bord, sans jamais laisser
+  // apparaitre la camera.
+  useEffect(() => {
+    if (role === 'visibilite') router.replace('/dashboard');
+  }, [role, router]);
 
   const handleScan = useCallback(
     async (raw: string) => {
@@ -71,6 +83,10 @@ export default function ScanPage() {
     },
     [router, status]
   );
+
+  if (role === 'visibilite') {
+    return <div className="flex min-h-dvh flex-col" />;
+  }
 
   return (
     <div className="flex min-h-dvh flex-col">
