@@ -111,15 +111,13 @@ export default function ScanPage() {
       )}
 
       <div className="mt-auto space-y-3 px-4 pb-6">
+        {/* Les deux boutons "Rechercher un invite" et "Invite sans Code QR"
+            menaient tous les deux a /search (juste un mode de depart
+            different) : fusionnes en un seul bouton le 19/08/2026 a la
+            demande de Gersom. Le mode telephone reste choisissable depuis
+            la page de recherche elle-meme si besoin. */}
         <Link href="/search" className="btn-secondary w-full">
           Rechercher un invité
-        </Link>
-        {/* Pour quand l'invite n'a plus de batterie, ne sait pas ou est ecrit
-            son nom sur sa table, ou que son nom est mal orthographie : on
-            saute directement a la recherche guidee par telephone ou email
-            plutot que de forcer a passer par le nom. */}
-        <Link href="/search?mode=telephone" className="btn-secondary w-full">
-          Invité sans Code QR
         </Link>
         <div className="grid grid-cols-2 gap-3">
           <Link href="/tables" className="btn-secondary">
