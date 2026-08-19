@@ -42,7 +42,7 @@ Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + 
 
 | Nom | PIN |
 |---|---|
-| Remi Landu | 2012 |
+| Remi | 1914 |
 | Tuzola | 2013 |
 | Sem Landu | 2015 |
 
@@ -50,7 +50,7 @@ Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + 
 
 | Nom | PIN |
 |---|---|
-| Nelly Lukau | 2014 |
+| Nelly Dos | 2014 |
 
 ### Visibilité — lecture seule (2)
 
