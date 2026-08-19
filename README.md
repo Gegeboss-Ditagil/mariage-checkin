@@ -9,9 +9,11 @@ fonctionne avec connexion requise pour valider une entrée.
 ## 1. C'est quoi, concrètement
 
 - Les hôtes/hôtesses scannent le QR code sur la table de l'invité (ou cherchent son nom), voient qui est attendu, et cochent les personnes présentes au fur et à mesure.
-- Un tableau de bord admin suit en direct : arrivés / attendus / tables pleines / débordements.
-- Les débordements (plus de monde que prévu à une table) sont assignés à des tables de réserve — et peuvent être retirés ou déplacés vers une autre table de réserve à tout moment.
+- Un tableau de bord suit en direct : arrivés / attendus / tables pleines / débordements, avec une jauge visuelle colorée (vert/jaune/rouge) du remplissage de la salle et de chaque table.
+- Les débordements (plus de monde que prévu à une table) sont assignés à n'importe quelle table (pas seulement les tables de réserve) — et peuvent être retirés ou déplacés vers une autre table à tout moment par les rôles qui peuvent modifier les tables.
 - N'importe quelle invitation (famille/groupe) peut être déplacée d'une table à une autre directement dans l'app, en cas de réorganisation avant ou pendant l'événement.
+- Une invitation peut être marquée "ne viendra pas" pour libérer ses places prévues dans les estimations de capacité (elle se démarque automatiquement si le groupe se présente quand même).
+- Recherche par nom, mais aussi par téléphone (avec sélecteur de pays) ou email, accessible via "Inviter sans code QR" — utile si quelqu'un n'a plus de batterie ou que son nom est mal orthographié.
 - Par défaut, tout est granulaire par invitation (foyer), pas par invité individuel — pour rester simple et rapide le jour J. Mais il est possible, groupe par groupe et seulement si besoin, de détailler la liste des membres d'une invitation pour retirer ou nommer une personne précise sans toucher au reste du groupe (voir section 7).
 - Tout se met à jour en temps réel entre les téléphones connectés : plusieurs agents peuvent travailler en même temps sur les mêmes tables sans se marcher dessus (voir section 8).
 
@@ -21,26 +23,43 @@ Tout le monde se connecte de la même façon : **nom affiché + code PIN à 4 ch
 
 | Rôle | Connexion | Peut faire |
 |---|---|---|
-| Admin | nom + code PIN | Tout : configuration, tables, invitations, exports, comptes équipe |
-| Placeur | nom + code PIN | Scanner, chercher, cocher les arrivées, gérer le placement et les débordements, exporter |
-| Agent d'accueil | nom + code PIN | Scanner / rechercher, cocher les arrivées |
-
-Le rôle "Placeur" a accès à tout ce que fait un agent d'accueil, en plus du placement — c'est le rôle donné à l'équipe polyvalente ("staff").
+| Admin | nom + code PIN | Tout : configuration, tables, invitations, imports/exports, mode test, comptes équipe |
+| Directeur de festin | nom + code PIN | Même accès opérationnel complet qu'un agent placeur (scan, check-in, modifier/déplacer les tables, dashboard), mais jamais le panneau admin (imports/exports/mode test/gestion des comptes) |
+| Agent placeur | nom + code PIN | Scanner, chercher, cocher les arrivées, modifier/déplacer les tables, gérer les débordements, dashboard |
+| Agent scan | nom + code PIN | Scanner / rechercher, cocher les arrivées, assigner un débordement au moment du check-in — ne peut pas déplacer un invité déjà assis ni réorganiser un débordement déjà affecté après coup |
+| Visibilité | nom + code PIN | Lecture seule : dashboard (avec jauges de remplissage), tables, recherche — jamais de scan ni de modification |
 
 Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + PIN (pour savoir qui a fait quoi le jour J). Les PIN peuvent être changés à tout moment par un admin depuis `/admin/users` (renommer, changer le PIN ou le mot de passe, activer/désactiver).
 
-### Admins (6)
+### Admins (2)
 
 | Nom (à taper tel quel) | PIN |
 |---|---|
 | Admin | 2245 |
 | Dos | 4654 |
+
+### Directeurs de festin (3)
+
+| Nom | PIN |
+|---|---|
 | Remi Landu | 2012 |
 | Tuzola | 2013 |
-| Nelly Lukau | 2014 |
 | Sem Landu | 2015 |
 
-### Staff — placeurs (13 nommés + 3 en réserve)
+### Agent placeur — la mariée (1)
+
+| Nom | PIN |
+|---|---|
+| Nelly Lukau | 2014 |
+
+### Visibilité — lecture seule (2)
+
+| Nom | PIN |
+|---|---|
+| Luis | 4792 |
+| David | 8560 |
+
+### Staff — agents placeurs (13 nommés + 3 en réserve)
 
 | Nom | PIN | | Nom | PIN |
 |---|---|---|---|---|
@@ -55,7 +74,7 @@ Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + 
 | Landu | 0624 | | | |
 | Sanda | 2648 | | | |
 
-### Agents d'accueil (16, comptes génériques en réserve)
+### Agents scan (16, comptes génériques en réserve)
 
 | Nom | PIN | | Nom | PIN |
 |---|---|---|---|---|
@@ -68,7 +87,7 @@ Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + 
 | Agent007 | 3007 | | Agent015 | 3015 |
 | Agent008 | 3008 | | Agent016 | 3016 |
 
-Renommez-les depuis `/admin/users` (bouton "Modifier") au fur et à mesure que vous confirmez d'autres membres de l'équipe, exactement comme pour les placeurs ci-dessus.
+Renommez-les depuis `/admin/users` (bouton "Modifier") au fur et à mesure que vous confirmez d'autres membres de l'équipe, exactement comme pour les agents placeurs ci-dessus.
 
 Astuce pour le jour J : imprimez/partagez chaque ligne uniquement à la personne concernée (ex: une photo du tableau découpée), plutôt que la liste complète, pour limiter les risques si un téléphone est perdu. Les anciens comptes de test (`Agent Test 1`, `Placeur Test`) sont désactivés.
 
@@ -87,10 +106,10 @@ app/                 pages (App Router) : login, scan, search, tables, tables/[i
                       dashboard, placement, exceptions, history,
                       admin/* (wizard, tables, import, qr, users, exports)
 app/api/              routes API (auth, checkin, export, admin/*, overflow/*,
-                      tables/move-invitation, members/*, exceptions, history)
-lib/                  clients Supabase, session, exports, types
+                      move-invitation, members/*, exceptions, history, invitations/no-show)
+lib/                  clients Supabase, session, exports, types, capacité (lib/capacity.ts)
 components/           composants partagés (TopBar avec déconnexion, QrScanner,
-                      InstallAppButton, BrandMotif, etc.)
+                      InstallAppButton, BrandMotif, CapacityGauge, etc.)
 hooks/                hooks (useOnline, useSessionRole)
 supabase/migrations/  schéma SQL de la base
 public/               manifest PWA, service worker, icônes
@@ -98,7 +117,7 @@ scripts/              scripts ponctuels utilisés pour importer les vraies donn�
                       et générer l'assignation des tables (voir section 6)
 ```
 
-Note : dans ce workspace de travail, les mêmes fichiers vivent sous `src/` (convention Next.js habituelle) — mais le repo GitHub réel n'a pas de dossier `src/`, tout est à la racine comme indiqué ci-dessus.
+Note : dans le workspace de travail utilisé pour développer l'application, les mêmes fichiers vivent sous `src/` (convention Next.js habituelle) — mais ce dépôt GitHub n'a pas de dossier `src/`, tout est à la racine comme indiqué ci-dessus.
 
 ## 5. Configuration (`.env.local`)
 
@@ -112,7 +131,7 @@ SESSION_SECRET=...
 NEXT_PUBLIC_EVENT_NAME="Mariage Nelly & Gersom"
 ```
 
-Ce projet est déjà connecté au projet Supabase réel (`znqxmmrtvmhsfsnphjcv`) avec les vraies données importées. Le fichier `.env.local` de ce workspace contient déjà les bonnes valeurs — voir `DEPLOIEMENT.md` pour les récupérer à nouveau si besoin.
+Ce projet est déjà connecté au projet Supabase réel (`znqxmmrtvmhsfsnphjcv`) avec les vraies données importées — voir `DEPLOIEMENT.md` pour les récupérer si besoin.
 
 ## 6. Données réelles déjà en base
 
@@ -148,9 +167,9 @@ Tout ça dépend malgré tout d'internet : vérifiez la qualité du WiFi sur pla
 1. Chaque hôte/hôtesse se connecte sur son téléphone (nom + PIN).
 2. Scan du QR sur la table, ou recherche par nom / table / téléphone / email.
 3. Coche les personnes présentes → décompte mis à jour en direct partout.
-4. En cas de surplus à une table, assignation à une table de réserve depuis l'écran de check-in ou `/placement` — retirable ou déplaçable ensuite depuis la table de réserve.
-5. En cas de réorganisation, une invitation entière peut être déplacée vers une autre table depuis l'écran de la table (bouton ⇄).
-6. L'admin suit tout depuis `/dashboard` et peut exporter les listes (arrivés, absents, partiels, supplémentaires, répartition, réserve) en CSV/XLSX depuis `/admin/exports`.
+4. En cas de surplus à une table, assignation à une autre table depuis l'écran de check-in ou `/placement` — retirable ou déplaçable ensuite (rôles admin/directeur/placeur uniquement).
+5. En cas de réorganisation, une invitation entière peut être déplacée vers une autre table depuis l'écran de la table (bouton ⇄, visible pour les rôles qui peuvent modifier).
+6. L'admin/directeur suit tout depuis `/dashboard` (avec jauges de remplissage) et peut exporter les listes (arrivés, absents, partiels, supplémentaires, répartition, réserve) en CSV/XLSX depuis `/admin/exports`.
 
 ## 10. Documents liés
 
