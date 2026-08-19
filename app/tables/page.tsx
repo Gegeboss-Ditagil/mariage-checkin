@@ -8,6 +8,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
+import { CapacityGauge } from '@/components/CapacityGauge';
 
 type Tri = 'numero' | 'libres';
 
@@ -127,6 +128,7 @@ export default function TablesPage() {
             >
               {c.libresMaintenant} libre{c.libresMaintenant > 1 ? 's' : ''} maintenant
             </p>
+            <CapacityGauge percent={(c.arrivees / t.capacity) * 100} size="sm" showLabel={false} />
           </>
         )}
       </Link>
@@ -151,6 +153,12 @@ export default function TablesPage() {
             <p className="text-xs uppercase text-cream/40">Libres maintenant</p>
             <p className="text-xl font-bold text-gold-300">{totaux.libresMaintenant}</p>
           </div>
+        </div>
+        <div className="card mb-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-semibold text-cream">Remplissage global</p>
+          </div>
+          <CapacityGauge percent={totaux.capacite > 0 ? (totaux.arrivees / totaux.capacite) * 100 : 0} />
         </div>
         <p className="mb-4 text-center text-xs text-cream/40">
           Estimation si tous les invités encore attendus se présentent : {totaux.libresEstimees} places libres.
@@ -231,4 +239,5 @@ export default function TablesPage() {
     </div>
   );
 }
+
 

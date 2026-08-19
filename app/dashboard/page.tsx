@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
+import { CapacityGauge } from '@/components/CapacityGauge';
 import { useSessionRole } from '@/hooks/useSessionRole';
 
 export default function DashboardPage() {
@@ -66,6 +67,8 @@ export default function DashboardPage() {
   const reserveTables = tables.filter((t) => t.is_reserve);
   const usageByTable = new Map<string, number>();
   overflow.forEach((o) => usageByTable.set(o.reserve_table_id, (usageByTable.get(o.reserve_table_id) || 0) + o.nombre_personnes));
+  const capaciteTotale = tables.reduce((s, t) => s + t.capacity, 0);
+  const remplissageSalle = capaciteTotale > 0 ? (stats.arrives / capaciteTotale) * 100 : 0;
 
   function voir(type: string) {
     router.push('/dashboard/liste?type=' + type);
@@ -76,6 +79,13 @@ export default function DashboardPage() {
       <TopBar title="Tableau de bord" />
 
       <div className="flex-1 space-y-6 px-4 py-4">
+        <div className="card">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-semibold">Remplissage de la salle</p>
+            <p className="text-xs text-black/40">{stats.arrives} / {capaciteTotale} places</p>
+          </div>
+          <CapacityGauge percent={remplissageSalle} size="lg" />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <StatTile label="Invités attendus" value={stats.attendus} onClick={() => voir('tous')} />
           <StatTile
@@ -198,3 +208,4 @@ function MiniStat({
 
   return <div className="flex items-center justify-between rounded-xl2 bg-white p-3 shadow-card">{content}</div>;
 }
+

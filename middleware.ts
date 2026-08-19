@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js'];
 
 // Tout le monde sauf admin a exactement le meme acces (agent ou placeur) :
 // seules les pages /admin restent reservees a l'admin.
-const STAFF_PREFIXES = [
+const FULL_STAFF_PREFIXES = [
   '/',
   '/scan',
   '/table',
@@ -19,11 +19,26 @@ const STAFF_PREFIXES = [
   '/api',
 ];
 
+const READ_ONLY_PREFIXES = ['/', '/dashboard', '/tables', '/search', '/placement', '/api'];
+
 const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
   admin: ['/'], // acces total
-  agent_checkin: STAFF_PREFIXES,
-  placeur: STAFF_PREFIXES,
+  directeur: FULL_STAFF_PREFIXES,
+  placeur: FULL_STAFF_PREFIXES,
+  agent_checkin: FULL_STAFF_PREFIXES,
+  visibilite: READ_ONLY_PREFIXES,
 };
+
+const DENY_SUBPATHS: Record<string, string[]> = {
+  agent_checkin: ['/tables/move', '/tables/overflow'],
+  visibilite: ['/tables/move', '/tables/overflow'],
+};
+
+function fallbackFor(role: string): string {
+  if (role === 'placeur' || role === 'directeur') return '/placement';
+  if (role === 'visibilite') return '/dashboard';
+  return '/scan';
+}
 
 function isPublic(pathname: string) {
   return (
@@ -61,9 +76,12 @@ export async function middleware(req: NextRequest) {
 
   if (!ok) {
     // Redirige vers l'ecran par defaut du role plutot que d'afficher une erreur
-    const fallback = user.role === 'placeur' ? '/placement' : '/scan';
-    return NextResponse.redirect(new URL(fallback, req.url));
+    return NextResponse.redirect(new URL(fallbackFor(user.role), req.url));
   }
+
+  const deniedSubpaths = DENY_SUBPATHS[user.role] ?? [];
+  const denied = deniedSubpaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  if (denied) return NextResponse.redirect(new URL('/tables', req.url));
 
   return NextResponse.next();
 }
@@ -71,3 +89,4 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|images).*)'],
 };
+

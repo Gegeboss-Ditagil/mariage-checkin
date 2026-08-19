@@ -15,9 +15,18 @@ const STAFF_ITEMS = [
   { href: '/dashboard', label: 'Bord', icon: '◔' },
 ];
 
+const SCAN_ONLY_ITEMS = STAFF_ITEMS;
+const READ_ONLY_ITEMS = [
+  { href: '/dashboard', label: 'Bord', icon: '◔' },
+  { href: '/tables', label: 'Tables', icon: '▦' },
+  { href: '/search', label: 'Recherche', icon: '⌕' },
+];
+
 const ITEMS: Record<string, { href: string; label: string; icon: string }[]> = {
-  agent_checkin: STAFF_ITEMS,
+  directeur: STAFF_ITEMS,
   placeur: STAFF_ITEMS,
+  agent_checkin: SCAN_ONLY_ITEMS,
+  visibilite: READ_ONLY_ITEMS,
   admin: [
     { href: '/scan', label: 'Scan', icon: '▣' },
     { href: '/dashboard', label: 'Bord', icon: '◔' },
@@ -52,3 +61,4 @@ export function BottomNav({ role }: { role: Role }) {
     </nav>
   );
 }
+

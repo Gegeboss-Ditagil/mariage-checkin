@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createSessionToken, verifySecret, SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from '@/lib/auth';
+import { Role } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -58,7 +59,7 @@ function setSessionAndRespond(user: {
   event_id: string;
   nom_affichage: string;
   nom_complet: string | null;
-  role: 'admin' | 'agent_checkin' | 'placeur';
+  role: Role;
 }) {
   const token = createSessionToken({
     id: user.id,
@@ -110,3 +111,4 @@ function setSessionAndRespond(user: {
 
   return res;
 }
+

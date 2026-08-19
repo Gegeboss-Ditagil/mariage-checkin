@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !['admin', 'agent_checkin', 'placeur'].includes(user.role)) {
+  if (!user || !['admin', 'directeur', 'placeur'].includes(user.role)) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
@@ -32,3 +32,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ assignment: data });
 }
+

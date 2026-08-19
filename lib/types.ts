@@ -1,4 +1,17 @@
-export type Role = 'admin' | 'agent_checkin' | 'placeur';
+// admin : acces total (Dos/Gersom).
+// directeur : acces operationnel complet, sans panneau admin.
+// placeur : acces operationnel complet.
+// agent_checkin : scan/check-in, sans reorganisation apres coup.
+// visibilite : lecture seule.
+export type Role = 'admin' | 'directeur' | 'placeur' | 'agent_checkin' | 'visibilite';
+
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: 'Admin',
+  directeur: 'Directeur de festin',
+  placeur: 'Agent placeur',
+  agent_checkin: 'Agent scan',
+  visibilite: 'Visibilité (lecture seule)',
+};
 
 export type InvitationStatut = 'non_arrive' | 'partiel' | 'complet' | 'excedent';
 
@@ -135,4 +148,5 @@ export const STATUS_COLORS: Record<InvitationStatut, string> = {
   complet: 'bg-status-complete',
   excedent: 'bg-status-over',
 };
+
 

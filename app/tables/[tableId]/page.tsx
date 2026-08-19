@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -35,6 +36,8 @@ function extractPrenoms(notes: string | null): string | null {
 export default function TableDetailPage() {
   const { tableId } = useParams<{ tableId: string }>();
   const router = useRouter();
+  const role = useSessionRole();
+  const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
@@ -156,7 +159,7 @@ export default function TableDetailPage() {
             const prenoms = extractPrenoms(inv.notes);
             return (
               <li key={inv.id} className="flex items-center gap-1">
-                <button
+                {canModify && <button
                   className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
                   onClick={() => router.push('/checkin/' + inv.id)}
                 >
@@ -168,7 +171,7 @@ export default function TableDetailPage() {
                     {inv.nombre_arrive}/{inv.nombre_prevu}
                     <StatusBadge statut={inv.statut} />
                   </span>
-                </button>
+                </button>}
                 <button
                   type="button"
                   aria-label="Déplacer vers une autre table"
@@ -180,7 +183,7 @@ export default function TableDetailPage() {
               </li>
             );
           })}
-          {overflow.map((o) => (
+          {overflow.map((o) => canModify ? (
               <li key={o.id}>
                 <button
                   className="flex w-full items-center justify-between gap-3 py-3 text-left active:scale-[0.98] transition-transform"
@@ -197,10 +200,16 @@ export default function TableDetailPage() {
                   </span>
                 </button>
               </li>
+            ) : (
+              <li key={o.id} className="flex items-center justify-between gap-3 py-3">
+                <p className="truncate font-medium text-cream/80">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
+                <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
+              </li>
             ))}
         </ul>
       </div>
     </div>
   );
 }
+
 

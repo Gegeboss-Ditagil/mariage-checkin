@@ -9,6 +9,7 @@ import { TopBar } from '@/components/TopBar';
 import { proposeReserveTable } from '@/lib/overflow';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { useOnline } from '@/hooks/useOnline';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
@@ -17,6 +18,8 @@ export default function CheckinPage() {
   const router = useRouter();
 
   const online = useOnline();
+  const role = useSessionRole();
+  const canReorganizeExcedent = role === 'admin' || role === 'directeur' || role === 'placeur';
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   // Valeur affichee par le compteur +/- : represente directement le nombre
@@ -336,7 +339,7 @@ export default function CheckinPage() {
             <div>
               <p className="mb-2 font-semibold text-cream">Déjà assigné</p>
               <div className="space-y-2">
-                {existingAssignments.map(({ assignment, table }) => (
+                {existingAssignments.map(({ assignment, table }) => canReorganizeExcedent ? (
                   <button
                     key={assignment.id}
                     onClick={() => router.push('/tables/overflow/' + assignment.id)}
@@ -348,6 +351,10 @@ export default function CheckinPage() {
                     </span>
                     <span className="text-xs text-gold-300 underline">Gérer</span>
                   </button>
+                ) : (
+                  <div key={assignment.id} className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-400/20 bg-night-800 px-4 py-3 text-cream">
+                    <span className="font-semibold">+{assignment.nombre_personnes} · {table ? 'Table ' + table.number : 'Table inconnue'}{table?.is_reserve ? ' (réserve)' : ''}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -551,4 +558,5 @@ function SuccessScreen({ title, lines }: { title: string; lines: string[] }) {
     </div>
   );
 }
+
 
