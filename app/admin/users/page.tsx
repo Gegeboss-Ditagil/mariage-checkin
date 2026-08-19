@@ -5,7 +5,7 @@ import { TopBar } from '@/components/TopBar';
 import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 
 const inputClass =
-  'w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-3 py-2.5 text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none';
+  'w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-2.5  placeholder:text-black/30 focus:border-gold-500 focus:outline-none';
 
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -105,12 +105,12 @@ export default function UsersAdminPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title="Comptes de l'equipe" backHref="/admin" />
 
       <div className="flex-1 space-y-6 px-4 py-4">
-        <form onSubmit={add} className="card-night space-y-3">
-          <p className="font-semibold text-cream">Ajouter un compte</p>
+        <form onSubmit={add} className="card space-y-3">
+          <p className="font-semibold ">Ajouter un compte</p>
           <input
             className={inputClass}
             placeholder="Nom affiche (ex: Gersom Dos)"
@@ -171,12 +171,12 @@ export default function UsersAdminPage() {
             <li key={u.id} className="py-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-cream">{u.nom_affichage}</p>
-                  <p className="text-sm text-cream/50">{ROLE_LABELS[u.role] || u.role}</p>
+                  <p className="font-medium ">{u.nom_affichage}</p>
+                  <p className="text-sm text-black/50">{ROLE_LABELS[u.role] || u.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    className="rounded-full border border-gold-400/25 px-3 py-1 text-xs font-semibold text-gold-300/80"
+                    className="rounded-full border border-gold-300/40 px-3 py-1 text-xs font-semibold text-gold-600/80"
                     onClick={() => (editingId === u.id ? cancelEdit() : startEdit(u))}
                   >
                     {editingId === u.id ? 'Annuler' : 'Modifier'}
@@ -194,7 +194,7 @@ export default function UsersAdminPage() {
               </div>
 
               {editingId === u.id && (
-                <div className="mt-3 space-y-2 rounded-xl2 border border-gold-400/15 bg-night-800/60 p-3">
+                <div className="mt-3 space-y-2 rounded-xl2 border border-gold-300/25 bg-black/5 p-3">
                   <input
                     className={inputClass}
                     placeholder="Nom affiché"

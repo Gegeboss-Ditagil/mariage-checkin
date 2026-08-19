@@ -73,12 +73,12 @@ export default function ScanPage() {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <UserMenu />
       <div className="px-4 pt-4">
         <p className="eyebrow">Staff</p>
-        <h1 className="font-display text-2xl text-cream">Scanner un QR code</h1>
-        <p className="text-sm text-cream/50">Présentez le QR de l'invité devant la caméra</p>
+        <h1 className="font-display text-2xl ">Scanner un QR code</h1>
+        <p className="text-sm text-black/50">Présentez le QR de l'invité devant la caméra</p>
       </div>
 
       <div className="px-4 py-4">
@@ -86,7 +86,7 @@ export default function ScanPage() {
       </div>
 
       {status === 'looking' && (
-        <p className="px-4 text-center text-cream/60">Recherche de la table…</p>
+        <p className="px-4 text-center text-black/60">Recherche de la table…</p>
       )}
       {status === 'error' && message && (
         <p className="mx-4 rounded-xl2 bg-status-over/10 p-3 text-center text-sm font-medium text-status-over">

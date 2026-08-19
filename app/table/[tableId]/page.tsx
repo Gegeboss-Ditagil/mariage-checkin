@@ -137,24 +137,24 @@ export default function TablePage() {
     : 'Table';
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title={titre} backHref="/scan" />
 
-      {loading && <p className="p-4 text-center text-cream/50">Chargement…</p>}
+      {loading && <p className="p-4 text-center text-black/50">Chargement…</p>}
 
       {!loading && table && (
         <div className="px-4 pt-3">
-          <div className="card-night mb-2 grid grid-cols-3 text-center">
+          <div className="card mb-2 grid grid-cols-3 text-center">
             <div>
-              <p className="text-xs uppercase text-cream/40">Prévu</p>
+              <p className="text-xs uppercase text-black/40">Prévu</p>
               <p className="text-2xl font-bold">{prevu}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-cream/40">Arrivés</p>
+              <p className="text-xs uppercase text-black/40">Arrivés</p>
               <p className="text-2xl font-bold text-status-complete">{arrive}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-cream/40">Restants</p>
+              <p className="text-xs uppercase text-black/40">Restants</p>
               <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function TablePage() {
       )}
 
       {!loading && invitations.length === 0 && overflow.length === 0 && (
-        <p className="p-6 text-center text-cream/50">Aucune invitation associée à cette table.</p>
+        <p className="p-6 text-center text-black/50">Aucune invitation associée à cette table.</p>
       )}
 
       <ul className="flex-1 divide-y divide-gold-400/10 px-4">
@@ -182,8 +182,8 @@ export default function TablePage() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
-                  {prenoms && <p className="truncate text-xs font-medium text-gold-300">{prenoms}</p>}
-                  <p className="text-sm text-cream/50">
+                  {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                  <p className="text-sm text-black/50">
                     {inv.nombre_arrive}/{inv.nombre_prevu} personnes
                     {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
                   </p>
@@ -194,7 +194,7 @@ export default function TablePage() {
                 type="button"
                 aria-label="Déplacer vers une autre table"
                 onClick={() => router.push('/tables/move/' + inv.id)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-400/25 text-base text-gold-300/80 active:scale-[0.95] transition-transform"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
               >
                 ⇄
               </button>
@@ -209,17 +209,17 @@ export default function TablePage() {
               onClick={() => router.push('/tables/overflow/' + o.id)}
             >
               <div className="min-w-0">
-                <p className="truncate font-medium text-cream/80">
+                <p className="truncate font-medium text-black/70">
                   {overflowNoms.get(o.invitation_id) || 'Excédent affecté'}
                 </p>
-                <p className="text-xs text-cream/40">Toucher pour retirer ou déplacer</p>
+                <p className="text-xs text-black/40">Toucher pour retirer ou déplacer</p>
               </div>
               <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
             </button>
           </li>
         ) : (
           <li key={o.id} className="flex items-center justify-between gap-3 py-4">
-            <p className="truncate font-medium text-cream/80">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
+            <p className="truncate font-medium text-black/70">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
             <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
           </li>
         ))}

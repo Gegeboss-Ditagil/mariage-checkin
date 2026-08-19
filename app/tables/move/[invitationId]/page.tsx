@@ -134,8 +134,8 @@ export default function DeplacerInvitationPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-radial px-6 text-center">
-        <p className="text-lg font-semibold text-cream/80">Invitation introuvable</p>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
         <button className="btn-primary" onClick={() => router.push('/tables')}>
           Retour aux tables
         </button>
@@ -144,34 +144,34 @@ export default function DeplacerInvitationPage() {
   }
 
   if (loading || !invitation) {
-    return <div className="flex min-h-dvh items-center justify-center bg-night-radial text-cream/50">Chargement…</div>;
+    return <div className="flex min-h-dvh items-center justify-center/50">Chargement…</div>;
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar
         title="Déplacer vers une table"
         backHref={currentTable ? '/tables/' + currentTable.id : '/tables'}
       />
 
       <div className="flex-1 space-y-4 px-4 py-4">
-        <div className="card-night">
-          <p className="text-sm font-bold uppercase tracking-wide text-gold-300">{invitation.nom_affichage}</p>
-          <p className="mt-1 text-cream/60">
+        <div className="card">
+          <p className="text-sm font-bold uppercase tracking-wide text-gold-600">{invitation.nom_affichage}</p>
+          <p className="mt-1 text-black/60">
             {invitation.nombre_prevu} personne{invitation.nombre_prevu > 1 ? 's' : ''} · actuellement à{' '}
             {currentTable ? 'Table ' + currentTable.number : 'aucune table'}
           </p>
         </div>
 
         <input
-          className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3 text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+          className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
           placeholder="Rechercher une table (numéro, ville, vol…)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
 
         <div className="space-y-2">
-          {filtered.length === 0 && <p className="text-sm text-cream/40">Aucune table trouvée.</p>}
+          {filtered.length === 0 && <p className="text-sm text-black/40">Aucune table trouvée.</p>}
           {filtered.map((u) => {
             const selected = chosenTableId === u.table.id;
             const proche = u.occupationEstimee >= u.table.capacity;
@@ -182,7 +182,7 @@ export default function DeplacerInvitationPage() {
                 onClick={() => setChosenTableId(u.table.id)}
                 className={
                   'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                  (selected ? 'border-gold-400 bg-gold-400/10 text-cream' : 'border-gold-400/20 bg-night-800 text-cream')
+                  (selected ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white ')
                 }
               >
                 <span className="min-w-0">
@@ -191,9 +191,9 @@ export default function DeplacerInvitationPage() {
                     {u.table.label ? ' — ' + u.table.label : ''}
                     {u.table.is_reserve ? ' (réserve)' : ''}
                   </span>
-                  {vol && <span className="block text-xs text-cream/40">{vol}</span>}
+                  {vol && <span className="block text-xs text-black/40">{vol}</span>}
                 </span>
-                <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-cream/50')}>
+                <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-black/50')}>
                   <span className="block">{u.occupationEstimee} / {u.table.capacity} places prévues</span>
                   <span className="block text-xs">{u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant</span>
                 </span>

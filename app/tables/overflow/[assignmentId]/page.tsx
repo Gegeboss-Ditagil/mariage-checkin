@@ -155,9 +155,9 @@ export default function GererExcedentPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-radial px-6 text-center">
-        <p className="text-lg font-semibold text-cream/80">Affectation introuvable</p>
-        <p className="text-sm text-cream/50">Elle a peut-être déjà été retirée ou déplacée.</p>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-lg font-semibold text-black/70">Affectation introuvable</p>
+        <p className="text-sm text-black/50">Elle a peut-être déjà été retirée ou déplacée.</p>
         <button className="btn-primary" onClick={() => router.push('/tables')}>
           Retour aux tables
         </button>
@@ -166,30 +166,30 @@ export default function GererExcedentPage() {
   }
 
   if (loading || !assignment) {
-    return <div className="flex min-h-dvh items-center justify-center bg-night-radial text-cream/50">Chargement…</div>;
+    return <div className="flex min-h-dvh items-center justify-center/50">Chargement…</div>;
   }
 
   const autresTables = reserveUsages.filter((u) => u.table.id !== assignment.reserve_table_id);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title="Gérer l'excédent" backHref={'/tables/' + assignment.reserve_table_id} />
 
       <div className="flex-1 space-y-4 px-4 py-4">
-        <div className="card-night border-2 border-status-over/30 bg-status-over/5">
+        <div className="card border-2 border-status-over/30 bg-status-over/5">
           <p className="text-sm font-bold uppercase tracking-wide text-status-over">
             {nomAffichage} · +{assignment.nombre_personnes} personne{assignment.nombre_personnes > 1 ? 's' : ''}
           </p>
-          <p className="mt-1 text-cream/60">
+          <p className="mt-1 text-black/60">
             Actuellement à {currentTable ? 'Table ' + currentTable.number : 'une table de réserve'}
           </p>
         </div>
 
         <div>
-          <p className="mb-2 font-semibold text-cream">Déplacer vers une autre table</p>
+          <p className="mb-2 font-semibold ">Déplacer vers une autre table</p>
           <div className="space-y-2">
             {autresTables.length === 0 && (
-              <p className="text-sm text-cream/40">Aucune autre table disponible.</p>
+              <p className="text-sm text-black/40">Aucune autre table disponible.</p>
             )}
             {autresTables.map((u) => {
               // "Complet" est un avertissement, pas un blocage : voir le
@@ -203,10 +203,10 @@ export default function GererExcedentPage() {
                   className={
                     'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
                     (selected
-                      ? 'border-gold-400 bg-gold-400/10 text-cream'
+                      ? 'border-gold-500 bg-gold-400/10 '
                       : full
-                      ? 'border-status-over/30 bg-status-over/5 text-cream'
-                      : 'border-gold-400/20 bg-night-800 text-cream')
+                      ? 'border-status-over/30 bg-status-over/5 '
+                      : 'border-gold-300/30 bg-white ')
                   }
                 >
                   <span className="font-semibold">
