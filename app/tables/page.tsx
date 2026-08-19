@@ -110,7 +110,7 @@ export default function TablesPage() {
     return (
       <Link
         href={'/tables/' + t.id}
-        className={'card' + (t.is_reserve ? ' border-2 border-status-partial/40' : '')}
+        className={'card-night' + (t.is_reserve ? ' border-2 border-status-partial/40' : '')}
       >
         <p className="font-display text-lg font-bold text-cream">Table {t.number}</p>
         {t.label && <p className="truncate text-xs text-cream/40">{t.label}</p>}
@@ -136,11 +136,11 @@ export default function TablesPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title="Tables" />
 
       <div className="flex-1 px-4 py-4">
-        <div className="card mb-4 grid grid-cols-3 gap-2 text-center">
+        <div className="card-night mb-4 grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="text-xs uppercase text-cream/40">Capacité</p>
             <p className="text-xl font-bold text-cream">{totaux.capacite}</p>
@@ -154,7 +154,7 @@ export default function TablesPage() {
             <p className="text-xl font-bold text-gold-300">{totaux.libresMaintenant}</p>
           </div>
         </div>
-        <div className="card mb-4">
+        <div className="card-night mb-4">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold text-cream">Remplissage global</p>
           </div>
@@ -239,5 +239,6 @@ export default function TablesPage() {
     </div>
   );
 }
+
 
 

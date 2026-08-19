@@ -155,7 +155,7 @@ export default function GererExcedentPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-radial px-6 text-center">
         <p className="text-lg font-semibold text-cream/80">Affectation introuvable</p>
         <p className="text-sm text-cream/50">Elle a peut-être déjà été retirée ou déplacée.</p>
         <button className="btn-primary" onClick={() => router.push('/tables')}>
@@ -166,17 +166,17 @@ export default function GererExcedentPage() {
   }
 
   if (loading || !assignment) {
-    return <div className="flex min-h-dvh items-center justify-center text-cream/50">Chargement…</div>;
+    return <div className="flex min-h-dvh items-center justify-center bg-night-radial text-cream/50">Chargement…</div>;
   }
 
   const autresTables = reserveUsages.filter((u) => u.table.id !== assignment.reserve_table_id);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title="Gérer l'excédent" backHref={'/tables/' + assignment.reserve_table_id} />
 
       <div className="flex-1 space-y-4 px-4 py-4">
-        <div className="card border-2 border-status-over/30 bg-status-over/5">
+        <div className="card-night border-2 border-status-over/30 bg-status-over/5">
           <p className="text-sm font-bold uppercase tracking-wide text-status-over">
             {nomAffichage} · +{assignment.nombre_personnes} personne{assignment.nombre_personnes > 1 ? 's' : ''}
           </p>
@@ -250,4 +250,5 @@ export default function GererExcedentPage() {
     </div>
   );
 }
+
 

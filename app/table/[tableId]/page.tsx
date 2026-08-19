@@ -137,14 +137,14 @@ export default function TablePage() {
     : 'Table';
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
       <TopBar title={titre} backHref="/scan" />
 
       {loading && <p className="p-4 text-center text-cream/50">Chargement…</p>}
 
       {!loading && table && (
         <div className="px-4 pt-3">
-          <div className="card mb-2 grid grid-cols-3 text-center">
+          <div className="card-night mb-2 grid grid-cols-3 text-center">
             <div>
               <p className="text-xs uppercase text-cream/40">Prévu</p>
               <p className="text-2xl font-bold">{prevu}</p>
@@ -227,5 +227,6 @@ export default function TablePage() {
     </div>
   );
 }
+
 
 
