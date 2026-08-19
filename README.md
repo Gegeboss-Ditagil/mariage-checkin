@@ -1,8 +1,14 @@
 # Check-in Mariage Nelly & Gersom
 
-Application de check-in pour le mariage — 8 octobre 2026 (à ajuster dans Supabase si besoin).
+[![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
+[![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
+[![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
+
+Application de check-in pour le mariage — **24 octobre 2026**.
 PWA (installable sur téléphone, avec un bouton "Installer l'app" sur l'écran de connexion),
 fonctionne avec connexion requise pour valider une entrée.
+
+> **Documentation vivante :** les badges ci-dessus suivent automatiquement la branche `main` et son dernier commit. À chaque changement fonctionnel, le même commit doit aussi ajuster les sections concernées de ce README (rôles, parcours, données ou exploitation) afin que la documentation reste alignée avec l'application déployée.
 
 423 invités / 200 invitations (foyers, familles, groupes) répartis sur 44 tables, déjà importés et placés dans la base réelle.
 

@@ -5,17 +5,24 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { Role } from '@/lib/types';
 
-// Agent et placeur ont exactement le meme acces (voir middleware.ts) donc
-// la meme barre de navigation ; seul l'admin a un menu different (+Admin).
+// directeur et placeur ont exactement le meme acces operationnel (voir
+// middleware.ts) donc la meme barre de navigation.
+// "Placement" a ete retire (19/08/2026) : cet onglet faisait doublon avec
+// Scan + Recherche (meme camera QR, meme recherche par nom/table), Gersom a
+// demande a le supprimer pour simplifier la barre a 4 boutons.
 const STAFF_ITEMS = [
   { href: '/scan', label: 'Scan', icon: '▣' },
   { href: '/search', label: 'Recherche', icon: '⌕' },
   { href: '/tables', label: 'Tables', icon: '▦' },
-  { href: '/placement', label: 'Placement', icon: '▤' },
   { href: '/dashboard', label: 'Bord', icon: '◔' },
 ];
 
+// agent_checkin (scan-only) : meme barre que le staff complet -- il garde le
+// scan/recherche/dashboard/tables -- mais les boutons de modification restent
+// caches dans les pages elles-memes (voir tables/[tableId], table/[tableId]).
 const SCAN_ONLY_ITEMS = STAFF_ITEMS;
+
+// visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.
 const READ_ONLY_ITEMS = [
   { href: '/dashboard', label: 'Bord', icon: '◔' },
   { href: '/tables', label: 'Tables', icon: '▦' },

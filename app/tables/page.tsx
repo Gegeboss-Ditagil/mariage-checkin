@@ -179,6 +179,15 @@ export default function TablesPage() {
           Estimation si tous les invités encore attendus se présentent : {totaux.libresEstimees} places libres.
         </p>
 
+        {/* Le bouton "Placement" a ete retire de la barre de navigation du bas
+            (doublon avec Scan + Recherche), mais son ecran (scan QR ou
+            recherche -> gros numero de table affiche, pratique pour
+            renseigner un invite rapidement) reste entierement disponible
+            ici, depuis la section Tables. */}
+        <Link href="/placement" className="btn-secondary mb-4 block w-full text-center">
+          Trouver la table d'un invité (scan QR ou recherche)
+        </Link>
+
         <input
           className="mb-3 w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
           placeholder="Rechercher une table (numéro, ville, vol…)"
