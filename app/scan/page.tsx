@@ -109,7 +109,7 @@ export default function ScanPage() {
           <Link href="/tables" className="btn-secondary">
             Tables
           </Link>
-          <Link href="/dashboard" className="btn-secondary">
+          <Link href="/dashboard" className="btn-secondary text-center">
             Tableau de bord
           </Link>
         </div>
