@@ -97,7 +97,7 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title="Importer les invités" backHref="/admin" />
 
       <div className="flex-1 space-y-5 px-4 py-4">
@@ -106,17 +106,17 @@ export default function ImportPage() {
             {fileName || 'Choisir un fichier CSV ou XLSX'}
             <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFile} />
           </label>
-          <p className="mt-2 text-xs text-cream/40">{rows.length > 0 && rows.length + ' lignes détectées'}</p>
+          <p className="mt-2 text-xs text-black/40">{rows.length > 0 && rows.length + ' lignes détectées'}</p>
         </div>
 
         {headers.length > 0 && (
           <div className="space-y-3">
-            <p className="font-semibold text-cream">Associer les colonnes</p>
+            <p className="font-semibold ">Associer les colonnes</p>
             {TARGET_FIELDS.map((f) => (
               <div key={f.key} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-cream/60">{f.label}</span>
+                <span className="text-sm text-black/60">{f.label}</span>
                 <select
-                  className="rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-3 py-2 text-sm text-cream focus:border-gold-400 focus:outline-none"
+                  className="rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-2 text-sm  focus:border-gold-500 focus:outline-none"
                   value={mapping[f.key] || ''}
                   onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value }))}
                 >
@@ -132,7 +132,7 @@ export default function ImportPage() {
           </div>
         )}
 
-        {result && <p className="rounded-xl2 bg-night-800 p-3 text-sm text-cream/70">{result}</p>}
+        {result && <p className="rounded-xl2 bg-white p-3 text-sm text-black/60">{result}</p>}
       </div>
 
       {rows.length > 0 && (

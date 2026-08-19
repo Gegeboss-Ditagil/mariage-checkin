@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { QrScanner } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';
+import { BottomNav } from '@/components/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { TableRow } from '@/lib/types';
-import { StarField } from '@/components/BrandMotif';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -18,6 +19,11 @@ function normalize(s: string): string {
 }
 
 export default function PlacementPage() {
+  // /placement est l'ecran d'atterrissage apres connexion pour les roles
+  // directeur/placeur (voir app/login/page.tsx) -- sans BottomNav ici, ces
+  // roles n'avaient aucun moyen de rejoindre le tableau de bord depuis cet
+  // ecran (bug remonte : "je ne vois pas de bouton tableau de bord").
+  const role = useSessionRole();
   const [mode, setMode] = useState<'scan' | 'search'>('scan');
   const [query, setQuery] = useState('');
   const [table, setTable] = useState<TableRow | null>(null);
@@ -81,14 +87,13 @@ export default function PlacementPage() {
 
   if (table) {
     return (
-      <div className="relative flex min-h-dvh flex-col items-center justify-center gap-4 overflow-hidden bg-night-radial text-cream">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
         <UserMenu />
-        <StarField />
-        <p className="eyebrow relative">Table</p>
-        <p className="relative font-display text-[9rem] font-bold leading-none text-gold-200">{table.number}</p>
-        {table.zone && <p className="relative text-2xl text-cream/60">{table.zone}</p>}
+        <p className="eyebrow">Table</p>
+        <p className="font-display text-[9rem] font-bold leading-none text-gold-700">{table.number}</p>
+        {table.zone && <p className="text-2xl text-black/60">{table.zone}</p>}
         <button
-          className="btn-secondary relative mt-8 w-56"
+          className="btn-secondary mt-8 w-56"
           onClick={() => {
             setTable(null);
             setQuery('');
@@ -101,19 +106,20 @@ export default function PlacementPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <UserMenu />
-      <div className="px-4 pt-4">
-        <h1 className="font-display text-2xl text-cream">Placement</h1>
-      </div>
+      <div className="flex-1">
+        <div className="px-4 pt-4">
+          <h1 className="font-display text-2xl ">Placement</h1>
+        </div>
 
-      <div className="mb-4 mt-3 flex gap-2 px-4">
+        <div className="mb-4 mt-3 flex gap-2 px-4">
         <button
           className={
             'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
             (mode === 'scan'
-              ? 'border-gold-400/70 bg-gold-400/15 text-gold-200'
-              : 'border-cream/10 bg-night-800 text-cream/50')
+              ? 'border-gold-400/70 bg-gold-400/15 text-gold-700'
+              : 'border-black/10 bg-white text-black/50')
           }
           onClick={() => setMode('scan')}
         >
@@ -123,16 +129,16 @@ export default function PlacementPage() {
           className={
             'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
             (mode === 'search'
-              ? 'border-gold-400/70 bg-gold-400/15 text-gold-200'
-              : 'border-cream/10 bg-night-800 text-cream/50')
+              ? 'border-gold-400/70 bg-gold-400/15 text-gold-700'
+              : 'border-black/10 bg-white text-black/50')
           }
           onClick={() => setMode('search')}
         >
           Recherche
         </button>
-      </div>
+        </div>
 
-      {mode === 'scan' ? (
+        {mode === 'scan' ? (
         <div className="px-4">
           <QrScanner onScan={resolveByCode} />
         </div>
@@ -140,7 +146,7 @@ export default function PlacementPage() {
         <div className="space-y-3 px-4">
           <input
             autoFocus
-            className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
             placeholder="Nom ou n° de table"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -149,9 +155,12 @@ export default function PlacementPage() {
             Rechercher
           </button>
         </div>
-      )}
+        )}
 
-      {error && <p className="mt-4 text-center font-medium text-status-over">{error}</p>}
+        {error && <p className="mt-4 text-center font-medium text-status-over">{error}</p>}
+      </div>
+
+      {role && <BottomNav role={role} />}
     </div>
   );
 }

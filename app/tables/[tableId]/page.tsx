@@ -125,21 +125,21 @@ export default function TableDetailPage() {
     : 'Table';
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title={titre} backHref="/tables" />
 
       <div className="px-4 py-4">
-        <div className="card-night mb-4 grid grid-cols-3 text-center">
+        <div className="card mb-4 grid grid-cols-3 text-center">
           <div>
-            <p className="text-xs uppercase text-cream/40">Prévu</p>
+            <p className="text-xs uppercase text-black/40">Prévu</p>
             <p className="text-2xl font-bold">{prevu}</p>
           </div>
           <div>
-            <p className="text-xs uppercase text-cream/40">Arrivés</p>
+            <p className="text-xs uppercase text-black/40">Arrivés</p>
             <p className="text-2xl font-bold text-status-complete">{arrive}</p>
           </div>
           <div>
-            <p className="text-xs uppercase text-cream/40">Restants</p>
+            <p className="text-xs uppercase text-black/40">Restants</p>
             <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function TableDetailPage() {
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{inv.nom_affichage}</p>
-                    {prenoms && <p className="truncate text-xs font-medium text-gold-300">{prenoms}</p>}
+                    {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
                   </div>
                   <span className="flex shrink-0 items-center gap-2 text-sm">
                     {inv.nombre_arrive}/{inv.nombre_prevu}
@@ -176,7 +176,7 @@ export default function TableDetailPage() {
                   type="button"
                   aria-label="Déplacer vers une autre table"
                   onClick={() => router.push('/tables/move/' + inv.id)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-400/25 text-base text-gold-300/80 active:scale-[0.95] transition-transform"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
                 >
                   ⇄
                 </button>
@@ -190,10 +190,10 @@ export default function TableDetailPage() {
                   onClick={() => router.push('/tables/overflow/' + o.id)}
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-cream/80">
+                    <p className="truncate font-medium text-black/70">
                       {overflowNoms.get(o.invitation_id) || 'Excédent affecté'}
                     </p>
-                    <p className="text-xs text-cream/40">Toucher pour retirer ou déplacer</p>
+                    <p className="text-xs text-black/40">Toucher pour retirer ou déplacer</p>
                   </div>
                   <span className="shrink-0 text-sm font-semibold text-status-over">
                     +{o.nombre_personnes}
@@ -202,7 +202,7 @@ export default function TableDetailPage() {
               </li>
             ) : (
               <li key={o.id} className="flex items-center justify-between gap-3 py-3">
-                <p className="truncate font-medium text-cream/80">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
+                <p className="truncate font-medium text-black/70">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
                 <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
               </li>
             ))}

@@ -30,8 +30,8 @@ const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
 };
 
 const DENY_SUBPATHS: Record<string, string[]> = {
-  agent_checkin: ['/tables/move', '/tables/overflow'],
-  visibilite: ['/tables/move', '/tables/overflow'],
+  agent_checkin: ['/tables/move', '/tables/overflow', '/tables/add'],
+  visibilite: ['/tables/move', '/tables/overflow', '/tables/add'],
 };
 
 function fallbackFor(role: string): string {

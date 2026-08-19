@@ -173,7 +173,7 @@ function SearchInner() {
   const hasQuery = query.trim().length >= (mode === 'telephone' ? 4 : 2);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title="Rechercher un invité" backHref="/scan" />
 
       <div className="px-4 pt-3">
@@ -183,7 +183,7 @@ function SearchInner() {
             onClick={() => setMode('nom')}
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'nom' ? 'border-gold-400 bg-gold-400/10 text-cream' : 'border-gold-400/20 bg-night-800 text-cream/60')
+              (mode === 'nom' ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white text-black/60')
             }
           >
             Nom / table
@@ -194,8 +194,8 @@ function SearchInner() {
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
               (mode === 'telephone'
-                ? 'border-gold-400 bg-gold-400/10 text-cream'
-                : 'border-gold-400/20 bg-night-800 text-cream/60')
+                ? 'border-gold-500 bg-gold-400/10 '
+                : 'border-gold-300/30 bg-white text-black/60')
             }
           >
             Téléphone
@@ -205,7 +205,7 @@ function SearchInner() {
             onClick={() => setMode('email')}
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'email' ? 'border-gold-400 bg-gold-400/10 text-cream' : 'border-gold-400/20 bg-night-800 text-cream/60')
+              (mode === 'email' ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white text-black/60')
             }
           >
             Email
@@ -215,7 +215,7 @@ function SearchInner() {
         {mode === 'nom' && (
           <input
             autoFocus
-            className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
             placeholder="Prénom, nom, table, téléphone…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -225,7 +225,7 @@ function SearchInner() {
         {mode === 'telephone' && (
           <div className="space-y-2">
             <select
-              className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3 text-cream focus:border-gold-400 focus:outline-none"
+              className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  focus:border-gold-500 focus:outline-none"
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
             >
@@ -236,19 +236,19 @@ function SearchInner() {
               ))}
             </select>
             <div className="flex items-center gap-2">
-              <span className="shrink-0 rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-3 py-3.5 text-lg text-cream/70">
+              <span className="shrink-0 rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-3.5 text-lg text-black/60">
                 {country.indicatif}
               </span>
               <input
                 autoFocus
                 inputMode="tel"
-                className="min-w-0 flex-1 rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+                className="min-w-0 flex-1 rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
                 placeholder={'ex : ' + country.exemple}
                 value={phoneNational}
                 onChange={(e) => setPhoneNational(e.target.value)}
               />
             </div>
-            <p className="text-xs text-cream/40">
+            <p className="text-xs text-black/40">
               Choisissez le pays puis saisissez le numéro sans le 0 initial — exemple pour {country.nom} :{' '}
               {country.indicatif} {country.exemple}
             </p>
@@ -260,7 +260,7 @@ function SearchInner() {
             autoFocus
             type="email"
             autoCapitalize="none"
-            className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
             placeholder="prenom.nom@exemple.com"
             value={emailInput}
             onChange={(e) => setEmailInput(e.target.value)}
@@ -268,30 +268,30 @@ function SearchInner() {
         )}
       </div>
 
-      {loading && <p className="p-4 text-center text-cream/40">Recherche…</p>}
+      {loading && <p className="p-4 text-center text-black/40">Recherche…</p>}
 
       {!loading && hasQuery && tableResults.length === 0 && results.length === 0 && (
-        <p className="p-6 text-center text-cream/50">Aucun résultat pour « {query} »</p>
+        <p className="p-6 text-center text-black/50">Aucun résultat pour « {query} »</p>
       )}
 
       {tableResults.length > 0 && (
         <div className="px-4 pt-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-cream/40">Tables</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-black/40">Tables</p>
           <div className="space-y-2">
             {tableResults.map((t) => {
               const vol = volCode(t.number);
               return (
                 <button
                   key={t.id}
-                  className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-400/20 bg-night-800 px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 text-left"
                   onClick={() => router.push('/tables/' + t.id)}
                 >
                   <span>
-                    <span className="block font-semibold text-cream">
+                    <span className="block font-semibold ">
                       Table {t.number}
                       {t.label ? ' — ' + t.label : ''}
                     </span>
-                    {vol && <span className="block text-xs text-cream/40">{vol}</span>}
+                    {vol && <span className="block text-xs text-black/40">{vol}</span>}
                   </span>
                   {t.is_reserve && <span className="text-xs text-status-partial">Réserve</span>}
                 </button>
@@ -304,7 +304,7 @@ function SearchInner() {
       {results.length > 0 && (
         <div className="mt-2 px-4">
           {tableResults.length > 0 && (
-            <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-cream/40">Invités</p>
+            <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-black/40">Invités</p>
           )}
           <ul className="flex-1 divide-y divide-gold-400/10">
             {results.map((r) => {
@@ -318,8 +318,8 @@ function SearchInner() {
                   >
                     <div className="min-w-0">
                       <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
-                      {prenoms && <p className="truncate text-xs font-medium text-gold-300">{prenoms}</p>}
-                      <p className="text-sm text-cream/50">
+                      {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                      <p className="text-sm text-black/50">
                         {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
                         {r.nombre_prevu > 1 ? 's' : ''}
                       </p>

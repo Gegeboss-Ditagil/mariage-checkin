@@ -276,9 +276,9 @@ export default function CheckinPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-radial px-6 text-center">
-        <p className="text-lg font-semibold text-cream/80">Invitation introuvable</p>
-        <p className="text-sm text-cream/50">Le lien utilisé ne correspond à aucune invitation.</p>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
+        <p className="text-sm text-black/50">Le lien utilisé ne correspond à aucune invitation.</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
           Retour au scan
         </button>
@@ -288,7 +288,7 @@ export default function CheckinPage() {
 
   if (!invitation) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-night-radial text-cream/50">Chargement…</div>
+      <div className="flex min-h-dvh items-center justify-center/50">Chargement…</div>
     );
   }
 
@@ -321,38 +321,38 @@ export default function CheckinPage() {
 
   if (step === 'overflow') {
     return (
-      <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+      <div className="flex min-h-dvh flex-col">
         <TopBar title="Personnes supplémentaires" backHref={'/checkin/' + invitation.id} />
         <div className="flex-1 space-y-4 px-4 py-4">
-          <div className="card-night border-2 border-status-over/30 bg-status-over/5">
+          <div className="card border-2 border-status-over/30 bg-status-over/5">
             <p className="text-sm font-bold uppercase tracking-wide text-status-over">
               ⚠️ {invitation.nombre_arrive - invitation.nombre_prevu} personne
               {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''} supplémentaire
               {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''}
             </p>
-            <p className="mt-1 text-cream/60">
+            <p className="mt-1 text-black/60">
               Prévu : {invitation.nombre_prevu} · Présents : {invitation.nombre_arrive}
             </p>
           </div>
 
           {existingAssignments.length > 0 && (
             <div>
-              <p className="mb-2 font-semibold text-cream">Déjà assigné</p>
+              <p className="mb-2 font-semibold ">Déjà assigné</p>
               <div className="space-y-2">
                 {existingAssignments.map(({ assignment, table }) => canReorganizeExcedent ? (
                   <button
                     key={assignment.id}
                     onClick={() => router.push('/tables/overflow/' + assignment.id)}
-                    className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-400/20 bg-night-800 px-4 py-3 text-left text-cream"
+                    className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 text-left "
                   >
                     <span className="font-semibold">
                       +{assignment.nombre_personnes} · {table ? 'Table ' + table.number : 'Table inconnue'}
                       {table?.is_reserve ? ' (réserve)' : ''}
                     </span>
-                    <span className="text-xs text-gold-300 underline">Gérer</span>
+                    <span className="text-xs text-gold-600 underline">Gérer</span>
                   </button>
                 ) : (
-                  <div key={assignment.id} className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-400/20 bg-night-800 px-4 py-3 text-cream">
+                  <div key={assignment.id} className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 ">
                     <span className="font-semibold">+{assignment.nombre_personnes} · {table ? 'Table ' + table.number : 'Table inconnue'}{table?.is_reserve ? ' (réserve)' : ''}</span>
                   </div>
                 ))}
@@ -362,7 +362,7 @@ export default function CheckinPage() {
 
           {excedentCount > 0 && (
             <div>
-              <p className="mb-2 font-semibold text-cream">
+              <p className="mb-2 font-semibold ">
                 Assigner {existingAssignments.length > 0 ? 'le reste (' + excedentCount + ')' : 'à une table'}
               </p>
               <div className="space-y-2">
@@ -381,10 +381,10 @@ export default function CheckinPage() {
                       className={
                         'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
                         (selected
-                          ? 'border-gold-400 bg-gold-400/10 text-cream'
+                          ? 'border-gold-500 bg-gold-400/10 '
                           : full
-                          ? 'border-status-over/30 bg-status-over/5 text-cream'
-                          : 'border-gold-400/20 bg-night-800 text-cream')
+                          ? 'border-status-over/30 bg-status-over/5 '
+                          : 'border-gold-300/30 bg-white ')
                       }
                     >
                       <span className="font-semibold">
@@ -445,21 +445,21 @@ export default function CheckinPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-night-radial text-cream">
+    <div className="flex min-h-dvh flex-col">
       <TopBar title={invitation.nom_affichage} backHref="/scan" />
 
       <div className="flex-1 px-4 py-6">
-        <div className="card-night mb-4 space-y-1 text-center">
+        <div className="card mb-4 space-y-1 text-center">
           {invitationTable && (
-            <p className="text-sm font-semibold uppercase tracking-wide text-gold-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-gold-600">
               Table {invitationTable.number}
               {invitationTable.label ? ' — ' + invitationTable.label : ''}
               {invitationTable.is_reserve ? ' (réserve)' : ''}
             </p>
           )}
-          <p className="text-sm uppercase tracking-wide text-cream/40">Personnes prévues</p>
-          <p className="font-display text-4xl font-bold text-cream">{invitation.nombre_prevu}</p>
-          <p className="text-sm text-cream/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
+          <p className="text-sm uppercase tracking-wide text-black/40">Personnes prévues</p>
+          <p className="font-display text-4xl font-bold ">{invitation.nombre_prevu}</p>
+          <p className="text-sm text-black/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
           {invitation.ne_viendra_pas && (
             <p className="text-sm font-semibold text-status-over">Marqué "ne viendra pas"</p>
           )}
@@ -467,7 +467,7 @@ export default function CheckinPage() {
 
         <button
           type="button"
-          className="mb-3 block w-full text-center text-sm font-medium text-gold-300 underline underline-offset-2"
+          className="mb-3 block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
           onClick={() => router.push('/checkin/' + invitation.id + '/members')}
         >
           Gérer les membres du groupe (ajouter, retirer, nommer)
@@ -492,7 +492,7 @@ export default function CheckinPage() {
           <button
             type="button"
             disabled={noShowSubmitting || !online}
-            className="mb-6 block w-full text-center text-sm font-medium text-cream/50 underline underline-offset-2 disabled:opacity-40"
+            className="mb-6 block w-full text-center text-sm font-medium text-black/50 underline underline-offset-2 disabled:opacity-40"
             onClick={() => handleToggleNoShow(!invitation.ne_viendra_pas)}
           >
             {invitation.ne_viendra_pas
@@ -501,11 +501,11 @@ export default function CheckinPage() {
           </button>
         )}
 
-        <p className="mb-3 text-center font-semibold text-cream">Personnes arrivées</p>
+        <p className="mb-3 text-center font-semibold ">Personnes arrivées</p>
         <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
 
         {delta !== 0 && (
-          <p className="mt-3 text-center text-sm font-medium text-gold-200">
+          <p className="mt-3 text-center text-sm font-medium text-gold-700">
             {delta > 0 ? '+' : ''}
             {delta} par rapport à maintenant
           </p>
