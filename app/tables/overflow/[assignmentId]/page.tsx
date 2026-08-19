@@ -50,22 +50,31 @@ export default function GererExcedentPage() {
       const assign = a as OverflowAssignmentRow;
       setAssignment(assign);
 
-      const [{ data: inv }, { data: reserveTables }, { data: allAssignments }] = await Promise.all([
+      const [{ data: inv }, { data: allTables }, { data: allAssignments }, { data: allInvs }] = await Promise.all([
         supabase.from('invitations').select('nom_affichage').eq('id', assign.invitation_id).maybeSingle(),
-        supabase.from('tables').select('*').eq('is_reserve', true).order('number'),
+        supabase.from('tables').select('*').order('is_reserve', { ascending: false }).order('number'),
         supabase.from('overflow_assignments').select('reserve_table_id, nombre_personnes'),
+        supabase.from('invitations').select('table_id, nombre_prevu'),
       ]);
 
       if (!active) return;
 
       setNomAffichage(inv?.nom_affichage || 'Invité');
 
+      // "used" cumule les excedents deja assignes ET les personnes prevues
+      // des invitations deja sur cette table, pour permettre de deplacer un
+      // excedent vers N'IMPORTE QUELLE table (pas seulement une reserve)
+      // sans jamais l'afficher comme plus libre qu'elle ne l'est.
       const usedByTable = new Map<string, number>();
       (allAssignments || []).forEach((o: any) => {
         usedByTable.set(o.reserve_table_id, (usedByTable.get(o.reserve_table_id) || 0) + o.nombre_personnes);
       });
+      (allInvs || []).forEach((i: any) => {
+        if (!i.table_id) return;
+        usedByTable.set(i.table_id, (usedByTable.get(i.table_id) || 0) + i.nombre_prevu);
+      });
 
-      const tables = (reserveTables as TableRow[]) || [];
+      const tables = (allTables as TableRow[]) || [];
       const usages: ReserveUsage[] = tables.map((t) => {
         const used = usedByTable.get(t.id) || 0;
         return { table: t, used, available: t.capacity - used };
@@ -194,10 +203,10 @@ export default function GererExcedentPage() {
         </div>
 
         <div>
-          <p className="mb-2 font-semibold text-cream">Déplacer vers une autre table de réserve</p>
+          <p className="mb-2 font-semibold text-cream">Déplacer vers une autre table</p>
           <div className="space-y-2">
             {autresTables.length === 0 && (
-              <p className="text-sm text-cream/40">Aucune autre table de réserve disponible.</p>
+              <p className="text-sm text-cream/40">Aucune autre table disponible.</p>
             )}
             {autresTables.map((u) => {
               const full = u.available < assignment.nombre_personnes;
@@ -216,7 +225,10 @@ export default function GererExcedentPage() {
                       : 'border-gold-400/20 bg-night-800 text-cream')
                   }
                 >
-                  <span className="font-semibold">Table {u.table.number}</span>
+                  <span className="font-semibold">
+                    Table {u.table.number}
+                    {u.table.is_reserve ? ' (réserve)' : ''}
+                  </span>
                   <span className="text-sm">
                     {full ? 'COMPLET' : u.used + ' / ' + u.table.capacity + ' places utilisées'}
                   </span>

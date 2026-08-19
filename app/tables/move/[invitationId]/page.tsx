@@ -54,17 +54,24 @@ export default function DeplacerInvitationPage() {
 
       setInvitation(inv as InvitationRow);
 
-      const [{ data: tables }, { data: allInvs }] = await Promise.all([
-        supabase.from('tables').select('*').eq('is_reserve', false).order('number'),
+      const [{ data: tables }, { data: allInvs }, { data: assignments }] = await Promise.all([
+        supabase.from('tables').select('*').order('is_reserve', { ascending: true }).order('number'),
         supabase.from('invitations').select('table_id, nombre_prevu'),
+        supabase.from('overflow_assignments').select('reserve_table_id, nombre_personnes'),
       ]);
 
       if (!active) return;
 
+      // "prevu" cumule les personnes deja prevues sur la table (invitations)
+      // ET les excedents deja assignes dessus (overflow_assignments), pour ne
+      // jamais afficher une table de reserve comme plus libre qu'elle ne l'est.
       const prevuByTable = new Map<string, number>();
       (allInvs || []).forEach((i: any) => {
         if (!i.table_id) return;
         prevuByTable.set(i.table_id, (prevuByTable.get(i.table_id) || 0) + i.nombre_prevu);
+      });
+      (assignments || []).forEach((a: any) => {
+        prevuByTable.set(a.reserve_table_id, (prevuByTable.get(a.reserve_table_id) || 0) + a.nombre_personnes);
       });
 
       const tbls = (tables as TableRow[]) || [];
@@ -192,6 +199,7 @@ export default function DeplacerInvitationPage() {
                   <span className="block font-semibold">
                     Table {u.table.number}
                     {u.table.label ? ' — ' + u.table.label : ''}
+                    {u.table.is_reserve ? ' (réserve)' : ''}
                   </span>
                   {vol && <span className="block text-xs text-cream/40">{vol}</span>}
                 </span>
