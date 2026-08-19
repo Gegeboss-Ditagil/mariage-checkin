@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
+import { PHONE_COUNTRIES } from '@/lib/countries';
 
 interface Result extends InvitationRow {
   table?: TableRow | null;
 }
+
+type Mode = 'nom' | 'telephone' | 'email';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -37,15 +40,52 @@ function extractPrenoms(notes: string | null): string | null {
 }
 
 export default function SearchPage() {
+  return (
+    <Suspense fallback={null}>
+      <SearchInner />
+    </Suspense>
+  );
+}
+
+function SearchInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const modeParam = params.get('mode');
+  const initialMode: Mode = modeParam === 'telephone' || modeParam === 'email' ? modeParam : 'nom';
+
+  const [mode, setMode] = useState<Mode>(initialMode);
+  // "query" reste la SEULE source de verite pour la recherche : que ce soit
+  // le mode nom/table (saisie libre), telephone (assemble a partir du pays +
+  // numero national) ou email, tout finit par alimenter ce meme texte, pour
+  // reutiliser telle quelle la logique de recherche existante (qui compare
+  // deja nom, groupe, email ET telephone_digits en une seule requete).
   const [query, setQuery] = useState('');
+  const [countryCode, setCountryCode] = useState(PHONE_COUNTRIES[0].code);
+  const [phoneNational, setPhoneNational] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [results, setResults] = useState<Result[]>([]);
   const [allTables, setAllTables] = useState<TableRow[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Les tables changent rarement pendant l'evenement : on les charge une
-  // seule fois, puis on filtre cote client (plus rapide, et permet de
-  // chercher par numero ET par nom de ville/vol en meme temps).
+  const country = PHONE_COUNTRIES.find((c) => c.code === countryCode) || PHONE_COUNTRIES[0];
+
+  // Assemble l'indicatif pays + le numero national saisi en une chaine de
+  // chiffres, en retirant un eventuel zero initial (convention locale : "06
+  // 12 34 56 78" devient "6 12 34 56 78" une fois l'indicatif ajoute devant,
+  // exactement comme WithJoy le demande a l'import).
+  useEffect(() => {
+    if (mode !== 'telephone') return;
+    const nationalDigits = phoneNational.replace(/\D/g, '').replace(/^0+/, '');
+    setQuery(nationalDigits ? country.indicatif + nationalDigits : '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, phoneNational, countryCode]);
+
+  useEffect(() => {
+    if (mode !== 'email') return;
+    setQuery(emailInput.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, emailInput]);
+
   useEffect(() => {
     const supabase = createClient();
     supabase
@@ -56,6 +96,7 @@ export default function SearchPage() {
   }, []);
 
   const tableResults = useMemo(() => {
+    if (mode !== 'nom') return [];
     const q = query.trim().toLowerCase();
     if (q.length < 2) return [];
     return allTables
@@ -69,11 +110,12 @@ export default function SearchPage() {
         );
       })
       .slice(0, 8);
-  }, [allTables, query]);
+  }, [allTables, query, mode]);
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
+    const seuil = mode === 'telephone' ? 4 : 2;
+    if (q.length < seuil) {
       setResults([]);
       return;
     }
@@ -90,14 +132,26 @@ export default function SearchPage() {
       const digits = q.replace(/\D/g, '');
       const digitSuffix = digits.length >= 5 ? digits.slice(-8) : null;
 
-      const orParts = [
-        'nom_affichage.ilike.%' + q + '%',
-        'groupe.ilike.%' + q + '%',
-        'notes.ilike.%' + q + '%',
-        'email.ilike.%' + q + '%',
-      ];
-      if (digitSuffix) {
+      const orParts: string[] = [];
+      if (mode === 'nom') {
+        orParts.push(
+          'nom_affichage.ilike.%' + q + '%',
+          'groupe.ilike.%' + q + '%',
+          'notes.ilike.%' + q + '%',
+          'email.ilike.%' + q + '%'
+        );
+      }
+      if (mode === 'email') {
+        orParts.push('email.ilike.%' + q + '%');
+      }
+      if (digitSuffix && (mode === 'nom' || mode === 'telephone')) {
         orParts.push('telephone_digits.ilike.%' + digitSuffix + '%');
+      }
+
+      if (orParts.length === 0) {
+        setResults([]);
+        setLoading(false);
+        return;
       }
 
       const { data } = await supabase
@@ -111,22 +165,104 @@ export default function SearchPage() {
     }, 200);
 
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [query, mode]);
 
-  const hasQuery = query.trim().length >= 2;
+  const hasQuery = query.trim().length >= (mode === 'telephone' ? 4 : 2);
 
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar title="Rechercher un invité" backHref="/scan" />
 
       <div className="px-4 pt-3">
-        <input
-          autoFocus
-          className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
-          placeholder="Prénom, nom, table, téléphone…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="mb-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('nom')}
+            className={
+              'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
+              (mode === 'nom' ? 'border-gold-400 bg-gold-400/10 text-cream' : 'border-gold-400/20 bg-night-800 text-cream/60')
+            }
+          >
+            Nom / table
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('telephone')}
+            className={
+              'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
+              (mode === 'telephone'
+                ? 'border-gold-400 bg-gold-400/10 text-cream'
+                : 'border-gold-400/20 bg-night-800 text-cream/60')
+            }
+          >
+            Téléphone
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('email')}
+            className={
+              'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
+              (mode === 'email' ? 'border-gold-400 bg-gold-400/10 text-cream' : 'border-gold-400/20 bg-night-800 text-cream/60')
+            }
+          >
+            Email
+          </button>
+        </div>
+
+        {mode === 'nom' && (
+          <input
+            autoFocus
+            className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+            placeholder="Prénom, nom, table, téléphone…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        )}
+
+        {mode === 'telephone' && (
+          <div className="space-y-2">
+            <select
+              className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3 text-cream focus:border-gold-400 focus:outline-none"
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+            >
+              {PHONE_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.nom} ({c.indicatif})
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-3 py-3.5 text-lg text-cream/70">
+                {country.indicatif}
+              </span>
+              <input
+                autoFocus
+                inputMode="tel"
+                className="min-w-0 flex-1 rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+                placeholder={'ex : ' + country.exemple}
+                value={phoneNational}
+                onChange={(e) => setPhoneNational(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-cream/40">
+              Choisissez le pays puis saisissez le numéro sans le 0 initial — exemple pour {country.nom} :{' '}
+              {country.indicatif} {country.exemple}
+            </p>
+          </div>
+        )}
+
+        {mode === 'email' && (
+          <input
+            autoFocus
+            type="email"
+            autoCapitalize="none"
+            className="w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-4 py-3.5 text-lg text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none"
+            placeholder="prenom.nom@exemple.com"
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+          />
+        )}
       </div>
 
       {loading && <p className="p-4 text-center text-cream/40">Recherche…</p>}
@@ -195,3 +331,4 @@ export default function SearchPage() {
     </div>
   );
 }
+

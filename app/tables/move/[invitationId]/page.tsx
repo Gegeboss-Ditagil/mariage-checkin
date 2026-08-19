@@ -3,14 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow, TableRow } from '@/lib/types';
+import { InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { useOnline } from '@/hooks/useOnline';
-
-interface TableUsage {
-  table: TableRow;
-  prevu: number;
-}
+import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -26,7 +22,7 @@ export default function DeplacerInvitationPage() {
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [currentTable, setCurrentTable] = useState<TableRow | null>(null);
-  const [usages, setUsages] = useState<TableUsage[]>([]);
+  const [usages, setUsages] = useState<TableCapacity[]>([]);
   const [query, setQuery] = useState('');
   const [chosenTableId, setChosenTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,27 +52,21 @@ export default function DeplacerInvitationPage() {
 
       const [{ data: tables }, { data: allInvs }, { data: assignments }] = await Promise.all([
         supabase.from('tables').select('*').order('is_reserve', { ascending: true }).order('number'),
-        supabase.from('invitations').select('table_id, nombre_prevu'),
-        supabase.from('overflow_assignments').select('reserve_table_id, nombre_personnes'),
+        supabase.from('invitations').select('*'),
+        supabase.from('overflow_assignments').select('*'),
       ]);
 
       if (!active) return;
 
-      // "prevu" cumule les personnes deja prevues sur la table (invitations)
-      // ET les excedents deja assignes dessus (overflow_assignments), pour ne
-      // jamais afficher une table de reserve comme plus libre qu'elle ne l'est.
-      const prevuByTable = new Map<string, number>();
-      (allInvs || []).forEach((i: any) => {
-        if (!i.table_id) return;
-        prevuByTable.set(i.table_id, (prevuByTable.get(i.table_id) || 0) + i.nombre_prevu);
-      });
-      (assignments || []).forEach((a: any) => {
-        prevuByTable.set(a.reserve_table_id, (prevuByTable.get(a.reserve_table_id) || 0) + a.nombre_personnes);
-      });
-
       const tbls = (tables as TableRow[]) || [];
       setCurrentTable(tbls.find((t) => t.id === (inv as InvitationRow).table_id) || null);
-      setUsages(tbls.map((t) => ({ table: t, prevu: prevuByTable.get(t.id) || 0 })));
+      setUsages(
+        computeTableCapacities(
+          tbls,
+          (allInvs as InvitationRow[]) || [],
+          (assignments as OverflowAssignmentRow[]) || []
+        )
+      );
       setLoading(false);
     }
 
@@ -110,7 +100,7 @@ export default function DeplacerInvitationPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/tables/move-invitation', {
+      const res = await fetch('/api/move-invitation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invitation_id: invitation.id, new_table_id: chosenTableId }),
@@ -184,7 +174,7 @@ export default function DeplacerInvitationPage() {
           {filtered.length === 0 && <p className="text-sm text-cream/40">Aucune table trouvée.</p>}
           {filtered.map((u) => {
             const selected = chosenTableId === u.table.id;
-            const proche = u.prevu >= u.table.capacity;
+            const proche = u.occupationEstimee >= u.table.capacity;
             const vol = volCode(u.table.number);
             return (
               <button
@@ -203,8 +193,9 @@ export default function DeplacerInvitationPage() {
                   </span>
                   {vol && <span className="block text-xs text-cream/40">{vol}</span>}
                 </span>
-                <span className={'shrink-0 text-sm ' + (proche ? 'text-status-over' : 'text-cream/50')}>
-                  {u.prevu} / {u.table.capacity} places prévues
+                <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-cream/50')}>
+                  <span className="block">{u.occupationEstimee} / {u.table.capacity} places prévues</span>
+                  <span className="block text-xs">{u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant</span>
                 </span>
               </button>
             );
@@ -226,3 +217,4 @@ export default function DeplacerInvitationPage() {
     </div>
   );
 }
+

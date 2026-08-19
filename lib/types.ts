@@ -37,6 +37,7 @@ export interface InvitationRow {
   telephone: string | null;
   email: string | null;
   telephone_digits?: string | null;
+  ne_viendra_pas: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -134,3 +135,4 @@ export const STATUS_COLORS: Record<InvitationStatut, string> = {
   complet: 'bg-status-complete',
   excedent: 'bg-status-over',
 };
+

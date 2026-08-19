@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { CounterStepper } from '@/components/CounterStepper';
 import { TopBar } from '@/components/TopBar';
-import { proposeReserveTable, ReserveTableUsage } from '@/lib/overflow';
+import { proposeReserveTable } from '@/lib/overflow';
+import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { useOnline } from '@/hooks/useOnline';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
@@ -32,11 +33,16 @@ export default function CheckinPage() {
   // deja ete assigne lors d'une visite precedente sur ce meme groupe — evite
   // d'assigner deux fois le meme excedent si on rouvre cet ecran plus tard.
   const [excedentCount, setExcedentCount] = useState(0);
-  const [reserveUsages, setReserveUsages] = useState<ReserveTableUsage[]>([]);
+  const [reserveUsages, setReserveUsages] = useState<TableCapacity[]>([]);
   const [chosenReserveTable, setChosenReserveTable] = useState<string | null>(null);
   const [existingAssignments, setExistingAssignments] = useState<
     { assignment: OverflowAssignmentRow; table: TableRow | null }[]
   >([]);
+  // Table a laquelle appartient cette invitation, pour l'afficher directement
+  // sur la fiche (utile pour informer l'invite retrouve via une recherche
+  // telephone/email de sa table, sans avoir a naviguer ailleurs).
+  const [invitationTable, setInvitationTable] = useState<TableRow | null>(null);
+  const [noShowSubmitting, setNoShowSubmitting] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,6 +56,14 @@ export default function CheckinPage() {
         setInvitation(inv);
         if (inv) {
           setArriveValue(inv.nombre_arrive);
+          if (inv.table_id) {
+            supabase
+              .from('tables')
+              .select('*')
+              .eq('id', inv.table_id)
+              .maybeSingle()
+              .then(({ data: t }) => setInvitationTable((t as TableRow) || null));
+          }
         } else {
           setNotFound(true);
         }
@@ -58,34 +72,25 @@ export default function CheckinPage() {
 
   const delta = invitation ? arriveValue - invitation.nombre_arrive : 0;
 
-  // Charge TOUTES les tables (reserve ET normales) avec leur occupation reelle,
-  // pour permettre d'assigner l'excedent n'importe ou (pas seulement en
-  // reserve). "used" combine les personnes prevues des invitations deja sur
-  // cette table + les excedents deja assignes dessus, pour ne jamais proposer
-  // une table normale deja pleine comme si elle etait libre.
-  async function loadAllTableUsages(): Promise<ReserveTableUsage[]> {
+  // Charge TOUTES les tables (reserve ET normales) avec leur occupation
+  // reelle ET estimee, pour permettre d'assigner l'excedent n'importe ou (pas
+  // seulement en reserve). L'occupation estimee tient compte des invitations
+  // marquees "ne viendra pas" (lib/capacity.ts) : leurs places prevues sont
+  // retirees du calcul, ce qui libere une table "complete sur le papier" des
+  // qu'on sait avec certitude qu'un groupe ne viendra pas.
+  async function loadAllTableUsages(): Promise<TableCapacity[]> {
     const supabase = createClient();
     const [{ data: tables }, { data: assignments }, { data: allInvs }] = await Promise.all([
       supabase.from('tables').select('*').order('is_reserve', { ascending: false }).order('number'),
-      supabase.from('overflow_assignments').select('reserve_table_id, nombre_personnes'),
-      supabase.from('invitations').select('table_id, nombre_prevu'),
+      supabase.from('overflow_assignments').select('*'),
+      supabase.from('invitations').select('*'),
     ]);
 
-    const overflowByTable = new Map<string, number>();
-    (assignments || []).forEach((a: any) => {
-      overflowByTable.set(a.reserve_table_id, (overflowByTable.get(a.reserve_table_id) || 0) + a.nombre_personnes);
-    });
-
-    const invByTable = new Map<string, number>();
-    (allInvs || []).forEach((i: any) => {
-      if (!i.table_id) return;
-      invByTable.set(i.table_id, (invByTable.get(i.table_id) || 0) + i.nombre_prevu);
-    });
-
-    return ((tables as TableRow[]) || []).map((t) => {
-      const used = (invByTable.get(t.id) || 0) + (overflowByTable.get(t.id) || 0);
-      return { table: t, used, available: t.capacity - used };
-    });
+    return computeTableCapacities(
+      (tables as TableRow[]) || [],
+      (allInvs as InvitationRow[]) || [],
+      (assignments as OverflowAssignmentRow[]) || []
+    );
   }
 
   // Ouvre l'ecran de gestion de l'excedent pour un total donne (calcule a
@@ -236,6 +241,36 @@ export default function CheckinPage() {
     }
   }
 
+  // Marque (ou demarque) cette invitation comme "ne viendra pas", pour
+  // liberer ses places prevues du calcul de capacite des tables partout dans
+  // l'app, sans attendre la fin de soiree. Trace dans audit_logs cote serveur.
+  async function handleToggleNoShow(noShow: boolean) {
+    if (!invitation) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
+      return;
+    }
+    setNoShowSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/invitations/no-show', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitation.id, no_show: noShow }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Échec de la mise à jour');
+        return;
+      }
+      setInvitation(data.invitation as InvitationRow);
+    } catch {
+      setError('Erreur réseau — réessayez');
+    } finally {
+      setNoShowSubmitting(false);
+    }
+  }
+
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
@@ -326,11 +361,11 @@ export default function CheckinPage() {
               <div className="space-y-2">
                 {reserveUsages.map((u) => {
                   // "Complet" est un AVERTISSEMENT, pas un blocage : ce calcul
-                  // se base sur le nombre de personnes PREVUES a cette table,
-                  // pas sur qui est reellement arrive. Une table peut donc
-                  // avoir des places libres en pratique meme si elle affiche
-                  // complet (des invites prevus qui ne viendront pas).
-                  const full = u.available < excedentCount;
+                  // (libresEstimees) tient deja compte des invitations
+                  // marquees "ne viendra pas", mais reste une ESTIMATION pour
+                  // celles pas encore arrivees. libresMaintenant, lui, est
+                  // toujours exact (places physiquement libres a l'instant).
+                  const full = u.libresEstimees < excedentCount;
                   const selected = chosenReserveTable === u.table.id;
                   return (
                     <button
@@ -350,7 +385,9 @@ export default function CheckinPage() {
                         {u.table.is_reserve ? ' (réserve)' : ''}
                       </span>
                       <span className={'text-sm ' + (full ? 'text-status-over' : '')}>
-                        {full ? 'COMPLET (prévu)' : u.used + ' / ' + u.table.capacity + ' places utilisees'}
+                        {full ? 'COMPLET (prévu)' : u.occupationEstimee + ' / ' + u.table.capacity + ' places'}
+                        {' · '}
+                        {u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant
                       </span>
                     </button>
                   );
@@ -358,10 +395,11 @@ export default function CheckinPage() {
               </div>
               {chosenReserveTable &&
                 reserveUsages.find((u) => u.table.id === chosenReserveTable) &&
-                reserveUsages.find((u) => u.table.id === chosenReserveTable)!.available < excedentCount && (
+                reserveUsages.find((u) => u.table.id === chosenReserveTable)!.libresEstimees < excedentCount && (
                   <p className="mt-2 text-sm text-status-over">
                     ⚠️ Cette table affiche complet d'après les personnes prévues. Ne confirmez que si vous savez que
-                    des places seront réellement libres (invités prévus absents).
+                    des places seront réellement libres (invités prévus absents), ou marquez-les d'abord "ne viendra
+                    pas" depuis leur propre fiche pour une estimation plus fiable.
                   </p>
                 )}
             </div>
@@ -405,9 +443,19 @@ export default function CheckinPage() {
 
       <div className="flex-1 px-4 py-6">
         <div className="card mb-4 space-y-1 text-center">
+          {invitationTable && (
+            <p className="text-sm font-semibold uppercase tracking-wide text-gold-300">
+              Table {invitationTable.number}
+              {invitationTable.label ? ' — ' + invitationTable.label : ''}
+              {invitationTable.is_reserve ? ' (réserve)' : ''}
+            </p>
+          )}
           <p className="text-sm uppercase tracking-wide text-cream/40">Personnes prévues</p>
           <p className="font-display text-4xl font-bold text-cream">{invitation.nombre_prevu}</p>
           <p className="text-sm text-cream/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
+          {invitation.ne_viendra_pas && (
+            <p className="text-sm font-semibold text-status-over">Marqué "ne viendra pas"</p>
+          )}
         </div>
 
         <button
@@ -421,11 +469,28 @@ export default function CheckinPage() {
         {invitation.nombre_arrive > invitation.nombre_prevu && (
           <button
             type="button"
-            className="mb-6 block w-full text-center text-sm font-medium text-status-over underline underline-offset-2"
+            className="mb-3 block w-full text-center text-sm font-medium text-status-over underline underline-offset-2"
             onClick={() => openOverflowFlow(invitation.nombre_arrive - invitation.nombre_prevu)}
           >
             ⚠️ Gérer l’excédent ({invitation.nombre_arrive - invitation.nombre_prevu} personne
             {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''})
+          </button>
+        )}
+
+        {/* Ne propose de marquer "ne viendra pas" que tant que personne de ce
+            groupe n'est arrive : une fois une arrivee enregistree, ce n'est
+            plus pertinent (et record_checkin leve deja le marqueur tout seul
+            si un groupe marque absent se presente quand meme). */}
+        {invitation.nombre_arrive === 0 && (
+          <button
+            type="button"
+            disabled={noShowSubmitting || !online}
+            className="mb-6 block w-full text-center text-sm font-medium text-cream/50 underline underline-offset-2 disabled:opacity-40"
+            onClick={() => handleToggleNoShow(!invitation.ne_viendra_pas)}
+          >
+            {invitation.ne_viendra_pas
+              ? 'Annuler le marquage "ne viendra pas"'
+              : 'Cet invité ne viendra pas (libère ses places prévues)'}
           </button>
         )}
 
@@ -486,3 +551,4 @@ function SuccessScreen({ title, lines }: { title: string; lines: string[] }) {
     </div>
   );
 }
+

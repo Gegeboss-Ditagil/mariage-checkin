@@ -98,6 +98,13 @@ export default function ScanPage() {
         <Link href="/search" className="btn-secondary w-full">
           Rechercher un invité
         </Link>
+        {/* Pour quand l'invite n'a plus de batterie, ne sait pas ou est ecrit
+            son nom sur sa table, ou que son nom est mal orthographie : on
+            saute directement a la recherche guidee par telephone ou email
+            plutot que de forcer a passer par le nom. */}
+        <Link href="/search?mode=telephone" className="btn-secondary w-full">
+          Inviter sans code QR (téléphone / email)
+        </Link>
         <div className="grid grid-cols-2 gap-3">
           <Link href="/tables" className="btn-secondary">
             Tables
@@ -110,3 +117,4 @@ export default function ScanPage() {
     </div>
   );
 }
+

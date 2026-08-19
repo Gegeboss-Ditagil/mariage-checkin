@@ -141,9 +141,13 @@ export default function TableDetailPage() {
           </div>
         </div>
 
-        {table?.is_reserve && (
-          <p className="mb-4 text-sm text-cream/50">
-            {overflowTotal} / {table.capacity} places de réserve utilisées
+        {/* L'excedent peut desormais etre assigne a N'IMPORTE QUELLE table
+            (pas seulement les tables de reserve) : cet avertissement ne doit
+            donc plus dependre de is_reserve, sinon un excedent place sur une
+            table normale devient invisible ici. */}
+        {overflow.length > 0 && (
+          <p className="mb-4 text-sm text-status-over">
+            +{overflowTotal} personne{overflowTotal > 1 ? 's' : ''} en excédent · {overflowTotal + arrive} / {table?.capacity} places de la table utilisées
           </p>
         )}
 
@@ -176,8 +180,7 @@ export default function TableDetailPage() {
               </li>
             );
           })}
-          {table?.is_reserve &&
-            overflow.map((o) => (
+          {overflow.map((o) => (
               <li key={o.id}>
                 <button
                   className="flex w-full items-center justify-between gap-3 py-3 text-left active:scale-[0.98] transition-transform"
@@ -200,3 +203,4 @@ export default function TableDetailPage() {
     </div>
   );
 }
+
