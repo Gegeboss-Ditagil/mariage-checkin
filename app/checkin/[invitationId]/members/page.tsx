@@ -196,7 +196,14 @@ export default function MembresInvitationPage() {
       setError('CONNEXION REQUISE');
       return;
     }
-    if (typeof window !== 'undefined' && !window.confirm('Retirer ' + guest.nom_affichage + ' de ce groupe ?')) {
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(
+        'Retirer ' +
+          guest.nom_affichage +
+          ' de ce groupe ? Cela retire aussi 1 place prévue pour ce groupe (utilisez plutôt "Modifier" si c\'est juste une erreur de nom).'
+      )
+    ) {
       return;
     }
     setSubmitting(true);
@@ -246,7 +253,15 @@ export default function MembresInvitationPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Échec de la modification');
+        setError(
+          data.error === 'member_not_found'
+            ? 'Cette personne a été retirée par quelqu\'un d\'autre entre-temps.'
+            : data.error || 'Échec de la modification'
+        );
+        if (data.error === 'member_not_found') {
+          setEditingId(null);
+          await load();
+        }
         return;
       }
       setEditingId(null);
