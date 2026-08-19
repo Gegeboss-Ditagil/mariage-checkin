@@ -3,15 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { OverflowAssignmentRow, TableRow } from '@/lib/types';
+import { InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { useOnline } from '@/hooks/useOnline';
-
-interface ReserveUsage {
-  table: TableRow;
-  used: number;
-  available: number;
-}
+import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 
 export default function GererExcedentPage() {
   const { assignmentId } = useParams<{ assignmentId: string }>();
@@ -22,7 +17,7 @@ export default function GererExcedentPage() {
   const [notFound, setNotFound] = useState(false);
   const [nomAffichage, setNomAffichage] = useState('');
   const [currentTable, setCurrentTable] = useState<TableRow | null>(null);
-  const [reserveUsages, setReserveUsages] = useState<ReserveUsage[]>([]);
+  const [reserveUsages, setReserveUsages] = useState<TableCapacity[]>([]);
   const [chosenTableId, setChosenTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -53,32 +48,20 @@ export default function GererExcedentPage() {
       const [{ data: inv }, { data: allTables }, { data: allAssignments }, { data: allInvs }] = await Promise.all([
         supabase.from('invitations').select('nom_affichage').eq('id', assign.invitation_id).maybeSingle(),
         supabase.from('tables').select('*').order('is_reserve', { ascending: false }).order('number'),
-        supabase.from('overflow_assignments').select('reserve_table_id, nombre_personnes'),
-        supabase.from('invitations').select('table_id, nombre_prevu'),
+        supabase.from('overflow_assignments').select('*'),
+        supabase.from('invitations').select('*'),
       ]);
 
       if (!active) return;
 
       setNomAffichage(inv?.nom_affichage || 'Invité');
 
-      // "used" cumule les excedents deja assignes ET les personnes prevues
-      // des invitations deja sur cette table, pour permettre de deplacer un
-      // excedent vers N'IMPORTE QUELLE table (pas seulement une reserve)
-      // sans jamais l'afficher comme plus libre qu'elle ne l'est.
-      const usedByTable = new Map<string, number>();
-      (allAssignments || []).forEach((o: any) => {
-        usedByTable.set(o.reserve_table_id, (usedByTable.get(o.reserve_table_id) || 0) + o.nombre_personnes);
-      });
-      (allInvs || []).forEach((i: any) => {
-        if (!i.table_id) return;
-        usedByTable.set(i.table_id, (usedByTable.get(i.table_id) || 0) + i.nombre_prevu);
-      });
-
       const tables = (allTables as TableRow[]) || [];
-      const usages: ReserveUsage[] = tables.map((t) => {
-        const used = usedByTable.get(t.id) || 0;
-        return { table: t, used, available: t.capacity - used };
-      });
+      const usages = computeTableCapacities(
+        tables,
+        (allInvs as InvitationRow[]) || [],
+        (allAssignments as OverflowAssignmentRow[]) || []
+      );
 
       setCurrentTable(tables.find((t) => t.id === assign.reserve_table_id) || null);
       setReserveUsages(usages);
@@ -211,7 +194,7 @@ export default function GererExcedentPage() {
             {autresTables.map((u) => {
               // "Complet" est un avertissement, pas un blocage : voir le
               // commentaire equivalent dans checkin/[invitationId]/page.tsx.
-              const full = u.available < assignment.nombre_personnes;
+              const full = u.libresEstimees < assignment.nombre_personnes;
               const selected = chosenTableId === u.table.id;
               return (
                 <button
@@ -231,7 +214,9 @@ export default function GererExcedentPage() {
                     {u.table.is_reserve ? ' (réserve)' : ''}
                   </span>
                   <span className={'text-sm ' + (full ? 'text-status-over' : '')}>
-                    {full ? 'COMPLET (prévu)' : u.used + ' / ' + u.table.capacity + ' places utilisées'}
+                    {full ? 'COMPLET (prévu)' : u.occupationEstimee + ' / ' + u.table.capacity + ' places'}
+                    {' · '}
+                    {u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant
                   </span>
                 </button>
               );
@@ -239,7 +224,7 @@ export default function GererExcedentPage() {
           </div>
           {chosenTableId &&
             autresTables.find((u) => u.table.id === chosenTableId) &&
-            autresTables.find((u) => u.table.id === chosenTableId)!.available < assignment.nombre_personnes && (
+            autresTables.find((u) => u.table.id === chosenTableId)!.libresEstimees < assignment.nombre_personnes && (
               <p className="mt-2 text-sm text-status-over">
                 ⚠️ Cette table affiche complet d'après les personnes prévues. Ne confirmez que si vous savez que
                 des places seront réellement libres (invités prévus absents).
@@ -265,3 +250,4 @@ export default function GererExcedentPage() {
     </div>
   );
 }
+
