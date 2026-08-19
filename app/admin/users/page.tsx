@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TopBar } from '@/components/TopBar';
-import { UserRow } from '@/lib/types';
+import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 
 const inputClass =
   'w-full rounded-xl2 border-2 border-gold-400/25 bg-night-800 px-3 py-2.5 text-cream placeholder:text-cream/30 focus:border-gold-400 focus:outline-none';
@@ -10,7 +10,7 @@ const inputClass =
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [nomAffichage, setNomAffichage] = useState('');
-  const [role, setRole] = useState<'admin' | 'agent_checkin' | 'placeur'>('agent_checkin');
+  const [role, setRole] = useState<Role>('agent_checkin');
   const [pin, setPin] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -123,8 +123,10 @@ export default function UsersAdminPage() {
             value={role}
             onChange={(e) => setRole(e.target.value as any)}
           >
-            <option value="agent_checkin">Agent check-in</option>
-            <option value="placeur">Placeur</option>
+            <option value="agent_checkin">Agent scan (scan uniquement)</option>
+            <option value="placeur">Agent placeur (scan + modification tables)</option>
+            <option value="directeur">Directeur de festin (accès complet, hors admin)</option>
+            <option value="visibilite">Visibilité (lecture seule)</option>
             <option value="admin">Admin</option>
           </select>
 
@@ -170,7 +172,7 @@ export default function UsersAdminPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-cream">{u.nom_affichage}</p>
-                  <p className="text-sm text-cream/50">{u.role}</p>
+                  <p className="text-sm text-cream/50">{ROLE_LABELS[u.role] || u.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -245,3 +247,4 @@ export default function UsersAdminPage() {
     </div>
   );
 }
+

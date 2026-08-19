@@ -7,6 +7,7 @@ import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { restants } from '@/lib/statusLogic';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -36,6 +37,8 @@ function extractPrenoms(notes: string | null): string | null {
 export default function TablePage() {
   const { tableId } = useParams<{ tableId: string }>();
   const router = useRouter();
+  const role = useSessionRole();
+  const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   // Excedents assignes a CETTE table (venant d'un autre groupe/table) : sans
@@ -173,7 +176,7 @@ export default function TablePage() {
           const prenoms = extractPrenoms(inv.notes);
           return (
             <li key={inv.id} className="flex items-center gap-1">
-              <button
+              {canModify && <button
                 className="flex min-w-0 flex-1 items-center justify-between gap-3 py-4 text-left"
                 onClick={() => router.push('/checkin/' + inv.id)}
               >
@@ -186,7 +189,7 @@ export default function TablePage() {
                   </p>
                 </div>
                 <StatusBadge statut={inv.statut} />
-              </button>
+              </button>}
               <button
                 type="button"
                 aria-label="Déplacer vers une autre table"
@@ -199,7 +202,7 @@ export default function TablePage() {
           );
         })}
 
-        {overflow.map((o) => (
+        {overflow.map((o) => canModify ? (
           <li key={o.id}>
             <button
               className="flex w-full items-center justify-between gap-3 py-4 text-left active:scale-[0.98] transition-transform"
@@ -214,9 +217,15 @@ export default function TablePage() {
               <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
             </button>
           </li>
+        ) : (
+          <li key={o.id} className="flex items-center justify-between gap-3 py-4">
+            <p className="truncate font-medium text-cream/80">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
+            <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
+          </li>
         ))}
       </ul>
     </div>
   );
 }
+
 

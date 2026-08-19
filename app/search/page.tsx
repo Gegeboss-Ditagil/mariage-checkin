@@ -7,6 +7,7 @@ import { InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { PHONE_COUNTRIES } from '@/lib/countries';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 interface Result extends InvitationRow {
   table?: TableRow | null;
@@ -49,6 +50,8 @@ export default function SearchPage() {
 
 function SearchInner() {
   const router = useRouter();
+  const role = useSessionRole();
+  const readOnly = role === 'visibilite';
   const params = useSearchParams();
   const modeParam = params.get('mode');
   const initialMode: Mode = modeParam === 'telephone' || modeParam === 'email' ? modeParam : 'nom';
@@ -310,7 +313,8 @@ function SearchInner() {
                 <li key={r.id}>
                   <button
                     className="flex w-full items-center justify-between gap-3 py-4 text-left"
-                    onClick={() => router.push('/checkin/' + r.id)}
+                    disabled={readOnly}
+                    onClick={() => !readOnly && router.push('/checkin/' + r.id)}
                   >
                     <div className="min-w-0">
                       <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
@@ -331,4 +335,5 @@ function SearchInner() {
     </div>
   );
 }
+
 

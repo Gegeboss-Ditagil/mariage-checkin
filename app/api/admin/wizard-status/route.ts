@@ -44,6 +44,8 @@ export async function GET() {
 
   const agents = (users || []).filter((u) => u.role === 'agent_checkin' && u.active).length;
   const placeurs = (users || []).filter((u) => u.role === 'placeur' && u.active).length;
+  const directeurs = (users || []).filter((u) => u.role === 'directeur' && u.active).length;
+  const visibilite = (users || []).filter((u) => u.role === 'visibilite' && u.active).length;
   const admins = (users || []).filter((u) => u.role === 'admin' && u.active).length;
 
   const qrManquants = Math.max((tables || []).length - (qrCount || 0), 0);
@@ -63,7 +65,10 @@ export async function GET() {
       qrManquants,
       agents,
       placeurs,
+      directeurs,
+      visibilite,
       admins,
     },
   });
 }
+

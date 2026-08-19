@@ -52,7 +52,12 @@ function LoginForm() {
         return;
       }
       const next = params.get('next');
-      const fallback = data.user.role === 'placeur' ? '/placement' : '/scan';
+      const fallback =
+        data.user.role === 'placeur' || data.user.role === 'directeur'
+          ? '/placement'
+          : data.user.role === 'visibilite'
+          ? '/dashboard'
+          : '/scan';
       setNextHref(next || fallback);
       setWelcomeName(data.user.nom_complet || data.user.nom_affichage);
     } catch {
@@ -140,3 +145,4 @@ function LoginForm() {
     </div>
   );
 }
+
