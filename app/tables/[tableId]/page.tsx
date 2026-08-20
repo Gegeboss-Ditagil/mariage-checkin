@@ -47,7 +47,11 @@ function TableDetailInner() {
   const searchParams = useSearchParams();
   const [movedNotice, setMovedNotice] = useState(searchParams.get('deplace') === '1');
   const role = useSessionRole();
+  // La consultation/check-in et le deplacement sont deux permissions
+  // distinctes : agent_checkin doit voir et ouvrir les invitations, mais la
+  // fleche de deplacement reste reservee a admin/directeur/placeur.
   const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
+  const canCheckin = canModify || role === 'agent_checkin';
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
@@ -181,27 +185,42 @@ function TableDetailInner() {
             const prenoms = extractPrenoms(inv.notes);
             return (
               <li key={inv.id} className="flex items-center gap-1">
-                {canModify && <button
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
-                  onClick={() => router.push('/checkin/' + inv.id)}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{inv.nom_affichage}</p>
-                    {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                {canCheckin ? (
+                  <button
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
+                    onClick={() => router.push('/checkin/' + inv.id)}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{inv.nom_affichage}</p>
+                      {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                    </div>
+                    <span className="flex shrink-0 items-center gap-2 text-sm">
+                      {inv.nombre_arrive}/{inv.nombre_prevu}
+                      <StatusBadge statut={inv.statut} />
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{inv.nom_affichage}</p>
+                      {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                    </div>
+                    <span className="flex shrink-0 items-center gap-2 text-sm">
+                      {inv.nombre_arrive}/{inv.nombre_prevu}
+                      <StatusBadge statut={inv.statut} />
+                    </span>
                   </div>
-                  <span className="flex shrink-0 items-center gap-2 text-sm">
-                    {inv.nombre_arrive}/{inv.nombre_prevu}
-                    <StatusBadge statut={inv.statut} />
-                  </span>
-                </button>}
-                <button
-                  type="button"
-                  aria-label="Déplacer vers une autre table"
-                  onClick={() => router.push('/tables/move/' + inv.id)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
-                >
-                  ⇄
-                </button>
+                )}
+                {canModify && (
+                  <button
+                    type="button"
+                    aria-label="Déplacer vers une autre table"
+                    onClick={() => router.push('/tables/move/' + inv.id)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
+                  >
+                    ⇄
+                  </button>
+                )}
               </li>
             );
           })}
