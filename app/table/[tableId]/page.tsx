@@ -43,7 +43,7 @@ export default function TablePage() {
   // check-in. Seuls admin/directeur/placeur peuvent afficher l'action de
   // deplacement. Garder ces deux permissions separees evite le bug ou un
   // agent scan ne voyait que les fleches, sans aucun nom sur la table.
-  const canModify = hasCapability(role, 'moveGuests');
+  const canMoveGuests = hasCapability(role, 'moveGuests');
   const canCheckin = hasCapability(role, 'checkin');
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
@@ -210,7 +210,7 @@ export default function TablePage() {
                   <StatusBadge statut={inv.statut} />
                 </div>
               )}
-              {canModify && (
+              {canMoveGuests && (
                 <button
                   type="button"
                   aria-label="Déplacer vers une autre table"
@@ -224,7 +224,7 @@ export default function TablePage() {
           );
         })}
 
-        {overflow.map((o) => canModify ? (
+        {overflow.map((o) => canMoveGuests ? (
           <li key={o.id}>
             <button
               className="flex w-full items-center justify-between gap-3 py-4 text-left active:scale-[0.98] transition-transform"
