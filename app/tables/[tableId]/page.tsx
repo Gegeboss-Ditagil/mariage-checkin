@@ -7,6 +7,7 @@ import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -50,8 +51,8 @@ function TableDetailInner() {
   // La consultation/check-in et le deplacement sont deux permissions
   // distinctes : agent_checkin doit voir et ouvrir les invitations, mais la
   // fleche de deplacement reste reservee a admin/directeur/placeur.
-  const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
-  const canCheckin = canModify || role === 'agent_checkin';
+  const canModify = hasCapability(role, 'moveGuests');
+  const canCheckin = hasCapability(role, 'checkin');
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);

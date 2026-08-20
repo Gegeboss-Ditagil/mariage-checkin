@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { restants } from '@/lib/statusLogic';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -42,8 +43,8 @@ export default function TablePage() {
   // check-in. Seuls admin/directeur/placeur peuvent afficher l'action de
   // deplacement. Garder ces deux permissions separees evite le bug ou un
   // agent scan ne voyait que les fleches, sans aucun nom sur la table.
-  const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
-  const canCheckin = canModify || role === 'agent_checkin';
+  const canModify = hasCapability(role, 'moveGuests');
+  const canCheckin = hasCapability(role, 'checkin');
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   // Excedents assignes a CETTE table (venant d'un autre groupe/table) : sans

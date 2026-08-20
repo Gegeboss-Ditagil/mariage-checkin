@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { PHONE_COUNTRIES } from '@/lib/countries';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 
 interface Result extends InvitationRow {
   table?: TableRow | null;
@@ -51,7 +52,7 @@ export default function SearchPage() {
 function SearchInner() {
   const router = useRouter();
   const role = useSessionRole();
-  const readOnly = role === 'visibilite';
+  const readOnly = !hasCapability(role, 'checkin');
   const params = useSearchParams();
   const modeParam = params.get('mode');
   const initialMode: Mode = modeParam === 'telephone' || modeParam === 'email' ? modeParam : 'nom';

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import { getSessionUser } from '@/lib/session';
 import { buildExport, ExportType } from '@/lib/exports';
+import { hasCapability } from '@/lib/permissions';
 
 const VALID_TYPES: ExportType[] = ['arrives', 'absents', 'partiels', 'supplementaires', 'repartition', 'reserve'];
 
@@ -16,7 +17,7 @@ function toCsv(headers: string[], rows: (string | number)[][]): string {
 
 export async function GET(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || (user.role !== 'admin' && user.role !== 'placeur')) {
+  if (!user || !hasCapability(user.role, 'exportData')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
