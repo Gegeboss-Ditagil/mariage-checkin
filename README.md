@@ -180,7 +180,7 @@ Tout ça dépend malgré tout d'internet : vérifiez la qualité du WiFi sur pla
 1. Chaque hôte/hôtesse se connecte sur son téléphone (nom + PIN).
 2. Scan du QR sur la table, ou recherche par nom / table / téléphone / email.
 3. Coche les personnes présentes → décompte mis à jour en direct partout.
-4. En cas de surplus à une table, assignation à une autre table depuis l'écran de check-in ou `/placement` — retirable ou déplaçable ensuite (rôles admin/directeur/placeur uniquement).
+4. En cas de surplus à une table, assignation depuis l'écran de check-in — retirable ou déplaçable ensuite par les rôles admin/directeur/placeur. L'écran `/placement` sert uniquement à retrouver rapidement un numéro de table.
 5. En cas de réorganisation, une invitation entière peut être déplacée vers une autre table depuis l'écran de la table (bouton ⇄, visible pour les rôles qui peuvent modifier).
 6. L'admin/directeur suit tout depuis `/dashboard` (avec jauges de remplissage) et peut exporter les listes (arrivés, absents, partiels, supplémentaires, répartition, réserve) en CSV/XLSX depuis `/admin/exports`.
 

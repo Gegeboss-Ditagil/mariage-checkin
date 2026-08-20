@@ -17,9 +17,9 @@ const STAFF_ITEMS = [
   { href: '/dashboard', label: 'Bord', icon: '◔' },
 ];
 
-// agent_checkin (scan-only) : meme barre que le staff complet -- il garde le
-// scan/recherche/dashboard/tables -- mais les boutons de modification restent
-// caches dans les pages elles-memes (voir tables/[tableId], table/[tableId]).
+// agent_checkin (accueil) : meme barre que le staff complet -- il garde le
+// scan/recherche/dashboard/tables et peut confirmer les arrivees. Les actions
+// de deplacement restent masquees et bloquees par la matrice de permissions.
 const SCAN_ONLY_ITEMS = STAFF_ITEMS;
 
 // visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.

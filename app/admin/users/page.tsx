@@ -123,7 +123,7 @@ export default function UsersAdminPage() {
             value={role}
             onChange={(e) => setRole(e.target.value as any)}
           >
-            <option value="agent_checkin">Agent scan (scan uniquement)</option>
+            <option value="agent_checkin">Agent accueil (scan, recherche et check-in)</option>
             <option value="placeur">Agent placeur (scan + modification tables)</option>
             <option value="directeur">Directeur de festin (accès complet, hors admin)</option>
             <option value="visibilite">Visibilité (lecture seule)</option>

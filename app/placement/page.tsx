@@ -19,10 +19,10 @@ function normalize(s: string): string {
 }
 
 export default function PlacementPage() {
-  // /placement est l'ecran d'atterrissage apres connexion pour les roles
-  // directeur/placeur (voir app/login/page.tsx) -- sans BottomNav ici, ces
-  // roles n'avaient aucun moyen de rejoindre le tableau de bord depuis cet
-  // ecran (bug remonte : "je ne vois pas de bouton tableau de bord").
+  // /placement est un outil ponctuel pour afficher rapidement un gros numero
+  // de table apres un scan ou une recherche. Il n'est plus une destination
+  // apres connexion : directeur arrive sur /dashboard et placeur sur /scan.
+  // Il reste accessible depuis /tables pour les roles autorises.
   const role = useSessionRole();
   const [mode, setMode] = useState<'scan' | 'search'>('scan');
   const [query, setQuery] = useState('');

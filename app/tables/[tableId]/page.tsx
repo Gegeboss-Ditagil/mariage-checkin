@@ -51,7 +51,7 @@ function TableDetailInner() {
   // La consultation/check-in et le deplacement sont deux permissions
   // distinctes : agent_checkin doit voir et ouvrir les invitations, mais la
   // fleche de deplacement reste reservee a admin/directeur/placeur.
-  const canModify = hasCapability(role, 'moveGuests');
+  const canMoveGuests = hasCapability(role, 'moveGuests');
   const canCheckin = hasCapability(role, 'checkin');
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
@@ -212,7 +212,7 @@ function TableDetailInner() {
                     </span>
                   </div>
                 )}
-                {canModify && (
+                {canMoveGuests && (
                   <button
                     type="button"
                     aria-label="Déplacer vers une autre table"
@@ -225,7 +225,7 @@ function TableDetailInner() {
               </li>
             );
           })}
-          {overflow.map((o) => canModify ? (
+          {overflow.map((o) => canMoveGuests ? (
               <li key={o.id}>
                 <button
                   className="flex w-full items-center justify-between gap-3 py-3 text-left active:scale-[0.98] transition-transform"
