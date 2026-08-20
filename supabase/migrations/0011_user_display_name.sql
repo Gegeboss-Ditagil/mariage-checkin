@@ -8,7 +8,7 @@
 alter table users add column if not exists nom_complet text;
 
 update users set nom_complet = 'Gersom Mbidi' where nom_affichage = 'Dos';
-update users set nom_complet = 'Remi Landu' where nom_affichage = 'Remi Landu';
+update users set nom_complet = 'Remy Landu' where nom_affichage = 'Remy Landu';
 update users set nom_complet = 'Tuzola Saviera' where nom_affichage = 'Tuzola';
 update users set nom_complet = 'Nelly Dos Goncalves' where nom_affichage = 'Nelly Lukau';
 update users set nom_complet = 'Sem Landu' where nom_affichage = 'Sem Landu';

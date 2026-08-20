@@ -55,7 +55,7 @@ Comptes déjà créés dans la base réelle. Chaque personne a son propre nom + 
 
 | Nom | PIN |
 |---|---|
-| Remi | 1914 |
+| Remy | 1914 |
 | Tuzola | 2013 |
 | Sem Landu | 2015 |
 
