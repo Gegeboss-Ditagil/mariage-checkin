@@ -38,7 +38,12 @@ export default function TablePage() {
   const { tableId } = useParams<{ tableId: string }>();
   const router = useRouter();
   const role = useSessionRole();
+  // Tous les agents operationnels doivent voir les invitations et ouvrir le
+  // check-in. Seuls admin/directeur/placeur peuvent afficher l'action de
+  // deplacement. Garder ces deux permissions separees evite le bug ou un
+  // agent scan ne voyait que les fleches, sans aucun nom sur la table.
   const canModify = role === 'admin' || role === 'directeur' || role === 'placeur';
+  const canCheckin = canModify || role === 'agent_checkin';
   const [table, setTable] = useState<TableRow | null>(null);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   // Excedents assignes a CETTE table (venant d'un autre groupe/table) : sans
@@ -176,28 +181,44 @@ export default function TablePage() {
           const prenoms = extractPrenoms(inv.notes);
           return (
             <li key={inv.id} className="flex items-center gap-1">
-              {canModify && <button
-                className="flex min-w-0 flex-1 items-center justify-between gap-3 py-4 text-left"
-                onClick={() => router.push('/checkin/' + inv.id)}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
-                  {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
-                  <p className="text-sm text-black/50">
-                    {inv.nombre_arrive}/{inv.nombre_prevu} personnes
-                    {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
-                  </p>
+              {canCheckin ? (
+                <button
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3 py-4 text-left"
+                  onClick={() => router.push('/checkin/' + inv.id)}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
+                    {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                    <p className="text-sm text-black/50">
+                      {inv.nombre_arrive}/{inv.nombre_prevu} personnes
+                      {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
+                    </p>
+                  </div>
+                  <StatusBadge statut={inv.statut} />
+                </button>
+              ) : (
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3 py-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
+                    {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                    <p className="text-sm text-black/50">
+                      {inv.nombre_arrive}/{inv.nombre_prevu} personnes
+                      {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
+                    </p>
+                  </div>
+                  <StatusBadge statut={inv.statut} />
                 </div>
-                <StatusBadge statut={inv.statut} />
-              </button>}
-              <button
-                type="button"
-                aria-label="Déplacer vers une autre table"
-                onClick={() => router.push('/tables/move/' + inv.id)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
-              >
-                ⇄
-              </button>
+              )}
+              {canModify && (
+                <button
+                  type="button"
+                  aria-label="Déplacer vers une autre table"
+                  onClick={() => router.push('/tables/move/' + inv.id)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
+                >
+                  ⇄
+                </button>
+              )}
             </li>
           );
         })}
