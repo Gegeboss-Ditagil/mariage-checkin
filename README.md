@@ -10,6 +10,13 @@ fonctionne avec connexion requise pour valider une entrée.
 
 > **Documentation vivante :** les badges ci-dessus suivent automatiquement la branche `main` et son dernier commit. À chaque changement fonctionnel, le même commit doit aussi ajuster les sections concernées de ce README (rôles, parcours, données ou exploitation) afin que la documentation reste alignée avec l'application déployée.
 
+Documentation de référence pour les développeurs, QA et agents IA :
+
+- [`docs/BUSINESS_RULES.md`](docs/BUSINESS_RULES.md) : matrice officielle des cinq rôles et règles métier.
+- [`docs/QA_SCENARIOS.md`](docs/QA_SCENARIOS.md) : parcours à tester avant chaque push.
+- [`docs/DATA_AND_FORMS.md`](docs/DATA_AND_FORMS.md) : règles Supabase, Google Sheets, imports et formulaires.
+- [`CLAUDE.md`](CLAUDE.md) : ordre de lecture obligatoire pour Claude Code et les autres agents IA.
+
 423 invités / 200 invitations (foyers, familles, groupes) répartis sur 44 tables, déjà importés et placés dans la base réelle.
 
 ## 1. C'est quoi, concrètement
@@ -19,7 +26,7 @@ fonctionne avec connexion requise pour valider une entrée.
 - Les débordements (plus de monde que prévu à une table) sont assignés à n'importe quelle table (pas seulement les tables de réserve) — et peuvent être retirés ou déplacés vers une autre table à tout moment par les rôles qui peuvent modifier les tables.
 - N'importe quelle invitation (famille/groupe) peut être déplacée d'une table à une autre directement dans l'app, en cas de réorganisation avant ou pendant l'événement.
 - Une invitation peut être marquée "ne viendra pas" pour libérer ses places prévues dans les estimations de capacité (elle se démarque automatiquement si le groupe se présente quand même).
-- Recherche par nom, mais aussi par téléphone (avec sélecteur de pays) ou email, accessible via "Inviter sans code QR" — utile si quelqu'un n'a plus de batterie ou que son nom est mal orthographié.
+- Recherche par nom, mais aussi par téléphone (avec sélecteur de pays) ou email, accessible depuis le bouton « Rechercher un invité » — utile si quelqu'un n'a plus de batterie ou que son nom est mal orthographié.
 - Par défaut, tout est granulaire par invitation (foyer), pas par invité individuel — pour rester simple et rapide le jour J. Mais il est possible, groupe par groupe et seulement si besoin, de détailler la liste des membres d'une invitation pour retirer ou nommer une personne précise sans toucher au reste du groupe (voir section 7).
 - Tout se met à jour en temps réel entre les téléphones connectés : plusieurs agents peuvent travailler en même temps sur les mêmes tables sans se marcher dessus (voir section 8).
 

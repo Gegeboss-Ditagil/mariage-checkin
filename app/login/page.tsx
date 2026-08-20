@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GoldSeal, FlightPath, StarField } from '@/components/BrandMotif';
+import { landingPathForRole } from '@/lib/permissions';
+import { Role } from '@/lib/types';
 
 export default function LoginPage() {
   return (
@@ -57,8 +59,7 @@ function LoginForm() {
       // Agent scan) atterrit sur /scan -- son travail commence par scanner
       // ou chercher un invite, pas par consulter le tableau de bord (retour
       // arriere le 20/08/2026 : /dashboard ne convenait pas pour ce role).
-      const fallback =
-        data.user.role === 'directeur' || data.user.role === 'visibilite' ? '/dashboard' : '/scan';
+      const fallback = landingPathForRole(data.user.role as Role);
       setNextHref(next || fallback);
       setWelcomeName(data.user.nom_complet || data.user.nom_affichage);
     } catch {

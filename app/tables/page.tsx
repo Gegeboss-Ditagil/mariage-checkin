@@ -9,6 +9,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { CapacityGauge } from '@/components/CapacityGauge';
+import { hasCapability } from '@/lib/permissions';
 
 type Tri = 'numero' | 'libres';
 
@@ -135,7 +136,7 @@ export default function TablesPage() {
     );
   }
 
-  const canAddInvitation = role === 'admin' || role === 'directeur' || role === 'placeur';
+  const canAddInvitation = hasCapability(role, 'addInvitation');
 
   return (
     <div className="flex min-h-dvh flex-col">

@@ -10,6 +10,7 @@ import { proposeReserveTable } from '@/lib/overflow';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { useOnline } from '@/hooks/useOnline';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
@@ -19,7 +20,7 @@ export default function CheckinPage() {
 
   const online = useOnline();
   const role = useSessionRole();
-  const canReorganizeExcedent = role === 'admin' || role === 'directeur' || role === 'placeur';
+  const canReorganizeExcedent = hasCapability(role, 'manageOverflow');
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   // Valeur affichee par le compteur +/- : represente directement le nombre
