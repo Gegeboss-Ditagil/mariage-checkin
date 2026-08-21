@@ -1,12 +1,16 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même commit.
+**Version documentaire : 1.1.0**  
+**Dernière mise à jour : 2026-08-21**
+
+Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
 ## Plan de table et placement With Joy
 
 - `/plan-table` est une vue de consultation accessible à tous les rôles autorisés à consulter les tables.
 - Un label With Joy `F0xx` ou `T0xx` produit un placement `confirmee`; un placement calculé reste `provisoire` ou `provisoire_reserve`.
-- Les 37 tables non réservées représentent 370 places officielles. Les tables 38 à 40 servent au surplus et aux imprévus.
+- Les tables 1 à 40 sont normales et représentent 400 places officielles.
+- La table 41 est l'unique table de réserve; la capacité absolue est donc 410 places.
 - `cote`, `tags` et `placement_status` expliquent le placement et ne modifient jamais les totaux de check-in.
 - Toute réimportation doit suivre `docs/DATA_CHANGE_INSTRUCTIONS.md` et obtenir une autorisation explicite avant écriture en production.
 
@@ -38,6 +42,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - Les opérations concurrentes doivent être atomiques, historisées et synchronisées en temps réel.
 - Une table affichée complète exige une confirmation explicite avant affectation exceptionnelle.
 - Les exports, imports, comptes, QR et configuration sont administratifs.
+- Une session applicative expire au plus tard après 12 h.
+- Une session appartenant à un ancien déploiement est invalide et doit retourner au login.
 
 ## Données et capacité
 
@@ -46,4 +52,3 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - Déplacer une invitation conserve ses arrivées, membres et historique.
 - Un débordement ne doit jamais être assigné deux fois.
 - Capacité physique, places libres maintenant et occupation estimée sont des mesures différentes.
-

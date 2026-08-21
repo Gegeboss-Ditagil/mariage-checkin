@@ -1,6 +1,9 @@
 # Scénarios QA obligatoires
 
-Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires ou aux données.
+**Version documentaire : 1.1.0**  
+**Dernière mise à jour : 2026-08-21**
+
+Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données.
 
 ## Pour chacun des cinq rôles
 
@@ -15,6 +18,22 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 9. Affectation puis réorganisation d'un débordement selon les permissions.
 10. Déplacement d'une invitation selon les permissions.
 11. Dashboard, historique, exceptions et export selon les permissions.
+
+## Session, déploiement et PWA
+
+- Une session valide reste utilisable avant 12 h.
+- Une session expirée est renvoyée vers `/login` et ses cookies auxiliaires sont supprimés.
+- Après un nouveau déploiement, une session issue de l'ancien déploiement est invalidée à la prochaine requête protégée.
+- Une erreur client de version/chunk doit afficher la récupération puis retourner au login, pas une page blanche durable.
+- Le service worker ne doit jamais servir `/_next/*` depuis un ancien cache.
+- Vérifier qu'une PWA installée sur iPhone/Android récupère la nouvelle version après redéploiement.
+
+## Capacité v1.1.0
+
+- 41 tables présentes : 1-40 normales, 41 réserve.
+- Capacité officielle affichée : 400.
+- Capacité absolue avec réserve : 410.
+- Les tables 38-40 ne doivent plus être marquées réserve.
 
 ## Concurrence et réseau
 
@@ -31,5 +50,12 @@ npm run test:roles
 npx tsc --noEmit
 npm run build
 ```
+
+## Contrôle de version avant merge
+
+- Vérifier `package.json`.
+- Vérifier `CHANGELOG.md`.
+- Vérifier que tous les documents modifiés affichent la version courante.
+- La PR doit indiquer `Version: X.Y.Z → A.B.C` ou `Version inchangée: X.Y.Z`.
 
 Ne jamais effectuer de test d'écriture sur les vraies données sans mode test ou autorisation explicite.
