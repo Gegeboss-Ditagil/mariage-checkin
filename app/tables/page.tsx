@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
@@ -10,6 +10,8 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { CapacityGauge } from '@/components/CapacityGauge';
 import { hasCapability } from '@/lib/permissions';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
 
 type Tri = 'numero' | 'libres';
 
@@ -30,22 +32,27 @@ export default function TablesPage() {
   // "ou puis-je placer un excedent maintenant ?" sans ouvrir chaque table
   // une par une.
   const [tri, setTri] = useState<Tri>('numero');
+  const activeRef = useRef(true);
+
+  // `load` sert au chargement initial, au temps réel (websocket) et au
+  // rafraîchissement manuel (tirer vers le bas / retour sur l'écran) —
+  // un seul et même code partout.
+  const load = useCallback(async () => {
+    const supabase = createClient();
+    const [{ data: t }, { data: i }, { data: o }] = await Promise.all([
+      supabase.from('tables').select('*').order('number'),
+      supabase.from('invitations').select('*'),
+      supabase.from('overflow_assignments').select('*'),
+    ]);
+    if (!activeRef.current) return;
+    setTables((t as TableRow[]) || []);
+    setInvitations((i as InvitationRow[]) || []);
+    setOverflow((o as OverflowAssignmentRow[]) || []);
+  }, []);
 
   useEffect(() => {
+    activeRef.current = true;
     const supabase = createClient();
-    let active = true;
-
-    async function load() {
-      const [{ data: t }, { data: i }, { data: o }] = await Promise.all([
-        supabase.from('tables').select('*').order('number'),
-        supabase.from('invitations').select('*'),
-        supabase.from('overflow_assignments').select('*'),
-      ]);
-      if (!active) return;
-      setTables((t as TableRow[]) || []);
-      setInvitations((i as InvitationRow[]) || []);
-      setOverflow((o as OverflowAssignmentRow[]) || []);
-    }
 
     load();
     const channel = supabase
@@ -55,10 +62,15 @@ export default function TablesPage() {
       .subscribe();
 
     return () => {
-      active = false;
+      activeRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [load]);
+
+  // Filet de sécurité si le websocket temps réel s'est endormi (téléphone
+  // verrouillé, app en arrière-plan) : tirer vers le bas, ou simplement
+  // revenir sur cet écran, relance un refetch rapide.
+  const { pulling, pullDistance, refreshing, pullThreshold } = usePullToRefresh(load);
 
   const capacities = useMemo(
     () => computeTableCapacities(tables, invitations, overflow),
@@ -153,6 +165,13 @@ export default function TablesPage() {
             </Link>
           ) : undefined
         }
+      />
+
+      <PullToRefreshIndicator
+        pulling={pulling}
+        pullDistance={pullDistance}
+        refreshing={refreshing}
+        pullThreshold={pullThreshold}
       />
 
       <div className="flex-1 px-4 py-4">
