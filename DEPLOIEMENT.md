@@ -53,4 +53,5 @@ Voir README.md section 2. **Recommandé avant le jour J** : dans `/admin/users`,
 ## 7. Coûts
 
 - **Vercel** : gratuit sur le plan Hobby pour ce volume de trafic.
-- **Supabase** : gratuit sur le plan Free pour ce volume de données (423 personnes, quelques centaines de lignes) — largement suffisant.
+- **Supabase** : gratuit sur le plan Free pour ce volume de données (393 personnes actuellement, quelques centaines de lignes) — largement suffisant.
+

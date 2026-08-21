@@ -42,10 +42,10 @@ L'agent doit obligatoirement :
 
 Les chiffres peuvent évoluer pendant le nettoyage de la liste, mais le dernier état documenté était :
 
-- 423 personnes prévues ;
-- 200 invitations ou groupes ;
-- 44 tables ;
-- objectif final d'environ 400 personnes.
+- 393 personnes prévues ;
+- 195 invitations ou groupes ;
+- 40 tables, dont 3 tables de réserve ;
+- objectif actuel de 370 places officielles.
 
 Ces chiffres ne doivent jamais être codés comme des contraintes permanentes. Ils servent uniquement à détecter une variation inattendue.
 
@@ -227,4 +227,5 @@ Ne jamais :
 - partager les clés Supabase ;
 - utiliser les vrais invités pour des tests d'écriture non coordonnés ;
 - fusionner une PR contenant une migration sans vérification et autorisation explicites.
+
 

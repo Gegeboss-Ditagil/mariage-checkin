@@ -2,6 +2,14 @@
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même commit.
 
+## Plan de table et placement With Joy
+
+- `/plan-table` est une vue de consultation accessible à tous les rôles autorisés à consulter les tables.
+- Un label With Joy `F0xx` ou `T0xx` produit un placement `confirmee`; un placement calculé reste `provisoire` ou `provisoire_reserve`.
+- Les 37 tables non réservées représentent 370 places officielles. Les tables 38 à 40 servent au surplus et aux imprévus.
+- `cote`, `tags` et `placement_status` expliquent le placement et ne modifient jamais les totaux de check-in.
+- Toute réimportation doit suivre `docs/DATA_CHANGE_INSTRUCTIONS.md` et obtenir une autorisation explicite avant écriture en production.
+
 ## Rôles
 
 | Capacité | Admin | Directeur | Placeur | Agent scan | Visibilité |
@@ -38,3 +46,4 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - Déplacer une invitation conserve ses arrivées, membres et historique.
 - Un débordement ne doit jamais être assigné deux fois.
 - Capacité physique, places libres maintenant et occupation estimée sont des mesures différentes.
+

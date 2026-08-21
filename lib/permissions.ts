@@ -53,15 +53,15 @@ export function landingPathForRole(role: Role): string {
 
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/checkin', '/search', '/dashboard', '/tables',
-  '/exceptions', '/history', '/placement', '/api',
+  '/plan-table', '/exceptions', '/history', '/placement', '/api',
 ];
 
 const SCAN_STAFF_PREFIXES = [
   '/scan', '/table', '/checkin', '/search', '/dashboard', '/tables',
-  '/exceptions', '/history', '/api',
+  '/plan-table', '/exceptions', '/history', '/api',
 ];
 
-const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/search', '/api'];
+const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/search', '/api'];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(prefix + '/');
@@ -96,3 +96,4 @@ export function canAccessPath(role: Role, pathname: string): boolean {
 
   return true;
 }
+
