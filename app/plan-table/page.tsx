@@ -15,6 +15,7 @@ import {
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
@@ -132,7 +133,10 @@ export default function PlanTablePage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title="Plan de table" backHref="/tables" />
+      <TopBar
+        title="Plan de table"
+        backHref={role && hasCapability(role, 'scan') ? '/scan' : '/tables'}
+      />
 
       {/* Indicateur de tire-pour-rafraichir */}
       <div

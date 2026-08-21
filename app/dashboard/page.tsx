@@ -8,6 +8,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { CapacityGauge } from '@/components/CapacityGauge';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
 
@@ -89,7 +90,10 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title="Tableau de bord" />
+      <TopBar
+        title="Tableau de bord"
+        backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
+      />
 
       <PullToRefreshIndicator
         pulling={pulling}
@@ -228,4 +232,5 @@ function MiniStat({
 
   return <div className="flex items-center justify-between rounded-xl2 bg-white p-3 shadow-card">{content}</div>;
 }
+
 
