@@ -23,10 +23,11 @@ type Filtre = 'toutes' | PlacementStatus;
 
 const PULL_THRESHOLD = 70;
 
-// Cible actuelle : 40 tables max (37 officielles + 3 réserve), donc 370 invités
-// "officiels" — le reste (jusqu'à ce qu'on coupe la liste au prochain import)
-// passe dans les 3 tables de réserve, clairement marquées "excédentaire".
-const CAPACITE_OFFICIELLE = 370;
+// Cible actuelle (mise à jour le 21/08/2026) : 41 tables max (40 officielles
+// + 1 seule réserve), donc 400 invités "officiels" — le reste (jusqu'à ce
+// qu'on coupe la liste au prochain import) passe dans l'unique table de
+// réserve, clairement marquée "excédentaire".
+const CAPACITE_OFFICIELLE = 400;
 
 export default function PlanTablePage() {
   const role = useSessionRole();
@@ -184,7 +185,7 @@ export default function PlanTablePage() {
               </div>
             </div>
 
-            {/* Capacite officielle : 37 tables x 10 = 370. Au-dela -> reserve/excedentaire. */}
+            {/* Capacite officielle : 40 tables x 10 = 400. Au-dela -> reserve/excedentaire. */}
             <div
               className={clsx(
                 'card mb-5 flex items-center justify-between gap-3 py-3',
@@ -193,12 +194,12 @@ export default function PlanTablePage() {
             >
               <div>
                 <p className="text-sm font-semibold">
-                  {stats.officielles} / {CAPACITE_OFFICIELLE} places officielles (37 tables)
+                  {stats.officielles} / {CAPACITE_OFFICIELLE} places officielles (40 tables)
                 </p>
                 <p className="text-[11px] text-black/50">
                   {stats.excedentaire > 0
                     ? stats.excedentaire + ' personnes excédentaires actuellement en réserve — à couper au prochain import CSV'
-                    : 'Sous la barre des 370, la réserve reste libre pour le jour J'}
+                    : 'Sous la barre des 400, la réserve reste libre pour le jour J'}
                 </p>
               </div>
               {stats.officielles > CAPACITE_OFFICIELLE && (
@@ -250,7 +251,7 @@ export default function PlanTablePage() {
             </div>
 
             <p className="mb-2 text-sm font-semibold text-black/50">
-              Tables de réserve <span className="font-normal text-black/40">— excédentaire au-delà des 370</span>
+              Tables de réserve <span className="font-normal text-black/40">— excédentaire au-delà des 400</span>
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {reserve.map((t) => (
@@ -347,4 +348,3 @@ function TableCard({
     </Link>
   );
 }
-
