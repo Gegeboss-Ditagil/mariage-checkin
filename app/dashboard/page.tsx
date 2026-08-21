@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
@@ -8,6 +8,8 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { CapacityGauge } from '@/components/CapacityGauge';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
 
 export default function DashboardPage() {
   const role = useSessionRole();
@@ -15,22 +17,28 @@ export default function DashboardPage() {
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
+  const activeRef = useRef(true);
+
+  // `load` sert à la fois au chargement initial, au temps réel (websocket)
+  // et au rafraîchissement manuel (tirer vers le bas / retour sur l'écran)
+  // — un seul et même code, pour ne jamais afficher deux logiques
+  // différentes qui pourraient diverger.
+  const load = useCallback(async () => {
+    const supabase = createClient();
+    const [{ data: invs }, { data: tbls }, { data: ov }] = await Promise.all([
+      supabase.from('invitations').select('*'),
+      supabase.from('tables').select('*').order('number'),
+      supabase.from('overflow_assignments').select('*'),
+    ]);
+    if (!activeRef.current) return;
+    setInvitations((invs as InvitationRow[]) || []);
+    setTables((tbls as TableRow[]) || []);
+    setOverflow((ov as OverflowAssignmentRow[]) || []);
+  }, []);
 
   useEffect(() => {
+    activeRef.current = true;
     const supabase = createClient();
-    let active = true;
-
-    async function load() {
-      const [{ data: invs }, { data: tbls }, { data: ov }] = await Promise.all([
-        supabase.from('invitations').select('*'),
-        supabase.from('tables').select('*').order('number'),
-        supabase.from('overflow_assignments').select('*'),
-      ]);
-      if (!active) return;
-      setInvitations((invs as InvitationRow[]) || []);
-      setTables((tbls as TableRow[]) || []);
-      setOverflow((ov as OverflowAssignmentRow[]) || []);
-    }
 
     load();
 
@@ -41,10 +49,15 @@ export default function DashboardPage() {
       .subscribe();
 
     return () => {
-      active = false;
+      activeRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [load]);
+
+  // Filet de sécurité si le websocket temps réel s'est endormi (téléphone
+  // verrouillé, app en arrière-plan) : tirer vers le bas, ou simplement
+  // revenir sur cet écran, relance un refetch rapide.
+  const { pulling, pullDistance, refreshing, pullThreshold } = usePullToRefresh(load);
 
   const stats = useMemo(() => {
     const attendus = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
@@ -77,6 +90,13 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar title="Tableau de bord" />
+
+      <PullToRefreshIndicator
+        pulling={pulling}
+        pullDistance={pullDistance}
+        refreshing={refreshing}
+        pullThreshold={pullThreshold}
+      />
 
       <div className="flex-1 space-y-6 px-4 py-4">
         <div className="card">

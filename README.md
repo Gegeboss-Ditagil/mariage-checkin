@@ -29,6 +29,7 @@ Documentation de référence pour les développeurs, QA et agents IA :
 - Recherche par nom, mais aussi par téléphone (avec sélecteur de pays) ou email, accessible depuis le bouton « Rechercher un invité » — utile si quelqu'un n'a plus de batterie ou que son nom est mal orthographié.
 - Par défaut, tout est granulaire par invitation (foyer), pas par invité individuel — pour rester simple et rapide le jour J. Mais il est possible, groupe par groupe et seulement si besoin, de détailler la liste des membres d'une invitation pour retirer ou nommer une personne précise sans toucher au reste du groupe (voir section 7).
 - Tout se met à jour en temps réel entre les téléphones connectés : plusieurs agents peuvent travailler en même temps sur les mêmes tables sans se marcher dessus (voir section 8).
+- Sur le tableau de bord et la liste des tables, tirer l'écran vers le bas relance un rafraîchissement léger. Les données sont aussi relues automatiquement quand l'application revient au premier plan.
 
 ## 2. Rôles
 
