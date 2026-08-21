@@ -155,20 +155,15 @@ export default function TablesPage() {
       <TopBar
         title="Tables"
         right={
-          <div className="flex items-center gap-2">
-            <Link href="/plan-table" className="shrink-0 rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white">
-              Plan de table
-            </Link>
-            {canAddInvitation && (
-            <Link
-              href="/tables/add"
+          canAddInvitation ? (
+              <Link
+                href="/tables/add"
               aria-label="Ajouter un invité"
               className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-gold-400/40 bg-gold-400/10 text-xl font-bold leading-none text-gold-600"
             >
-              +
-            </Link>
-            )}
-          </div>
+                +
+              </Link>
+          ) : undefined
         }
       />
 
@@ -204,13 +199,10 @@ export default function TablesPage() {
           Estimation si tous les invités encore attendus se présentent : {totaux.libresEstimees} places libres.
         </p>
 
-        {/* Le bouton "Placement" a ete retire de la barre de navigation du bas
-            (doublon avec Scan + Recherche), mais son ecran (scan QR ou
-            recherche -> gros numero de table affiche, pratique pour
-            renseigner un invite rapidement) reste entierement disponible
-            ici, depuis la section Tables. */}
-        <Link href="/placement" className="btn-secondary mb-4 block w-full text-center">
-          Trouver la table d'un invité (scan QR ou recherche)
+        {/* Le plan de table est volontairement présenté comme une action
+            principale pleine largeur, plutôt que dans la barre du titre. */}
+        <Link href="/plan-table" className="btn-secondary mb-4 block w-full text-center">
+          Plan de table
         </Link>
 
         <input

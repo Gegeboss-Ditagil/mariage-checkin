@@ -30,6 +30,7 @@ Documentation de référence pour les développeurs, QA et agents IA :
 - Par défaut, tout est granulaire par invitation (foyer), pas par invité individuel — pour rester simple et rapide le jour J. Mais il est possible, groupe par groupe et seulement si besoin, de détailler la liste des membres d'une invitation pour retirer ou nommer une personne précise sans toucher au reste du groupe (voir section 7).
 - Tout se met à jour en temps réel entre les téléphones connectés : plusieurs agents peuvent travailler en même temps sur les mêmes tables sans se marcher dessus (voir section 8).
 - Sur le tableau de bord et la liste des tables, tirer l'écran vers le bas relance un rafraîchissement léger. Les données sont aussi relues automatiquement quand l'application revient au premier plan.
+- Le bouton « Plan de table » est présenté dans l'écran Tables. Les rôles autorisés à scanner peuvent revenir directement au Scan depuis le plan de table et le tableau de bord; le rôle Visibilité reste dans son parcours en lecture seule.
 
 ## 2. Rôles
 
