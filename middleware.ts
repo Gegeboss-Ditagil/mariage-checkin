@@ -15,6 +15,21 @@ function isPublic(pathname: string) {
   );
 }
 
+function redirectToLogin(req: NextRequest, pathname: string) {
+  const loginUrl = new URL('/login', req.url);
+  loginUrl.searchParams.set('next', pathname);
+  const res = NextResponse.redirect(loginUrl);
+
+  // Une session expiree, invalide ou issue d'un ancien deploiement doit etre
+  // nettoyee entierement pour eviter que l'UI client conserve un ancien role
+  // ou un ancien nom pendant la reconnexion.
+  res.cookies.set(SESSION_COOKIE_NAME, '', { path: '/', maxAge: 0 });
+  res.cookies.set('wc_role', '', { path: '/', maxAge: 0 });
+  res.cookies.set('wc_name', '', { path: '/', maxAge: 0 });
+
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -26,9 +41,7 @@ export async function middleware(req: NextRequest) {
   const user = await verifySessionTokenEdge(token);
 
   if (!user) {
-    const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
+    return redirectToLogin(req, pathname);
   }
 
   if (user.role === 'admin') {
@@ -46,4 +59,3 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|images).*)'],
 };
-
