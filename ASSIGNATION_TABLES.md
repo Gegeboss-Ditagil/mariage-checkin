@@ -1,36 +1,29 @@
 # Assignation des tables — méthode et résultat
 
-**Statut : appliqué en base et vérifié.** Les 200 invitations (423 personnes) ont chacune une table assignée dans Supabase (`invitations.table_id`). C'est une **proposition de départ automatique** — à relire et ajuster avant de la considérer définitive, notamment via `/admin/tables` et le futur écran de plan de salle.
+**Statut : appliqué en base et vérifié.** Import réalisé à partir de l'export "With Joy" `guestlist_8.csv`. C'est une **proposition qui se complète au fil des imports** — les places marquées "confirmée" sont figées par vos labels With Joy, les places "provisoire" restent à valider (voir `/plan-table` dans l'app, qui reste à jour en direct après chaque nouvel import).
 
-## Méthode utilisée
+## Capacité cible
 
-1. **Regroupement par famille** : les invitations sont regroupées par le champ "groupe" du CSV (même nom de famille / même foyer), pour garder les membres d'une même famille sur des tables voisines plutôt que dispersés.
-2. **Priorité "famille proche"** : les groupes contenant au moins une invitation taguée comme famille proche dans le CSV (parents Culumbu, parents Gégé, parents Nelly, famille Kumpesa Vemba, famille Mbidi Dos, etc. — 78 groupes / 185 personnes) sont placés en premier, sur les **7 tables "F"** (Maquela do Zombo, Kinshasa, Neuchâtel, Luanda, M'Banza Congo, Victoriaville, Genève). Si une famille proche déborde des tables F, elle continue sur les tables "T" dans l'ordre.
-3. **Tout le reste** (le gros du volume — amis, collègues, DJ, MC, photographe, autres invités) est placé sur les **33 tables "T"**, dans l'ordre, en remplissant chaque table au mieux avant de passer à la suivante (algorithme "best fit" : chaque invitation va sur la table avec le moins de place restante qui peut encore la contenir, pour minimiser les trous).
-4. **Débordement final** : si une table T ne suffit plus, le surplus va sur les **4 tables de réserve**.
-5. Aucune invitation n'a été exclue : les 200 groupes (423 personnes), y compris le staff (DJ, MC, photographe, etc., traités comme les autres invités, comme demandé), sont tous placés.
+**40 tables au total** : **37 tables "officielles"** (7 familiales + 30 de soirée, capacité 10 chacune → **370 invités max**) + **3 tables de réserve/excédentaire**. Objectif : ramener la liste sous 370 personnes au prochain import CSV ; en attendant, le surplus est placé en réserve (clairement marqué "Excédentaire" dans l'app).
 
-## Résultat (vérifié en base après application)
+## Méthode utilisée (guestlist_8, 2e ré-import)
 
-- **200 / 200 invitations placées**, **423 / 423 personnes placées** — aucun manquant.
-- Tables F (1 à 7) : **10/10** chacune (pleines).
-- Tables T (8 à 40) : **10/10** chacune (pleines).
-- Réserve 1 : **10/10** (pleine)
-- Réserve 2 : **10/10** (pleine)
-- Réserve 3 : **3/10**
-- Réserve 4 : **0/10**
+1. **Labels With Joy honorés en priorité.** Vous avez commencé à taguer certains invités avec `T0xx` / `F0xx` (ex. `F003` = table 3, `T026` = table 26) directement dans With Joy. Chaque tag est respecté à la lettre — ces invitations sont marquées **confirmée**. Si un même foyer a des membres tagués différemment (label partiel ou contradictoire), le foyer est scindé en sous-groupes plutôt que de deviner : chaque sous-groupe va sur la table indiquée par son propre tag.
+2. **RSVP décliné = exclu.** Toute personne ayant répondu explicitement *"Non, nous allons manquer le vol"* n'est pas importée du tout.
+3. **Côté (Nelly / Gégé / Neutre) et famille proche** (Parents Culumbu, Parents Gege, Parents Nelly, Famille Kumpesa Vemba, Famille Mbidi DOS, Tonton Mbiki) sont détectés via les tags With Joy et stockés sur chaque invitation (`cote`, `tags`) pour affichage/filtre dans l'app.
+4. **Le reste (aucun tag de table) est réparti aléatoirement** — foyer par foyer, sans le scinder — sur les tables encore totalement vierges de tout label, jamais sur une table déjà en cours de labellisation par vous. Si une table labellisée dépasse sa capacité de 10 (double-réservation), le surplus rejoint ce même pool "reste". Ces invitations sont marquées **provisoire**.
+5. Si le pool des tables vierges ne suffit plus, le débordement va dans les 3 tables de réserve (`38, 39, 40`, renommées "Réserve 1/2/3" pour l'occasion).
 
-## ⚠️ Point important à valider avec vous
+## Scripts
 
-Les 40 tables "normales" (F + T) tombent exactement à 400 places pour 423 personnes attendues — l'algorithme a donc dû utiliser **23 places de réserve** rien que pour loger tout le monde au départ. Concrètement :
+- `scripts/build_plan_from_csv.py` — parse l'export With Joy, exclut les déclinés, détecte côté/tags/famille proche, découpe les foyers aux tags contradictoires.
+- `scripts/assign_tables_from_labels.py` — applique la logique de placement (labels d'abord, reste randomisé, réserve en dernier recours) et affiche un résumé, avec alerte si les 370 places officielles sont dépassées.
 
-- Il ne reste que **13 places de réserve libres** (sur Réserve 3 et 4) pour absorber un vrai imprévu le jour J (invité surprise, accompagnant non prévu, erreur de comptage, etc.).
-- Si vous préférez garder plus de marge de réserve, il faudra soit ajouter des tables normales, soit augmenter la capacité de certaines tables existantes (modifiable dans `/admin/tables`), puis relancer l'assignation.
-
-Ceci n'est pas un bug : la capacité totale (44 tables × 10 = 440) est simplement proche du nombre de personnes (423), donc la réserve sert ici surtout à absorber le fait que 423 ne se divise pas parfaitement en groupes de 10 par table.
+Ni l'un ni l'autre ne touche la base directement : ils régénèrent des fichiers JSON qui doivent ensuite être réappliqués manuellement (`DELETE` + `INSERT` sur `invitations`).
 
 ## Comment ajuster si besoin
 
-- Modifier une place à la main : dans Supabase, table `invitations`, changer la colonne `table_id` d'une ligne — ou attendre l'écran de plan de salle dans l'admin.
-- Changer les capacités de table : `/admin/tables` dans l'application.
-- Relancer l'algorithme complet : les scripts `scripts/assign_tables.py` (calcule les familles proches) puis `scripts/pack_tables.py` (fait l'assignation) peuvent être réexécutés après modification des tables ou des invitations — ils ne touchent pas la base directement, ils régénèrent `scripts/table_assignments.json`, qui doit ensuite être réappliqué manuellement.
+- Modifier une place à la main : dans Supabase, table `invitations`, changer la colonne `table_id` — ou depuis `/plan-table` / `/placement` dans l'app.
+- Changer les capacités ou le nombre de tables : `/admin/tables` dans l'application.
+- Relancer l'algorithme complet après un nouvel export With Joy : `build_plan_from_csv.py` puis `assign_tables_from_labels.py`.
+

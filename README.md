@@ -17,7 +17,7 @@ Documentation de référence pour les développeurs, QA et agents IA :
 - [`docs/DATA_AND_FORMS.md`](docs/DATA_AND_FORMS.md) : règles Supabase, Google Sheets, imports et formulaires.
 - [`CLAUDE.md`](CLAUDE.md) : ordre de lecture obligatoire pour Claude Code et les autres agents IA.
 
-423 invités / 200 invitations (foyers, familles, groupes) répartis sur 44 tables, déjà importés et placés dans la base réelle.
+393 invités / 195 invitations (foyers, familles, groupes) répartis sur 40 tables (37 officielles + 3 de réserve), déjà importés et placés dans la base réelle. Cible actuelle : 370 places officielles; le surplus reste identifié dans les tables de réserve pendant le nettoyage de la liste.
 
 ## 1. C'est quoi, concrètement
 
@@ -149,9 +149,11 @@ Ce projet est déjà connecté au projet Supabase réel (`znqxmmrtvmhsfsnphjcv`)
 
 ## 6. Données réelles déjà en base
 
-- **200 invitations / 423 personnes** importées depuis l'export "With Joy" fourni, en gardant tout le monde (invités, familles, DJ, MC, photographe, etc. — personne n'est exclu).
-- **44 tables** réelles : 7 tables "F" (familles proches) + 33 tables "T" + 4 tables de réserve, avec les vrais noms de villes du modèle Google Sheet.
-- **Assignation des tables** déjà effectuée pour les 200 invitations (voir `ASSIGNATION_TABLES.md`).
+- **195 invitations / 393 personnes** importées depuis l'export With Joy `guestlist_8.csv`, en excluant les RSVP explicitement déclinés.
+- **40 tables** réelles : 7 tables familiales + 30 tables de soirée (370 places officielles), puis 3 tables de réserve.
+- Chaque invitation possède un côté (Nelly, Gégé ou neutre) et un statut de placement : confirmé depuis un label With Joy ou provisoire.
+- **`/plan-table`** affiche en direct les occupants, leur côté et leur statut de placement; l'écran est accessible depuis Tables.
+- **Assignation des tables** déjà effectuée pour les 195 invitations (voir `ASSIGNATION_TABLES.md`).
 - Colonnes téléphone/email disponibles sur les invitations (recherche floue par numéro, suffixe de 5 chiffres minimum) mais pas encore remplies dans l'import actuel — réimportez via `/admin/import` avec les colonnes Téléphone/Email si besoin de cette fonctionnalité.
 
 Les scripts dans `scripts/` (`gen_real_seed.py`, `assign_tables.py`, `pack_tables.py`, etc.) documentent comment ces données ont été générées à partir du CSV — ils ne sont pas nécessaires pour faire tourner l'application, gardez-les pour référence ou pour un futur ré-import via `/admin/import`.
@@ -188,4 +190,5 @@ Tout ça dépend malgré tout d'internet : vérifiez la qualité du WiFi sur pla
 ## 10. Documents liés
 
 - `DEPLOIEMENT.md` — comment mettre l'application en ligne (Vercel) et la connecter à Supabase.
-- `ASSIGNATION_TABLES.md` — détail de la méthode utilisée pour placer les 200 invitations sur les 44 tables, et l'état actuel des réserves.
+- `ASSIGNATION_TABLES.md` — détail de la méthode utilisée pour placer les invitations sur les 40 tables, et l'état actuel des réserves.
+

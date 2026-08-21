@@ -35,6 +35,9 @@ export interface TableRow {
   created_at: string;
 }
 
+export type Cote = 'Nelly' | 'Gege' | 'Neutre';
+export type PlacementStatus = 'confirmee' | 'provisoire' | 'provisoire_reserve';
+
 export interface InvitationRow {
   id: string;
   event_id: string;
@@ -51,9 +54,27 @@ export interface InvitationRow {
   email: string | null;
   telephone_digits?: string | null;
   ne_viendra_pas: boolean;
+  cote: Cote | null;
+  tags: string[];
+  placement_status: PlacementStatus;
   created_at: string;
   updated_at: string;
 }
+
+export const COTE_LABELS: Record<Cote, string> = {
+  Nelly: 'Côté Nelly', Gege: 'Côté Gégé', Neutre: 'Neutre / prestataire',
+};
+export const COTE_DOT_COLORS: Record<Cote, string> = {
+  Nelly: 'bg-nelly', Gege: 'bg-gege', Neutre: 'bg-black/30',
+};
+export const PLACEMENT_LABELS: Record<PlacementStatus, string> = {
+  confirmee: 'Confirmée', provisoire: 'Provisoire', provisoire_reserve: 'Provisoire (réserve)',
+};
+export const PLACEMENT_COLORS: Record<PlacementStatus, string> = {
+  confirmee: 'bg-status-complete/15 text-status-complete',
+  provisoire: 'bg-status-partial/15 text-status-partial',
+  provisoire_reserve: 'bg-status-partial/15 text-status-partial',
+};
 
 export interface GuestRow {
   id: string;
@@ -148,5 +169,6 @@ export const STATUS_COLORS: Record<InvitationStatut, string> = {
   complet: 'bg-status-complete',
   excedent: 'bg-status-over',
 };
+
 
 

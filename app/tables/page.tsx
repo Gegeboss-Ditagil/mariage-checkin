@@ -155,7 +155,11 @@ export default function TablesPage() {
       <TopBar
         title="Tables"
         right={
-          canAddInvitation ? (
+          <div className="flex items-center gap-2">
+            <Link href="/plan-table" className="shrink-0 rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white">
+              Plan de table
+            </Link>
+            {canAddInvitation && (
             <Link
               href="/tables/add"
               aria-label="Ajouter un invité"
@@ -163,7 +167,8 @@ export default function TablesPage() {
             >
               +
             </Link>
-          ) : undefined
+            )}
+          </div>
         }
       />
 
@@ -283,5 +288,6 @@ export default function TablesPage() {
     </div>
   );
 }
+
 
 

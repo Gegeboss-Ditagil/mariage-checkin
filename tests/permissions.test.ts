@@ -24,6 +24,7 @@ test('agent scan peut consulter et faire le check-in sans deplacer', () => {
   assert.equal(hasCapability('agent_checkin', 'moveGuests'), false);
   assert.equal(hasCapability('agent_checkin', 'manageOverflow'), false);
   assert.equal(canAccessPath('agent_checkin', '/table/abc'), true);
+  assert.equal(canAccessPath('agent_checkin', '/plan-table'), true);
   assert.equal(canAccessPath('agent_checkin', '/tables/move/abc'), false);
   assert.equal(canAccessPath('agent_checkin', '/placement'), false);
 });
@@ -36,6 +37,7 @@ test('visibilite reste strictement en lecture seule', () => {
   assert.equal(hasCapability('visibilite', 'checkin'), false);
   assert.equal(canAccessPath('visibilite', '/dashboard'), true);
   assert.equal(canAccessPath('visibilite', '/tables/abc'), true);
+  assert.equal(canAccessPath('visibilite', '/plan-table'), true);
   assert.equal(canAccessPath('visibilite', '/search'), true);
   assert.equal(canAccessPath('visibilite', '/scan'), false);
   assert.equal(canAccessPath('visibilite', '/placement'), false);
@@ -63,3 +65,4 @@ test("le chemin racine n'autorise pas implicitement toutes les pages", () => {
   assert.equal(canAccessPath('visibilite', '/admin'), false);
   assert.equal(canAccessPath('agent_checkin', '/admin'), false);
 });
+
