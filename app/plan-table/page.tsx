@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
   COTE_DOT_COLORS,
@@ -287,7 +288,10 @@ function TableCard({
   const pct = Math.min(100, (occ / (table.capacity || 10)) * 100);
 
   return (
-    <div className={clsx('card', reserve && 'border-2 border-status-partial/40')}>
+    <Link
+      href={'/tables/' + table.id}
+      className={clsx('card block', reserve && 'border-2 border-status-partial/40')}
+    >
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-display text-lg">
           Table {table.number}
@@ -340,7 +344,7 @@ function TableCard({
           </li>
         ))}
       </ul>
-    </div>
+    </Link>
   );
 }
 
