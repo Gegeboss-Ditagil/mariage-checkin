@@ -10,6 +10,15 @@ import { SessionUser } from './types';
 
 const SESSION_COOKIE_NAME = 'wc_session';
 
+function getSessionVersion(): string {
+  return (
+    process.env.VERCEL_DEPLOYMENT_ID ||
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ||
+    'local'
+  );
+}
+
 function base64urlToBytes(str: string): Uint8Array {
   const pad = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4));
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/') + pad;
@@ -62,6 +71,7 @@ export async function verifySessionTokenEdge(
 
     const payload = JSON.parse(new TextDecoder().decode(toArrayBuffer(base64urlToBytes(encoded))));
     if (typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
+    if (payload.ver !== getSessionVersion()) return null;
     return {
       id: payload.id,
       nom_affichage: payload.nom_affichage,
