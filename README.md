@@ -31,6 +31,7 @@ Documentation de référence pour les développeurs, QA et agents IA :
 - Tout se met à jour en temps réel entre les téléphones connectés : plusieurs agents peuvent travailler en même temps sur les mêmes tables sans se marcher dessus (voir section 8).
 - Sur le tableau de bord et la liste des tables, tirer l'écran vers le bas relance un rafraîchissement léger. Les données sont aussi relues automatiquement quand l'application revient au premier plan.
 - Le bouton « Plan de table » est présenté dans l'écran Tables. Les rôles autorisés à scanner peuvent revenir directement au Scan depuis le plan de table et le tableau de bord; le rôle Visibilité reste dans son parcours en lecture seule.
+- L'écran Recherche affiche la liste alphabétique complète des invitations avant toute saisie. Chaque groupe peut être déplié pour consulter ses tags et ses membres; l'ouverture du check-in reste réservée aux rôles autorisés.
 
 ## 2. Rôles
 

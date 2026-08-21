@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow, TableRow } from '@/lib/types';
+import { COTE_DOT_COLORS, COTE_LABELS, InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { PHONE_COUNTRIES } from '@/lib/countries';
@@ -41,6 +41,19 @@ function extractPrenoms(notes: string | null): string | null {
   return noms.join(', ');
 }
 
+function extractMembresComplet(notes: string | null): string[] {
+  if (!notes) return [];
+  const marker = 'Membres:';
+  const idx = notes.indexOf(marker);
+  if (idx === -1) return [];
+  const after = notes.slice(idx + marker.length).trim();
+  if (!after) return [];
+  return after
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export default function SearchPage() {
   return (
     <Suspense fallback={null}>
@@ -70,6 +83,9 @@ function SearchInner() {
   const [results, setResults] = useState<Result[]>([]);
   const [allTables, setAllTables] = useState<TableRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [allInvitations, setAllInvitations] = useState<Result[]>([]);
+  const [loadingAll, setLoadingAll] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const country = PHONE_COUNTRIES.find((c) => c.code === countryCode) || PHONE_COUNTRIES[0];
 
@@ -97,6 +113,18 @@ function SearchInner() {
       .select('*')
       .order('number')
       .then(({ data }) => setAllTables((data as TableRow[]) || []));
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from('invitations')
+      .select('*, table:tables(*)')
+      .order('nom_affichage')
+      .then(({ data }) => {
+        setAllInvitations((data as Result[]) || []);
+        setLoadingAll(false);
+      });
   }, []);
 
   const tableResults = useMemo(() => {
@@ -172,6 +200,82 @@ function SearchInner() {
   }, [query, mode]);
 
   const hasQuery = query.trim().length >= (mode === 'telephone' ? 4 : 2);
+
+  const browsing = mode === 'nom' && !hasQuery;
+  const listeAffichee = browsing ? allInvitations : results;
+
+  function InvitationItem({ r }: { r: Result }) {
+    const prenoms = extractPrenoms(r.notes);
+    const membres = extractMembresComplet(r.notes);
+    const expanded = expandedId === r.id;
+
+    return (
+      <li>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-3 py-4 text-left"
+          onClick={() => setExpandedId(expanded ? null : r.id)}
+        >
+          <div className="min-w-0">
+            <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
+            {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+            <p className="text-sm text-black/50">
+              {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
+              {r.nombre_prevu > 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <StatusBadge statut={r.statut} />
+            <span className={'text-lg text-black/30 transition-transform' + (expanded ? ' rotate-180' : '')}>⌄</span>
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="mb-4 rounded-xl2 bg-white p-3 text-sm shadow-card">
+            {r.cote && (
+              <span className="mb-2 mr-1.5 inline-flex items-center gap-1.5 rounded-full bg-black/5 px-2.5 py-1 text-xs font-semibold">
+                <span className={'h-2 w-2 rounded-full ' + COTE_DOT_COLORS[r.cote]} />
+                {COTE_LABELS[r.cote]}
+              </span>
+            )}
+            {(r.tags || []).map((tag) => (
+              <span
+                key={tag}
+                className="mb-2 mr-1.5 inline-block rounded-full bg-gold-400/10 px-2.5 py-1 text-xs font-semibold text-gold-700"
+              >
+                {tag}
+              </span>
+            ))}
+            {!r.cote && (!r.tags || r.tags.length === 0) && (
+              <p className="mb-2 text-xs italic text-black/40">Aucun tag enregistré</p>
+            )}
+
+            {membres.length > 0 ? (
+              <ul className="mt-1 space-y-1">
+                {membres.map((membre, index) => (
+                  <li key={index} className="text-black/70">{membre}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs italic text-black/40">
+                Détail des personnes non disponible pour ce groupe (seul le nom affiché "{r.nom_affichage}" est connu).
+              </p>
+            )}
+
+            {!readOnly && (
+              <button
+                type="button"
+                className="btn-secondary mt-3 w-full text-center text-sm"
+                onClick={() => router.push('/checkin/' + r.id)}
+              >
+                Ouvrir le check-in
+              </button>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -270,6 +374,7 @@ function SearchInner() {
       </div>
 
       {loading && <p className="p-4 text-center text-black/40">Recherche…</p>}
+      {browsing && loadingAll && <p className="p-4 text-center text-black/40">Chargement…</p>}
 
       {!loading && hasQuery && tableResults.length === 0 && results.length === 0 && (
         <p className="p-6 text-center text-black/50">Aucun résultat pour « {query} »</p>
@@ -302,39 +407,24 @@ function SearchInner() {
         </div>
       )}
 
-      {results.length > 0 && (
+      {listeAffichee.length > 0 && (
         <div className="mt-2 px-4">
           {tableResults.length > 0 && (
             <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-black/40">Invités</p>
           )}
-          <ul className="flex-1 divide-y divide-gold-400/10">
-            {results.map((r) => {
-              const prenoms = extractPrenoms(r.notes);
-              return (
-                <li key={r.id}>
-                  <button
-                    className="flex w-full items-center justify-between gap-3 py-4 text-left"
-                    disabled={readOnly}
-                    onClick={() => !readOnly && router.push('/checkin/' + r.id)}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
-                      {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
-                      <p className="text-sm text-black/50">
-                        {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
-                        {r.nombre_prevu > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <StatusBadge statut={r.statut} />
-                  </button>
-                </li>
-              );
-            })}
+          {browsing && (
+            <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-black/40">
+              Toutes les invitations ({listeAffichee.length}) — appuyez pour voir qui est dedans et ses tags
+            </p>
+          )}
+          <ul className="flex-1 divide-y divide-gold-400/10 pb-6">
+            {listeAffichee.map((r) => <InvitationItem key={r.id} r={r} />)}
           </ul>
         </div>
       )}
     </div>
   );
 }
+
 
 

@@ -154,6 +154,7 @@ export default function TablesPage() {
     <div className="flex min-h-dvh flex-col">
       <TopBar
         title="Tables"
+        backHref={role ? (hasCapability(role, 'scan') ? '/scan' : '/dashboard') : undefined}
         right={
           canAddInvitation ? (
               <Link
