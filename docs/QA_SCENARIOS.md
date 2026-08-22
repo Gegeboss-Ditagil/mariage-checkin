@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.2.1**  
+**Version documentaire : 1.2.2**  
 **Dernière mise à jour : 2026-08-22**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données.
@@ -18,8 +18,8 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 9. Affectation puis réorganisation d'un débordement selon les permissions.
 10. Déplacement d'une invitation selon les permissions.
 11. Dashboard, historique, exceptions et export selon les permissions.
-12. Écran Staff : accès pour les cinq rôles, check-in selon permission, badge Sans table et téléphone absent/présent.
-13. QR `STAFF` en casse variée : redirection vers `/staff`; visibilité ne doit jamais accéder à la caméra.
+12. Écran Staff : accès réservé à admin, directeur de festin et visibilité (agent placeur et agent scan n'y accèdent pas, même par URL directe) ; check-in selon permission ; badge Sans table ; téléphone absent/présent ; staff affiché par personne (jamais par foyer) quand un seul membre du foyer porte le tag de rôle.
+13. QR `STAFF` en casse variée : redirection vers `/staff` pour admin/directeur uniquement ; visibilité ne doit jamais accéder à la caméra.
 
 ## Session, déploiement et PWA
 
@@ -30,7 +30,7 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Le service worker ne doit jamais servir `/_next/*` depuis un ancien cache.
 - Vérifier qu'une PWA installée sur iPhone/Android récupère la nouvelle version après redéploiement.
 
-## Capacité v1.1.0
+## Capacité (depuis v1.1.0)
 
 - 41 tables présentes : 1-40 normales, 41 réserve.
 - Capacité officielle affichée : 400.

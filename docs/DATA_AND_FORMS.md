@@ -1,11 +1,11 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.2.1**  
+**Version documentaire : 1.2.2**  
 **Dernière mise à jour : 2026-08-22**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
-## État de référence v1.2.1
+## État de référence v1.2.2
 
 - 41 tables au total.
 - Tables 1 à 40 : normales.
@@ -29,6 +29,8 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Import/administration | tables, invitations, users, événement | Admin uniquement |
 
 La page `/staff` est une lecture filtrée de `invitations.category = 'Staff'`. Elle ne crée aucun nouveau type d'écriture : toucher une ligne réutilise le check-in existant. Pour les futurs imports With Joy, `notable` conserve `table_id = NULL` sauf si un tag `Txxx`/`Fxxx` explicite est présent.
+
+`scripts/build_plan_from_csv.py` extrait `phone number` par personne (colonne With Joy) vers `telephone` : pour une invitation groupée, c'est le premier téléphone non vide du foyer. Conformément à la règle d'individuation du staff (`docs/BUSINESS_RULES.md`), le script isole chaque personne portant un tag de rôle staff dans sa propre invitation — y compris quand plusieurs membres d'un même foyer sont staff — pour permettre de cocher l'arrivée de chacun séparément ; les membres non-staff du même foyer restent groupés.
 
 ## Instructions aux agents IA
 

@@ -26,12 +26,29 @@ def has_no_table_tag(tags):
 TABLE_RE = re.compile(r'^[TF](\d{3})$')
 DECLINE = 'Non, nous allons manquer le vol'
 CLOSE_FAMILY_TAGS = {"Parents Culumbu","Parents Gege","Parents Nelly","Famille Kumpesa Vemba","Famille Mbidi DOS","Parents Nelly / Tonton Mbiki"}
-NON_ROLE_TAGS = {"Côté_Nelly","Côté_Gege","SMS_1506","SMSGEGE_1506","SMS_nelly1606","SMS_1506AA","SMS_Late_Gege","2evague","Maybe","Amis_Gege","notable"} | CLOSE_FAMILY_TAGS
+# Groomsman/Bridesmaid designent le cortege (garcons/demoiselles d'honneur),
+# pas le staff operationnel (service, securite, DJ...) -- ne comptent jamais
+# comme un tag de role staff, meme si ce sont des "roles" au sens large.
+WEDDING_PARTY_TAGS = {"Groomsman", "Bridesmaid"}
+NON_ROLE_TAGS = {"Côté_Nelly","Côté_Gege","SMS_1506","SMSGEGE_1506","SMS_nelly1606","SMS_1506AA","SMS_Late_Gege","2evague","Maybe","Amis_Gege","notable"} | CLOSE_FAMILY_TAGS | WEDDING_PARTY_TAGS
 
 def is_role_tag(t):
     if TABLE_RE.match(t): return False
     if t in NON_ROLE_TAGS: return False
     return True
+
+def is_staff_member(r):
+    ts = tags_of(r)
+    return 'SERVICES' in ts or any(is_role_tag(t) for t in ts)
+
+def phone_of(members):
+    # Le telephone With Joy est rempli par personne, pas par foyer : pour une
+    # invitation groupee, on prend le premier telephone non vide rencontre.
+    for m in members:
+        ph = (m.get('phone number') or '').strip()
+        if ph:
+            return ph
+    return None
 
 # 1) group rows by party (household); rows w/o party = solo
 groups = defaultdict(list)
@@ -64,8 +81,20 @@ for pid, members in groups.items():
         nums = [mm.group(1) for t in tags_of(m) if (mm := TABLE_RE.match(t))]
         key = nums[0] if nums else None  # if a person has 2 table tags (rare), take first encountered
         by_table[key].append(m)
+    # Le tag de role staff est individuel (docs/BUSINESS_RULES.md) : si un
+    # seul membre d'un foyer le porte, seule cette personne est category
+    # 'Staff', isolee dans sa propre invitation -- jamais tout le foyer. On
+    # isole donc chaque personne staff dans sa propre invitation individuelle
+    # (meme quand plusieurs membres du meme foyer sont staff : ca permet de
+    # cocher l'arrivee de chacun separement) ; les membres non-staff du meme
+    # foyer restent groupes ensemble comme avant.
     for tnum, mem in by_table.items():
-        subgroups.append({'party_id': pid, 'members': mem, 'table_num': tnum})
+        staff_members = [m for m in mem if is_staff_member(m)]
+        non_staff_members = [m for m in mem if not is_staff_member(m)]
+        for m in staff_members:
+            subgroups.append({'party_id': pid, 'members': [m], 'table_num': tnum})
+        if non_staff_members:
+            subgroups.append({'party_id': pid, 'members': non_staff_members, 'table_num': tnum})
 
 print("Total subgroups:", len(subgroups))
 print("Total kept people:", sum(len(s['members']) for s in subgroups))
@@ -122,6 +151,7 @@ def build_invitation(sg):
         'close_family': close,
         'notes': notes,
         'names': names_disp,
+        'telephone': phone_of(members),
     }
 
 invitations = [build_invitation(sg) for sg in subgroups]
@@ -133,4 +163,7 @@ print("Saved", args.output, "—", len(invitations), "invitations")
 print("Side breakdown:", Counter(i['cote'] for i in invitations))
 print("Explicit table target count:", sum(1 for i in invitations if i['table_num_explicit']))
 print("No explicit table:", sum(1 for i in invitations if not i['table_num_explicit']))
+print("With phone:", sum(1 for i in invitations if i['telephone']))
+print("Without phone:", sum(1 for i in invitations if not i['telephone']))
+print("Staff invitations:", sum(1 for i in invitations if i['category'] == 'Staff'))
 

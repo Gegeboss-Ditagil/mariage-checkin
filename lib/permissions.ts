@@ -71,6 +71,13 @@ export function canAccessPath(role: Role, pathname: string): boolean {
   if (role === 'admin') return true;
   if (pathname === '/') return true;
 
+  // Le suivi nominatif du personnel est réservé au directeur et à la
+  // visibilité en plus de l'admin (traité ci-dessus). Placeur et agent scan
+  // ne peuvent pas ouvrir cette liste, même par URL directe.
+  if (matchesPrefix(pathname, '/staff')) {
+    return role === 'directeur' || role === 'visibilite';
+  }
+
   const prefixes =
     role === 'directeur' || role === 'placeur'
       ? FULL_STAFF_PREFIXES

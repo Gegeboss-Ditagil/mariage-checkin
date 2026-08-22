@@ -54,7 +54,12 @@ export default function ScanPage() {
       // Le badge collectif du personnel encode simplement STAFF : il ouvre
       // la liste dédiée sans tenter une recherche de table inexistante.
       if (code.toUpperCase() === 'STAFF') {
-        router.push('/staff');
+        if (role === 'admin' || role === 'directeur') {
+          router.push('/staff');
+        } else {
+          setStatus('error');
+          setMessage("L'écran Staff est réservé au directeur.");
+        }
         return;
       }
 
@@ -88,7 +93,7 @@ export default function ScanPage() {
       setStatus('error');
       setMessage('QR non reconnu (' + code + '). Essayez la recherche manuelle.');
     },
-    [router, status]
+    [role, router, status]
   );
 
   if (role === 'visibilite') {
@@ -134,9 +139,11 @@ export default function ScanPage() {
             Tableau de bord
           </Link>
         </div>
-        <Link href="/staff" className="btn-secondary w-full text-center">
-          Staff
-        </Link>
+        {(role === 'admin' || role === 'directeur') && (
+          <Link href="/staff" className="btn-secondary w-full text-center">
+            Staff
+          </Link>
+        )}
       </div>
     </div>
   );

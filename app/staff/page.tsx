@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow } from '@/lib/types';
+import { InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
@@ -36,6 +36,10 @@ function isNoTable(inv: InvitationRow): boolean {
   return (inv.tags || []).some((t) => normalizeTag(t) === 'notable');
 }
 
+interface StaffInvitation extends InvitationRow {
+  table?: TableRow | null;
+}
+
 function extractPrenoms(notes: string | null): string | null {
   if (!notes) return null;
   const marker = 'Membres:';
@@ -62,7 +66,7 @@ export default function StaffPage() {
   // la liste complete, seuls ceux qui ont la capacite "checkin" peuvent
   // toucher une ligne pour cocher une arrivee.
   const canCheckin = hasCapability(role, 'checkin');
-  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
+  const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,11 +76,11 @@ export default function StaffPage() {
     async function load() {
       const { data } = await supabase
         .from('invitations')
-        .select('*')
+        .select('*, table:tables(*)')
         .eq('category', 'Staff')
         .order('nom_affichage');
       if (!active) return;
-      setInvitations((data as InvitationRow[]) || []);
+      setInvitations((data as StaffInvitation[]) || []);
       setLoading(false);
     }
 
@@ -143,6 +147,9 @@ export default function StaffPage() {
               {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
               <p className="text-sm text-black/50">
                 {inv.telephone || 'Pas de numéro enregistré'}
+              </p>
+              <p className="text-sm text-black/50">
+                {inv.table ? 'Table ' + inv.table.number + (inv.table.label ? ' — ' + inv.table.label : '') : 'Sans table'}
               </p>
               <p className="text-sm text-black/50">
                 {inv.nombre_arrive}/{inv.nombre_prevu} personnes
