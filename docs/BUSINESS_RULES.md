@@ -84,9 +84,10 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 ## Staff
 
 - Une invitation `category = 'Staff'` apparaît dans `/staff`, indépendamment de son affectation à une table.
-- Les cinq rôles peuvent consulter `/staff`; seuls admin, directeur, placeur et agent scan peuvent ouvrir le check-in.
-- La section Staff du dashboard est visible uniquement par admin et directeur.
-- Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff` pour les rôles autorisés à scanner.
+- `/staff` est réservé à admin, directeur de festin et visibilité (ex: Papa, David) — agent placeur et agent scan n'y ont pas accès, même s'ils ont par ailleurs un accès opérationnel large (précisé le 22/08/2026).
+- Le tag de rôle staff (`SERVICES` ou autre tag de rôle) est individuel : si un seul membre d'un foyer le porte, seule cette personne est `category = 'Staff'` (isolée dans sa propre invitation), jamais tout le foyer.
+- La section Staff du dashboard est visible par admin, directeur et visibilité.
+- Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff`, réservé à admin/directeur.
 - Un tag `notable` signale un membre du staff volontairement sans table. Lors d'un futur import, un tag de table explicite reste prioritaire et produit un avertissement.
 
 ## Principes
