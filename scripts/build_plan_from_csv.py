@@ -1,4 +1,4 @@
-import argparse, csv, re, json, random
+import argparse, csv, re, json, random, unicodedata
 from collections import defaultdict, Counter
 
 random.seed(20261008)  # date du mariage, pour reproductibilite
@@ -15,6 +15,13 @@ with open(path, encoding='utf-8-sig') as f:
 
 def tags_of(r):
     return [t.strip() for t in (r.get('tags') or '').split(',') if t.strip()]
+
+def normalize_tag(tag):
+    normalized = unicodedata.normalize('NFD', tag)
+    return ''.join(c for c in normalized if c.isalpha() and not unicodedata.combining(c)).lower()
+
+def has_no_table_tag(tags):
+    return any(normalize_tag(tag) in {'notable', 'sanstable'} for tag in tags)
 
 TABLE_RE = re.compile(r'^[TF](\d{3})$')
 DECLINE = 'Non, nous allons manquer le vol'
@@ -73,6 +80,12 @@ def build_invitation(sg):
     close = sorted(all_tags & CLOSE_FAMILY_TAGS)
     roles = sorted(t for t in all_tags if is_role_tag(t) and t != 'SERVICES')
     is_staff = 'SERVICES' in all_tags or bool(roles)
+    no_table = has_no_table_tag(all_tags) and not sg['table_num']
+    if has_no_table_tag(all_tags) and sg['table_num']:
+        print(
+            f"WARNING: {sg['party_id']} porte notable et un tag de table "
+            f"T/F{sg['table_num']} ; le tag de table explicite est prioritaire."
+        )
     last_names = [ (m.get('last name') or '').strip() for m in members ]
     last_names_nonblank = [n for n in last_names if n]
     dominant_last = Counter(last_names_nonblank).most_common(1)[0][0] if last_names_nonblank else None
@@ -103,6 +116,7 @@ def build_invitation(sg):
         'groupe': dominant_last,
         'nombre_prevu': len(members),
         'category': 'Staff' if is_staff else None,
+        'no_table': no_table,
         'cote': cote,
         'tags': sorted(all_tags),
         'close_family': close,

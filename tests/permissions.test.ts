@@ -17,6 +17,14 @@ test('tous les roles ont une matrice explicite', () => {
   for (const role of roles) assert.equal(typeof hasCapability(role, 'viewTables'), 'boolean');
 });
 
+test('les cinq roles consultent le staff selon leurs droits de check-in', () => {
+  for (const role of roles) assert.equal(canAccessPath(role, '/staff'), true);
+  for (const role of ['admin', 'directeur', 'placeur', 'agent_checkin'] as const) {
+    assert.equal(hasCapability(role, 'checkin'), true);
+  }
+  assert.equal(hasCapability('visibilite', 'checkin'), false);
+});
+
 test('agent scan peut consulter et faire le check-in sans deplacer', () => {
   assert.equal(hasCapability('agent_checkin', 'scan'), true);
   assert.equal(hasCapability('agent_checkin', 'checkin'), true);
@@ -25,6 +33,7 @@ test('agent scan peut consulter et faire le check-in sans deplacer', () => {
   assert.equal(hasCapability('agent_checkin', 'manageOverflow'), false);
   assert.equal(canAccessPath('agent_checkin', '/table/abc'), true);
   assert.equal(canAccessPath('agent_checkin', '/plan-table'), true);
+  assert.equal(canAccessPath('agent_checkin', '/staff'), true);
   assert.equal(canAccessPath('agent_checkin', '/tables/move/abc'), false);
   assert.equal(canAccessPath('agent_checkin', '/placement'), false);
 });
@@ -38,6 +47,7 @@ test('visibilite reste strictement en lecture seule', () => {
   assert.equal(canAccessPath('visibilite', '/dashboard'), true);
   assert.equal(canAccessPath('visibilite', '/tables/abc'), true);
   assert.equal(canAccessPath('visibilite', '/plan-table'), true);
+  assert.equal(canAccessPath('visibilite', '/staff'), true);
   assert.equal(canAccessPath('visibilite', '/search'), true);
   assert.equal(canAccessPath('visibilite', '/scan'), false);
   assert.equal(canAccessPath('visibilite', '/placement'), false);

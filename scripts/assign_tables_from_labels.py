@@ -12,15 +12,11 @@ with open(args.input, encoding='utf-8') as source:
     data = json.load(source)
 invitations = data['invitations']
 
-# Modele actuel (aout 2026) : 40 tables max -- 37 "officielles" (1-37) +
-# 3 de reserve/excedentaire (38-40). Objectif : ne pas depasser 370 invites
-# officiels (37 x 10) ; le surplus va en reserve en attendant de couper la
-# liste au prochain import CSV. Si vous ajoutez/retirez des tables, changez
-# uniquement les deux lignes ci-dessous -- le reste du script s'adapte.
-TABLE_NUMBERS = list(range(1, 41))
-RESERVE = {38, 39, 40}
+# Modele v1.1.0 : 40 tables officielles (1-40) et une reserve (41).
+TABLE_NUMBERS = list(range(1, 42))
+RESERVE = {41}
 CAPACITY = 10
-CAPACITE_OFFICIELLE = (len(TABLE_NUMBERS) - len(RESERVE)) * CAPACITY  # 370
+CAPACITE_OFFICIELLE = (len(TABLE_NUMBERS) - len(RESERVE)) * CAPACITY  # 400
 
 # labeled tables actually referenced in the CSV (explicit)
 labeled_tables = set(int(i['table_num_explicit']) for i in invitations if i['table_num_explicit'])
@@ -61,7 +57,13 @@ for o in overflow_pool:
     print(f"   table T/F{o['table_num_explicit']} overflow -> {o['nom_affichage']} (n={o['nombre_prevu']}, côté={o['cote']})")
 
 # --- Step B: 'reste' pool = no explicit table + overflow from labeled tables ---
-reste = [i for i in invitations if not i['table_num_explicit']] + overflow_pool
+# Les groupes "notable" sans tag de table restent volontairement sans table.
+sans_table = [i for i in invitations if i.get('no_table')]
+for inv in sans_table:
+    inv['placement_status'] = 'provisoire'
+    inv['table_final'] = None
+
+reste = [i for i in invitations if not i['table_num_explicit'] and not i.get('no_table')] + overflow_pool
 random.shuffle(reste)
 # sort by size descending within shuffle groups a bit to pack better (best-fit-decreasing lite),
 # but keep majority of randomness: shuffle first, then stable-sort only to reduce fragmentation
@@ -121,6 +123,7 @@ for t in TABLE_NUMBERS:
 
 print("\nTotal people placed:", total_people)
 print("Total invitations placed:", sum(len(v) for v in final_assignment.values()))
+print("Staff volontairement sans table:", len(sans_table))
 
 officielles_count = sum(
     i['nombre_prevu'] for t, invs in final_assignment.items() if t not in RESERVE for i in invs
@@ -133,6 +136,7 @@ with open(args.output, 'w', encoding='utf-8') as f:
     json.dump({
         'invitations': invitations,
         'unplaced': unplaced,
+        'sans_table': sans_table,
         'declined_report': data['declined_report'],
         'labeled_tables': sorted(labeled_tables),
         'unlabeled_tables': unlabeled_tables,

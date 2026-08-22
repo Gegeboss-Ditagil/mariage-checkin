@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.2.0] — 2026-08-21
+
+### Ajouté
+- Écran `/staff` en temps réel avec totaux, téléphone, statut d'arrivée et badge « Sans table ».
+- Reconnaissance du QR spécial `STAFF` et accès manuel depuis l'écran Scan.
+- Résumé des arrivées du staff sur le dashboard pour admin et directeur.
+
+### Modifié
+- `/staff` est consultable par les cinq rôles; le check-in reste limité aux rôles autorisés.
+- Les futurs imports conservent sans table les groupes tagués `notable`, sauf si un tag de table explicite est présent.
+
+### Données
+- Aucune donnée de production ni aucun schéma Supabase modifié.
+
 ## [1.1.0] — 2026-08-21
 
 ### Ajouté

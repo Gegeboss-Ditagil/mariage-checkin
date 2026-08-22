@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.1.0**  
+**Version documentaire : 1.2.0**  
 **Dernière mise à jour : 2026-08-21**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données.
@@ -18,6 +18,8 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 9. Affectation puis réorganisation d'un débordement selon les permissions.
 10. Déplacement d'une invitation selon les permissions.
 11. Dashboard, historique, exceptions et export selon les permissions.
+12. Écran Staff : accès pour les cinq rôles, check-in selon permission, badge Sans table et téléphone absent/présent.
+13. QR `STAFF` en casse variée : redirection vers `/staff`; visibilité ne doit jamais accéder à la caméra.
 
 ## Session, déploiement et PWA
 

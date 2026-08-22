@@ -1,6 +1,6 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.1.0**  
+**Version documentaire : 1.2.0**  
 **Dernière mise à jour : 2026-08-21**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
@@ -27,6 +27,8 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Déplacer invitation | invitations, audit | Admin, directeur, placeur |
 | Ajouter invitation | invitations | Admin, directeur, placeur |
 | Import/administration | tables, invitations, users, événement | Admin uniquement |
+
+La page `/staff` est une lecture filtrée de `invitations.category = 'Staff'`. Elle ne crée aucun nouveau type d'écriture : toucher une ligne réutilise le check-in existant. Pour les futurs imports With Joy, `notable` conserve `table_id = NULL` sauf si un tag `Txxx`/`Fxxx` explicite est présent.
 
 ## Instructions aux agents IA
 
