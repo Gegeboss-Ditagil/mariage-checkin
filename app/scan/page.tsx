@@ -51,6 +51,13 @@ export default function ScanPage() {
         // ce n'est pas une URL, on garde le texte brut
       }
 
+      // Le badge collectif du personnel encode simplement STAFF : il ouvre
+      // la liste dédiée sans tenter une recherche de table inexistante.
+      if (code.toUpperCase() === 'STAFF') {
+        router.push('/staff');
+        return;
+      }
+
       const supabase = createClient();
       // ilike (insensible a la casse) : les QR imprimes peuvent encoder le code
       // en majuscules/minuscules differemment de ce qui est stocke en base.
@@ -127,6 +134,9 @@ export default function ScanPage() {
             Tableau de bord
           </Link>
         </div>
+        <Link href="/staff" className="btn-secondary w-full text-center">
+          Staff
+        </Link>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.1.0**  
+**Version documentaire : 1.2.0**  
 **Dernière mise à jour : 2026-08-21**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -31,6 +31,14 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Historique et exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+
+## Staff
+
+- Une invitation `category = 'Staff'` apparaît dans `/staff`, indépendamment de son affectation à une table.
+- Les cinq rôles peuvent consulter `/staff`; seuls admin, directeur, placeur et agent scan peuvent ouvrir le check-in.
+- La section Staff du dashboard est visible uniquement par admin et directeur.
+- Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff` pour les rôles autorisés à scanner.
+- Un tag `notable` signale un membre du staff volontairement sans table. Lors d'un futur import, un tag de table explicite reste prioritaire et produit un avertissement.
 
 ## Principes
 

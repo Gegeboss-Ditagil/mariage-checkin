@@ -78,6 +78,11 @@ export default function DashboardPage() {
     };
   }, [invitations]);
 
+  const staffInvitations = invitations.filter((i) => i.category === 'Staff');
+  const staffPrevu = staffInvitations.reduce((s, i) => s + i.nombre_prevu, 0);
+  const staffArrive = staffInvitations.reduce((s, i) => s + i.nombre_arrive, 0);
+  const canSeeStaffSection = role === 'admin' || role === 'directeur';
+
   const reserveTables = tables.filter((t) => t.is_reserve);
   const usageByTable = new Map<string, number>();
   overflow.forEach((o) => usageByTable.set(o.reserve_table_id, (usageByTable.get(o.reserve_table_id) || 0) + o.nombre_personnes));
@@ -138,6 +143,22 @@ export default function DashboardPage() {
             onClick={() => voir('supplementaire')}
           />
         </div>
+
+        {canSeeStaffSection && (
+          <div>
+            <p className="mb-2 font-semibold">Staff</p>
+            <button
+              type="button"
+              onClick={() => router.push('/staff')}
+              className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+            >
+              <span className="font-semibold">Staff</span>
+              <span className="text-black/60">
+                {staffArrive} / {staffPrevu} arrivés
+              </span>
+            </button>
+          </div>
+        )}
 
         <div>
           <p className="mb-2 font-semibold">Tables de réserve</p>

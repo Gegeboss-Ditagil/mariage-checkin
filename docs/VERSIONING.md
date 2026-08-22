@@ -1,6 +1,6 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.1.0**  
+**Version documentaire : 1.2.0**  
 **Dernière mise à jour : 2026-08-21**
 
 ## Source de vérité
@@ -59,7 +59,7 @@ Avant toute modification :
 
 Après modification, Claude doit confirmer que le code et les documents de référence correspondent à la même version.
 
-## État v1.1.0
+## État v1.2.0
 
 - 41 tables au total.
 - Tables 1 à 40 : tables normales.
@@ -69,3 +69,4 @@ Après modification, Claude doit confirmer que le code et les documents de réf�
 - Session maximale : 12 heures.
 - Une session issue d'un ancien déploiement est invalidée à la prochaine requête protégée.
 - Les assets Next.js `/_next/*` ne sont pas servis depuis l'ancien cache PWA.
+- Le staff dispose d'un écran d'arrivées dédié et d'un QR collectif `STAFF`.

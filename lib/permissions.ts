@@ -52,16 +52,16 @@ export function landingPathForRole(role: Role): string {
 }
 
 const FULL_STAFF_PREFIXES = [
-  '/scan', '/table', '/checkin', '/search', '/dashboard', '/tables',
+  '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
   '/plan-table', '/exceptions', '/history', '/placement', '/api',
 ];
 
 const SCAN_STAFF_PREFIXES = [
-  '/scan', '/table', '/checkin', '/search', '/dashboard', '/tables',
+  '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
   '/plan-table', '/exceptions', '/history', '/api',
 ];
 
-const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/search', '/api'];
+const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/api'];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(prefix + '/');
