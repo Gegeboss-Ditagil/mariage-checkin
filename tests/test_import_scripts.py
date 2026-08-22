@@ -11,6 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class StaffImportRulesTest(unittest.TestCase):
+    def test_sql_tag_rules_reconnaissent_needs_table(self):
+        # La règle existe aussi dans les RPC d'édition manuelle. 0023 est
+        # indispensable aux bases où 0022 avait déjà été appliquée.
+        for migration in (
+            ROOT / 'supabase/migrations/0022_manage_invitation_tags.sql',
+            ROOT / 'supabase/migrations/0023_sync_needs_table_tag_rules.sql',
+        ):
+            sql = migration.read_text(encoding='utf-8').lower()
+            self.assertIn('needs_table_gege', sql)
+            self.assertIn('needs_table_nelly', sql)
+
     def test_notable_reste_sans_table_sauf_tag_explicite(self):
         with tempfile.TemporaryDirectory() as directory:
             temp = Path(directory)
@@ -381,6 +392,73 @@ class StaffImportRulesTest(unittest.TestCase):
             data = json.loads(assigned_path.read_text(encoding='utf-8'))
             self.assertEqual(len(data['unplaced']), 10)
             self.assertIn('Truly unplaced (no room anywhere): 10', assigned.stdout)
+
+    def test_needs_table_gege_nelly_reste_sans_table_et_nest_pas_staff(self):
+        # Decouvert le 22/08/2026 (export With Joy du meme jour) : ces deux
+        # tags signifient que Gege/Nelly n'a pas encore assigne de table a la
+        # main -- meme intention que "notable" (jamais d'auto-assignation via
+        # le pool), sans etre du staff. Verifie aussi qu'une variation de
+        # casse ("needs_table_gege" en minuscules) est toleree, comme le
+        # commentaire de NO_TABLE_TAGS_NORMALIZED le promet.
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+            assigned_path = temp / 'assigned.json'
+
+            rows = [
+                {
+                    'party': 'attente-nelly',
+                    'first name': 'Eric',
+                    'last name': 'Lema',
+                    'rsvp': 'Oui',
+                    'tags': 'Côté_Nelly, Needs_Table_Nelly',
+                },
+                {
+                    'party': 'attente-gege-casse-variee',
+                    'first name': 'Fatou',
+                    'last name': 'Casse',
+                    'rsvp': 'Oui',
+                    'tags': 'Côté_Gege, needs_table_gege',
+                },
+                {
+                    'party': 'attente-nelly-table-explicite',
+                    'first name': 'Henry',
+                    'last name': 'Force',
+                    'rsvp': 'Oui',
+                    'tags': 'Côté_Nelly, Needs_Table_Nelly, T005',
+                },
+            ]
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/assign_tables_from_labels.py'), str(prepared_path), '--output', str(assigned_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(assigned_path.read_text(encoding='utf-8'))
+            by_name = {inv['nom_affichage']: inv for inv in data['invitations']}
+
+            self.assertIsNone(by_name['Eric Lema']['category'])
+            self.assertTrue(by_name['Eric Lema']['no_table'])
+            self.assertIsNone(by_name['Eric Lema']['table_final'])
+
+            self.assertIsNone(by_name['Fatou Casse']['category'])
+            self.assertTrue(by_name['Fatou Casse']['no_table'])
+            self.assertIsNone(by_name['Fatou Casse']['table_final'])
+
+            # Un tag de table explicite reste prioritaire sur Needs_Table_*,
+            # meme regle que pour "notable" (docs/QE_QA_PROCESS.md, cas 1).
+            self.assertIsNone(by_name['Henry Force']['category'])
+            self.assertFalse(by_name['Henry Force']['no_table'])
+            self.assertEqual(by_name['Henry Force']['table_final'], 5)
 
 
 if __name__ == '__main__':

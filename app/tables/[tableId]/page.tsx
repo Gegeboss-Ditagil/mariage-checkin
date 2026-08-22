@@ -8,6 +8,11 @@ import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import {
+  clearBulkMoveSelection,
+  readBulkMoveSelection,
+  saveBulkMoveSelection,
+} from '@/lib/bulkMoveSession';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -57,6 +62,106 @@ function TableDetailInner() {
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
   const [overflowNoms, setOverflowNoms] = useState<Map<string, string>>(new Map());
+
+  // -- Selection multiple (transfert/echange en lot) -------------------------
+  // echangeAvec dans l'URL = deuxieme moitie d'un echange : on est venu ici
+  // choisir qui quitte CETTE table en echange de la selection deja faite sur
+  // la table A (retrouvee via sessionStorage, voir lib/bulkMoveSession.ts).
+  const echangeAvecTableId = searchParams.get('echangeAvec');
+  const [echangeIdsA, setEchangeIdsA] = useState<string[] | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [swapSubmitting, setSwapSubmitting] = useState(false);
+  const [swapError, setSwapError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!echangeAvecTableId) return;
+    const pending = readBulkMoveSelection();
+    if (pending && pending.mode === 'exchange-pick-b' && pending.fromTableId === echangeAvecTableId) {
+      setEchangeIdsA(pending.invitationIds);
+      setSelectMode(true);
+    } else {
+      // Session perdue (onglet ferme, navigation privee...) : rien a
+      // echanger, retour a l'ecran normal plutot que de rester bloque.
+      setEchangeIdsA(null);
+    }
+  }, [echangeAvecTableId]);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function annulerSelection() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    if (echangeAvecTableId) {
+      clearBulkMoveSelection();
+      router.replace('/tables/' + tableId);
+    }
+  }
+
+  function lancerTransfert() {
+    if (selectedIds.size === 0 || !table) return;
+    saveBulkMoveSelection({
+      invitationIds: Array.from(selectedIds),
+      fromTableId: table.id,
+      mode: 'transfer',
+    });
+    router.push('/tables/move-multiple');
+  }
+
+  function lancerEchange() {
+    if (selectedIds.size === 0 || !table) return;
+    saveBulkMoveSelection({
+      invitationIds: Array.from(selectedIds),
+      fromTableId: table.id,
+      mode: 'exchange-pick-b',
+    });
+    router.push('/tables/move-multiple');
+  }
+
+  async function confirmerEchange() {
+    if (!table || !echangeAvecTableId || !echangeIdsA || selectedIds.size === 0) return;
+    const confirmMsg =
+      'Échanger ' +
+      echangeIdsA.length +
+      ' invitation' + (echangeIdsA.length > 1 ? 's' : '') +
+      ' contre ' +
+      selectedIds.size +
+      ' invitation' + (selectedIds.size > 1 ? 's' : '') +
+      ' ?';
+    if (typeof window !== 'undefined' && !window.confirm(confirmMsg)) return;
+    setSwapSubmitting(true);
+    setSwapError(null);
+    try {
+      const res = await fetch('/api/swap-invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids_out_of_a: echangeIdsA,
+          table_a: echangeAvecTableId,
+          ids_out_of_b: Array.from(selectedIds),
+          table_b: table.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSwapError(data.error || 'Échec de l’échange');
+        return;
+      }
+      clearBulkMoveSelection();
+      router.push('/tables/' + tableId + '?deplace=1');
+    } catch {
+      setSwapError('Erreur réseau — réessayez');
+    } finally {
+      setSwapSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -149,11 +254,28 @@ function TableDetailInner() {
     <div className="flex min-h-dvh flex-col">
       <TopBar title={titre} backHref="/tables" />
 
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 pb-24">
         {movedNotice && (
           <p className="mb-4 rounded-xl2 border-2 border-status-complete/40 bg-status-complete/10 p-3 text-center text-sm font-semibold text-status-complete">
             ✓ Invité déplacé vers cette table
           </p>
+        )}
+
+        {echangeAvecTableId && echangeIdsA && (
+          <p className="mb-4 rounded-xl2 border-2 border-gold-500/40 bg-gold-400/10 p-3 text-sm font-semibold text-gold-700">
+            Sélectionnez qui quitte cette table en échange de {echangeIdsA.length} invitation
+            {echangeIdsA.length > 1 ? 's' : ''} venant de l'autre table.
+          </p>
+        )}
+
+        {canMoveGuests && !echangeAvecTableId && (
+          <button
+            type="button"
+            onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
+            className="mb-3 text-sm font-semibold text-gold-700 underline underline-offset-2"
+          >
+            {selectMode ? 'Annuler la sélection' : 'Sélectionner plusieurs invités'}
+          </button>
         )}
 
         <div className="card mb-4 grid grid-cols-3 text-center">
@@ -184,35 +306,42 @@ function TableDetailInner() {
         <ul className="divide-y divide-gold-400/10">
           {invitations.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
+            const checked = selectedIds.has(inv.id);
+            const body = (
+              <>
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{inv.nom_affichage}</p>
+                  {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                </div>
+                <span className="flex shrink-0 items-center gap-2 text-sm">
+                  {inv.nombre_arrive}/{inv.nombre_prevu}
+                  <StatusBadge statut={inv.statut} />
+                </span>
+              </>
+            );
             return (
               <li key={inv.id} className="flex items-center gap-1">
-                {canCheckin ? (
+                {selectMode ? (
+                  <label className="flex min-w-0 flex-1 items-center gap-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleSelected(inv.id)}
+                      className="h-5 w-5 shrink-0 rounded border-2 border-gold-400/60 accent-gold-600"
+                    />
+                    <span className="flex min-w-0 flex-1 items-center justify-between gap-3">{body}</span>
+                  </label>
+                ) : canCheckin ? (
                   <button
                     className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
                     onClick={() => router.push('/checkin/' + inv.id)}
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{inv.nom_affichage}</p>
-                      {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
-                    </div>
-                    <span className="flex shrink-0 items-center gap-2 text-sm">
-                      {inv.nombre_arrive}/{inv.nombre_prevu}
-                      <StatusBadge statut={inv.statut} />
-                    </span>
+                    {body}
                   </button>
                 ) : (
-                  <div className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{inv.nom_affichage}</p>
-                      {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
-                    </div>
-                    <span className="flex shrink-0 items-center gap-2 text-sm">
-                      {inv.nombre_arrive}/{inv.nombre_prevu}
-                      <StatusBadge statut={inv.statut} />
-                    </span>
-                  </div>
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3">{body}</div>
                 )}
-                {canMoveGuests && (
+                {canMoveGuests && !selectMode && (
                   <button
                     type="button"
                     aria-label="Déplacer vers une autre table"
@@ -250,8 +379,37 @@ function TableDetailInner() {
             ))}
         </ul>
       </div>
+
+      {selectMode && selectedIds.size > 0 && (
+        <div className="fixed inset-x-0 bottom-0 border-t border-gold-300/30 bg-white px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+          <p className="mb-2 text-center text-sm font-semibold text-black/60">
+            {selectedIds.size} invitation{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
+          </p>
+          {swapError && <p className="mb-2 text-center text-sm font-medium text-status-over">{swapError}</p>}
+          {echangeAvecTableId && echangeIdsA ? (
+            <button
+              type="button"
+              className="btn-primary w-full"
+              disabled={swapSubmitting}
+              onClick={confirmerEchange}
+            >
+              {swapSubmitting
+                ? '…'
+                : 'Confirmer l’échange (' + echangeIdsA.length + ' ⇄ ' + selectedIds.size + ')'}
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button type="button" className="btn-secondary flex-1" onClick={lancerTransfert}>
+                ⇄ Transférer
+              </button>
+              <button type="button" className="btn-secondary flex-1" onClick={lancerEchange}>
+                ⇋ Échanger
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-
 

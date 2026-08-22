@@ -53,12 +53,14 @@ export default function ScanPage() {
 
       // Le badge collectif du personnel encode simplement STAFF : il ouvre
       // la liste dédiée sans tenter une recherche de table inexistante.
+      // Ouvert à toute l'équipe d'accueil : les invitations Staff sans table
+      // se présentent à l'entrée générale, tenue par placeur/agent scan.
       if (code.toUpperCase() === 'STAFF') {
-        if (role === 'admin' || role === 'directeur') {
+        if (role === 'admin' || role === 'directeur' || role === 'placeur' || role === 'agent_checkin') {
           router.push('/staff');
         } else {
           setStatus('error');
-          setMessage("L'écran Staff est réservé au directeur.");
+          setMessage("L'écran Staff n'est pas accessible avec ce rôle.");
         }
         return;
       }

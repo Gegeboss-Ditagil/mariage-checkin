@@ -1,6 +1,6 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.2.3**  
+**Version documentaire : 1.6.0**  
 **Dernière mise à jour : 2026-08-22**
 
 ## 1. Principe général
@@ -35,7 +35,7 @@ L'agent doit :
 8. prévoir un retour arrière ;
 9. déterminer l'impact de version.
 
-## 4. État de référence v1.2.3
+## 4. État de référence v1.6.0
 
 - 41 tables au total ;
 - tables 1 à 40 normales ;
@@ -43,7 +43,7 @@ L'agent doit :
 - capacité officielle : 400 places ;
 - capacité absolue : 410 places.
 
-Ces chiffres décrivent la version 1.2.3 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
+Ces chiffres décrivent la version 1.6.0 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
 
 ## 5. Identifiants
 

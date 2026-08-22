@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.2.3**  
+**Version documentaire : 1.6.0**  
 **Dernière mise à jour : 2026-08-22**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -13,6 +13,29 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - La table 41 est l'unique table de réserve; la capacité absolue est donc 410 places.
 - `cote`, `tags` et `placement_status` expliquent le placement et ne modifient jamais les totaux de check-in.
 - Toute réimportation doit suivre `docs/DATA_CHANGE_INSTRUCTIONS.md` et obtenir une autorisation explicite avant écriture en production.
+- Les tags `Needs_Table_Gege`/`Needs_Table_Nelly` (export With Joy) signifient que Gege ou Nelly n'a pas encore assigné de table à la main : même traitement que `notable` (jamais d'auto-assignation via le pool aléatoire), sans être du staff. Un tag de table explicite reste prioritaire. Cette liste de personnes en attente reste modifiable directement dans l'application via les étiquettes et le transfert/échange en lot (voir sections ci-dessous), sans attendre un réimport.
+
+## Réorganisation des tables (transfert/échange en lot)
+
+- Depuis `/table/[tableId]` ou `/tables/[tableId]`, « Sélectionner plusieurs invités » fait apparaître une case à cocher par invitation (même capacité `moveGuests` que le déplacement individuel — pas de nouveau rôle).
+- **Transférer** : les invitations sélectionnées sont déplacées ensemble vers une seule table de destination choisie ensuite (`move_invitations_table`, une ligne d'audit `invitation_move` par invitation, comme un déplacement individuel).
+- **Échanger** : un groupe quitte la table A pour la table B pendant qu'un autre groupe quitte B pour A, dans la même transaction (`swap_invitations_between_tables`). Les deux groupes n'ont pas besoin de la même taille (ex. 2 personnes contre 4) — ce n'est pas un échange strictement 1 pour 1, seulement deux mouvements groupés exécutés ensemble.
+- Comme le déplacement individuel, le lot n'est jamais bloqué par la capacité de la table (avertissement affiché, pas de blocage) : le placement pendant l'événement doit rester rapide, souvent provisoire, en attendant le placement final.
+- Une invitation disparue entre-temps (déjà déplacée par quelqu'un d'autre) est ignorée dans le lot plutôt que de faire échouer tout le transfert/échange.
+
+## Renommer et fusionner des invitations
+
+- Depuis `/checkin/[invitationId]`, « Renommer cette invitation » corrige le nom affiché (`nom_affichage`) sans toucher ni au nombre prévu, ni aux arrivées, ni à la table (`manageMembers` — même capacité que « Gérer les membres du groupe »). Utile pour un « Accompagnant non-nommé » identifié après coup.
+- « Fusionner avec un autre groupe » (`moveGuests` — même capacité que le déplacement de table) combine l'invitation courante dans une autre invitation choisie par recherche de nom : les nombres prévus/arrivés/supplémentaires s'additionnent, tout l'historique (checkins, débordements, membres détaillés, exceptions, audit) est rattaché à la cible avant que la source ne soit supprimée — rien n'est perdu.
+- Fusionner deux invitations toutes les deux `category = 'Staff'` regroupe leur arrivée en une seule case à cocher, ce qui va à l'encontre de la règle d'individuation du staff : averti à l'écran, jamais bloqué (même principe que l'avertissement de capacité sur un déplacement de table) — à utiliser seulement pour corriger un import qui a séparé à tort deux membres d'un même foyer non-staff, pas pour regrouper deux vrais membres du staff.
+
+## Étiquettes d'une invitation
+
+- Depuis `/checkin/[invitationId]`, la section « 🏷️ Étiquettes » permet d'ajouter/retirer n'importe quelle étiquette (`manageMembers` — même capacité que le renommage), avec des raccourcis pour les étiquettes courantes : `Côté_Gege`, `Côté_Nelly`, `SERVICES` (Staff), `Photographe`, `Prestataire`, `DJ_Animation` (Animation) et `notable` (Sans table). But : pouvoir marquer sur place (photographe, prestataire, animation trouvés le jour J...) qui fait partie du staff, sans attendre un réimport CSV.
+- `Côté_Gege` et `Côté_Nelly` sont mutuellement exclusifs et synchronisent directement la colonne `cote` (comme à l'import With Joy) ; ajouter l'un retire automatiquement l'autre.
+- Ajouter une étiquette de rôle (tout ce qui n'est ni un tag de table `Txxx`/`Fxxx` ni un tag « non-rôle » connu — `notable`, les tags de côté, SMS, cortège, etc. — voir `scripts/build_plan_from_csv.py`) place automatiquement l'invitation en `category = 'Staff'`, exactement comme à l'import. Retirer une étiquette de rôle ne repasse `category` à `null` que si c'était la **dernière** étiquette de rôle restante — jamais si l'invitation garde un autre rôle, pour ne pas désindividualiser silencieusement un vrai membre du staff.
+- `notable` n'a aucun effet automatique sur `category` ou `cote` : il sert uniquement à afficher « Sans table » sur `/staff`, indépendamment du fait que l'invitation soit déjà `category = 'Staff'` ou non.
+- Cette heuristique (SQL, `add_invitation_tag`/`remove_invitation_tag`) réplique volontairement celle du script d'import Python pour qu'une étiquette ajoutée à la main produise le même résultat qu'un réimport avec le même tag — si la liste des tags « non-rôle » change côté script, la reporter dans la migration SQL correspondante.
 
 ## Rôles
 
@@ -25,9 +48,14 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Gérer les membres et absences | Oui | Oui | Oui | Oui | Non |
 | Affecter un débordement pendant le check-in | Oui | Oui | Oui | Oui | Non |
 | Déplacer un groupe | Oui | Oui | Oui | Non | Non |
+| Transférer/échanger plusieurs invitations en lot | Oui | Oui | Oui | Non | Non |
 | Réorganiser un débordement déjà affecté | Oui | Oui | Oui | Non | Non |
 | Ajouter une invitation individuelle | Oui | Oui | Oui | Non | Non |
+| Renommer une invitation | Oui | Oui | Oui | Oui | Non |
+| Ajouter/retirer une étiquette | Oui | Oui | Oui | Oui | Non |
+| Fusionner deux invitations | Oui | Oui | Oui | Non | Non |
 | Utiliser l'écran Placement | Oui | Oui | Oui | Non | Non |
+| Écran Staff (consultation + check-in) | Oui | Oui | Oui | Oui | Oui (lecture seule) |
 | Historique et exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
@@ -84,10 +112,10 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 ## Staff
 
 - Une invitation `category = 'Staff'` apparaît dans `/staff`, indépendamment de son affectation à une table.
-- `/staff` est réservé à admin, directeur de festin et visibilité (ex: Papa, David) — agent placeur et agent scan n'y ont pas accès, même s'ils ont par ailleurs un accès opérationnel large (précisé le 22/08/2026).
+- `/staff` est accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité en lecture seule. Cette règle a été revue le 22/08/2026 après confirmation que les membres du staff sans table se présentent à l'entrée générale tenue par placeur/agent scan.
 - Le tag de rôle staff (`SERVICES` ou autre tag de rôle) est individuel : si un seul membre d'un foyer le porte, seule cette personne est `category = 'Staff'` (isolée dans sa propre invitation), jamais tout le foyer.
 - La section Staff du dashboard est visible par admin, directeur et visibilité.
-- Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff`, réservé à admin/directeur.
+- Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff` pour admin/directeur/placeur/agent scan; visibilité ne peut jamais atteindre la caméra.
 - Un tag `notable` signale un membre du staff volontairement sans table. Lors d'un futur import, un tag de table explicite reste prioritaire et produit un avertissement.
 
 ## Principes

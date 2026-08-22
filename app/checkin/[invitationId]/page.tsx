@@ -14,6 +14,23 @@ import { hasCapability } from '@/lib/permissions';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
+// Etiquettes courantes proposees en un clic (voir 0022_manage_invitation_tags.sql
+// pour les effets de bord automatiques sur `category`/`cote`). N'importe quelle
+// autre etiquette reste ajoutable via le champ texte libre.
+const ETIQUETTES_RAPIDES: { value: string; label: string }[] = [
+  { value: 'Côté_Gege', label: 'Côté Gege' },
+  { value: 'Côté_Nelly', label: 'Côté Nelly' },
+  { value: 'SERVICES', label: 'Staff' },
+  { value: 'Photographe', label: 'Photographe' },
+  { value: 'Prestataire', label: 'Prestataire' },
+  { value: 'DJ_Animation', label: 'Animation (DJ)' },
+  { value: 'notable', label: 'Sans table' },
+];
+
+function libelleEtiquette(tag: string): string {
+  return ETIQUETTES_RAPIDES.find((e) => e.value === tag)?.label ?? tag;
+}
+
 export default function CheckinPage() {
   const { invitationId } = useParams<{ invitationId: string }>();
   const router = useRouter();
@@ -21,6 +38,8 @@ export default function CheckinPage() {
   const online = useOnline();
   const role = useSessionRole();
   const canReorganizeExcedent = hasCapability(role, 'manageOverflow');
+  const canRename = hasCapability(role, 'manageMembers');
+  const canMerge = hasCapability(role, 'moveGuests');
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   // Valeur affichee par le compteur +/- : represente directement le nombre
@@ -50,6 +69,17 @@ export default function CheckinPage() {
   // telephone/email de sa table, sans avoir a naviguer ailleurs).
   const [invitationTable, setInvitationTable] = useState<TableRow | null>(null);
   const [noShowSubmitting, setNoShowSubmitting] = useState(false);
+
+  // -- Renommer l'invitation (pas un membre detaille -- voir /members) ------
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameSubmitting, setRenameSubmitting] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+
+  // -- Etiquettes (cote, staff, sans table, role prestataire) --------------
+  const [tagSubmitting, setTagSubmitting] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
+  const [customTag, setCustomTag] = useState('');
 
   useEffect(() => {
     const supabase = createClient();
@@ -372,6 +402,113 @@ export default function CheckinPage() {
     }
   }
 
+  function startRename() {
+    if (!invitation) return;
+    setRenameValue(invitation.nom_affichage);
+    setRenameError(null);
+    setRenaming(true);
+  }
+
+  async function handleSaveRename() {
+    if (!invitation || !renameValue.trim()) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setRenameError('CONNEXION REQUISE');
+      return;
+    }
+    setRenameSubmitting(true);
+    setRenameError(null);
+    try {
+      const res = await fetch('/api/invitations/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitation.id, nouveau_nom: renameValue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRenameError(
+          data.error === 'invitation_not_found'
+            ? 'Cette invitation a été retirée entre-temps.'
+            : data.error || 'Échec du renommage'
+        );
+        return;
+      }
+      setInvitation(data.invitation as InvitationRow);
+      setRenaming(false);
+    } catch {
+      setRenameError('Erreur réseau — réessayez');
+    } finally {
+      setRenameSubmitting(false);
+    }
+  }
+
+  async function callTagApi(endpoint: 'add' | 'remove', tag: string) {
+    if (!invitation) return;
+    const res = await fetch('/api/invitations/tags/' + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitation_id: invitation.id, tag }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(
+        data.error === 'invitation_not_found'
+          ? 'Cette invitation a été retirée entre-temps.'
+          : data.error || 'Échec de la mise à jour des étiquettes'
+      );
+    }
+    setInvitation(data.invitation as InvitationRow);
+  }
+
+  async function handleAddTag(tag: string) {
+    if (!invitation) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setTagError('CONNEXION REQUISE');
+      return;
+    }
+    setTagSubmitting(true);
+    setTagError(null);
+    try {
+      // Cote_Gege et Cote_Nelly sont mutuellement exclusifs : on retire
+      // l'autre avant d'ajouter le nouveau, pour ne jamais se retrouver avec
+      // les deux en meme temps (ce que /plan-table et le CSV n'ont jamais
+      // besoin de gerer).
+      const autreCote =
+        tag === 'Côté_Gege' ? 'Côté_Nelly' : tag === 'Côté_Nelly' ? 'Côté_Gege' : null;
+      if (autreCote && invitation.tags.includes(autreCote)) {
+        await callTagApi('remove', autreCote);
+      }
+      await callTagApi('add', tag);
+    } catch (e) {
+      setTagError(e instanceof Error ? e.message : 'Erreur réseau — réessayez');
+    } finally {
+      setTagSubmitting(false);
+    }
+  }
+
+  async function handleRemoveTag(tag: string) {
+    if (!invitation) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setTagError('CONNEXION REQUISE');
+      return;
+    }
+    setTagSubmitting(true);
+    setTagError(null);
+    try {
+      await callTagApi('remove', tag);
+    } catch (e) {
+      setTagError(e instanceof Error ? e.message : 'Erreur réseau — réessayez');
+    } finally {
+      setTagSubmitting(false);
+    }
+  }
+
+  async function handleAddCustomTag() {
+    const tag = customTag.trim();
+    if (!tag) return;
+    await handleAddTag(tag);
+    setCustomTag('');
+  }
+
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
@@ -588,6 +725,105 @@ export default function CheckinPage() {
           )}
         </div>
 
+        {canRename && (
+          <div className="mb-3">
+            {renaming ? (
+              <div className="space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3">
+                <input
+                  className="w-full rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                  placeholder="Nom affiché"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  autoFocus
+                />
+                {renameError && <p className="text-xs font-medium text-status-over">{renameError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn-primary flex-1 py-2 text-sm"
+                    disabled={renameSubmitting || !online || !renameValue.trim()}
+                    onClick={handleSaveRename}
+                  >
+                    {renameSubmitting ? '…' : 'Enregistrer'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary flex-1 py-2 text-sm"
+                    onClick={() => setRenaming(false)}
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
+                onClick={startRename}
+              >
+                ✎ Renommer cette invitation
+              </button>
+            )}
+          </div>
+        )}
+
+        {canRename && (
+          <div className="mb-4 rounded-xl2 border-2 border-gold-300/30 bg-white p-3">
+            <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
+            {invitation.tags.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {invitation.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700"
+                  >
+                    {libelleEtiquette(tag)}
+                    <button
+                      type="button"
+                      aria-label={'Retirer ' + libelleEtiquette(tag)}
+                      disabled={tagSubmitting}
+                      className="ml-0.5 text-gold-600 disabled:opacity-40"
+                      onClick={() => handleRemoveTag(tag)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="mb-2 flex flex-wrap gap-2">
+              {ETIQUETTES_RAPIDES.filter((e) => !invitation.tags.includes(e.value)).map((e) => (
+                <button
+                  key={e.value}
+                  type="button"
+                  disabled={tagSubmitting || !online}
+                  className="rounded-full border border-gold-300/50 px-3 py-1 text-xs font-medium text-black/60 disabled:opacity-40"
+                  onClick={() => handleAddTag(e.value)}
+                >
+                  + {e.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                placeholder="Autre étiquette"
+                value={customTag}
+                onChange={(e) => setCustomTag(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-secondary px-4 text-sm"
+                disabled={tagSubmitting || !online || !customTag.trim()}
+                onClick={handleAddCustomTag}
+              >
+                Ajouter
+              </button>
+            </div>
+            {tagError && <p className="mt-2 text-xs font-medium text-status-over">{tagError}</p>}
+          </div>
+        )}
+
         <button
           type="button"
           className="mb-3 block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
@@ -595,6 +831,16 @@ export default function CheckinPage() {
         >
           Gérer les membres du groupe (ajouter, retirer, nommer)
         </button>
+
+        {canMerge && (
+          <button
+            type="button"
+            className="mb-3 block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
+            onClick={() => router.push('/checkin/' + invitation.id + '/merge')}
+          >
+            ⇄ Fusionner avec un autre groupe
+          </button>
+        )}
 
         {invitation.nombre_arrive > invitation.nombre_prevu && (
           <button
@@ -712,5 +958,4 @@ function SuccessScreen({
     </div>
   );
 }
-
 

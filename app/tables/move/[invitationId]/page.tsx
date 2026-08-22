@@ -1,18 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
+import { TablePicker } from '@/components/TablePicker';
 import { useOnline } from '@/hooks/useOnline';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
-
-function volCode(number: number): string | null {
-  if (number < 1 || number > 40) return null;
-  const padded = String(number).padStart(3, '0');
-  return number <= 7 ? 'Vol-F' + padded : 'Vol-T' + padded;
-}
 
 export default function DeplacerInvitationPage() {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -23,7 +18,6 @@ export default function DeplacerInvitationPage() {
   const [notFound, setNotFound] = useState(false);
   const [currentTable, setCurrentTable] = useState<TableRow | null>(null);
   const [usages, setUsages] = useState<TableCapacity[]>([]);
-  const [query, setQuery] = useState('');
   const [chosenTableId, setChosenTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -83,21 +77,6 @@ export default function DeplacerInvitationPage() {
       supabase.removeChannel(channel);
     };
   }, [invitationId]);
-
-  const filtered = useMemo(() => {
-    const list = usages.filter((u) => u.table.id !== invitation?.table_id);
-    const q = query.trim().toLowerCase();
-    const sorted = [...list].sort((a, b) => b.libresMaintenant - a.libresMaintenant);
-    if (!q) return sorted;
-    return sorted.filter((u) => {
-      const vol = volCode(u.table.number) || '';
-      return (
-        String(u.table.number).includes(q) ||
-        (u.table.label || '').toLowerCase().includes(q) ||
-        vol.toLowerCase().includes(q)
-      );
-    });
-  }, [usages, query, invitation]);
 
   async function handleMove() {
     if (!invitation || !chosenTableId) return;
@@ -196,44 +175,12 @@ export default function DeplacerInvitationPage() {
           </p>
         </div>
 
-        <input
-          className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
-          placeholder="Rechercher une table (numéro, ville, vol…)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+        <TablePicker
+          usages={usages}
+          excludeTableId={invitation.table_id}
+          selectedTableId={chosenTableId}
+          onSelect={setChosenTableId}
         />
-
-        <div className="space-y-2">
-          {filtered.length === 0 && <p className="text-sm text-black/40">Aucune table trouvée.</p>}
-          {filtered.map((u) => {
-            const selected = chosenTableId === u.table.id;
-            const proche = u.occupationEstimee >= u.table.capacity;
-            const vol = volCode(u.table.number);
-            return (
-              <button
-                key={u.table.id}
-                onClick={() => setChosenTableId(u.table.id)}
-                className={
-                  'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                  (selected ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white ')
-                }
-              >
-                <span className="min-w-0">
-                  <span className="block font-semibold">
-                    Table {u.table.number}
-                    {u.table.label ? ' — ' + u.table.label : ''}
-                    {u.table.is_reserve ? ' (réserve)' : ''}
-                  </span>
-                  {vol && <span className="block text-xs text-black/40">{vol}</span>}
-                </span>
-                <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-black/50')}>
-                  <span className="block">{u.occupationEstimee} / {u.table.capacity} places prévues</span>
-                  <span className="block text-xs">{u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
 
         {error && <p className="text-sm font-medium text-status-over">{error}</p>}
       </div>
@@ -250,4 +197,3 @@ export default function DeplacerInvitationPage() {
     </div>
   );
 }
-

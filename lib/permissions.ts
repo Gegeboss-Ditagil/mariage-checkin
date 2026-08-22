@@ -71,13 +71,6 @@ export function canAccessPath(role: Role, pathname: string): boolean {
   if (role === 'admin') return true;
   if (pathname === '/') return true;
 
-  // Le suivi nominatif du personnel est réservé au directeur et à la
-  // visibilité en plus de l'admin (traité ci-dessus). Placeur et agent scan
-  // ne peuvent pas ouvrir cette liste, même par URL directe.
-  if (matchesPrefix(pathname, '/staff')) {
-    return role === 'directeur' || role === 'visibilite';
-  }
-
   const prefixes =
     role === 'directeur' || role === 'placeur'
       ? FULL_STAFF_PREFIXES
@@ -88,10 +81,18 @@ export function canAccessPath(role: Role, pathname: string): boolean {
   if (!prefixes.some((prefix) => matchesPrefix(pathname, prefix))) return false;
 
   if (role === 'agent_checkin') {
+    // Note : /checkin/[invitationId]/merge n'est PAS dans cette liste --
+    // matchesPrefix ne peut pas exprimer "bloquer un sous-chemin qui suit un
+    // segment dynamique" (l'id de l'invitation vient avant "/merge"). La
+    // page reste donc atteignable par URL directe pour ce role, mais
+    // /api/invitations/merge ci-dessous refuse l'ecriture : meme filet de
+    // securite que /tables/move/[invitationId] pour visibilite (l'API fait
+    // sa propre verification). Voir docs/QE_QA_PROCESS.md section 5.
     return ![
-      '/tables/move', '/tables/overflow', '/tables/add',
-      '/api/move-invitation', '/api/overflow/move', '/api/overflow/unassign',
-      '/api/invitations/add',
+      '/tables/move', '/tables/move-multiple', '/tables/overflow', '/tables/add',
+      '/api/move-invitation', '/api/move-invitations', '/api/swap-invitations',
+      '/api/overflow/move', '/api/overflow/unassign', '/api/invitations/add',
+      '/api/invitations/merge',
     ].some((prefix) => matchesPrefix(pathname, prefix));
   }
 

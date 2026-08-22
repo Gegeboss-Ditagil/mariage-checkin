@@ -20,8 +20,18 @@ def normalize_tag(tag):
     normalized = unicodedata.normalize('NFD', tag)
     return ''.join(c for c in normalized if c.isalpha() and not unicodedata.combining(c)).lower()
 
+# Needs_Table_Gege / Needs_Table_Nelly (decouvert le 22/08/2026, export With
+# Joy du 22/08/2026) : signifie que Gege ou Nelly n'a pas encore assigne
+# manuellement de table a cette personne -- meme intention que "notable"
+# (ne JAMAIS auto-assigner via le pool aleatoire, attendre une decision
+# manuelle), mais garde le tag brut pour qu'on puisse filtrer "qui attend
+# encore un placement, et de quel cote" dans /search ou /plan-table.
+# Normalise (comme notable) pour tolerer une variation de casse future --
+# le format peut encore changer selon l'export With Joy.
+NO_TABLE_TAGS_NORMALIZED = {'notable', 'sanstable', 'needstablegege', 'needstablenelly'}
+
 def has_no_table_tag(tags):
-    return any(normalize_tag(tag) in {'notable', 'sanstable'} for tag in tags)
+    return any(normalize_tag(tag) in NO_TABLE_TAGS_NORMALIZED for tag in tags)
 
 TABLE_RE = re.compile(r'^[TF](\d{3})$')
 DECLINE = 'Non, nous allons manquer le vol'
@@ -35,6 +45,10 @@ NON_ROLE_TAGS = {"Côté_Nelly","Côté_Gege","SMS_1506","SMSGEGE_1506","SMS_nel
 def is_role_tag(t):
     if TABLE_RE.match(t): return False
     if t in NON_ROLE_TAGS: return False
+    # Needs_Table_Gege/Nelly ne sont pas des tags de role staff : sans ce
+    # garde-fou, is_staff_member les traiterait a tort comme du staff (bug
+    # trouve le 22/08/2026 avant tout reimport, voir docs/QE_QA_PROCESS.md).
+    if normalize_tag(t) in NO_TABLE_TAGS_NORMALIZED: return False
     return True
 
 def is_staff_member(r):

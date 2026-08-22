@@ -17,12 +17,13 @@ test('tous les roles ont une matrice explicite', () => {
   for (const role of roles) assert.equal(typeof hasCapability(role, 'viewTables'), 'boolean');
 });
 
-test('staff est reserve a admin, directeur et visibilite', () => {
+test('staff est accessible a tous les roles operationnels, visibilite en lecture seule', () => {
   assert.equal(canAccessPath('admin', '/staff'), true);
   assert.equal(canAccessPath('directeur', '/staff'), true);
+  assert.equal(canAccessPath('placeur', '/staff'), true);
+  assert.equal(canAccessPath('agent_checkin', '/staff'), true);
   assert.equal(canAccessPath('visibilite', '/staff'), true);
-  assert.equal(canAccessPath('placeur', '/staff'), false);
-  assert.equal(canAccessPath('agent_checkin', '/staff'), false);
+  assert.equal(hasCapability('visibilite', 'checkin'), false);
   assert.equal(hasCapability('visibilite', 'checkin'), false);
 });
 
@@ -34,9 +35,26 @@ test('agent scan peut consulter et faire le check-in sans deplacer', () => {
   assert.equal(hasCapability('agent_checkin', 'manageOverflow'), false);
   assert.equal(canAccessPath('agent_checkin', '/table/abc'), true);
   assert.equal(canAccessPath('agent_checkin', '/plan-table'), true);
-  assert.equal(canAccessPath('agent_checkin', '/staff'), false);
+  assert.equal(canAccessPath('agent_checkin', '/staff'), true);
   assert.equal(canAccessPath('agent_checkin', '/tables/move/abc'), false);
   assert.equal(canAccessPath('agent_checkin', '/placement'), false);
+});
+
+test('agent scan ne peut pas transferer ou echanger en lot', () => {
+  // /tables/move-multiple et /api/move-invitations ne sont PAS couverts par
+  // le prefixe '/tables/move' (pas de '/' juste apres) : verifie
+  // explicitement pour ne pas regresser silencieusement si la logique de
+  // matchesPrefix change un jour.
+  assert.equal(canAccessPath('agent_checkin', '/tables/move-multiple'), false);
+  assert.equal(canAccessPath('agent_checkin', '/api/move-invitations'), false);
+  assert.equal(canAccessPath('agent_checkin', '/api/swap-invitations'), false);
+});
+
+test('agent scan ne peut pas fusionner deux invitations (mais peut renommer)', () => {
+  assert.equal(canAccessPath('agent_checkin', '/api/invitations/merge'), false);
+  // Renommer une invitation reste au meme niveau que gerer les membres :
+  // pas de nouveau blocage pour ce role sur /api/invitations/rename.
+  assert.equal(canAccessPath('agent_checkin', '/api/invitations/rename'), true);
 });
 
 test('visibilite reste strictement en lecture seule', () => {

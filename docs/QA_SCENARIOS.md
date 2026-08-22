@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.2.3**  
+**Version documentaire : 1.6.0**  
 **Dernière mise à jour : 2026-08-22**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -15,11 +15,14 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 6. Consultation d'une table : noms, compteurs, statuts et débordements visibles.
 7. Check-in, correction et annulation selon les permissions.
 8. Gestion des membres et marquage « ne viendra pas » selon les permissions.
+8bis. Renommer une invitation depuis `/checkin/[invitationId]` selon les permissions (agent scan inclus) ; fusionner deux invitations selon les permissions (agent scan exclu, avertissement affiché — jamais bloqué — quand les deux sont `category = 'Staff'`) ; vérifier après fusion que checkins, débordements et membres détaillés de la source apparaissent bien sur la cible (rien perdu), pas seulement les compteurs.
+8ter. Étiquettes depuis `/checkin/[invitationId]` (agent scan inclus, visibilité exclu même par URL directe) : ajouter/retirer un tag via un raccourci et via le champ libre ; ajouter `Côté_Gege` puis `Côté_Nelly` retire bien le premier (mutuellement exclusifs) et met à jour `cote` ; ajouter un tag de rôle (`Photographe`, `Prestataire`, `DJ_Animation`, `SERVICES`, ou tout tag libre non reconnu) place l'invitation en `category = 'Staff'` et la fait apparaître sur `/staff` ; retirer ce tag alors qu'aucun autre tag de rôle ne reste repasse `category` à vide et la fait disparaître de `/staff` ; retirer un tag de rôle alors qu'un AUTRE tag de rôle reste présent laisse `category = 'Staff'` inchangé ; ajouter/retirer `notable` bascule uniquement le badge « Sans table » sans toucher `category` ; ajouter un tag déjà présent ou retirer un tag absent ne fait rien (idempotent, pas de doublon dans l'affichage).
 9. Affectation puis réorganisation d'un débordement selon les permissions.
 10. Déplacement d'une invitation selon les permissions.
+10bis. Transfert et échange en lot sur `/table/[tableId]` et `/tables/[tableId]` : sélection multiple visible seulement selon permission ; transfert de N invitations vers une seule table ; échange A↔B avec des tailles de groupe différentes (ex. 2 contre 4) ; une invitation déjà déplacée entre-temps par quelqu'un d'autre est ignorée sans faire échouer le reste du lot ; `agent_checkin` ne doit atteindre ni `/tables/move-multiple` ni `/api/move-invitations`/`/api/swap-invitations`, y compris par URL directe.
 11. Dashboard, historique, exceptions et export selon les permissions.
-12. Écran Staff : accès réservé à admin, directeur de festin et visibilité (agent placeur et agent scan n'y accèdent pas, même par URL directe) ; check-in selon permission ; badge Sans table ; téléphone absent/présent ; staff affiché par personne (jamais par foyer) quand un seul membre du foyer porte le tag de rôle.
-13. QR `STAFF` en casse variée : redirection vers `/staff` pour admin/directeur uniquement ; visibilité ne doit jamais accéder à la caméra.
+12. Écran Staff : accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité (consultation seule, bouton de check-in absent); badge Sans table; téléphone absent/présent; staff affiché par personne.
+13. QR `STAFF` en casse variée : redirection vers `/staff` pour admin/directeur/placeur/agent scan; visibilité ne doit jamais accéder à la caméra.
 
 ## Session, déploiement et PWA
 
