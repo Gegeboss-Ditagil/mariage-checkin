@@ -86,8 +86,13 @@ export default function DashboardPage() {
   const reserveTables = tables.filter((t) => t.is_reserve);
   const usageByTable = new Map<string, number>();
   overflow.forEach((o) => usageByTable.set(o.reserve_table_id, (usageByTable.get(o.reserve_table_id) || 0) + o.nombre_personnes));
+  const capaciteOfficielle = tables.filter((t) => !t.is_reserve).reduce((s, t) => s + t.capacity, 0);
   const capaciteTotale = tables.reduce((s, t) => s + t.capacity, 0);
   const remplissageSalle = capaciteTotale > 0 ? (stats.arrives / capaciteTotale) * 100 : 0;
+  // Marque sur la jauge la limite des places officielles (400) dans une
+  // jauge graduee sur la capacite totale (400 + reserve) : au-dela de cette
+  // marque, on est dans la reserve, pas dans la capacite normale de la salle.
+  const seuilOfficielPct = capaciteTotale > 0 ? (capaciteOfficielle / capaciteTotale) * 100 : undefined;
 
   function voir(type: string) {
     router.push('/dashboard/liste?type=' + type);
@@ -111,9 +116,12 @@ export default function DashboardPage() {
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold">Remplissage de la salle</p>
-            <p className="text-xs text-black/40">{stats.arrives} / {capaciteTotale} places</p>
+            <p className="text-xs text-black/40">
+              {stats.arrives} / {capaciteOfficielle}
+              {capaciteTotale > capaciteOfficielle && ' (+' + (capaciteTotale - capaciteOfficielle) + ' réserve)'}
+            </p>
           </div>
-          <CapacityGauge percent={remplissageSalle} size="lg" />
+          <CapacityGauge percent={remplissageSalle} size="lg" warningAt={seuilOfficielPct} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <StatTile label="Invités attendus" value={stats.attendus} onClick={() => voir('tous')} />

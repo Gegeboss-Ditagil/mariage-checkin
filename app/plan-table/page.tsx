@@ -117,21 +117,28 @@ export default function PlanTablePage() {
 
   const stats = useMemo(() => {
     const normalesIds = new Set(normales.map((t) => t.id));
+    const reserveIds = new Set(reserve.map((t) => t.id));
     const totalPersonnes = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
     const parCote: Record<Cote, number> = { Nelly: 0, Gege: 0, Neutre: 0 };
     let confirmees = 0;
     let provisoires = 0;
     let officielles = 0;
     let excedentaire = 0;
+    let sansTable = 0;
     for (const i of invitations) {
       if (i.cote) parCote[i.cote] += i.nombre_prevu;
       if (i.placement_status === 'confirmee') confirmees += i.nombre_prevu;
       else provisoires += i.nombre_prevu;
+      // Sans table (staff "notable" volontairement accueilli hors placement,
+      // voir /staff) n'est ni une place officielle ni un débordement en
+      // réserve : les compter en excédentaire ferait croire à un problème de
+      // capacité qui n'existe pas.
       if (i.table_id && normalesIds.has(i.table_id)) officielles += i.nombre_prevu;
-      else excedentaire += i.nombre_prevu;
+      else if (i.table_id && reserveIds.has(i.table_id)) excedentaire += i.nombre_prevu;
+      else sansTable += i.nombre_prevu;
     }
-    return { totalPersonnes, parCote, confirmees, provisoires, officielles, excedentaire };
-  }, [invitations, normales]);
+    return { totalPersonnes, parCote, confirmees, provisoires, officielles, excedentaire, sansTable };
+  }, [invitations, normales, reserve]);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -200,6 +207,8 @@ export default function PlanTablePage() {
                   {stats.excedentaire > 0
                     ? stats.excedentaire + ' personnes excédentaires actuellement en réserve — à couper au prochain import CSV'
                     : 'Sous la barre des 400, la réserve reste libre pour le jour J'}
+                  {stats.sansTable > 0 &&
+                    ' · ' + stats.sansTable + ' sans table (staff accueilli directement, voir /staff)'}
                 </p>
               </div>
               {stats.officielles > CAPACITE_OFFICIELLE && (

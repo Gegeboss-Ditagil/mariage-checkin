@@ -1,6 +1,6 @@
 # Processus QE/QA pour les bugs
 
-**Version documentaire : 1.2.2**  
+**Version documentaire : 1.2.3**  
 **Dernière mise à jour : 2026-08-22**
 
 Ce document distingue deux moments différents et fixe ce qui est obligatoire à chacun :
@@ -50,8 +50,9 @@ Liste exhaustive à ce jour. Toute correction touchant ces scripts doit repasser
 | 10 | Table explicite déjà pleine (débordement) | Bascule en pool aléatoire (`provisoire`), jamais rejetée silencieusement | `test_debordement_table_explicite_bascule_en_pool` |
 | 11 | Pool aléatoire et réserve (table 41) saturés | Le script signale les invitations non placées (`unplaced`), ne les fait jamais disparaître | `test_capacite_totale_saturee_signale_les_non_places` |
 | 12 | Capacité officielle dépassée (> 400 hors réserve) | Avertissement `DEPASSEMENT` affiché | **découverte lors de l'audit du 22/08/2026 : ce branch est du code mort.** Chaque table hors réserve est capée à 10 dès l'insertion (Étapes A et B) ; `officielles_count` est une somme sur des tables qui ne peuvent individuellement jamais dépasser 10 — donc `officielles_count > 400` ne peut mathématiquement jamais se produire avec l'algorithme actuel. Le message n'a jamais pu s'afficher. À décider avec Gersom : supprimer ce branch, ou le garder comme garde-fou pour un futur changement d'algorithme (auquel cas l'ajouter explicitement en commentaire pour ne pas le refaire passer pour un bug la prochaine fois qu'un agent le lit). |
+| 13 | Invitation avec `table_id = NULL` (staff `notable` volontairement sans table, cas 2) affichée sur `/plan-table` et `/dashboard` | Ne compte ni dans les places officielles ni dans l'excédentaire/réserve — c'est un choix délibéré, pas un débordement. Doit apparaître à part (« sans table ») | **bug trouvé le 22/08/2026** : `app/plan-table/page.tsx` comptait tout `table_id` hors des tables normales comme « excédentaire en réserve », y compris `table_id = NULL` — 3 personnes (les staff `notable` du cas 2) apparaissaient à tort comme un dépassement de capacité alors que 0 personne n'était réellement en réserve. Corrigé : bucket `sansTable` séparé, `/dashboard` marque aussi le seuil des 400 sur la jauge (`CapacityGauge` avec `warningAt`). **Pas de test automatisé — ce sont des composants React non couverts par la suite actuelle (Python + `tests/permissions.test.ts`), à vérifier manuellement via `docs/QA_SCENARIOS.md` jusqu'à ce qu'un test de composant existe.** |
 
-Les lignes 4, 9, 10, 11 étaient marquées comme dette de test — comblées le 22/08/2026 (voir `tests/test_import_scripts.py`, 9 tests au total). La ligne 12 reste une découverte non actionnée, pas une dette de test : il n'y a rien à tester puisque le cas ne peut pas survenir.
+Les lignes 4, 9, 10, 11 étaient marquées comme dette de test — comblées le 22/08/2026 (voir `tests/test_import_scripts.py`, 9 tests au total). La ligne 12 reste une découverte non actionnée, pas une dette de test : il n'y a rien à tester puisque le cas ne peut pas survenir. La ligne 13 est une vraie dette de test (composants React, pas de framework de test en place pour ça aujourd'hui).
 
 ## Rattachement
 
