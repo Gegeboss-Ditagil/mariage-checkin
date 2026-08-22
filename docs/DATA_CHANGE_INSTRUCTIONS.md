@@ -9,6 +9,8 @@ L'application contient les données réelles du mariage. Toute modification de S
 
 Ne jamais modifier, supprimer, réimporter ou réinitialiser les données réelles sans une demande explicite de Gersom.
 
+Pour toute correction faisant suite à un bug signalé, suivre `docs/QE_QA_PROCESS.md` en plus des règles ci-dessous (reproduction avec les vraies données, recherche des cas similaires par requête groupée, test de régression avant de clore).
+
 ## 2. Sources de vérité
 
 - Supabase : source de vérité utilisée par l'application en production.

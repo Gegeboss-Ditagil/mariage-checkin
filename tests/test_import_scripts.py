@@ -165,6 +165,223 @@ class StaffImportRulesTest(unittest.TestCase):
             self.assertIsNone(by_name['Herve Menga']['category'])
             self.assertIsNone(by_name['Deborah Yezi']['category'])
 
+    def test_groomsman_avec_tag_staff_reste_staff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+
+            rows = [{
+                'party': '',
+                'first name': 'Sem',
+                'last name': 'Landu',
+                'phone number': '+33782184726',
+                'rsvp': 'Oui',
+                'tags': 'Groomsman,SERVICES,Orateur,Côté_Gege,T030',
+            }]
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(prepared_path.read_text(encoding='utf-8'))
+            inv = data['invitations'][0]
+            self.assertEqual(inv['nom_affichage'], 'Sem Landu')
+            self.assertEqual(inv['category'], 'Staff')
+
+    def test_avertit_sur_double_tag_de_table(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+
+            rows = [{
+                'party': '',
+                'first name': 'Cedrik',
+                'last name': 'LeCaous',
+                'phone number': '',
+                'rsvp': 'Oui',
+                'tags': 'Amis_Gege,Côté_Gege,T027,T036',
+            }]
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            prepared = subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(prepared_path.read_text(encoding='utf-8'))
+            inv = data['invitations'][0]
+            self.assertEqual(inv['table_num_explicit'], '027')
+            self.assertIn('plusieurs tags de table', prepared.stdout)
+            self.assertIn('T027', prepared.stdout)
+            self.assertIn('T036', prepared.stdout)
+
+    def test_foyer_entierement_staff_isole_chaque_personne(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+
+            rows = [
+                {
+                    'party': 'foyer-tout-staff',
+                    'first name': 'Remy',
+                    'last name': 'Landu',
+                    'phone number': '+33651874779',
+                    'rsvp': 'Oui',
+                    'tags': 'SERVICES,Directeur_Festin _Adjoint,Côté_Gege,T030',
+                },
+                {
+                    'party': 'foyer-tout-staff',
+                    'first name': 'Denise',
+                    'last name': 'Landu',
+                    'phone number': '+33618318413',
+                    'rsvp': 'Oui',
+                    'tags': 'SERVICES,Adjoint_Décoration,Côté_Gege,T030',
+                },
+            ]
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(prepared_path.read_text(encoding='utf-8'))
+            self.assertEqual(len(data['invitations']), 2)
+            by_name = {inv['nom_affichage']: inv for inv in data['invitations']}
+            self.assertEqual(by_name['Remy Landu']['category'], 'Staff')
+            self.assertEqual(by_name['Remy Landu']['nombre_prevu'], 1)
+            self.assertEqual(by_name['Denise Landu']['category'], 'Staff')
+            self.assertEqual(by_name['Denise Landu']['nombre_prevu'], 1)
+
+    def test_rsvp_decline_exclu_entierement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+
+            rows = [
+                {
+                    'party': 'foyer-decline',
+                    'first name': 'Ana',
+                    'last name': 'Perdue',
+                    'phone number': '',
+                    'rsvp': 'Non, nous allons manquer le vol',
+                    'tags': 'Côté_Nelly',
+                },
+                {
+                    'party': 'foyer-decline',
+                    'first name': 'Bob',
+                    'last name': 'Reste',
+                    'phone number': '',
+                    'rsvp': 'Oui',
+                    'tags': 'Côté_Nelly',
+                },
+            ]
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(prepared_path.read_text(encoding='utf-8'))
+            names = [n for inv in data['invitations'] for n in inv['names']]
+            self.assertNotIn('Ana Perdue', names)
+            self.assertIn('Bob Reste', names)
+            self.assertEqual(len(data['declined_report']), 1)
+            self.assertIn('Ana Perdue', data['declined_report'][0]['declined'])
+
+    def test_debordement_table_explicite_bascule_en_pool(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+            assigned_path = temp / 'assigned.json'
+
+            rows = []
+            for i in range(11):
+                rows.append({
+                    'party': f'solo-{i}',
+                    'first name': f'Invite{i}',
+                    'last name': 'Debordement',
+                    'phone number': '',
+                    'rsvp': 'Oui',
+                    'tags': 'Côté_Nelly,T005',
+                })
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/assign_tables_from_labels.py'), str(prepared_path), '--output', str(assigned_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(assigned_path.read_text(encoding='utf-8'))
+            self.assertEqual(len(data['unplaced']), 0)
+            statuts = {inv['nom_affichage']: inv['placement_status'] for inv in data['invitations']}
+            confirmees = sum(1 for s in statuts.values() if s == 'confirmee')
+            provisoires = sum(1 for s in statuts.values() if s == 'provisoire')
+            self.assertEqual(confirmees, 10)
+            self.assertEqual(provisoires, 1)
+
+    def test_capacite_totale_saturee_signale_les_non_places(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp = Path(directory)
+            csv_path = temp / 'guestlist.csv'
+            prepared_path = temp / 'prepared.json'
+            assigned_path = temp / 'assigned.json'
+
+            rows = []
+            for i in range(420):
+                rows.append({
+                    'party': f'solo-{i}',
+                    'first name': f'Invite{i}',
+                    'last name': 'Sature',
+                    'phone number': '',
+                    'rsvp': 'Oui',
+                    'tags': 'Côté_Nelly',
+                })
+            with csv_path.open('w', encoding='utf-8', newline='') as target:
+                writer = csv.DictWriter(target, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+
+            subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/build_plan_from_csv.py'), str(csv_path), '--output', str(prepared_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+            assigned = subprocess.run(
+                [sys.executable, str(ROOT / 'scripts/assign_tables_from_labels.py'), str(prepared_path), '--output', str(assigned_path)],
+                check=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            )
+
+            data = json.loads(assigned_path.read_text(encoding='utf-8'))
+            self.assertEqual(len(data['unplaced']), 10)
+            self.assertIn('Truly unplaced (no room anywhere): 10', assigned.stdout)
+
 
 if __name__ == '__main__':
     unittest.main()

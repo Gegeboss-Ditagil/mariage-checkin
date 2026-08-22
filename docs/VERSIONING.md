@@ -25,7 +25,7 @@ Toute PR qui change le comportement de production doit :
 3. ajouter l'entrée correspondante dans `CHANGELOG.md` ;
 4. mettre à jour les documents concernés ;
 5. vérifier que les chiffres opérationnels et règles métier ne sont pas contradictoires ;
-6. exécuter les contrôles QA pertinents ;
+6. exécuter les contrôles QA pertinents (`docs/QE_QA_PROCESS.md`, `docs/QA_SCENARIOS.md`) ;
 7. indiquer dans la PR la version avant et la version après.
 
 Un merge qui modifie uniquement du texte sans changer le comportement peut conserver la version courante, mais doit mettre à jour la date documentaire si nécessaire.
@@ -41,6 +41,7 @@ Les documents suivants décrivent l'état courant et doivent rester alignés :
 - `docs/BUSINESS_RULES.md`
 - `docs/DATA_AND_FORMS.md`
 - `docs/DATA_CHANGE_INSTRUCTIONS.md`
+- `docs/QE_QA_PROCESS.md`
 - `docs/QA_SCENARIOS.md`
 - `docs/VERSIONING.md`
 - `CHANGELOG.md`

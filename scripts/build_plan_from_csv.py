@@ -79,6 +79,12 @@ for pid, members in groups.items():
     by_table = defaultdict(list)
     for m in kept:
         nums = [mm.group(1) for t in tags_of(m) if (mm := TABLE_RE.match(t))]
+        if len(nums) > 1:
+            nom = f"{m.get('first name','').strip()} {m.get('last name','').strip()}".strip() or 'Accompagnant non-nommé'
+            print(
+                f"WARNING: {nom} porte plusieurs tags de table ({', '.join('T'+n for n in nums)}) ; "
+                f"seul le premier (T{nums[0]}) est utilise, les autres sont ignores pour le placement."
+            )
         key = nums[0] if nums else None  # if a person has 2 table tags (rare), take first encountered
         by_table[key].append(m)
     # Le tag de role staff est individuel (docs/BUSINESS_RULES.md) : si un

@@ -11,10 +11,13 @@ Avant toute modification, lire dans cet ordre :
 4. `docs/BUSINESS_RULES.md`
 5. `docs/DATA_AND_FORMS.md`
 6. `docs/DATA_CHANGE_INSTRUCTIONS.md`
-7. `docs/QA_SCENARIOS.md`
-8. `README.md`
+7. `docs/QE_QA_PROCESS.md`
+8. `docs/QA_SCENARIOS.md`
+9. `README.md`
 
 Avant de coder, rechercher les anciennes valeurs ou règles susceptibles d'être devenues obsolètes. Après la modification, vérifier que le code, les migrations et tous les documents concernés décrivent le même état.
+
+En présence d'un bug (signalé par l'utilisateur ou constaté), suivre `docs/QE_QA_PROCESS.md` : reproduire avec les vraies données, distinguer bug de code (script/page) et bug de données déjà en base, chercher les cas similaires non signalés par une requête groupée avant de corriger cas par cas, écrire un test de régression avant de considérer le bug clos.
 
 Dans chaque PR, indiquer explicitement : `Version: X.Y.Z → A.B.C` ou `Version inchangée: X.Y.Z`, les fichiers documentaires mis à jour, les tests exécutés et les éventuelles migrations.
 
