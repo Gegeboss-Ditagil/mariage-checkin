@@ -1,7 +1,7 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.2.0**  
-**Dernière mise à jour : 2026-08-21**
+**Version documentaire : 1.2.1**  
+**Dernière mise à jour : 2026-08-22**
 
 ## 1. Principe général
 
@@ -33,7 +33,7 @@ L'agent doit :
 8. prévoir un retour arrière ;
 9. déterminer l'impact de version.
 
-## 4. État de référence v1.2.0
+## 4. État de référence v1.2.1
 
 - 41 tables au total ;
 - tables 1 à 40 normales ;
@@ -41,7 +41,7 @@ L'agent doit :
 - capacité officielle : 400 places ;
 - capacité absolue : 410 places.
 
-Ces chiffres décrivent la version 1.2.0 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
+Ces chiffres décrivent la version 1.2.1 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
 
 ## 5. Identifiants
 
@@ -72,6 +72,7 @@ Pour chaque formulaire modifié, documenter champs, validations client/serveur, 
 
 - Ne jamais exposer `SUPABASE_SERVICE_ROLE_KEY` dans le navigateur, les logs, GitHub ou Google Sheets.
 - Ne jamais placer une clé secrète dans une variable `NEXT_PUBLIC_*`.
+- Ne jamais stocker les PIN de connexion dans Git, README, `docs/`, une PR ou un ticket.
 - Vérifier RLS et autorisations serveur.
 - Une information modifiable par l'utilisateur ne constitue jamais une preuve de rôle.
 

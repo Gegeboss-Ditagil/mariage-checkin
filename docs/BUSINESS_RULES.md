@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.2.0**  
-**Dernière mise à jour : 2026-08-21**
+**Version documentaire : 1.2.1**  
+**Dernière mise à jour : 2026-08-22**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -31,6 +31,55 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Historique et exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+
+## Comptes de connexion
+
+Cette liste documente uniquement les **noms à saisir** et les rôles opérationnels. Les PIN sont des secrets d'authentification : ils ne doivent jamais être écrits dans README, `docs/`, Git, une PR, un ticket ou un message collectif. Ils sont gérés par un admin depuis `/admin/users` et stockés dans Supabase.
+
+### Admins
+
+- Admin
+- Dos
+
+### Directeurs de festin
+
+- Rémy
+- Tuzola
+- Sem
+
+### Agent placeur — la mariée
+
+- Nelly Dos
+
+### Visibilité — lecture seule
+
+- Papa
+- David
+
+### Staff — agents placeurs
+
+- Wandubula
+- Ribeiro
+- Shungu
+- Muzezenu
+- Shampe
+- Onokoko
+- Lotisi
+- Damuna
+- Kambwa
+- Luyindula
+- Lopez
+- Landu
+- Sanda
+- Placeur014 (réserve)
+- Placeur015 (réserve)
+- Placeur016 (réserve)
+
+### Agents scan — comptes génériques en réserve
+
+- Agent001 à Agent016
+
+Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et à mesure que l'équipe est confirmée. Les anciens comptes de test restent désactivés. Chaque PIN doit être transmis individuellement à son détenteur, jamais avec la liste complète des comptes.
 
 ## Staff
 
