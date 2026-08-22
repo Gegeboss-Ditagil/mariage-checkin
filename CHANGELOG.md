@@ -3,6 +3,13 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.2.1] — 2026-08-22
+
+### Documentation
+- Rétablit dans les règles métier la liste des noms de connexion par rôle.
+- Les PIN restent volontairement exclus du dépôt public et sont gérés uniquement dans Supabase via `/admin/users`.
+- Ajoute une règle explicite interdisant de stocker des secrets d'authentification dans Git.
+
 ## [1.2.0] — 2026-08-21
 
 ### Ajouté

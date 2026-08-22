@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.2.0**  
-**Dernière mise à jour : 2026-08-21**
+**Version documentaire : 1.2.1**  
+**Dernière mise à jour : 2026-08-22**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données.
 

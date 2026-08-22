@@ -1,7 +1,7 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.2.0**  
-**Dernière mise à jour : 2026-08-21**
+**Version documentaire : 1.2.1**  
+**Dernière mise à jour : 2026-08-22**
 
 ## Source de vérité
 
@@ -59,7 +59,7 @@ Avant toute modification :
 
 Après modification, Claude doit confirmer que le code et les documents de référence correspondent à la même version.
 
-## État v1.2.0
+## État v1.2.1
 
 - 41 tables au total.
 - Tables 1 à 40 : tables normales.
