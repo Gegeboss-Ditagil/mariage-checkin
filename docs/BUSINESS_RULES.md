@@ -111,14 +111,13 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 
 ## Staff
 
-- Une invitation `category = 'Staff'` apparaît dans `/staff`, indépendamment de son affectation à une table.
-- `/staff` est accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité en lecture seule. Cette règle a été revue le 22/08/2026 après confirmation que les membres du staff sans table se présentent à l'entrée générale tenue par placeur/agent scan.
-- Admin, directeur et visibilité voient tout le staff, avec ou sans table. Placeur et agent scan ne voient sur `/staff` que les personnes marquées `notable` et accueillies sans table; le staff déjà placé se présente normalement via sa table.
-- Cette restriction est appliquée par `GET /api/staff` après validation de la session signée côté serveur; un simple masquage dans l'interface ne constitue jamais le contrôle d'accès.
-- Les capacités `viewStaff` et `viewAllStaff` de `lib/permissions.ts` sont l'unique source de vérité pour cette matrice; l'API, le scan, le dashboard et la page ne doivent jamais recopier une liste de rôles.
+- Une invitation `category = 'Staff'` marque une personne du staff/prestataire, indépendamment de son affectation à une table.
+- `/staff` (route ET badge QR `STAFF` depuis `/scan`) est accessible à tous les rôles scannants (admin, directeur, placeur, agent scan) en plus de visibilité en lecture seule.
+- **Corrigé le 23/08/2026 : `/staff` n'affiche désormais QUE le personnel sans table** (tag `notable` — photographe, DJ, MC, prestataires…), pour tous les rôles sans exception. Le reste du staff (avec table) est déjà compté comme invité normal, arrive avec sa famille/son groupe, et n'a pas reçu le badge QR `STAFF` (le sien est un QR de table classique) — il n'a donc pas sa place sur cet écran. Objectif : une liste courte, uniquement les personnes qu'un agent doit contrôler et laisser entrer rapidement sans les rattacher à une table.
+- Une barre de recherche par nom/téléphone est disponible sur `/staff` pour retrouver rapidement une personne dans la liste.
+- Chaque ligne affiche un bouton d'appel direct (`tel:`) quand un numéro est enregistré, pour joindre la personne sans devoir d'abord ouvrir son check-in.
 - Le tag de rôle staff (`SERVICES` ou autre tag de rôle) est individuel : si un seul membre d'un foyer le porte, seule cette personne est `category = 'Staff'` (isolée dans sa propre invitation), jamais tout le foyer.
-- La section Staff du dashboard est visible par admin, directeur et visibilité.
-- Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff` pour admin/directeur/placeur/agent scan; visibilité ne peut jamais atteindre la caméra.
+- La section Staff du tableau de bord (`/dashboard`, réservée à admin/directeur/visibilité) reste une vue d'ensemble distincte : elle compte TOUT le staff (avec et sans table), pour le suivi global — différente de la liste opérationnelle `/staff` qui, elle, ne montre que le personnel sans table à contrôler à l'entrée.
 - Un tag `notable` signale un membre du staff volontairement sans table. Lors d'un futur import, un tag de table explicite reste prioritaire et produit un avertissement.
 
 ## Principes
