@@ -1,6 +1,6 @@
 # Transmission Claude — accès sécurisé à `/staff`
 
-**Version documentaire : 1.7.0**  
+**Version documentaire : 1.8.0**
 **Dernière mise à jour : 2026-08-23**
 
 Ce fichier explique la logique d'accès Staff à conserver lors des prochains changements. Il ne contient volontairement aucun code PIN ni secret.
@@ -20,11 +20,11 @@ Ne jamais recréer une liste telle que `role === 'admin' || role === ...` dans u
 
 | Rôle | `viewStaff` | `viewAllStaff` | `checkin` | Résultat dans `/staff` |
 |---|---:|---:|---:|---|
-| Admin | Oui | Oui | Oui | Tout le staff, lignes cliquables |
-| Directeur | Oui | Oui | Oui | Tout le staff, lignes cliquables |
+| Admin | Oui | Oui | Oui | Onglets Sans table / Avec table, lignes cliquables |
+| Directeur | Oui | Oui | Oui | Onglets Sans table / Avec table, lignes cliquables |
 | Placeur | Oui | Non | Oui | Seulement le staff `notable` sans table |
 | Agent scan (`agent_checkin`) | Oui | Non | Oui | Seulement le staff `notable` sans table |
-| Visibilité | Oui | Oui | Non | Tout le staff, lecture seule |
+| Visibilité | Oui | Oui | Non | Onglets Sans table / Avec table, lecture seule |
 
 La section Staff du dashboard utilise `viewAllStaff`. Le raccourci Staff et le QR `STAFF` sur `/scan` utilisent `viewStaff` et restent naturellement invisibles à visibilité, qui n'a pas la capacité `scan` et ne peut pas ouvrir `/scan`.
 
@@ -36,7 +36,7 @@ Le filtrage n'est jamais seulement visuel :
 2. `GET /api/staff` relit la session signée côté serveur et vérifie `viewStaff`;
 3. l'API applique `viewAllStaff`; sans cette capacité, elle ne renvoie que les invitations portant un tag normalisé en `notable`;
 4. la réponse porte `Cache-Control: private, no-store`;
-5. `app/staff/page.tsx` consomme uniquement cette API et ne lit plus directement toute la table `invitations` pour construire la liste Staff.
+5. `app/staff/page.tsx` consomme uniquement cette API et ne lit ni ne souscrit directement à `invitations`; ses actualisations périodiques et au retour au premier plan repassent par l'API protégée.
 
 La clé `SUPABASE_SERVICE_ROLE_KEY` reste exclusivement dans `lib/supabase/admin.ts`, importé seulement par du code serveur. Ne jamais l'importer dans un composant `'use client'` et ne jamais créer de variable publique `NEXT_PUBLIC_*` contenant un secret.
 

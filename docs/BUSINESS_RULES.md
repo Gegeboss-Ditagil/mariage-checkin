@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.7.0**  
+**Version documentaire : 1.8.0**
 **Dernière mise à jour : 2026-08-23**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -113,7 +113,8 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 
 - Une invitation `category = 'Staff'` marque une personne du staff/prestataire, indépendamment de son affectation à une table.
 - `/staff` (route ET badge QR `STAFF` depuis `/scan`) est accessible à tous les rôles scannants (admin, directeur, placeur, agent scan) en plus de visibilité en lecture seule.
-- **Corrigé le 23/08/2026 : `/staff` n'affiche désormais QUE le personnel sans table** (tag `notable` — photographe, DJ, MC, prestataires…), pour tous les rôles sans exception. Le reste du staff (avec table) est déjà compté comme invité normal, arrive avec sa famille/son groupe, et n'a pas reçu le badge QR `STAFF` (le sien est un QR de table classique) — il n'a donc pas sa place sur cet écran. Objectif : une liste courte, uniquement les personnes qu'un agent doit contrôler et laisser entrer rapidement sans les rattacher à une table.
+- **Corrigé le 23/08/2026 : `/staff` affiche par défaut uniquement le personnel sans table** (tag `notable` — photographe, DJ, MC, prestataires…). Le reste du staff (avec table) est déjà compté comme invité normal et arrive avec sa famille ou son groupe. Objectif : conserver une liste opérationnelle courte pour l'entrée.
+- **Ajouté le 23/08/2026 : onglets « Sans table » / « Avec table »**, visibles uniquement pour admin, directeur et visibilité (`viewAllStaff`). Placeur et agent scan restent sur la seule liste sans table, sans onglet. La page consomme exclusivement `GET /api/staff`; le serveur vérifie la session signée et ne transmet les lignes avec table qu'aux rôles possédant `viewAllStaff`. Les actualisations périodiques et au retour au premier plan repassent par cette API protégée, sans souscription Supabase directe depuis le navigateur.
 - Une barre de recherche par nom/téléphone est disponible sur `/staff` pour retrouver rapidement une personne dans la liste.
 - Chaque ligne affiche un bouton d'appel direct (`tel:`) quand un numéro est enregistré, pour joindre la personne sans devoir d'abord ouvrir son check-in.
 - Le tag de rôle staff (`SERVICES` ou autre tag de rôle) est individuel : si un seul membre d'un foyer le porte, seule cette personne est `category = 'Staff'` (isolée dans sa propre invitation), jamais tout le foyer.

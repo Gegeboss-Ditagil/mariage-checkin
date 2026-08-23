@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.8.0] — 2026-08-23
+
+### Ajouté
+- `/staff` propose désormais deux onglets « Sans table » / « Avec table », visibles uniquement pour admin, directeur et visibilité (`viewAllStaff`). Permet de vérifier rapidement les arrivées du reste du staff (avec table) sans repasser par la vue d'ensemble de `/dashboard`. Onglet « Sans table » sélectionné par défaut, identique à la liste opérationnelle déjà en place. Placeur et agent scan ne voient pas les onglets : rien à départager pour eux, ils ne voient déjà que le staff sans table.
+- Le découpage réutilise la détection centralisée du tag `notable` (`isStaffWithoutTable`, tolérante aux accents, tirets et espaces) — aucune nouvelle règle de classification.
+- La page consomme exclusivement `GET /api/staff` : la session signée et `viewAllStaff` sont vérifiées côté serveur, et les lignes masquées ne sont jamais envoyées aux placeurs ou agents scan. La souscription Supabase Realtime côté navigateur est remplacée par un rafraîchissement périodique et au retour au premier plan via cette API protégée, afin qu'aucun payload Staff non filtré ne transite par le client. La jointure de table existante permet d'afficher le numéro de table dans l'onglet « Avec table », sans nouvel appel lors du changement d'onglet ni nouvelle capacité.
+- Corrige aussi la recherche : une saisie alphabétique ne correspond plus automatiquement à toutes les lignes possédant un téléphone lorsque la partie numérique recherchée est vide.
+
+### Contexte
+- `/staff` avait été recentré le 23/08/2026 sur le seul personnel sans table, avec une barre de recherche et un bouton d'appel direct. Cette liste opérationnelle reste la vue par défaut pour tous les rôles.
+
+### Tests
+- Ajoute un test de non-régression garantissant que `/staff` consomme `/api/staff`, ne lit pas directement `invitations` depuis le client et conserve le filtrage serveur `viewAllStaff`.
+- `npx tsc --noEmit`, `npm run test:roles`, `npm run test:members`, `python3 -m unittest tests.test_import_scripts` et `npm run build` exécutés avant le push.
+
 ## Données — 2026-08-23 (réimport complet, guestlist_19.csv)
 
 ### Réimport complet de la liste d'invités

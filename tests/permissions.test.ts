@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { canAccessPath, hasCapability, landingPathForRole } from '../lib/permissions.ts';
 import type { Role } from '../lib/types.ts';
 import { isStaffWithoutTable } from '../lib/staffVisibility.ts';
@@ -37,6 +38,17 @@ test('la visibilite des lignes staff est restreinte selon le role', () => {
   assert.equal(hasCapability('agent_checkin', 'viewAllStaff'), false);
   assert.equal(isStaffWithoutTable({ tags: ['Côté_Gege', 'no-table'] }), true);
   assert.equal(isStaffWithoutTable({ tags: ['SERVICES', 'T030'] }), false);
+});
+
+test('la page staff conserve le filtrage serveur et ne lit pas directement invitations', () => {
+  const pageSource = readFileSync(new URL('../app/staff/page.tsx', import.meta.url), 'utf8');
+  const apiSource = readFileSync(new URL('../app/api/staff/route.ts', import.meta.url), 'utf8');
+
+  assert.match(pageSource, /fetch\(['"]\/api\/staff['"]/);
+  assert.doesNotMatch(pageSource, /\.from\(['"]invitations['"]\)/);
+  assert.doesNotMatch(pageSource, /createClient|postgres_changes/);
+  assert.match(apiSource, /hasCapability\(user\.role, ['"]viewAllStaff['"]\)/);
+  assert.match(apiSource, /staff\.filter\(isStaffWithoutTable\)/);
 });
 
 test('agent scan peut consulter et faire le check-in sans deplacer', () => {
