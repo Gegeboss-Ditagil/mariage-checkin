@@ -81,6 +81,32 @@ test('agent scan ne peut pas fusionner deux invitations (mais peut renommer)', (
   assert.equal(canAccessPath('agent_checkin', '/api/invitations/rename'), true);
 });
 
+test('agent scan ne peut pas gerer les etiquettes (mais garde le reste de manageMembers)', () => {
+  // Retire le 23/08/2026 sur demande explicite de Gersom : ce role est la
+  // pour scanner/checker, pas pour reclassifier les invites (cote, roles
+  // staff, notable...). manageMembers (renommer, gerer les membres du
+  // groupe) reste inchange pour ce role.
+  assert.equal(hasCapability('agent_checkin', 'manageTags'), false);
+  assert.equal(hasCapability('agent_checkin', 'manageMembers'), true);
+  for (const role of ['admin', 'directeur', 'placeur'] as const) {
+    assert.equal(hasCapability(role, 'manageTags'), true, role + ' doit garder manageTags');
+  }
+  assert.equal(hasCapability('visibilite', 'manageTags'), false);
+
+  const tagsAddSource = readFileSync(new URL('../app/api/invitations/tags/add/route.ts', import.meta.url), 'utf8');
+  const tagsRemoveSource = readFileSync(new URL('../app/api/invitations/tags/remove/route.ts', import.meta.url), 'utf8');
+  const renameSource = readFileSync(new URL('../app/api/invitations/rename/route.ts', import.meta.url), 'utf8');
+  const checkinPageSource = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
+  for (const source of [tagsAddSource, tagsRemoveSource]) {
+    assert.match(source, /hasCapability\(user\.role, ['"]manageTags['"]\)/);
+    // Ne doit plus recreer de liste de roles locale (voir CLAUDE.md).
+    assert.doesNotMatch(source, /agent_checkin/);
+  }
+  assert.match(renameSource, /hasCapability\(user\.role, ['"]manageMembers['"]\)/);
+  assert.match(checkinPageSource, /const canManageTags = hasCapability\(role, ['"]manageTags['"]\)/);
+  assert.match(checkinPageSource, /\{canManageTags && \(/);
+});
+
 test('visibilite reste strictement en lecture seule', () => {
   assert.equal(hasCapability('visibilite', 'viewDashboard'), true);
   assert.equal(hasCapability('visibilite', 'viewTables'), true);

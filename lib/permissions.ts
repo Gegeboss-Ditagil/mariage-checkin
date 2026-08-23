@@ -13,6 +13,7 @@ export type Capability =
   | 'assignOverflow'
   | 'manageOverflow'
   | 'manageMembers'
+  | 'manageTags'
   | 'markNoShow'
   | 'addInvitation'
   | 'viewHistory'
@@ -22,14 +23,14 @@ export type Capability =
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
-  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
+  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'exportData', 'adminPanel',
 ];
 
 const OPERATIONAL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
-  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
+  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
 ];
 
@@ -37,6 +38,12 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   admin: ALL_CAPABILITIES,
   directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff'],
   placeur: OPERATIONAL_CAPABILITIES,
+  // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
+  // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
+  // Conserve manageMembers (renommer, gerer les membres du groupe) : seule
+  // la gestion des etiquettes a ete retiree, sur demande explicite de
+  // Gersom le 23/08/2026 -- ce role est la pour scanner/checker, pas pour
+  // reclassifier les invites.
   agent_checkin: [
     'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin',
     'assignOverflow', 'manageMembers', 'markNoShow', 'viewHistory',

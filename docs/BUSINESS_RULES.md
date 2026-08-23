@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.8.1**
+**Version documentaire : 1.9.0**
 **Dernière mise à jour : 2026-08-23**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -31,7 +31,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 
 ## Étiquettes d'une invitation
 
-- Depuis `/checkin/[invitationId]`, la section « 🏷️ Étiquettes » permet d'ajouter/retirer n'importe quelle étiquette (`manageMembers` — même capacité que le renommage), avec des raccourcis pour les étiquettes courantes : `Côté_Gege`, `Côté_Nelly`, `SERVICES` (Staff), `Photographe`, `Prestataire`, `DJ_Animation` (Animation) et `notable` (Sans table). But : pouvoir marquer sur place (photographe, prestataire, animation trouvés le jour J...) qui fait partie du staff, sans attendre un réimport CSV.
+- Depuis `/checkin/[invitationId]`, la section « 🏷️ Étiquettes » permet d'ajouter/retirer n'importe quelle étiquette (capacité dédiée `manageTags` — admin, directeur, placeur; **pas agent scan**, retiré le 23/08/2026 sur demande explicite de Gersom : ce rôle est là pour scanner/checker, pas pour reclassifier les invités), avec des raccourcis pour les étiquettes courantes : `Côté_Gege`, `Côté_Nelly`, `SERVICES` (Staff), `Photographe`, `Prestataire`, `DJ_Animation` (Animation) et `notable` (Sans table). But : pouvoir marquer sur place (photographe, prestataire, animation trouvés le jour J...) qui fait partie du staff, sans attendre un réimport CSV. `manageTags` était auparavant confondu avec `manageMembers` (renommer, gérer les membres du groupe) — les deux capacités restent identiques pour admin/directeur/placeur, mais divergent désormais pour agent scan qui garde `manageMembers` sans `manageTags`.
 - `Côté_Gege` et `Côté_Nelly` sont mutuellement exclusifs et synchronisent directement la colonne `cote` (comme à l'import With Joy) ; ajouter l'un retire automatiquement l'autre.
 - Ajouter une étiquette de rôle (tout ce qui n'est ni un tag de table `Txxx`/`Fxxx` ni un tag « non-rôle » connu — `notable`, les tags de côté, SMS, cortège, etc. — voir `scripts/build_plan_from_csv.py`) place automatiquement l'invitation en `category = 'Staff'`, exactement comme à l'import. Retirer une étiquette de rôle ne repasse `category` à `null` que si c'était la **dernière** étiquette de rôle restante — jamais si l'invitation garde un autre rôle, pour ne pas désindividualiser silencieusement un vrai membre du staff.
 - `notable` n'a aucun effet automatique sur `category` ou `cote` : il sert uniquement à afficher « Sans table » sur `/staff`, indépendamment du fait que l'invitation soit déjà `category = 'Staff'` ou non.
@@ -52,7 +52,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Réorganiser un débordement déjà affecté | Oui | Oui | Oui | Non | Non |
 | Ajouter une invitation individuelle | Oui | Oui | Oui | Non | Non |
 | Renommer une invitation | Oui | Oui | Oui | Oui | Non |
-| Ajouter/retirer une étiquette | Oui | Oui | Oui | Oui | Non |
+| Ajouter/retirer une étiquette | Oui | Oui | Oui | **Non** (retiré le 23/08/2026) | Non |
 | Fusionner deux invitations | Oui | Oui | Oui | Non | Non |
 | Utiliser l'écran Placement | Oui | Oui | Oui | Non | Non |
 | Écran Staff (consultation + check-in) | Oui | Oui | Oui | Oui | Oui (lecture seule) |

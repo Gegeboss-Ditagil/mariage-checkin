@@ -39,6 +39,7 @@ export default function CheckinPage() {
   const role = useSessionRole();
   const canReorganizeExcedent = hasCapability(role, 'manageOverflow');
   const canRename = hasCapability(role, 'manageMembers');
+  const canManageTags = hasCapability(role, 'manageTags');
   const canMerge = hasCapability(role, 'moveGuests');
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -767,7 +768,7 @@ export default function CheckinPage() {
           </div>
         )}
 
-        {canRename && (
+        {canManageTags && (
           <div className="mb-4 rounded-xl2 border-2 border-gold-300/30 bg-white p-3">
             <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
             {invitation.tags.length > 0 && (

@@ -1,11 +1,11 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.8.1**
+**Version documentaire : 1.9.0**
 **Dernière mise à jour : 2026-08-23**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
-## État de référence v1.8.1
+## État de référence v1.9.0
 
 - 41 tables au total.
 - Tables 1 à 40 : normales.
@@ -29,7 +29,7 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Ajouter invitation | invitations | Admin, directeur, placeur |
 | Renommer invitation | invitations, audit | Admin, directeur, placeur, agent scan |
 | Fusionner deux invitations | invitations, checkins, overflow_assignments, invitation_guests, exceptions, audit | Admin, directeur, placeur |
-| Ajouter/retirer une étiquette | invitations, audit | Admin, directeur, placeur, agent scan |
+| Ajouter/retirer une étiquette | invitations, audit | Admin, directeur, placeur |
 | Import/administration | tables, invitations, users, événement | Admin uniquement |
 
 La page `/staff` est une lecture filtrée de `invitations.category = 'Staff'`. Elle ne crée aucun nouveau type d'écriture : toucher une ligne réutilise le check-in existant. Pour les futurs imports With Joy, `notable` conserve `table_id = NULL` sauf si un tag `Txxx`/`Fxxx` explicite est présent.
@@ -44,7 +44,7 @@ Renommer une invitation (`/checkin/[invitationId]`) : champ `nouveau_nom` ; vali
 
 Fusionner deux invitations (`/checkin/[invitationId]/merge`) : champs `source_invitation_id`/`target_invitation_id` ; validation serveur dans `/api/invitations/merge` (rôle admin/directeur/placeur) ; fonction SQL `merge_invitations` (`0021_rename_and_merge_invitations.sql`) : additionne `nombre_prevu`/`nombre_arrive`/`nombre_supplementaire`, réattache `checkins`/`overflow_assignments`/`invitation_guests`/`exceptions`/`audit_logs` de la source vers la cible avant de supprimer la source (rien n'est perdu, contrairement à une suppression directe qui ferait disparaître les checkins/débordements en cascade) ; effet secondaire : une ligne `audit_logs` (`action = 'invitation_merge'`) ; avertissement (non bloquant) si les deux invitations sont `category = 'Staff'`.
 
-Ajouter/retirer une étiquette (`/checkin/[invitationId]`, section « 🏷️ Étiquettes ») : champ `tag` (raccourcis proposés : `Côté_Gege`, `Côté_Nelly`, `SERVICES`, `Photographe`, `Prestataire`, `DJ_Animation`, `notable`, ou saisie libre) ; validation serveur dans `/api/invitations/tags/add` et `/api/invitations/tags/remove` (rôle admin/directeur/placeur/agent scan, comme le renommage) ; fonctions SQL `add_invitation_tag`/`remove_invitation_tag` (`0022_manage_invitation_tags.sql`, synchronisées pour `Needs_Table_*` par `0023_sync_needs_table_tag_rules.sql`), idempotentes (ajouter un tag déjà présent ou retirer un tag absent ne fait rien et ne journalise pas) ; effets secondaires : `tags` (ajout/retrait), synchronisation de `cote` pour `Côté_Gege`/`Côté_Nelly` (mutuellement exclusifs), passage automatique de `category` à `'Staff'` à l'ajout d'un tag de rôle et retour à `null` au retrait du dernier tag de rôle restant (même heuristique que `scripts/build_plan_from_csv.py`, à garder synchronisée) ; une ligne `audit_logs` (`action = 'invitation_tag_add'`/`'invitation_tag_remove'`) par changement.
+Ajouter/retirer une étiquette (`/checkin/[invitationId]`, section « 🏷️ Étiquettes ») : champ `tag` (raccourcis proposés : `Côté_Gege`, `Côté_Nelly`, `SERVICES`, `Photographe`, `Prestataire`, `DJ_Animation`, `notable`, ou saisie libre) ; validation serveur dans `/api/invitations/tags/add` et `/api/invitations/tags/remove` (capacité dédiée `manageTags` — rôle admin/directeur/placeur ; agent scan ne l'a plus depuis le 23/08/2026, à la différence du renommage qui reste sur `manageMembers`) ; fonctions SQL `add_invitation_tag`/`remove_invitation_tag` (`0022_manage_invitation_tags.sql`, synchronisées pour `Needs_Table_*` par `0023_sync_needs_table_tag_rules.sql`), idempotentes (ajouter un tag déjà présent ou retirer un tag absent ne fait rien et ne journalise pas) ; effets secondaires : `tags` (ajout/retrait), synchronisation de `cote` pour `Côté_Gege`/`Côté_Nelly` (mutuellement exclusifs), passage automatique de `category` à `'Staff'` à l'ajout d'un tag de rôle et retour à `null` au retrait du dernier tag de rôle restant (même heuristique que `scripts/build_plan_from_csv.py`, à garder synchronisée) ; une ligne `audit_logs` (`action = 'invitation_tag_add'`/`'invitation_tag_remove'`) par changement.
 
 ## Instructions aux agents IA
 

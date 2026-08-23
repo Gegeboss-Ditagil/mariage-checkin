@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.9.0] — 2026-08-23
+
+### Sécurité et permissions
+- Nouvelle capacité dédiée `manageTags` dans `lib/permissions.ts`, séparée de `manageMembers`. Signalé par Gersom : agent scan (rôle de scan/entrée) n'a plus besoin de pouvoir gérer les étiquettes d'une invitation (côté, rôle staff, `notable`…) — retiré pour ce rôle. Admin, directeur et placeur conservent `manageTags` (comportement inchangé). `manageMembers` (renommer, gérer les membres du groupe) reste inchangé pour agent scan.
+- `app/checkin/[invitationId]/page.tsx` : la section « 🏷️ Étiquettes » utilise désormais `manageTags` au lieu de `manageMembers` pour son affichage; le bloc « Renommer » reste sur `manageMembers`.
+- `/api/invitations/tags/add` et `/api/invitations/tags/remove` vérifient désormais `hasCapability(user.role, 'manageTags')` au lieu d'une liste de rôles recréée localement (`['admin', 'directeur', 'placeur', 'agent_checkin']`), corrigeant au passage une entorse à la règle centrale de `CLAUDE.md`. `/api/invitations/rename` est corrigée de la même façon vers `hasCapability(user.role, 'manageMembers')`, sans changement de comportement (mêmes rôles qu'avant).
+
+### Tests
+- Nouveau test : agent scan n'a pas `manageTags` mais garde `manageMembers`; admin/directeur/placeur gardent `manageTags`; visibilité ne l'a jamais eu. Vérifie aussi par inspection du code source que les routes tags utilisent `hasCapability` et ne recréent plus de liste de rôles locale.
+- `npx tsc --noEmit`, `npm run test:roles` (13/13), `npm run test:members` (3/3), `python3 -m unittest tests.test_import_scripts` (11/11) et `npm run build` exécutés avec succès.
+
 ## [1.8.1] — 2026-08-23
 
 ### Corrigé
