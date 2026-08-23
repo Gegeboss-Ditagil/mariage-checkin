@@ -16,6 +16,19 @@ Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.
 - Vérification visuelle : rendu du SVG exporté en HTML statique et capturé via Chromium headless (sans dépendre d'un environnement Supabase) — a permis de repérer et corriger un chevauchement réel (étiquette « Couloir Est » débordant sur les pièces voisines dans un couloir trop étroit pour du texte horizontal, corrigé par rotation à 90° des étiquettes de colonnes étroites).
 - `npx tsc --noEmit`, `npm run test:roles` (13/13), `npm run test:members` (3/3), `npm run test:floorplan` (7/7), `python3 -m unittest tests.test_import_scripts` (11/11) et `npm run build` exécutés avec succès.
 
+## Données — 2026-08-23 (réimport complet, guestlist_20.csv)
+
+### Réimport complet de la liste d'invités
+- Remplacement complet des invitations de l'événement « Mariage Nelly & Gersom » à partir de `guestlist_20.csv`, avec autorisation explicite de Gersom (« MET A JOURS AVEC CETTE SOURCE »).
+- Sauvegarde préalable : `invitations_backup_20260823_v20`, avec RLS activé immédiatement dans la même migration (`alter table ... enable row level security` juste après le `create table ... as select`), pour ne pas reproduire l'oubli du réimport du 22/08.
+- Avant : 226 invitations, 388 personnes prévues, 61 Staff (44 sans table), 0 arrivée réelle, 0 « ne viendra pas » — vérifié explicitement avant écriture : rien à perdre, aucune confirmation supplémentaire nécessaire au-delà de l'instruction elle-même.
+- Après : 234 invitations, 387 personnes prévues, 226 avec table, 8 Staff sans table, 0 arrivée, 0 « ne viendra pas ».
+- Conflit de double-tag table : Henry Kiadi Ndiongo portait à la fois `T015` et `T025` dans `guestlist_20.csv` ; placé table 15 (table la moins remplie entre les deux), conformément à la règle déjà appliquée lors des réimports précédents.
+- Débordements de capacité sur tables explicitement taguées, redistribués vers la table la moins remplie parmi celles sans étiquette (« reste ») : Famille Okito → table 23, Famille Mpapa → table 39, Nsimba Mambakasa → table 39, Famille Bitumazala → table 23.
+- Vérification : comparaison automatisée champ par champ (nom, groupe, nombre prévu, téléphone, catégorie, côté, tags, statut de placement) et numéro de table, contre le JSON source vérifié (`scripts/build_plan_from_csv.py` puis `scripts/assign_tables_from_labels.py`) — correspondance parfaite sur les 234 lignes, aucune ligne fabriquée ni manquante. Les cinq cas ci-dessus revérifiés individuellement par requête nominative après écriture.
+- RLS de `invitations_backup_20260823_v20` confirmé actif (`pg_class.relrowsecurity = true`) directement après la migration.
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## [1.9.0] — 2026-08-23
 
 ### Sécurité et permissions
