@@ -1,0 +1,12 @@
+-- invitations_backup_20260822 a ete creee via `create table ... as select *
+-- from invitations` pendant le reimport complet du 22/08/2026 (voir
+-- CHANGELOG.md section Donnees). CTAS ne copie jamais le RLS de la table
+-- source : cette sauvegarde restait donc exposee sans protection via
+-- l'API PostgREST, signale par l'advisor Supabase
+-- (rls_disabled_in_public, niveau ERROR) le 23/08/2026.
+--
+-- C'est une sauvegarde interne pure (retour arriere en cas de probleme sur
+-- un reimport), jamais censee etre interrogee par l'application : RLS
+-- active sans aucune policy = deny-all pour anon/authenticated via l'API,
+-- service_role continue de tout voir comme d'habitude (bypasse RLS).
+alter table if exists invitations_backup_20260822 enable row level security;

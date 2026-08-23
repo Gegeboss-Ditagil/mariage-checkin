@@ -21,6 +21,14 @@ Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.
 ### Tests
 - Ajoute `npm run test:members` : baisse uniquement, absence de hausse implicite, verrouillage, audit avant/après et capacité `manageMembers`.
 
+## Données — 2026-08-23
+
+### Sécurité : RLS manquant sur `invitations_backup_20260822`
+- `create table ... as select` ne copie jamais le RLS de la table source — la sauvegarde créée pendant le réimport du 22/08/2026 (voir section Données du même jour) était donc restée exposée sans protection via l'API PostgREST. Signalé par Gersom via l'advisor Supabase (`rls_disabled_in_public`, niveau `ERROR`).
+- Corrigé : `supabase/migrations/0025_enable_rls_invitations_backup.sql` — `alter table invitations_backup_20260822 enable row level security;`, sans policy (deny-all pour anon/authenticated via l'API ; `service_role` continue de tout voir comme d'habitude — c'est une sauvegarde interne, jamais censée être interrogée par l'application).
+- Vérifié : l'avertissement `ERROR` a disparu des advisors Supabase après application; seuls des `INFO` bénins (même famille que `audit_logs`/`users`, déjà RLS-activées sans policy par conception) subsistent.
+- Aucun code applicatif modifié — migration Supabase uniquement.
+
 ## [1.6.4] — 2026-08-23
 
 ### Sécurité et permissions
