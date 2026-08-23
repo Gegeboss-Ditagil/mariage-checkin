@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-23 (réimport complet, guestlist_19.csv)
+
+### Réimport complet de la liste d'invités
+- Remplacement complet des invitations de l'événement « Mariage Nelly & Gersom » à partir de `guestlist_19.csv`, avec autorisation explicite et répétée de Gersom (« Non, remplace tout sans exception »).
+- Sauvegarde préalable : `invitations_backup_20260823`, avec RLS activé immédiatement après création (contrairement à la sauvegarde du réimport précédent, corrigée après coup — voir section RLS ci-dessous).
+- Avant : 225 invitations, 386 personnes prévues, 61 Staff, 44 sans table, 1 arrivée réelle enregistrée (Famille Bolamba).
+- Après : 226 invitations, 388 personnes prévues, 61 Staff, 44 sans table, 0 arrivée. Remise à zéro assumée par Gersom : l'arrivée de Famille Bolamba et le statut « ne viendra pas » de Famille Makopa étaient des tests, pas des données réelles (confirmé explicitement avant l'import).
+- Conflit de double-tag table (Famille Simao) signalé lors du réimport du 22/08 : absent de `guestlist_19.csv`, corrigé à la source ; aucune action nécessaire cette fois.
+- Vérification : comparaison automatisée champ par champ (nom, groupe, nombre prévu, téléphone, catégorie, côté, tags, statut de placement) et numéro de table, contre le JSON source vérifié (`scripts/build_plan_from_csv.py` puis `scripts/assign_tables_from_labels.py`) — correspondance parfaite sur les 226 lignes, aucune ligne fabriquée ni manquante.
+- Incident évité en cours de route : une première tentative de transcription manuelle du SQL généré a scindé par erreur un champ `notes` en deux littéraux au lieu d'un seul avec séparateur ` | `. Postgres a rejeté toute la transaction avant écriture (`VALUES lists must all be the same length`) ; vérifié immédiatement que la production était inchangée. La transcription corrigée a ensuite été validée par `diff` contre le fichier SQL généré par script avant nouvelle tentative, conformément au garde-fou de `docs/QE_QA_PROCESS.md` §5.
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## [1.7.0] — 2026-08-23
 
 ### Corrigé
