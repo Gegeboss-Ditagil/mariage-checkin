@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.7.0] — 2026-08-23
+
+### Corrigé
+- `initialize_invitation_members` ajuste désormais `nombre_prevu` à la baisse lorsqu'une ligne est retirée du brouillon avant le premier enregistrement de la liste. Le statut est recalculé dans la même transaction; une liste égale ou plus longue ne fait jamais grandir le nombre prévu.
+- Cas réel : Famille Bolamba, annoncée à 2 personnes; Koffi retiré avant l'enregistrement; le groupe doit devenir complet à 1/1 plutôt que rester partiel à 1/2.
+- L'écran explique explicitement cette conséquence avant l'enregistrement.
+
+### Sécurité et audit
+- La route `/api/members/initialize` utilise la capacité centrale `manageMembers` au lieu d'une liste locale de rôles.
+- L'initialisation reste sérialisée par verrouillage de l'invitation et journalise le nombre prévu avant/après ainsi que l'indicateur d'ajustement.
+
+### Migration et production
+- Ajoute `0024_initialize_members_adjust_prevu.sql`. Le numéro `0020` fourni initialement n'a pas été réutilisé, car il appartient déjà au transfert/échange en lot.
+- Le comportement était déjà appliqué directement en production avec autorisation explicite. La définition active a été vérifiée en lecture seule le 23/08/2026; aucune nouvelle écriture de production n'a été effectuée pendant ce merge.
+
+### Tests
+- Ajoute `npm run test:members` : baisse uniquement, absence de hausse implicite, verrouillage, audit avant/après et capacité `manageMembers`.
+
 ## [1.6.4] — 2026-08-23
 
 ### Sécurité et permissions

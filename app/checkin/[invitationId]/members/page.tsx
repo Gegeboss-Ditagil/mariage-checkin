@@ -304,6 +304,11 @@ export default function MembresInvitationPage() {
               La liste détaillée des membres n'a pas encore été créée pour ce groupe. C'est optionnel — utile
               seulement si vous devez retirer ou nommer une personne précise plus tard.
             </p>
+            <p className="text-sm text-black/50">
+              Si vous retirez une ligne ci-dessous avant d'enregistrer, le nombre de personnes prévues sera
+              automatiquement réduit. Ajouter une ligne ici ne l'augmente pas; utilisez ensuite « Ajouter une
+              personne » pour enregistrer un invité supplémentaire.
+            </p>
             {draft.length === 0 && (
               <p className="text-sm text-black/40">Aucun membre détecté dans les notes importées.</p>
             )}

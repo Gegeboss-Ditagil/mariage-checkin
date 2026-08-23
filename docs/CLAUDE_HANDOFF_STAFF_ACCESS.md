@@ -1,6 +1,6 @@
 # Transmission Claude — accès sécurisé à `/staff`
 
-**Version documentaire : 1.6.4**  
+**Version documentaire : 1.7.0**  
 **Dernière mise à jour : 2026-08-23**
 
 Ce fichier explique la logique d'accès Staff à conserver lors des prochains changements. Il ne contient volontairement aucun code PIN ni secret.
@@ -56,4 +56,3 @@ Avant toute modification des rôles ou de `/staff` :
 6. exécuter `npm run test:roles`, `npx tsc --noEmit` et `npm run build`;
 7. documenter la version et les tests dans `CHANGELOG.md`;
 8. ne faire aucune migration ou écriture Supabase sans autorisation explicite, sauvegarde et plan de retour arrière.
-

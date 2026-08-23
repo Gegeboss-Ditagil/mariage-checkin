@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.6.4**  
+**Version documentaire : 1.7.0**  
 **Dernière mise à jour : 2026-08-23**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -138,6 +138,7 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 
 - `nombre_prevu` est le nombre attendu; `nombre_arrive` est le total enregistré.
 - Retirer un membre diminue `nombre_prevu`; le renommer ne le modifie pas.
+- Lors de la toute première création de la liste détaillée, retirer une ligne du brouillon puis enregistrer diminue également `nombre_prevu` au nombre de membres effectivement sauvegardés. Cette initialisation ne peut jamais augmenter `nombre_prevu`; un ajout passe par l'action dédiée « Ajouter une personne ».
 - Déplacer une invitation conserve ses arrivées, membres et historique.
 - Un débordement ne doit jamais être assigné deux fois.
 - Capacité physique, places libres maintenant et occupation estimée sont des mesures différentes.

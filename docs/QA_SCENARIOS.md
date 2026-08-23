@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.6.4**  
+**Version documentaire : 1.7.0**  
 **Dernière mise à jour : 2026-08-23**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -23,6 +23,7 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 11. Dashboard, historique, exceptions et export selon les permissions.
 12. Écran Staff : accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité (consultation seule, bouton de check-in absent); admin/directeur/visibilité voient tout le staff, placeur/agent scan seulement les personnes `notable` sans table; vérifier aussi directement `GET /api/staff` pour confirmer que les lignes masquées ne sont pas envoyées au navigateur; badge Sans table; téléphone absent/présent; staff affiché par personne.
 13. QR `STAFF` en casse variée : redirection vers `/staff` pour admin/directeur/placeur/agent scan; visibilité ne doit jamais accéder à la caméra. Tester aussi un scan immédiatement après l'arrivée sur `/scan`, badge déjà présenté : aucun refus ne doit apparaître avant le chargement du rôle.
+14. Première création des membres : partir d'une invitation prévue à 2, retirer une ligne du brouillon avant l'enregistrement et vérifier le passage à 1 prévu avec statut recalculé; ajouter une ligne au brouillon ne doit jamais augmenter implicitement `nombre_prevu`; un second enregistrement concurrent doit recevoir `already_initialized`.
 
 ## Session, déploiement et PWA
 
