@@ -1,11 +1,11 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.12.0**
+**Version documentaire : 1.13.0**
 **Dernière mise à jour : 2026-08-23**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
-## État de référence v1.12.0
+## État de référence v1.13.0
 
 - 41 tables au total.
 - Tables 1 à 40 : normales.
@@ -31,6 +31,7 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Fusionner deux invitations | invitations, checkins, overflow_assignments, invitation_guests, exceptions, audit | Admin, directeur, placeur |
 | Ajouter/retirer une étiquette | invitations, audit | Admin, directeur, placeur |
 | Import/administration | tables, invitations, users, événement | Admin uniquement |
+| Diffusion des invitations | Excel/CSV local en mémoire, aucune écriture serveur | Admin uniquement |
 
 La page `/staff` est une lecture filtrée de `invitations.category = 'Staff'`. Elle ne crée aucun nouveau type d'écriture : toucher une ligne réutilise le check-in existant. Pour les futurs imports With Joy, `notable` conserve `table_id = NULL` sauf si un tag `Txxx`/`Fxxx` explicite est présent.
 

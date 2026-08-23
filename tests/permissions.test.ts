@@ -138,6 +138,10 @@ test('admin conserve tous les droits sensibles', () => {
   assert.equal(hasCapability('admin', 'adminPanel'), true);
   assert.equal(hasCapability('admin', 'exportData'), true);
   assert.equal(canAccessPath('admin', '/admin/users'), true);
+  assert.equal(canAccessPath('admin', '/admin/diffusion'), true);
+  for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(canAccessPath(role, '/admin/diffusion'), false);
+  }
 });
 
 test("le chemin racine n'autorise pas implicitement toutes les pages", () => {

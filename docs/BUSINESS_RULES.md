@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.12.0**
+**Version documentaire : 1.13.0**
 **Dernière mise à jour : 2026-08-23**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -124,6 +124,16 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 - Un tag `notable` signale un membre du staff volontairement sans table. Lors d'un futur import, un tag de table explicite reste prioritaire et produit un avertissement.
 
 ## Principes
+
+### Diffusion des invitations
+
+- `/admin/diffusion` est réservé à l'admin par le middleware, comme tous les écrans `/admin`.
+- Le fichier Excel/CSV est lu uniquement dans le navigateur : aucune ligne, coordonnée ou progression d'envoi n'est transmise à Supabase ou à une API de l'application.
+- Le code d'invitation doit être explicite et suivre `T010`/`F004`; l'application ne déduit jamais ce code du numéro de table. Le lien produit suit `https://libalz.my.canva.site/vol-{code en minuscules}`.
+- WhatsApp et email sont des raccourcis manuels avec message prérempli. Aucun envoi automatique ou en masse n'est effectué par l'application.
+- Un nom ou un code Canva invalide bloque les raccourcis d'envoi afin d'éviter la transmission d'un mauvais lien. Les coordonnées invalides sont signalées avant envoi.
+- Le suivi reste en mémoire jusqu'à sa réexportation Excel. Fermer ou recharger la page sans exporter perd la progression, volontairement, afin de ne pas conserver les contacts dans le navigateur.
+- Aucun PIN, jeton de session ou identifiant interne ne doit apparaître dans le fichier importé ou exporté.
 
 - Voir une invitation, effectuer son check-in et la déplacer sont trois permissions distinctes.
 - Masquer un bouton ne suffit jamais : chaque route API vérifie aussi le rôle côté serveur.

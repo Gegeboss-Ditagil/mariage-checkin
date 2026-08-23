@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.12.0**
+**Version documentaire : 1.13.0**
 **Dernière mise à jour : 2026-08-23**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -27,6 +27,7 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 15. Plan de salle interactif sur `/plan-table` (tous rôles ayant `viewTables`, donc les cinq) : le bouton « 🗺️ Voir le plan de salle » est replié par défaut; l'ouvrir affiche les 41 tables numérotées (1 à 40 plus la réserve, 41, qui a désormais un emplacement), aucune n'est superposée à une autre ni à un libellé de pièce; appuyer sur une table du plan la surligne en vert et fait apparaître une carte « Table sélectionnée » juste en dessous avec la bonne liste d'invités; le bouton 📍 sur une carte de la liste plus bas (y compris la carte de la réserve) sélectionne la même table, ouvre le plan s'il était fermé et y fait défiler la page; cliquer le reste d'une carte (hors bouton 📍) continue de naviguer normalement vers `/tables/[tableId]`, sans régression; la flèche retour du haut ramène au bon écran selon le rôle (`/scan` ou `/tables`), comme avant cette fonctionnalité.
 16. Zoom du plan de salle sur `/plan-table` : pincer à deux doigts agrandit le plan (jusqu'à ×3) sans zoomer le reste de la page; relâcher le pincement au-dessus d'une table ne la sélectionne jamais par accident; glisser à un doigt une fois zoomé déplace le plan sans jamais laisser un bord vide apparaître dans le cadre; les boutons +/− (et ↺ une fois zoomé) fonctionnent au clic/tactile pour les appareils sans pincement; refermer puis rouvrir le plan réinitialise le zoom à 100 %; un double-tap/double-clic réinitialise aussi le zoom.
 17. Zones staff cliquables sur le plan de `/plan-table` (Cuisine, Bar, DJ et animation, Prestataires & staff) : cliquer une zone en surbrillance affiche le personnel de catégorie Staff portant le tag correspondant (Traiteur, Bar, DJ_Animation, Photographe) juste en dessous du plan, avec statut de table et bouton d'appel; sélectionner une zone efface la table sélectionnée (et inversement), un seul panneau s'affiche à la fois; une zone sans personnel rattaché affiche un message clair plutôt qu'une liste vide silencieuse; les zones sans tag (Zone enfants, Piste de danse, Stage band & chanteurs, couloirs, buffets…) restent de simples repères visuels, non cliquables.
+18. Diffusion des invitations : `/admin/diffusion` inaccessible aux quatre rôles non-admin; import `.xlsx` et `.csv` sans appel API; association automatique et manuelle des colonnes; `T010` produit exactement `https://libalz.my.canva.site/vol-t010`; un code absent/invalide bloque WhatsApp et email; aperçu personnalisé; aucun envoi automatique; statut modifiable puis présent dans l'Excel réexporté; rechargement de page ne restaure aucune coordonnée.
 
 ## Session, déploiement et PWA
 

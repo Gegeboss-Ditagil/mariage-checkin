@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.13.0] — 2026-08-23
+
+### Ajouté
+- Nouvel écran admin `/admin/diffusion` pour préparer l'envoi personnalisé des invitations à partir d'un fichier Excel ou CSV. Le premier onglet est lu localement dans le navigateur, avec association automatique ou manuelle des colonnes (famille, téléphone, email, code d'invitation, nombre de personnes, langue, canal, statut et notes).
+- Génération stricte du lien Canva depuis un code explicite `T010`/`F004` (`https://libalz.my.canva.site/vol-t010`), sans déduction fragile depuis un numéro de table. Aperçu du message avec variables, copie, ouverture manuelle de WhatsApp ou de l'email, filtres de suivi et marquage « Envoyé ».
+- Réexport `.xlsx` du suivi complet, incluant coordonnées, code, lien Canva, statut, erreurs, notes et message généré.
+
+### Sécurité
+- Écran réservé à l'admin par le middleware existant. Aucune API et aucune écriture Supabase : les contacts et le suivi restent uniquement en mémoire dans l'onglet et disparaissent au rechargement, sauf réexport volontaire par l'admin.
+- Aucun envoi automatique. Un nom ou un code Canva invalide désactive les raccourcis WhatsApp/email et le marquage d'envoi; les téléphones/emails invalides sont signalés ligne par ligne.
+
+### Tests
+- Ajoute `tests/invitation-diffusion.test.ts` : génération stricte des URL Canva, association des en-têtes Excel, validation sans déduction de table, personnalisation du message et encodage du lien WhatsApp.
+
 ## [1.12.0] — 2026-08-23
 
 ### Ajouté
