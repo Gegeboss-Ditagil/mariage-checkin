@@ -39,8 +39,8 @@ const config: Config = {
           complete: '#1f8a52',
           over: '#d13438',
         },
-        nelly: '#9d5b7d',
-        gege: '#2f6f83',
+        nelly: '#d6336c',
+        gege: '#1d4ed8',
       },
       fontFamily: {
         display: ['Georgia', 'Cambria', 'serif'],

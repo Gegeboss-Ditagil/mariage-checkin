@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.8.1] — 2026-08-23
+
+### Corrigé
+- Couleurs `nelly` (`#9d5b7d` → `#d6336c`) et `gege` (`#2f6f83` → `#1d4ed8`) dans `tailwind.config.ts`, utilisées pour les pastilles de côté sur `/plan-table` et `/search`, ainsi que les compteurs par côté. Signalé par Gersom : les deux teintes d'origine étaient difficiles à différencier d'un coup d'œil sur un petit écran. Les nouvelles teintes rose/framboise et bleu indigo sont mieux séparées, avec un contraste texte sur fond blanc d'environ 4,62:1 et 6,70:1.
+- `tailwind.config.ts` reste l'unique source des valeurs hexadécimales; `lib/types.ts` ne contient que la correspondance vers les classes `bg-nelly` et `bg-gege`. Aucune teinte dupliquée en dur dans les composants.
+
+### Tests
+- `npx tsc --noEmit`, `npm run test:roles`, `npm run test:members`, `python3 -m unittest tests.test_import_scripts` et `npm run build` exécutés avant le push. Changement purement visuel, aucun test automatisé supplémentaire.
+
 ## [1.8.0] — 2026-08-23
 
 ### Ajouté

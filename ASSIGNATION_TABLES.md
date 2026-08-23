@@ -1,6 +1,6 @@
 # Assignation des tables — méthode et résultat
 
-**Version documentaire : 1.8.0**
+**Version documentaire : 1.8.1**
 **Dernière mise à jour : 2026-08-23**
 **Statut : appliqué en base et vérifié.**
 
