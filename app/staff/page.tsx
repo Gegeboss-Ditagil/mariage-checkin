@@ -62,9 +62,8 @@ function extractPrenoms(notes: string | null): string | null {
 export default function StaffPage() {
   const router = useRouter();
   const role = useSessionRole();
-  // Comme sur /table/[tableId] : tout le monde qui peut voir cet ecran voit
-  // la liste complete, seuls ceux qui ont la capacite "checkin" peuvent
-  // toucher une ligne pour cocher une arrivee.
+  // Tous les roles autorises voient cet ecran, mais seuls ceux qui ont la
+  // capacite "checkin" peuvent toucher une ligne pour cocher une arrivee.
   const canCheckin = hasCapability(role, 'checkin');
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +96,12 @@ export default function StaffPage() {
     };
   }, []);
 
-  const staff = invitations.filter(isStaff);
+  // Admin/directeur/visibilite suivent tout le personnel. Les roles qui
+  // assurent l'accueil voient seulement le staff volontairement sans table :
+  // le personnel deja place se presente normalement via sa table.
+  const seesOnlyNoTable = role === 'placeur' || role === 'agent_checkin';
+  const staffAll = invitations.filter(isStaff);
+  const staff = seesOnlyNoTable ? staffAll.filter(isNoTable) : staffAll;
   const prevu = staff.reduce((s, i) => s + i.nombre_prevu, 0);
   const arrive = staff.reduce((s, i) => s + i.nombre_arrive, 0);
 
@@ -127,14 +131,19 @@ export default function StaffPage() {
             </div>
           </div>
           <p className="mb-2 text-xs text-black/40">
-            Toute personne du staff (photographe, MC, DJ, service, sécurité…), qu'elle ait une table ou non — voir le
-            badge « Sans table » pour celles accueillies directement ici, sans table assignée.
+            {seesOnlyNoTable
+              ? 'Personnel sans table assignée (photographe, MC, DJ…), accueilli directement via le QR « STAFF ».'
+              : "Toute personne du staff (photographe, MC, DJ, service, sécurité…), qu'elle ait une table ou non — voir le badge « Sans table » pour celles accueillies directement ici, sans table assignée."}
           </p>
         </div>
       )}
 
       {!loading && staff.length === 0 && (
-        <p className="p-6 text-center text-black/50">Aucun membre du staff enregistré pour l'instant.</p>
+        <p className="p-6 text-center text-black/50">
+          {seesOnlyNoTable
+            ? "Aucune personne du staff sans table pour l'instant."
+            : "Aucun membre du staff enregistré pour l'instant."}
+        </p>
       )}
 
       <ul className="flex-1 divide-y divide-gold-400/10 px-4">

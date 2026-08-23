@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.6.1**  
-**Dernière mise à jour : 2026-08-22**
+**Version documentaire : 1.6.2**  
+**Dernière mise à jour : 2026-08-23**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -113,6 +113,7 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 
 - Une invitation `category = 'Staff'` apparaît dans `/staff`, indépendamment de son affectation à une table.
 - `/staff` est accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité en lecture seule. Cette règle a été revue le 22/08/2026 après confirmation que les membres du staff sans table se présentent à l'entrée générale tenue par placeur/agent scan.
+- Admin, directeur et visibilité voient tout le staff, avec ou sans table. Placeur et agent scan ne voient sur `/staff` que les personnes marquées `notable` et accueillies sans table; le staff déjà placé se présente normalement via sa table.
 - Le tag de rôle staff (`SERVICES` ou autre tag de rôle) est individuel : si un seul membre d'un foyer le porte, seule cette personne est `category = 'Staff'` (isolée dans sa propre invitation), jamais tout le foyer.
 - La section Staff du dashboard est visible par admin, directeur et visibilité.
 - Le QR littéral `STAFF`, insensible à la casse, ouvre directement `/staff` pour admin/directeur/placeur/agent scan; visibilité ne peut jamais atteindre la caméra.

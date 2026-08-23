@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.6.2] — 2026-08-23
+
+### Corrigé
+- `/staff` adapte maintenant sa liste au rôle : admin, directeur et visibilité conservent la vue d'ensemble, tandis que placeur et agent scan voient uniquement le personnel marqué `notable` et accueilli sans table. Le staff déjà placé continue son check-in normal depuis sa table.
+- La documentation des comptes reste sans codes PIN : aucun secret d'authentification n'est ajouté au dépôt.
+
+### Tests
+- Tests de permissions, vérification TypeScript et build Next.js exécutés avant publication.
+
 ## [1.6.1] — 2026-08-22
 
 ### Corrigé

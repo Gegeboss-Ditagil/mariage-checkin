@@ -51,6 +51,10 @@ export function landingPathForRole(role: Role): string {
   return role === 'directeur' || role === 'visibilite' ? '/dashboard' : '/scan';
 }
 
+// /staff reste accessible aux quatre roles operationnels ainsi qu'a
+// visibilite en lecture seule. Le contenu est filtre dans app/staff/page.tsx :
+// placeur et agent_checkin ne voient que le personnel sans table, tandis
+// qu'admin, directeur et visibilite voient l'ensemble du staff.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
   '/plan-table', '/exceptions', '/history', '/placement', '/api',

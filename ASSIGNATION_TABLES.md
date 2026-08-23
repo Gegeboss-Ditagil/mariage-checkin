@@ -1,7 +1,7 @@
 # Assignation des tables — méthode et résultat
 
-**Version documentaire : 1.6.1**  
-**Dernière mise à jour : 2026-08-22**
+**Version documentaire : 1.6.2**  
+**Dernière mise à jour : 2026-08-23**
 **Statut : appliqué en base et vérifié.**
 
 Import réalisé à partir de l'export With Joy `guestlist_8.csv`. Les places marquées `confirmée` viennent des labels With Joy; les places `provisoire` restent à valider. `/plan-table` reflète l'état courant de la base.
