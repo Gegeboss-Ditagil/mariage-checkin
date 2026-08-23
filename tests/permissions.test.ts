@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { canAccessPath, hasCapability, landingPathForRole } from '../lib/permissions.ts';
 import type { Role } from '../lib/types.ts';
+import { canViewAllStaff, isStaffWithoutTable } from '../lib/staffVisibility.ts';
 
 const roles: Role[] = ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibilite'];
 
@@ -25,6 +26,16 @@ test('staff est accessible a tous les roles operationnels, visibilite en lecture
   assert.equal(canAccessPath('visibilite', '/staff'), true);
   assert.equal(hasCapability('visibilite', 'checkin'), false);
   assert.equal(hasCapability('visibilite', 'checkin'), false);
+});
+
+test('la visibilite des lignes staff est restreinte selon le role', () => {
+  assert.equal(canViewAllStaff('admin'), true);
+  assert.equal(canViewAllStaff('directeur'), true);
+  assert.equal(canViewAllStaff('visibilite'), true);
+  assert.equal(canViewAllStaff('placeur'), false);
+  assert.equal(canViewAllStaff('agent_checkin'), false);
+  assert.equal(isStaffWithoutTable({ tags: ['Côté_Gege', 'no-table'] }), true);
+  assert.equal(isStaffWithoutTable({ tags: ['SERVICES', 'T030'] }), false);
 });
 
 test('agent scan peut consulter et faire le check-in sans deplacer', () => {

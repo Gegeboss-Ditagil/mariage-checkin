@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.6.3] — 2026-08-23
+
+### Sécurité
+- `/staff` ne télécharge plus toutes les invitations avant de les filtrer dans le navigateur. La nouvelle route `GET /api/staff` valide le cookie de session signé côté serveur et ne renvoie aux placeurs/agents scan que le personnel `notable` sans table; admin, directeur et visibilité reçoivent la vue complète prévue par la règle métier.
+- La réponse Staff est privée et non mise en cache. La clé Supabase de service reste confinée au serveur.
+- Les noms de comptes peuvent rester documentés, mais aucun code PIN ni secret d'authentification n'est conservé dans Git.
+
+### Tests
+- Ajoute un test de la matrice de visibilité Staff et de la reconnaissance tolérante du tag sans table.
+
 ## [1.6.2] — 2026-08-23
 
 ### Corrigé
