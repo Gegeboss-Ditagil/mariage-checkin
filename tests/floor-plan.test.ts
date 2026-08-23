@@ -9,6 +9,7 @@ import test from 'node:test';
 // voir tests/permissions.test.ts et tests/members-migration.test.ts.
 const source = readFileSync(new URL('../components/FloorPlan.tsx', import.meta.url), 'utf8');
 const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+const zoomSource = readFileSync(new URL('../components/ZoomableFloorPlan.tsx', import.meta.url), 'utf8');
 
 function parsePositions(src: string): Map<number, [number, number]> {
   const match = src.match(/FLOOR_PLAN_TABLE_POSITIONS[^{]*\{([\s\S]*?)\n\};/);
@@ -77,4 +78,33 @@ test('la table de reserve n a pas de bouton "localiser sur le plan"', () => {
   // (tables 1-40) le fait, garde par tablesSurLePlan.has(t.number).
   const reserveBlock = pageSource.slice(pageSource.indexOf('reserve.map'));
   assert.doesNotMatch(reserveBlock.slice(0, reserveBlock.indexOf('/>')), /onLocate/);
+});
+
+test('la page utilise le plan zoomable, pas le plan brut directement', () => {
+  // Demande de Gersom le 23/08/2026 : le plan est trop petit pour appeler
+  // rapidement, ajout du pincement/zoom -- /plan-table doit passer par le
+  // wrapper, sinon la fonctionnalite n'est pas branchee.
+  assert.match(pageSource, /<ZoomableFloorPlan\b/);
+  assert.doesNotMatch(pageSource, /<FloorPlan\b/);
+});
+
+test('le zoom du plan de salle reste borne et ne desactive pas le zoom natif de toute la page', () => {
+  // MIN_SCALE=1 : on ne retrecit jamais en dessous de la taille normale.
+  assert.match(zoomSource, /const MIN_SCALE = 1;/);
+  assert.match(zoomSource, /const MAX_SCALE = 3;/);
+  // touch-action: none doit rester scope au cadre du plan (pas au document
+  // entier), pour ne pas casser le defilement/zoom du reste de l'appli.
+  assert.match(zoomSource, /touchAction: 'none'/);
+});
+
+test('un pincement ou un glissement sur le plan ne declenche jamais la selection de la table relachee sous le doigt', () => {
+  // Sans cette garde, relacher un pincement ou un glissement sur une table
+  // la selectionnerait par accident au lieu de juste zoomer/deplacer.
+  assert.match(zoomSource, /onClickCapture=\{onClickCapture\}/);
+  assert.match(zoomSource, /moved\.current/);
+  // Si le navigateur ne produit aucun click après le pincement, le prochain
+  // vrai geste doit quand même pouvoir sélectionner une table.
+  assert.match(zoomSource, /if \(pointers\.current\.size === 0\) moved\.current = false/);
+  // Pas de division par zéro si les deux pointeurs démarrent au même pixel.
+  assert.match(zoomSource, /Math\.max\(1, distance\(a, b\)\)/);
 });

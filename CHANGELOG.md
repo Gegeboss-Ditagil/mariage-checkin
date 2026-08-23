@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.11.0] — 2026-08-23
+
+### Ajouté
+- Le plan de salle interactif de `/plan-table` se zoome désormais : pincement à deux doigts sur écran tactile (jusqu'à ×3), ou boutons +/− (et ↺ pour réinitialiser une fois zoomé) pour les appareils sans tactile. Signalé par Gersom : le plan était trop petit pour distinguer une table d'un coup d'œil quand on veut appeler quelqu'un rapidement.
+- Nouveau composant `components/ZoomableFloorPlan.tsx`, qui enrobe `FloorPlan` (le SVG du plan lui-même est inchangé) avec un zoom/déplacement tactile en Pointer Events, sans dépendance externe. `touch-action: none` reste scopé au cadre du plan uniquement — le zoom natif du reste de la page n'est jamais désactivé.
+- Le déplacement (pan) à un doigt une fois zoomé reste borné pour ne jamais laisser un bord vide apparaître dans le cadre. Refermer puis rouvrir le plan réinitialise le zoom à 100 % (le composant est démonté avec le bloc replié, son état interne repart donc à zéro à chaque réouverture).
+- Relâcher un pincement ou un glissement au-dessus d'une table ne déclenche jamais sa sélection par accident (`onClickCapture` supprime le clic qui suit un mouvement au-delà d'un seuil). Chaque nouveau geste réinitialise proprement cette garde lorsqu'aucun clic synthétique n'a été produit, afin que le prochain vrai tap ne soit jamais ignoré; une distance initiale minimale protège aussi le calcul du pincement contre une division par zéro.
+
+### Tests
+- `npm run test:floorplan` étendu (10/10) : la page utilise bien le plan zoomable et non le plan brut directement; les bornes de zoom (`MIN_SCALE`/`MAX_SCALE`) et le scope de `touch-action: none` sont vérifiés par inspection du code source; la garde anti-clic-accidentel après pincement/glissement est vérifiée.
+- `npx tsc --noEmit`, `npm run test:roles` (13/13), `npm run test:members` (3/3), `npm run test:floorplan` (10/10), `python3 -m unittest tests.test_import_scripts` (11/11) et `npm run build` exécutés avec succès.
+
 ## [1.10.0] — 2026-08-23
 
 ### Ajouté

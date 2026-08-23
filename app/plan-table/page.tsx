@@ -17,7 +17,8 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { FloorPlan, FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
+import { FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
+import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
@@ -221,13 +222,13 @@ export default function PlanTablePage() {
 
             {showFloorPlan && (
               <div ref={floorPlanRef} className="mb-5">
-                <FloorPlan
+                <ZoomableFloorPlan
                   selectedNumber={selectedTable?.number ?? null}
                   onSelectNumber={selectTableByNumber}
                   occupied={occupiedNumbers}
                 />
                 <p className="mt-2 text-center text-xs text-black/40">
-                  Appuyez sur une table pour la sélectionner.
+                  Appuyez sur une table pour la sélectionner · pincez avec deux doigts (ou utilisez +/−) pour zoomer.
                 </p>
 
                 {selectedTable && (
