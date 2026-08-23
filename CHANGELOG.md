@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-23 (réimport complet, guestlist_24.csv)
+
+### Réimport complet de la liste d'invités
+- Remplacement complet des invitations de l'événement « Mariage Nelly & Gersom » à partir de `guestlist_24.csv`, avec autorisation explicite de Gersom (« MET A JOURS AVEC CETTE SOURCE... corrige tout et écrase à partir de cette source »).
+- Sauvegarde préalable : `invitations_backup_20260823_v24`, avec RLS activé immédiatement dans la même migration.
+- Avant : 234 invitations, 387 personnes prévues, 0 arrivée réelle, 0 « ne viendra pas ».
+- Après : 233 invitations, 386 personnes prévues, 224 avec table, 9 Staff sans table, 0 arrivée, 0 « ne viendra pas ».
+- Conflit signalé : Henry Kiadi Ndiongo porte toujours à la fois `T015` et `T025` dans `guestlist_24.csv` (même conflit que lors du réimport précédent) ; placé table 15 (premier tag, règle déjà appliquée).
+- Débordement de capacité sur une table explicitement taguée : Famille Bitumazala (T015, 4 personnes) redistribuée vers la table la moins remplie sans étiquette (23).
+- Sans table en dehors des `notable` habituels : **Mika Fleurival** (tags `Bar`, `Needs_Table_Gege`) — Gege ne lui a pas encore assigné de table à la main (même traitement que `notable` par règle métier existante, voir `docs/BUSINESS_RULES.md`), signalé explicitement comme demandé.
+- Genevieve Bila porte désormais le tag `notable` dans cette source (elle n'a plus de table, contrairement au réimport précédent) — cohérent avec ce que Gersom avait annoncé.
+- Vérification : comparaison automatisée champ par champ (nom, groupe, nombre prévu, téléphone, catégorie, côté, tags, statut de placement) et numéro de table, contre le JSON source vérifié — correspondance parfaite sur les 233 lignes, aucune ligne fabriquée ni manquante. Cas particuliers revérifiés individuellement par requête nominative après écriture.
+- RLS de `invitations_backup_20260823_v24` confirmé actif (`pg_class.relrowsecurity = true`) directement après la migration.
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## [1.13.0] — 2026-08-23
 
 ### Ajouté
