@@ -7,6 +7,7 @@ import { QrScanner } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -60,7 +61,7 @@ export default function ScanPage() {
       // Ouvert à toute l'équipe d'accueil : les invitations Staff sans table
       // se présentent à l'entrée générale, tenue par placeur/agent scan.
       if (code.toUpperCase() === 'STAFF') {
-        if (role === 'admin' || role === 'directeur' || role === 'placeur' || role === 'agent_checkin') {
+        if (hasCapability(role, 'viewStaff')) {
           router.push('/staff');
         } else {
           setStatus('error');
@@ -151,7 +152,7 @@ export default function ScanPage() {
             Tableau de bord
           </Link>
         </div>
-        {(role === 'admin' || role === 'directeur' || role === 'placeur' || role === 'agent_checkin') && (
+        {hasCapability(role, 'viewStaff') && (
           <Link href="/staff" className="btn-secondary w-full text-center">
             Staff
           </Link>

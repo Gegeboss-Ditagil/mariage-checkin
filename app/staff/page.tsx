@@ -80,7 +80,7 @@ export default function StaffPage() {
   // La restriction des lignes est deja appliquee par /api/staff apres
   // verification de la session signee. Cette condition ne sert qu'au texte
   // d'interface; elle n'est jamais utilisee comme controle d'autorisation.
-  const seesOnlyNoTable = role === 'placeur' || role === 'agent_checkin';
+  const seesOnlyNoTable = !!role && !hasCapability(role, 'viewAllStaff');
   const staff = invitations.filter(isStaff);
   const prevu = staff.reduce((s, i) => s + i.nombre_prevu, 0);
   const arrive = staff.reduce((s, i) => s + i.nombre_arrive, 0);

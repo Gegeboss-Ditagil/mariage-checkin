@@ -1,4 +1,4 @@
-import type { InvitationRow, Role } from './types';
+import type { InvitationRow } from './types';
 
 export function normalizeStaffTag(value: string): string {
   return value
@@ -11,8 +11,3 @@ export function normalizeStaffTag(value: string): string {
 export function isStaffWithoutTable(invitation: Pick<InvitationRow, 'tags'>): boolean {
   return (invitation.tags || []).some((tag) => normalizeStaffTag(tag) === 'notable');
 }
-
-export function canViewAllStaff(role: Role): boolean {
-  return role === 'admin' || role === 'directeur' || role === 'visibilite';
-}
-

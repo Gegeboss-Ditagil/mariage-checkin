@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.6.4] — 2026-08-23
+
+### Sécurité et permissions
+- Centralise toute la logique Staff dans deux capacités de `lib/permissions.ts` : `viewStaff` pour accéder à l'écran/API et `viewAllStaff` pour recevoir la vue complète. L'API, la page Staff, le QR/raccourci Scan et la section du dashboard utilisent désormais `hasCapability` au lieu de recopier des listes de rôles.
+- Conserve les barrières de v1.6.3 : session signée vérifiée côté serveur, filtrage avant envoi au navigateur et réponse privée sans cache.
+- Ajoute `docs/CLAUDE_HANDOFF_STAFF_ACCESS.md`, fiche de transmission destinée à Claude avec matrice des rôles, architecture de sécurité, politique sans PIN et checklist de modification.
+
+### Tests
+- Étend le test de permissions afin de couvrir explicitement `viewStaff` et `viewAllStaff` pour les cinq rôles.
+
 ## [1.6.3] — 2026-08-23
 
 ### Sécurité

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/session';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { canViewAllStaff, isStaffWithoutTable } from '@/lib/staffVisibility';
+import { hasCapability } from '@/lib/permissions';
+import { isStaffWithoutTable } from '@/lib/staffVisibility';
 import type { InvitationRow, TableRow } from '@/lib/types';
 
 interface StaffInvitation extends InvitationRow {
@@ -10,7 +11,7 @@ interface StaffInvitation extends InvitationRow {
 
 export async function GET() {
   const user = getSessionUser();
-  if (!user) {
+  if (!user || !hasCapability(user.role, 'viewStaff')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
@@ -26,11 +27,10 @@ export async function GET() {
   }
 
   const staff = (data as StaffInvitation[] | null) || [];
-  const visibleStaff = canViewAllStaff(user.role) ? staff : staff.filter(isStaffWithoutTable);
+  const visibleStaff = hasCapability(user.role, 'viewAllStaff') ? staff : staff.filter(isStaffWithoutTable);
 
   return NextResponse.json(
     { invitations: visibleStaff },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
 }
-

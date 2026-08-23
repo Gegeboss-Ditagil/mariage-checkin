@@ -5,6 +5,8 @@ export type Capability =
   | 'search'
   | 'viewDashboard'
   | 'viewTables'
+  | 'viewStaff'
+  | 'viewAllStaff'
   | 'checkin'
   | 'placement'
   | 'moveGuests'
@@ -19,28 +21,28 @@ export type Capability =
   | 'adminPanel';
 
 const ALL_CAPABILITIES: Capability[] = [
-  'scan', 'search', 'viewDashboard', 'viewTables', 'checkin', 'placement',
+  'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
   'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'exportData', 'adminPanel',
 ];
 
 const OPERATIONAL_CAPABILITIES: Capability[] = [
-  'scan', 'search', 'viewDashboard', 'viewTables', 'checkin', 'placement',
+  'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
   'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
 ];
 
 export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   admin: ALL_CAPABILITIES,
-  directeur: OPERATIONAL_CAPABILITIES,
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff'],
   placeur: OPERATIONAL_CAPABILITIES,
   agent_checkin: [
-    'scan', 'search', 'viewDashboard', 'viewTables', 'checkin',
+    'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin',
     'assignOverflow', 'manageMembers', 'markNoShow', 'viewHistory',
     'resolveExceptions',
   ],
-  visibilite: ['search', 'viewDashboard', 'viewTables'],
+  visibilite: ['search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff'],
 };
 
 export function hasCapability(role: Role | null | undefined, capability: Capability): boolean {
@@ -51,10 +53,9 @@ export function landingPathForRole(role: Role): string {
   return role === 'directeur' || role === 'visibilite' ? '/dashboard' : '/scan';
 }
 
-// /staff reste accessible aux quatre roles operationnels ainsi qu'a
-// visibilite en lecture seule. Le contenu est filtre dans app/staff/page.tsx :
-// placeur et agent_checkin ne voient que le personnel sans table, tandis
-// qu'admin, directeur et visibilite voient l'ensemble du staff.
+// L'acces a la route reste protege par le middleware. La granularite du
+// contenu est centralisee dans les capacites viewStaff/viewAllStaff et doit
+// aussi etre verifiee dans l'API, jamais seulement dans l'interface.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
   '/plan-table', '/exceptions', '/history', '/placement', '/api',

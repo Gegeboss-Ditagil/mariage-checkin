@@ -81,7 +81,7 @@ export default function DashboardPage() {
   const staffInvitations = invitations.filter((i) => i.category === 'Staff');
   const staffPrevu = staffInvitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const staffArrive = staffInvitations.reduce((s, i) => s + i.nombre_arrive, 0);
-  const canSeeStaffSection = role === 'admin' || role === 'directeur' || role === 'visibilite';
+  const canSeeStaffSection = hasCapability(role, 'viewAllStaff');
 
   const reserveTables = tables.filter((t) => t.is_reserve);
   const usageByTable = new Map<string, number>();
