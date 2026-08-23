@@ -1,6 +1,6 @@
 # Processus QE/QA pour les bugs
 
-**Version documentaire : 1.6.0**  
+**Version documentaire : 1.6.1**  
 **Dernière mise à jour : 2026-08-22**
 
 Ce document distingue deux moments différents et fixe ce qui est obligatoire à chacun :
@@ -63,6 +63,8 @@ Cas découverts hors de la matrice de la section 4, valables pour tout le projet
 - **`matchesPrefix` ne peut pas non plus bloquer un sous-chemin qui suit un segment dynamique** (ex: `/checkin/[invitationId]/merge` — l'id vient avant `/merge`, donc aucun prefixe statique ne peut viser spécifiquement cette page sans aussi bloquer tout `/checkin/...`). Découvert le 22/08/2026 en ajoutant la fusion d'invitations : la page `/checkin/[id]/merge` reste atteignable par URL directe pour `agent_checkin`, mais `/api/invitations/merge` refuse l'écriture (même filet de sécurité que `/tables/move/[invitationId]` pour `visibilite` — commentaire déjà présent dans `canAccessPath`). Tant que le middleware fait du matching par préfixe de chaîne, ce type de route doit être protégé côté API, pas côté page — le vérifier explicitement plutôt que de supposer une régression de `canAccessPath`.
 - **Une même règle métier implémentée deux fois (Python à l'import, SQL pour une modification manuelle) peut diverger silencieusement.** `add_invitation_tag`/`remove_invitation_tag` (`0022_manage_invitation_tags.sql`, puis correctif `0023_sync_needs_table_tag_rules.sql`) répliquent volontairement la liste `NON_ROLE_TAGS`/`is_role_tag` de `scripts/build_plan_from_csv.py` pour qu'ajouter un tag à la main produise le même `category` qu'un réimport avec ce même tag. Si cette liste change d'un côté (nouveau tag non-rôle découvert dans un futur export With Joy), la reporter immédiatement de l'autre côté — sinon un tag ajouté à la main et le même tag arrivant par CSV donneraient des résultats différents sans avertissement.
 - **Une restriction d'accès doit suivre le scénario d'usage réel.** `/staff` a été restreint puis rouvert à placeur/agent scan le 22/08/2026 après confirmation que le staff sans table se présente à l'entrée générale. Ne pas réintroduire cette restriction sans une nouvelle décision métier explicite.
+- **Ne jamais retranscrire à la main un gros bloc SQL contenant des données réelles.** Après toute écriture de masse, comparer automatiquement la base au fichier source vérifié, ligne par ligne et champ par champ; une exécution SQL réussie ne prouve pas que les données sont exactes.
+- **Un hook chargé dans un `useEffect` expose d'abord un état vide.** Sur `/scan`, la caméra doit rester démontée tant que `useSessionRole()` renvoie `null`; sinon un QR déjà présenté peut être refusé avant le chargement du rôle.
 
 ## Rattachement
 

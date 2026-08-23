@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.6.1] — 2026-08-22
+
+### Corrigé
+- `app/scan/page.tsx` : le QR littéral `STAFF` pouvait être refusé à tort pour un rôle autorisé si le badge était scanné avant le chargement asynchrone de `useSessionRole()`. La caméra reste désormais démontée tant que `role === null`, puis s'active une fois le rôle disponible.
+- Le raccourci « Staff » en bas de `/scan`, resté limité à admin/directeur par oubli, est aligné sur le QR et visible aussi pour placeur/agent scan.
+
+### Tests
+- 11 tests d'import, 10 tests de permissions, `npx tsc --noEmit` et `npm run build` passants. Le scénario de scan immédiat reste documenté comme vérification manuelle de composant dans `docs/QA_SCENARIOS.md`.
+
+## Données — 2026-08-22
+
+### Réimport complet de la liste d'invités (`guestlist_18.csv`)
+- Remplacement complet de `invitations` en production, déjà effectué avec autorisation explicite. Aucun code applicatif ni schéma modifié par cette opération.
+- Avant : 226 invitations, 385 personnes prévues, 59 Staff. Après, vérifié en lecture avant ce merge : **225 invitations, 387 personnes prévues, 61 Staff et 44 sans table**.
+- Sauvegarde `invitations_backup_20260822` confirmée présente; aucun check-in n'était enregistré avant l'opération.
+- « Accompagnant non-nommé » affiche maintenant « Photographe Assistant Auguste » depuis les données source.
+- La première tentative SQL a échoué et sa transaction a été annulée. La seconde contenait 7 invitations absentes du CSV, détectées par comparaison automatisée puis supprimées immédiatement sans check-in associé. Une comparaison exhaustive des champs a ensuite confirmé les 225 invitations attendues.
+- Garde-fou : ne jamais retranscrire manuellement un gros bloc SQL de données réelles; générer l'écriture depuis la source et comparer automatiquement la base au fichier vérifié après toute opération de masse.
+- `Needs_Table_Gege`/`Needs_Table_Nelly` est correctement traité : pas d'auto-assignation et pas de classification Staff.
+
 ## [1.6.0] — 2026-08-22
 
 ### Ajouté / Corrigé

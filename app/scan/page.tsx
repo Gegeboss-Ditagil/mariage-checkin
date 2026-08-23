@@ -23,6 +23,10 @@ export default function ScanPage() {
   const role = useSessionRole();
   const [status, setStatus] = useState<'idle' | 'looking' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
+  // useSessionRole lit le cookie après le premier rendu. Tant que `role`
+  // vaut null, aucune caméra n'est montée : un badge déjà présenté ne peut
+  // donc pas être traité comme un refus avant le chargement de la session.
+  const roleReady = role !== null;
 
   // Filet de securite cote client : le role "visibilite" ne doit jamais
   // pouvoir scanner. Le middleware bloque deja /scan pour ce role, mais un
@@ -112,7 +116,13 @@ export default function ScanPage() {
       </div>
 
       <div className="px-4 py-4">
-        <QrScanner onScan={handleScan} />
+        {roleReady ? (
+          <QrScanner onScan={handleScan} />
+        ) : (
+          <div className="flex aspect-square items-center justify-center rounded-xl2 bg-black/5 text-black/40">
+            Chargement…
+          </div>
+        )}
       </div>
 
       {status === 'looking' && (
@@ -141,7 +151,7 @@ export default function ScanPage() {
             Tableau de bord
           </Link>
         </div>
-        {(role === 'admin' || role === 'directeur') && (
+        {(role === 'admin' || role === 'directeur' || role === 'placeur' || role === 'agent_checkin') && (
           <Link href="/staff" className="btn-secondary w-full text-center">
             Staff
           </Link>
