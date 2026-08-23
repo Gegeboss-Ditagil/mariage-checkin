@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test:roles": "node --test tests/permissions.test.ts",
     "test:members": "node --test tests/members-migration.test.ts",
+    "test:floorplan": "node --test tests/floor-plan.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"
   },

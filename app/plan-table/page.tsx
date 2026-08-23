@@ -17,6 +17,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { FloorPlan, FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
@@ -35,6 +36,17 @@ export default function PlanTablePage() {
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtre, setFiltre] = useState<Filtre>('toutes');
+
+  // -- Plan de salle interactif -----------------------------------------------
+  // Replie par defaut (demande explicite de Gersom le 23/08/2026) : un
+  // bouton dedie ouvre le plan plutot que de l'afficher en permanence en
+  // haut d'une page deja longue. selectedTableId pilote a la fois le
+  // surlignage sur le SVG et la carte "Table selectionnee" juste en dessous;
+  // cliquer une table sur le plan OU le repere sur une carte plus bas met a
+  // jour le meme etat, dans les deux sens.
+  const [showFloorPlan, setShowFloorPlan] = useState(false);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const floorPlanRef = useRef<HTMLDivElement>(null);
 
   // -- Tire-pour-rafraichir (pull-to-refresh) --------------------------------
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -140,6 +152,36 @@ export default function PlanTablePage() {
     return { totalPersonnes, parCote, confirmees, provisoires, officielles, excedentaire, sansTable };
   }, [invitations, normales, reserve]);
 
+  const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
+  // Uniquement les tables 1-40 : le plan ne connait pas encore la table de
+  // reserve (41), sans emplacement physique defini (voir Gersom le
+  // 23/08/2026) -- FLOOR_PLAN_TABLE_POSITIONS n'a d'entree que pour celles-la.
+  const tablesSurLePlan = new Set(Object.keys(FLOOR_PLAN_TABLE_POSITIONS).map(Number));
+  const occupiedNumbers = new Set(
+    normales.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
+  );
+
+  function scrollToFloorPlan() {
+    // requestAnimationFrame : laisse le temps au bloc de s'ouvrir (showFloorPlan)
+    // avant de calculer sa position, sinon le scroll vise l'ancienne mise en page.
+    requestAnimationFrame(() => {
+      floorPlanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  function selectTableByNumber(number: number) {
+    const table = tables.find((t) => t.number === number && !t.is_reserve);
+    if (!table) return; // Defensif : ne devrait pas arriver, seules 1-40 sont sur le plan.
+    setSelectedTableId(table.id);
+  }
+
+  function locateOnPlan(table: TableRow) {
+    if (!tablesSurLePlan.has(table.number)) return; // Reserve ou table hors plan.
+    setSelectedTableId(table.id);
+    setShowFloorPlan(true);
+    scrollToFloorPlan();
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar
@@ -166,6 +208,41 @@ export default function PlanTablePage() {
 
         {!loading && (
           <>
+            {/* Plan de salle interactif : replie par defaut, un bouton
+                dedie l'ouvre plutot que de l'imposer en haut d'une page
+                deja longue (demande explicite de Gersom le 23/08/2026). */}
+            <button
+              type="button"
+              className="btn-secondary mb-4 block w-full text-center"
+              onClick={() => setShowFloorPlan((v) => !v)}
+            >
+              {showFloorPlan ? '🗺️ Masquer le plan de salle' : '🗺️ Voir le plan de salle'}
+            </button>
+
+            {showFloorPlan && (
+              <div ref={floorPlanRef} className="mb-5">
+                <FloorPlan
+                  selectedNumber={selectedTable?.number ?? null}
+                  onSelectNumber={selectTableByNumber}
+                  occupied={occupiedNumbers}
+                />
+                <p className="mt-2 text-center text-xs text-black/40">
+                  Appuyez sur une table pour la sélectionner.
+                </p>
+
+                {selectedTable && (
+                  <div className="mt-3">
+                    <TableCard
+                      table={selectedTable}
+                      invitations={invitationsByTable.get(selectedTable.id) || []}
+                      filtre={filtre}
+                      selected
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Stats compactes */}
             <div className="mb-4 grid grid-cols-3 gap-2 text-center">
               <div className="card py-2">
@@ -255,6 +332,8 @@ export default function PlanTablePage() {
                   table={t}
                   invitations={invitationsByTable.get(t.id) || []}
                   filtre={filtre}
+                  selected={selectedTableId === t.id}
+                  onLocate={tablesSurLePlan.has(t.number) ? () => locateOnPlan(t) : undefined}
                 />
               ))}
             </div>
@@ -287,73 +366,96 @@ function TableCard({
   invitations,
   filtre,
   reserve,
+  selected,
+  onLocate,
 }: {
   table: TableRow;
   invitations: InvitationRow[];
   filtre: Filtre;
   reserve?: boolean;
+  // Table actuellement selectionnee sur le plan de salle interactif -- carte
+  // encadree en vert, meme convention de couleur que le plan lui-meme.
+  selected?: boolean;
+  // Absent quand la table n'a pas d'emplacement sur le plan (reserve, ou
+  // futur ajout hors plan) : bouton "localiser" masque plutot que desactive.
+  onLocate?: () => void;
 }) {
   const visibles = filtre === 'toutes' ? invitations : invitations.filter((i) => i.placement_status === filtre);
   const occ = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const pct = Math.min(100, (occ / (table.capacity || 10)) * 100);
 
   return (
-    <Link
-      href={'/tables/' + table.id}
-      className={clsx('card block', reserve && 'border-2 border-status-partial/40')}
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="font-display text-lg">
-          Table {table.number}
-          {table.label && <span className="ml-1.5 text-sm font-sans text-black/50">— {table.label}</span>}
-          {reserve && (
-            <span className="ml-1.5 rounded-full bg-status-over/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-status-over align-middle">
-              Excédentaire
-            </span>
-          )}
-        </p>
-        <p className="shrink-0 text-xs tabular-nums text-black/40">
-          {occ}/{table.capacity}
-        </p>
-      </div>
-      <div className="mt-1.5 h-1.5 rounded-full bg-black/5">
-        <div className="h-full rounded-full bg-gold-500" style={{ width: pct + '%' }} />
-      </div>
-
-      {visibles.length === 0 && (
-        <p className="mt-2 text-xs italic text-black/40">
-          {invitations.length === 0 ? 'Libre pour le débordement du jour J' : 'Aucune place de ce type'}
-        </p>
+    <div
+      className={clsx(
+        'card relative block',
+        reserve && 'border-2 border-status-partial/40',
+        selected && 'border-2 border-status-complete ring-2 ring-status-complete/30'
       )}
-
-      <ul className="mt-2.5 space-y-1.5">
-        {visibles.map((inv) => (
-          <li key={inv.id} className="flex items-center gap-1.5 text-sm">
-            <span
-              className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
-              title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
-            />
-            <span className="min-w-0 flex-1 truncate">{inv.nom_affichage}</span>
-            {inv.category === 'Staff' && (
-              <span className="flex shrink-0 items-center gap-1 rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
-                Staff
-                <span
-                  className={clsx('h-1.5 w-1.5 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
-                />
+    >
+      {onLocate && (
+        <button
+          type="button"
+          aria-label={'Localiser la table ' + table.number + ' sur le plan de salle'}
+          className="absolute right-2 top-2 rounded-full bg-gold-100 p-1.5 text-sm leading-none text-gold-700"
+          onClick={onLocate}
+        >
+          📍
+        </button>
+      )}
+      <Link href={'/tables/' + table.id} className="block">
+        <div className="flex items-baseline justify-between gap-2 pr-8">
+          <p className="font-display text-lg">
+            Table {table.number}
+            {table.label && <span className="ml-1.5 text-sm font-sans text-black/50">— {table.label}</span>}
+            {reserve && (
+              <span className="ml-1.5 rounded-full bg-status-over/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-status-over align-middle">
+                Excédentaire
               </span>
             )}
-            <span className="shrink-0 text-xs text-black/40">×{inv.nombre_prevu}</span>
-            <span
-              className={clsx(
-                'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',
-                PLACEMENT_COLORS[inv.placement_status]
+          </p>
+          <p className="shrink-0 text-xs tabular-nums text-black/40">
+            {occ}/{table.capacity}
+          </p>
+        </div>
+        <div className="mt-1.5 h-1.5 rounded-full bg-black/5">
+          <div className="h-full rounded-full bg-gold-500" style={{ width: pct + '%' }} />
+        </div>
+
+        {visibles.length === 0 && (
+          <p className="mt-2 text-xs italic text-black/40">
+            {invitations.length === 0 ? 'Libre pour le débordement du jour J' : 'Aucune place de ce type'}
+          </p>
+        )}
+
+        <ul className="mt-2.5 space-y-1.5">
+          {visibles.map((inv) => (
+            <li key={inv.id} className="flex items-center gap-1.5 text-sm">
+              <span
+                className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
+                title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
+              />
+              <span className="min-w-0 flex-1 truncate">{inv.nom_affichage}</span>
+              {inv.category === 'Staff' && (
+                <span className="flex shrink-0 items-center gap-1 rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
+                  Staff
+                  <span
+                    className={clsx('h-1.5 w-1.5 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
+                  />
+                </span>
               )}
-            >
-              {PLACEMENT_LABELS[inv.placement_status]}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Link>
+              <span className="shrink-0 text-xs text-black/40">×{inv.nombre_prevu}</span>
+              <span
+                className={clsx(
+                  'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                  PLACEMENT_COLORS[inv.placement_status]
+                )}
+              >
+                {PLACEMENT_LABELS[inv.placement_status]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Link>
+    </div>
   );
 }

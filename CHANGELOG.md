@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.10.0] — 2026-08-23
+
+### Ajouté
+- Plan de salle interactif sur `/plan-table` (`components/FloorPlan.tsx`), derrière un bouton dédié « 🗺️ Voir le plan de salle » replié par défaut (demande explicite de Gersom : ne pas imposer l'image en haut d'une page déjà longue). Schéma SVG redessiné à la main à partir du plan papier fourni — l'image d'origine ne pouvait pas être intégrée telle quelle (transmise dans le chat, jamais reçue comme fichier téléchargeable malgré deux tentatives) ; ce choix a un avantage réel : rendu net à toute résolution, dans la charte de couleurs de l'app, contrairement à une photo intégrée telle quelle.
+- Les 40 tables (1 à 40) sont numérotées et cliquables sur le plan; la table de réserve (41) n'y figure pas volontairement, son emplacement physique n'étant pas encore défini (à ajouter plus tard).
+- Sélection bidirectionnelle, entièrement côté client sur les données déjà chargées (aucun nouvel appel réseau, aucune nouvelle capacité) : appuyer sur une table du plan la surligne en vert et affiche sa fiche (mêmes informations qu'une carte de la liste) juste en dessous du plan; un bouton 📍 sur chaque carte de la liste habituelle (tables 1-40 uniquement) sélectionne la même table et fait défiler la page jusqu'au plan, en l'ouvrant au besoin. Le clic normal sur le reste d'une carte continue de naviguer vers `/tables/[tableId]`, inchangé. Le bouton 📍 est un contrôle frère du lien plutôt qu'un bouton imbriqué dans celui-ci, afin d'éviter les interactions invalides et les navigations accidentelles.
+- Accessible à tous les rôles ayant `viewTables` (les cinq) : lecture seule pure, aucune permission n'était nécessaire ni ajoutée.
+
+### Tests
+- Nouvelle suite `npm run test:floorplan` : les 40 tables (et uniquement elles, jamais la 41) ont une position sur le plan, les cibles tactiles ne se chevauchent pas et restent entièrement dans le viewBox, le plan est bien replié par défaut derrière son bouton, les tables sont utilisables au clavier, le bouton 📍 n'est pas imbriqué dans le lien de navigation, et la table de réserve n'a jamais de bouton 📍 (inspection du code source, même convention que les tests staff/tags de ce lot).
+- Vérification visuelle : rendu du SVG exporté en HTML statique et capturé via Chromium headless (sans dépendre d'un environnement Supabase) — a permis de repérer et corriger un chevauchement réel (étiquette « Couloir Est » débordant sur les pièces voisines dans un couloir trop étroit pour du texte horizontal, corrigé par rotation à 90° des étiquettes de colonnes étroites).
+- `npx tsc --noEmit`, `npm run test:roles` (13/13), `npm run test:members` (3/3), `npm run test:floorplan` (7/7), `python3 -m unittest tests.test_import_scripts` (11/11) et `npm run build` exécutés avec succès.
+
 ## [1.9.0] — 2026-08-23
 
 ### Sécurité et permissions
