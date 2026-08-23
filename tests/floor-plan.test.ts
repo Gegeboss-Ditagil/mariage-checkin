@@ -24,15 +24,15 @@ function parsePositions(src: string): Map<number, [number, number]> {
   return positions;
 }
 
-test('le plan de salle couvre exactement les tables 1 a 40, sans la reserve (41)', () => {
+test('le plan de salle couvre exactement les tables 1 a 41 (reserve incluse)', () => {
   const positions = parsePositions(source);
-  assert.equal(positions.size, 40, 'doit y avoir exactement 40 tables positionnees sur le plan');
-  for (let n = 1; n <= 40; n++) {
+  // Mise a jour du 23/08/2026 : la table 41 (reserve) a desormais une
+  // position confirmee par Gersom -- avant cette date elle etait
+  // volontairement absente (emplacement physique non defini).
+  assert.equal(positions.size, 41, 'doit y avoir exactement 41 tables positionnees sur le plan');
+  for (let n = 1; n <= 41; n++) {
     assert.ok(positions.has(n), 'table ' + n + ' doit avoir une position sur le plan');
   }
-  // La reserve (41) n'a volontairement pas d'emplacement defini -- voir
-  // Gersom le 23/08/2026 : a ajouter plus tard, jamais implicitement.
-  assert.equal(positions.has(41), false, "la table 41 (reserve) ne doit pas apparaitre sur le plan pour l'instant");
 });
 
 test('les cibles tactiles des tables ne se chevauchent pas', () => {
@@ -73,11 +73,34 @@ test('le bouton localiser n est jamais imbrique dans le lien de navigation', () 
   assert.ok(cardBlock.indexOf('{onLocate && (') < cardBlock.indexOf("<Link href={'/tables/' + table.id}"));
 });
 
-test('la table de reserve n a pas de bouton "localiser sur le plan"', () => {
-  // reserve.map(...) ne doit jamais recevoir onLocate -- seule normales.map
-  // (tables 1-40) le fait, garde par tablesSurLePlan.has(t.number).
-  const reserveBlock = pageSource.slice(pageSource.indexOf('reserve.map'));
-  assert.doesNotMatch(reserveBlock.slice(0, reserveBlock.indexOf('/>')), /onLocate/);
+test('la table de reserve a desormais un bouton "localiser sur le plan"', () => {
+  // Mise a jour du 23/08/2026 : la reserve (41) a maintenant une position
+  // sur le plan (voir ci-dessus), donc reserve.map(...) doit recevoir
+  // onLocate comme normales.map, garde par tablesSurLePlan.has(t.number).
+  // Ancrage precis sur l'appel JSX (le fichier contient aussi
+  // "reserve.map" plus haut, dans "new Set(reserve.map((t) => t.id))").
+  const reserveBlock = pageSource.slice(pageSource.indexOf('{reserve.map((t) => ('));
+  assert.match(reserveBlock.slice(0, reserveBlock.indexOf('/>')), /onLocate/);
+});
+
+test('les zones staff (Bar, Cuisine, DJ et animation, Prestataires) portent un tag deja present en base', () => {
+  // Demande de Gersom le 23/08/2026 : cliquer une zone doit faire sortir le
+  // personnel qui y est rattache -- reutilise les tags deja poses lors de
+  // l'import CSV, aucune nouvelle liste de roles a maintenir.
+  assert.match(source, /label: 'Cuisine', staffTag: 'Traiteur'/);
+  assert.match(source, /label: 'Bar', staffTag: 'Bar'/);
+  assert.match(source, /vertical: true, staffTag: 'DJ_Animation'/);
+  assert.match(source, /staffTag: 'Photographe'/);
+});
+
+test('selectionner une table efface la zone selectionnee et inversement', () => {
+  // Un seul panneau (table ou zone) affiche a la fois sous le plan.
+  assert.match(pageSource, /setSelectedTableId\(table\.id\);\s*\n\s*setSelectedZone\(null\)/);
+  assert.match(pageSource, /setSelectedZone\(room\);\s*\n\s*setSelectedTableId\(null\)/);
+});
+
+test('le personnel d une zone est filtre par tag sur les invitations deja chargees, sans nouvel appel reseau', () => {
+  assert.match(pageSource, /inv\.category === 'Staff' && inv\.tags\.includes\(selectedZoneTag\)/);
 });
 
 test('la page utilise le plan zoomable, pas le plan brut directement', () => {

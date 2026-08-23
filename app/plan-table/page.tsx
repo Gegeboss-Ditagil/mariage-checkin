@@ -17,7 +17,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
+import { FLOOR_PLAN_TABLE_POSITIONS, type Room } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import clsx from 'clsx';
 
@@ -47,6 +47,12 @@ export default function PlanTablePage() {
   // jour le meme etat, dans les deux sens.
   const [showFloorPlan, setShowFloorPlan] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  // Zone staff selectionnee (Bar, Cuisine, DJ et animation, Prestataires...)
+  // -- mutuellement exclusive avec selectedTableId : selectionner l'une
+  // efface l'autre, un seul panneau s'affiche sous le plan a la fois.
+  // Demande de Gersom le 23/08/2026 : cliquer une zone doit faire sortir le
+  // personnel qui y est rattache (tag deja pose lors de l'import CSV).
+  const [selectedZone, setSelectedZone] = useState<Room | null>(null);
   const floorPlanRef = useRef<HTMLDivElement>(null);
 
   // -- Tire-pour-rafraichir (pull-to-refresh) --------------------------------
@@ -154,13 +160,21 @@ export default function PlanTablePage() {
   }, [invitations, normales, reserve]);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
-  // Uniquement les tables 1-40 : le plan ne connait pas encore la table de
-  // reserve (41), sans emplacement physique defini (voir Gersom le
-  // 23/08/2026) -- FLOOR_PLAN_TABLE_POSITIONS n'a d'entree que pour celles-la.
+  // Tables presentes sur le plan interactif -- 1 a 40 plus la reserve (41,
+  // qui a desormais une position definie, voir FLOOR_PLAN_TABLE_POSITIONS).
   const tablesSurLePlan = new Set(Object.keys(FLOOR_PLAN_TABLE_POSITIONS).map(Number));
   const occupiedNumbers = new Set(
-    normales.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
+    tables.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
   );
+
+  // Personnel rattache a la zone selectionnee (tag deja present en base,
+  // voir components/FloorPlan.tsx). Simple filtrage cote client sur les
+  // invitations deja chargees -- aucun nouvel appel reseau.
+  const selectedZoneTag = selectedZone?.staffTag ?? null;
+  const staffForZone = selectedZoneTag
+    ? invitations.filter((inv) => inv.category === 'Staff' && inv.tags.includes(selectedZoneTag))
+    : [];
+  const staffPeopleForZone = staffForZone.reduce((sum, inv) => sum + inv.nombre_prevu, 0);
 
   function scrollToFloorPlan() {
     // requestAnimationFrame : laisse le temps au bloc de s'ouvrir (showFloorPlan)
@@ -171,17 +185,29 @@ export default function PlanTablePage() {
   }
 
   function selectTableByNumber(number: number) {
-    const table = tables.find((t) => t.number === number && !t.is_reserve);
-    if (!table) return; // Defensif : ne devrait pas arriver, seules 1-40 sont sur le plan.
+    const table = tables.find((t) => t.number === number);
+    if (!table) return; // Defensif : ne devrait pas arriver, seules les tables du plan sont cliquables.
     setSelectedTableId(table.id);
+    setSelectedZone(null);
+  }
+
+  function selectZone(room: Room) {
+    setSelectedZone(room);
+    setSelectedTableId(null);
   }
 
   function locateOnPlan(table: TableRow) {
-    if (!tablesSurLePlan.has(table.number)) return; // Reserve ou table hors plan.
+    if (!tablesSurLePlan.has(table.number)) return; // Table hors plan (pas encore positionnee).
     setSelectedTableId(table.id);
+    setSelectedZone(null);
     setShowFloorPlan(true);
     scrollToFloorPlan();
   }
+
+  // Comme sur /staff : tout le monde qui peut voir cet ecran voit le
+  // personnel d'une zone, seuls ceux qui ont "checkin" peuvent toucher une
+  // ligne pour aller la cocher.
+  const canCheckin = hasCapability(role, 'checkin');
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -226,9 +252,13 @@ export default function PlanTablePage() {
                   selectedNumber={selectedTable?.number ?? null}
                   onSelectNumber={selectTableByNumber}
                   occupied={occupiedNumbers}
+                  selectedZoneTag={selectedZoneTag}
+                  onSelectZone={selectZone}
                 />
                 <p className="mt-2 text-center text-xs text-black/40">
-                  Appuyez sur une table pour la sélectionner · pincez avec deux doigts (ou utilisez +/−) pour zoomer.
+                  Appuyez sur une table pour la sélectionner, ou sur une zone en surbrillance (Bar, Cuisine, DJ et
+                  animation, Prestataires) pour voir le personnel associé · pincez avec deux doigts (ou utilisez
+                  +/−) pour zoomer.
                 </p>
 
                 {selectedTable && (
@@ -239,6 +269,59 @@ export default function PlanTablePage() {
                       filtre={filtre}
                       selected
                     />
+                  </div>
+                )}
+
+                {selectedZone && (
+                  <div className="card mt-3 p-4">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold">{selectedZone.label}</p>
+                        {selectedZone.sub && <p className="truncate text-xs text-black/40">{selectedZone.sub}</p>}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-gold-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold-700">
+                        {staffPeopleForZone} personne{staffPeopleForZone > 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    {staffForZone.length === 0 ? (
+                      <p className="text-sm text-black/40">
+                        Personne du staff n'est encore rattachée à cette zone pour l'instant.
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-gold-400/10">
+                        {staffForZone.map((inv) => {
+                          const invTable = inv.table_id ? tables.find((t) => t.id === inv.table_id) : null;
+                          const row = (
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">{inv.nom_affichage}</p>
+                              <p className="text-xs text-black/50">{invTable ? 'Table ' + invTable.number : 'Sans table'}</p>
+                            </div>
+                          );
+                          return (
+                            <li key={inv.id} className="flex items-center gap-2 py-2">
+                              {canCheckin ? (
+                                <Link href={'/checkin/' + inv.id} className="min-w-0 flex-1">
+                                  {row}
+                                </Link>
+                              ) : (
+                                row
+                              )}
+                              {inv.telephone && (
+                                <a
+                                  href={'tel:' + inv.telephone}
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label={'Appeler ' + inv.nom_affichage}
+                                  className="shrink-0 rounded-full bg-gold-100 p-2 text-sm text-gold-700"
+                                >
+                                  📞
+                                </a>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 )}
               </div>
@@ -350,6 +433,8 @@ export default function PlanTablePage() {
                   invitations={invitationsByTable.get(t.id) || []}
                   filtre={filtre}
                   reserve
+                  selected={selectedTableId === t.id}
+                  onLocate={tablesSurLePlan.has(t.number) ? () => locateOnPlan(t) : undefined}
                 />
               ))}
             </div>

@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.11.0**
+**Version documentaire : 1.12.0**
 **Dernière mise à jour : 2026-08-23**
 
 Avant toute modification, lire dans cet ordre :
@@ -26,7 +26,7 @@ Les permissions sont centralisées dans `lib/permissions.ts`. Ne recréez pas de
 
 Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation explicite, aperçu des impacts, sauvegarde et procédure de retour arrière. Toute modification manuelle de production doit être reflétée dans une migration GitHub et dans le changelog de la version correspondante.
 
-## État de référence v1.11.0
+## État de référence v1.12.0
 
 - 41 tables : 40 normales (1-40) + une réserve (41).
 - Capacité officielle : 400 places; capacité absolue : 410.

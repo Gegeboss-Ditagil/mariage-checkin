@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { FloorPlan } from '@/components/FloorPlan';
+import { FloorPlan, type Room } from '@/components/FloorPlan';
 
 // Enrobe FloorPlan (le SVG lui-meme reste inchange) avec un zoom/pan tactile.
 // Demande de Gersom le 23/08/2026 : le plan est trop petit pour distinguer
@@ -40,9 +40,17 @@ interface ZoomableFloorPlanProps {
   selectedNumber: number | null;
   onSelectNumber: (number: number) => void;
   occupied?: Set<number>;
+  selectedZoneTag?: string | null;
+  onSelectZone?: (room: Room) => void;
 }
 
-export function ZoomableFloorPlan({ selectedNumber, onSelectNumber, occupied }: ZoomableFloorPlanProps) {
+export function ZoomableFloorPlan({
+  selectedNumber,
+  onSelectNumber,
+  occupied,
+  selectedZoneTag,
+  onSelectZone,
+}: ZoomableFloorPlanProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pointers = useRef<Map<number, Point>>(new Map());
   const pinchStart = useRef<{ dist: number; scale: number } | null>(null);
@@ -159,7 +167,13 @@ export function ZoomableFloorPlan({ selectedNumber, onSelectNumber, occupied }: 
             transition: pointers.current.size === 0 ? 'transform 150ms ease-out' : 'none',
           }}
         >
-          <FloorPlan selectedNumber={selectedNumber} onSelectNumber={onSelectNumber} occupied={occupied} />
+          <FloorPlan
+            selectedNumber={selectedNumber}
+            onSelectNumber={onSelectNumber}
+            occupied={occupied}
+            selectedZoneTag={selectedZoneTag}
+            onSelectZone={onSelectZone}
+          />
         </div>
       </div>
 

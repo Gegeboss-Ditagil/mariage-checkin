@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.12.0] — 2026-08-23
+
+### Ajouté
+- Mise à jour du plan de salle interactif de `/plan-table` à partir d'une photo annotée à la main envoyée par Gersom : numérotation et disposition des tables 22-41 ajustées (reconstruction raisonnable à partir de la photo, approximative comme le plan d'origine — pas une trace pixel par pixel), et deux nouvelles zones ajoutées par split de zones existantes : « Zone enfants » + « Prestataires & staff » (ex-Stockage), « Piste de danse » (réduite) + « Stage band & chanteurs » (ex-Piste de danse).
+- **La table de réserve (41) a désormais une position définie sur le plan**, confirmé explicitement par Gersom — jusqu'ici elle en était volontairement absente (emplacement physique non défini, voir v1.10.0). Elle est maintenant cliquable comme les tables 1-40, et sa carte dans la liste habituelle reçoit elle aussi le bouton 📍 « localiser sur le plan ».
+- Certaines zones du plan (Cuisine, Bar, DJ et animation, Prestataires & staff) sont cliquables : elles affichent en dessous du plan le personnel de catégorie `Staff` portant le tag correspondant (`Traiteur`, `Bar`, `DJ_Animation`, `Photographe`) — noms, statut de table, bouton d'appel direct. Ces tags sont déjà posés sur les invitations depuis l'import CSV (voir `scripts/build_plan_from_csv.py`) : aucune migration ni changement de données n'a été nécessaire, uniquement un filtrage côté client sur les invitations déjà chargées. Demande explicite de Gersom : « quand on clique sur les différentes zones, ça puisse nous amener sur les personnes, incluant les gens du staff ».
+- Sélectionner une zone efface la table sélectionnée et inversement — un seul panneau (table ou zone) s'affiche sous le plan à la fois, dans la continuité de la logique déjà en place pour la sélection de table.
+- Les autres zones (Zone enfants, Piste de danse, Stage band & chanteurs, couloirs, buffets, vin d'honneur…) restent de simples repères visuels non cliquables, faute de tag dédié en base pour l'instant.
+
+### Non fait (sur demande explicite de Gersom)
+- Genevieve Bila (tag `Traiteur`) a actuellement une table assignée en production — Gersom a précisé que le prochain réimport CSV la passera sans table, donc aucune modification manuelle de production n'a été faite ici (voir `docs/DATA_CHANGE_INSTRUCTIONS.md` : jamais de modification de données sans autorisation explicite et ciblée). Le clic sur la zone Cuisine l'affiche déjà via son tag `Traiteur`, qu'elle ait une table ou non.
+
+### Tests
+- `tests/floor-plan.test.ts` étendu (13/13, contre 10/10 en v1.11.0) : couverture des 41 positions (1 à 40 plus la réserve), la carte de réserve reçoit bien `onLocate`, les quatre zones cliquables portent le bon tag, sélectionner une table efface la zone sélectionnée et inversement, le filtrage du personnel d'une zone se fait bien sur les invitations déjà chargées (aucun nouvel appel réseau). Un vrai bug de test préexistant a été corrigé au passage : l'ancien test de non-régression sur la réserve ciblait par erreur la première occurrence de `reserve.map` dans le fichier (`new Set(reserve.map(...))`, sans rapport avec le rendu JSX) au lieu de l'appel JSX réel — il passait donc pour la mauvaise raison depuis v1.10.0; ancrage corrigé sur `{reserve.map((t) => (`.
+- Vérification visuelle : rendu du plan mis à jour exporté en HTML statique et capturé via Chromium headless (même technique que v1.10.0, sans dépendre d'un environnement Supabase) — confirme l'absence de chevauchement entre les nouvelles zones scindées et la nouvelle colonne de tables.
+- `npx tsc --noEmit`, `npm run test:roles` (13/13), `npm run test:members` (3/3), `npm run test:floorplan` (13/13), `python3 -m unittest tests.test_import_scripts` (11/11) et `npm run build` exécutés avec succès.
+
 ## [1.11.0] — 2026-08-23
 
 ### Ajouté

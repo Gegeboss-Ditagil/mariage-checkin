@@ -2,25 +2,27 @@
 
 import clsx from 'clsx';
 
-// Coordonnees du plan de la salle, redessinees a la main a partir du plan
-// papier fourni par Gersom le 23/08/2026 (schema simplifie -- pas une trace
-// pixel par pixel de la photo, que l'app ne peut pas embarquer). Systeme de
-// coordonnees SVG propre a ce composant, en unites arbitraires (viewBox
-// 0 0 1400 1080), sans rapport avec les coordonnees Supabase.
+// Coordonnees du plan de la salle, redessinees a la main a partir des photos
+// annotees fournies par Gersom (23/08/2026, puis mise a jour du 23/08/2026
+// avec numerotation ajustee + nouvelles zones) -- schema simplifie, pas une
+// trace pixel par pixel de la photo, que l'app ne peut pas embarquer.
+// Systeme de coordonnees SVG propre a ce composant, en unites arbitraires
+// (viewBox 0 0 1400 1080), sans rapport avec les coordonnees Supabase.
 //
-// La table 41 (reserve) n'a volontairement PAS de position ici : son
-// emplacement physique n'est pas encore defini (a ajouter plus tard, voir
-// Gersom le 23/08/2026). Elle reste geree normalement dans la liste
-// classique sous ce plan.
+// La table 41 (reserve) a desormais une position definie ici (mise a jour
+// du 23/08/2026, confirmee par Gersom) -- avant cette date elle n'apparaissait
+// pas sur le plan, son emplacement physique n'etant pas encore fixe.
 export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
-  // Bloc "Tables amis" (22-40), 4 rangees x 5 colonnes (derniere rangee
-  // incomplete, 4 tables).
-  22: [695, 118], 28: [769, 118], 29: [843, 118], 36: [917, 118], 40: [991, 118],
-  23: [695, 210], 27: [769, 210], 30: [843, 210], 35: [917, 210], 39: [991, 210],
-  24: [695, 302], 26: [769, 302], 31: [843, 302], 34: [917, 302], 38: [991, 302],
-  25: [695, 394], 32: [769, 394], 33: [843, 394], 37: [917, 394],
-  // Bloc "familles" (1-21), 5 rangees x 5 colonnes (premiere et derniere
-  // rangee incompletes).
+  // Bloc "Tables amis" (22-41), reconstruit a partir de la photo annotee du
+  // 23/08/2026 : une 6e colonne a ete ajoutee a gauche pour la table 41 :
+  // approximation raisonnable a partir d'une photo annotee a la main, pas
+  // une trace pixel par pixel -- a corriger si l'emplacement reel differe.
+  22: [650, 118], 24: [718, 118], 29: [786, 118], 30: [855, 118], 36: [923, 118], 41: [991, 118],
+  23: [650, 210], 25: [718, 210], 28: [786, 210], 31: [855, 210], 35: [923, 210], 40: [991, 210],
+  26: [718, 302], 27: [786, 302], 32: [855, 302], 34: [923, 302], 39: [991, 302],
+  33: [855, 394], 37: [923, 394], 38: [991, 394],
+  // Bloc "familles" (1-21), inchange -- 5 rangees x 5 colonnes (premiere et
+  // derniere rangee incompletes).
   6: [769, 610], 13: [843, 610], 14: [917, 610], 21: [991, 610],
   5: [695, 690], 7: [769, 690], 12: [843, 690], 15: [917, 690], 20: [991, 690],
   4: [695, 770], 8: [769, 770], 11: [843, 770], 16: [917, 770], 19: [991, 770],
@@ -28,7 +30,7 @@ export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
   1: [695, 930], 2: [769, 930],
 };
 
-interface Room {
+export interface Room {
   x: number;
   y: number;
   w: number;
@@ -39,18 +41,43 @@ interface Room {
   // pour un texte horizontal (ex. "Couloir Est", 45 unites de large) --
   // sans ca le texte deborde sur les pieces voisines.
   vertical?: boolean;
+  // Tag staff (deja present sur les invitations en base, voir lib/tags) --
+  // present uniquement sur les zones cliquables. Cliquer la zone affiche le
+  // personnel portant ce tag, sous le plan (voir app/plan-table/page.tsx).
+  // Demande de Gersom le 23/08/2026 : DJ et animation, Cuisine (traiteur),
+  // Bar et Prestataires/staff (photographe et autres) doivent pouvoir
+  // s'ouvrir ainsi, sans dupliquer de liste de roles -- on reutilise les
+  // tags deja poses lors de l'import CSV.
+  staffTag?: string;
 }
 
 const ROOMS: Room[] = [
-  { x: 10, y: 20, w: 220, h: 320, label: 'Cuisine' },
+  { x: 10, y: 20, w: 220, h: 320, label: 'Cuisine', staffTag: 'Traiteur' },
   { x: 240, y: 20, w: 180, h: 90, label: 'CF' },
   { x: 240, y: 115, w: 180, h: 105, label: 'WCH' },
   { x: 240, y: 225, w: 180, h: 115, label: 'WCF' },
-  { x: 150, y: 345, w: 270, h: 75, label: 'Bar' },
-  { x: 10, y: 425, w: 240, h: 560, label: 'Stockage' },
+  { x: 150, y: 345, w: 270, h: 75, label: 'Bar', staffTag: 'Bar' },
+  // Ancienne zone "Stockage" scindee en deux (photo annotee du 23/08/2026) :
+  // une zone enfants (pas de personnel rattache, simple espace) et une zone
+  // prestataires/staff cliquable (photographe et autres, tag Photographe).
+  { x: 10, y: 425, w: 240, h: 280, label: 'Zone enfants' },
+  {
+    x: 10,
+    y: 705,
+    w: 240,
+    h: 280,
+    label: 'Prestataires & staff',
+    sub: 'Photographe et autres',
+    staffTag: 'Photographe',
+  },
   { x: 260, y: 425, w: 100, h: 250, label: 'Les mariés', vertical: true },
-  { x: 260, y: 680, w: 100, h: 305, label: 'DJ et animation', vertical: true },
-  { x: 370, y: 425, w: 240, h: 560, label: 'Piste de danse' },
+  { x: 260, y: 680, w: 100, h: 305, label: 'DJ et animation', vertical: true, staffTag: 'DJ_Animation' },
+  // Ancienne zone "Piste de danse" scindee en deux (photo annotee du
+  // 23/08/2026) : la piste retrecit et une zone "Stage band & chanteurs"
+  // occupe le reste (pas de tag staff : aucun tag dedie en base pour
+  // l'instant, purement indicatif).
+  { x: 370, y: 425, w: 240, h: 250, label: 'Piste de danse' },
+  { x: 370, y: 675, w: 240, h: 310, label: 'Stage band & chanteurs' },
   { x: 610, y: 425, w: 420, h: 90, label: 'Allée centrale' },
   { x: 630, y: 20, w: 400, h: 60, label: 'Couloir Nord' },
   { x: 440, y: 950, w: 590, h: 55, label: 'Couloir Sud' },
@@ -67,54 +94,95 @@ interface FloorPlanProps {
   selectedNumber: number | null;
   onSelectNumber: (number: number) => void;
   occupied?: Set<number>;
+  // Zone staff selectionnee (identifiee par son staffTag) + callback --
+  // optionnels : un appelant qui ne les passe pas garde un plan sans zones
+  // cliquables (comportement inchange).
+  selectedZoneTag?: string | null;
+  onSelectZone?: (room: Room) => void;
 }
 
-export function FloorPlan({ selectedNumber, onSelectNumber, occupied }: FloorPlanProps) {
+export function FloorPlan({
+  selectedNumber,
+  onSelectNumber,
+  occupied,
+  selectedZoneTag,
+  onSelectZone,
+}: FloorPlanProps) {
   return (
     <svg
       viewBox="0 0 1400 1080"
       className="h-auto w-full select-none rounded-xl2 border-2 border-gold-300/30 bg-cream"
       role="img"
-      aria-label="Plan interactif de la salle : appuyez sur une table pour la sélectionner"
+      aria-label="Plan interactif de la salle : appuyez sur une table pour la sélectionner, ou sur une zone (Bar, Cuisine, DJ et animation, Prestataires) pour voir le personnel associé"
     >
-      {ROOMS.map((room, idx) => (
-        <g key={idx}>
-          <rect
-            x={room.x}
-            y={room.y}
-            width={room.w}
-            height={room.h}
-            rx={6}
-            className="fill-black/[0.04] stroke-black/15"
-            strokeWidth={1.5}
-          />
-          <text
-            x={room.x + room.w / 2}
-            y={room.y + room.h / 2 - (room.sub ? 8 : 0)}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            transform={
-              room.vertical
-                ? 'rotate(-90 ' + (room.x + room.w / 2) + ' ' + (room.y + room.h / 2) + ')'
+      {ROOMS.map((room, idx) => {
+        const clickable = Boolean(room.staffTag && onSelectZone);
+        const selected = clickable && selectedZoneTag === room.staffTag;
+        return (
+          <g
+            key={idx}
+            className={clsx(clickable && 'cursor-pointer focus:outline-none')}
+            onClick={clickable ? () => onSelectZone?.(room) : undefined}
+            onKeyDown={
+              clickable
+                ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onSelectZone?.(room);
+                    }
+                  }
                 : undefined
             }
-            className="fill-black/45 text-[13px] font-semibold uppercase tracking-wide"
+            role={clickable ? 'button' : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            aria-label={clickable ? 'Voir le personnel : ' + room.label : undefined}
           >
-            {room.label}
-          </text>
-          {room.sub && (
+            <rect
+              x={room.x}
+              y={room.y}
+              width={room.w}
+              height={room.h}
+              rx={6}
+              className={clsx(
+                selected
+                  ? 'fill-gold-400/20 stroke-gold-600'
+                  : clickable
+                    ? 'fill-black/[0.04] stroke-gold-400/50'
+                    : 'fill-black/[0.04] stroke-black/15'
+              )}
+              strokeWidth={selected ? 3 : 1.5}
+            />
             <text
               x={room.x + room.w / 2}
-              y={room.y + room.h / 2 + 14}
+              y={room.y + room.h / 2 - (room.sub ? 8 : 0)}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="fill-black/35 text-[10px]"
+              transform={
+                room.vertical
+                  ? 'rotate(-90 ' + (room.x + room.w / 2) + ' ' + (room.y + room.h / 2) + ')'
+                  : undefined
+              }
+              className={clsx(
+                'text-[13px] font-semibold uppercase tracking-wide',
+                selected ? 'fill-gold-700' : 'fill-black/45'
+              )}
             >
-              {room.sub}
+              {room.label}
             </text>
-          )}
-        </g>
-      ))}
+            {room.sub && (
+              <text
+                x={room.x + room.w / 2}
+                y={room.y + room.h / 2 + 14}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-black/35 text-[10px]"
+              >
+                {room.sub}
+              </text>
+            )}
+          </g>
+        );
+      })}
 
       {Object.entries(FLOOR_PLAN_TABLE_POSITIONS).map(([numStr, [x, y]]) => {
         const number = Number(numStr);
