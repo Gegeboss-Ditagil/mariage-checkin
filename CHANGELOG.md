@@ -3,6 +3,12 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.15.1] — 2026-08-23
+
+### Corrigé
+- La migration `0026_import_replace_invitations.sql` qualifie désormais `extensions.digest`, car `pgcrypto` est installé dans le schéma `extensions` du projet Supabase et n'est volontairement pas inclus dans le `search_path` sécurisé des RPC.
+- La première tentative d'application a échoué transactionnellement avant toute création; aucune donnée ni aucun objet de schéma n'a été modifié.
+
 ## [1.15.0] — 2026-08-23
 
 ### Ajouté

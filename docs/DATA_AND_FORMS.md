@@ -1,13 +1,13 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.15.0**
+**Version documentaire : 1.15.1**
 **Dernière mise à jour : 2026-08-23**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
 `/admin/import-withjoy` accepte uniquement un CSV With Joy et ne transmet son contenu qu'à la route serveur admin. L'aperçu n'écrit rien. La confirmation remplace les invitations dans une transaction, après une sauvegarde JSON privée incluant invitations, membres, check-ins, débordements, exceptions et audit. Elle remet volontairement les données opérationnelles à zéro et reste donc interdite en mode live/closed.
 
-## État de référence v1.15.0
+## État de référence v1.15.1
 
 - 41 tables au total.
 - Tables 1 à 40 : normales.

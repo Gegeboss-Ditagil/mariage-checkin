@@ -24,7 +24,7 @@ returns jsonb as $$
   select jsonb_build_object(
     'count', count(*),
     'fingerprint', encode(
-      digest(
+      extensions.digest(
         coalesce(
           string_agg(
             concat_ws(':', id, updated_at, table_id, nombre_prevu, nombre_arrive,
