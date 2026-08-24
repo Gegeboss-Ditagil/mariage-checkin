@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-24 (réimport complet, guestlist_27.csv)
+
+### Réimport complet de la liste d'invités
+- Remplacement complet des invitations de l'événement « Mariage Nelly & Gersom » à partir de `guestlist_27.csv`, avec autorisation explicite de Gersom (« met a jours avec ce data a jours svp »).
+- Méthode : même pipeline validé que les réimports précédents (`lib/withjoyImport.ts`, déjà testé par `tests/withjoy-import.test.ts`) pour préparer et valider les invitations, puis écriture en base avec la même discipline que la RPC `admin_replace_invitations` (verrou de l'événement, contrôle de concurrence par comptage + empreinte, sauvegarde transactionnelle complète dans `import_backups` (RLS déjà active), suppression puis réinsertion, vérification du nombre inséré, journal d'audit `import_withjoy_replace`).
+- Avant : 232 invitations, 386 personnes prévues, 0 arrivée, 0 « ne viendra pas ».
+- Après : 235 invitations, 389 personnes prévues, 227 avec table, 8 Staff/notable sans table, 0 arrivée, 0 « ne viendra pas ».
+- **Aucun conflit et aucune personne disparue** : diff automatisé (par nom, multiset) entre l'ancien état et le nouveau montre uniquement 3 ajouts, 0 suppression — Alegria Mpilingi et Dylan Landu (nouveaux invités, table 40, sans tag de table explicite dans le CSV) et une ligne « Accompagnant non-nommé » (1 personne, `RSVP: Sans réponse`, aucun tag) correspondant à une ligne totalement vide côté With Joy (aucun nom, aucun tag) — anomalie de la source à signaler à Gersom, pas une erreur du script.
+- **Personnes sans table en dehors des `notable` habituels : aucune.** Les 8 sans-table sont Genevieve Bila (tag `notable`, toujours sans affectation manuelle comme anticipé par Gersom le 23/08/2026 : « elle n'aura pas de table de toute facon ») et les 7 mêmes prestataires `notable` (photographes, DJ/animation) déjà signalés lors du réimport `0026`/vérification précédente.
+- Vérification : comparaison automatisée champ par champ (nom, groupe, nombre prévu, téléphone, email, notes, tags, côté, catégorie, statut de placement, numéro de table) contre le JSON source vérifié — correspondance parfaite sur les 235 lignes.
+- RLS de `import_backups` confirmée active après l'opération ; `import_backups` contient désormais 1 sauvegarde (l'état des 232 invitations précédentes), toujours illisible par `anon`/`authenticated`.
+- Advisors Supabase sans problème critique après l'opération (mêmes notes `INFO` déjà connues, RLS-sans-policy sur les tables de sauvegarde).
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## [1.15.3] — 2026-08-24
 
 ### Corrigé
