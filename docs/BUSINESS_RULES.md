@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.13.0**
+**Version documentaire : 1.14.0**
 **Dernière mise à jour : 2026-08-23**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -147,6 +147,8 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 - Une session appartenant à un ancien déploiement est invalide et doit retourner au login.
 
 ## Données et capacité
+
+- Les listes détaillées de `/dashboard` répartissent les personnes par côté Nelly/Gégé. Le total représente les arrivés pour la liste « Arrivés », les personnes encore attendues pour « Restants », l'excédent réel pour « Supplémentaires » et le nombre prévu pour les autres listes.
 
 - `nombre_prevu` est le nombre attendu; `nombre_arrive` est le total enregistré.
 - Retirer un membre diminue `nombre_prevu`; le renommer ne le modifie pas.
