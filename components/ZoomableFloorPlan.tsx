@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { FloorPlan, type Room } from '@/components/FloorPlan';
+import { FloorPlan, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 
 // Enrobe FloorPlan (le SVG lui-meme reste inchange) avec un zoom/pan tactile.
 // Demande de Gersom le 23/08/2026 : le plan est trop petit pour distinguer
@@ -42,6 +42,7 @@ interface ZoomableFloorPlanProps {
   occupied?: Set<number>;
   selectedZoneTag?: string | null;
   onSelectZone?: (room: Room) => void;
+  coteByNumber?: Map<number, TableCoteCounts>;
 }
 
 export function ZoomableFloorPlan({
@@ -50,6 +51,7 @@ export function ZoomableFloorPlan({
   occupied,
   selectedZoneTag,
   onSelectZone,
+  coteByNumber,
 }: ZoomableFloorPlanProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pointers = useRef<Map<number, Point>>(new Map());
@@ -173,6 +175,7 @@ export function ZoomableFloorPlan({
             occupied={occupied}
             selectedZoneTag={selectedZoneTag}
             onSelectZone={onSelectZone}
+            coteByNumber={coteByNumber}
           />
         </div>
       </div>

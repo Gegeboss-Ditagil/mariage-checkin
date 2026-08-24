@@ -17,7 +17,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { FLOOR_PLAN_TABLE_POSITIONS, type Room } from '@/components/FloorPlan';
+import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import clsx from 'clsx';
 
@@ -167,6 +167,22 @@ export default function PlanTablePage() {
     tables.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
   );
 
+  // Recalcule la majorite Nelly/Gege de chaque table depuis les invitations
+  // chargees. La couleur suit ainsi automatiquement les changements de
+  // placement recus en temps reel.
+  const coteByNumber = useMemo(() => {
+    const map = new Map<number, TableCoteCounts>();
+    for (const table of tables) {
+      const counts: TableCoteCounts = { nelly: 0, gege: 0 };
+      for (const invitation of invitationsByTable.get(table.id) || []) {
+        if (invitation.cote === 'Nelly') counts.nelly += invitation.nombre_prevu;
+        else if (invitation.cote === 'Gege') counts.gege += invitation.nombre_prevu;
+      }
+      map.set(table.number, counts);
+    }
+    return map;
+  }, [tables, invitationsByTable]);
+
   // Personnel rattache a la zone selectionnee (tag deja present en base,
   // voir components/FloorPlan.tsx). Simple filtrage cote client sur les
   // invitations deja chargees -- aucun nouvel appel reseau.
@@ -256,12 +272,24 @@ export default function PlanTablePage() {
                   occupied={occupiedNumbers}
                   selectedZoneTag={selectedZoneTag}
                   onSelectZone={selectZone}
+                  coteByNumber={coteByNumber}
                 />
                 <p className="mt-2 text-center text-xs text-black/40">
                   Appuyez sur une table pour la sélectionner, ou sur une zone en surbrillance (Bar, Cuisine, DJ et
                   animation, Prestataires) pour voir le personnel associé · pincez avec deux doigts (ou utilisez
                   +/−) pour zoomer.
                 </p>
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-black/50">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded-full bg-nelly/25 ring-2 ring-nelly" /> majorité côté Nelly
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded-full bg-gege/25 ring-2 ring-gege" /> majorité côté Gégé
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded-full bg-black/10 ring-2 ring-black/30" /> égalité / neutre
+                  </span>
+                </div>
 
                 {selectedTable && (
                   <div className="mt-3">
