@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.14.0**
+**Version documentaire : 1.15.0**
 **Dernière mise à jour : 2026-08-23**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -48,6 +48,8 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Les tables 38-40 ne doivent plus être marquées réserve.
 
 ## Concurrence et réseau
+
+- Import With Joy : aperçu sans écriture; admin uniquement; RSVP déclinés exclus; staff individualisé; `Groomsman`/`Bridesmaid` non-staff; `notable` et `Needs_Table_*` sans table; `Txxx`/`Fxxx` reconnus; saturation bloquée; deuxième import concurrent refusé; modes live/closed refusés; sauvegarde privée et audit créés dans la même transaction.
 
 - Deux téléphones ouverts sur la même invitation.
 - Modification distante pendant qu'un compteur local est en cours.
