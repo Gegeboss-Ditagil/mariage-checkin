@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.15.0] — 2026-08-23
+
+### Ajouté
+- Nouvel écran admin `/admin/import-withjoy` : lecture locale d'un export CSV With Joy, aperçu complet du placement puis remplacement atomique des invitations après double confirmation.
+- Port TypeScript des règles d'import validées : tags `Txxx`/`Fxxx`, RSVP déclinés, individuation du staff, exclusion du cortège, tags `notable`/`Needs_Table_*`, débordement vers le pool puis la réserve et blocage si la capacité totale est dépassée.
+- Migration `0026_import_replace_invitations.sql` : sauvegarde privée complète avant remplacement et journal d'audit avec identifiant de sauvegarde.
+
+### Sécurité
+- Route et écran réservés à l'admin. L'import réel est interdit en mode `live`/`closed`, exige la saisie `REMPLACER`, recalcule le CSV côté serveur et refuse toute liste modifiée depuis l'aperçu.
+- Les sauvegardes contenant des données personnelles ne sont accessibles ni à `public`, ni à `anon`, ni à `authenticated`; seule la `service_role` serveur peut utiliser la RPC.
+- L'import est bloqué si une personne reste non placée, si une table manque ou si la capacité est dépassée. Aucun import n'a été exécuté sur Supabase dans ce lot.
+
+### Tests
+- Ajoute `tests/withjoy-import.test.ts` pour le CSV, les règles staff/cortège/sans-table, les RSVP, les tags F/T, la saturation et les protections SQL/API.
+
 ## [1.14.0] — 2026-08-23
 
 ### Ajouté
