@@ -4,8 +4,10 @@ import clsx from 'clsx';
 
 // Coordonnees du plan de la salle, redessinees a la main a partir des photos
 // annotees fournies par Gersom (23/08/2026, puis mise a jour du 23/08/2026
-// avec numerotation ajustee + nouvelles zones) -- schema simplifie, pas une
-// trace pixel par pixel de la photo, que l'app ne peut pas embarquer.
+// avec numerotation ajustee + nouvelles zones ; puis correctif du 24/08/2026
+// sur l'emplacement des tables 34/35/36/37, confirme par Gersom apres
+// relecture du rendu) -- schema simplifie, pas une trace pixel par pixel de
+// la photo, que l'app ne peut pas embarquer.
 // Systeme de coordonnees SVG propre a ce composant, en unites arbitraires
 // (viewBox 0 0 1400 1080), sans rapport avec les coordonnees Supabase.
 //
@@ -17,10 +19,10 @@ export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
   // 23/08/2026 : une 6e colonne a ete ajoutee a gauche pour la table 41 :
   // approximation raisonnable a partir d'une photo annotee a la main, pas
   // une trace pixel par pixel -- a corriger si l'emplacement reel differe.
-  22: [650, 118], 24: [718, 118], 29: [786, 118], 30: [855, 118], 36: [923, 118], 41: [991, 118],
-  23: [650, 210], 25: [718, 210], 28: [786, 210], 31: [855, 210], 35: [923, 210], 40: [991, 210],
-  26: [718, 302], 27: [786, 302], 32: [855, 302], 34: [923, 302], 39: [991, 302],
-  33: [855, 394], 37: [923, 394], 38: [991, 394],
+  22: [650, 118], 24: [718, 118], 29: [786, 118], 30: [855, 118], 37: [923, 118], 41: [991, 118],
+  23: [650, 210], 25: [718, 210], 28: [786, 210], 31: [855, 210], 36: [923, 210], 40: [991, 210],
+  26: [718, 302], 27: [786, 302], 32: [855, 302], 35: [923, 302], 39: [991, 302],
+  33: [855, 394], 34: [923, 394], 38: [991, 394],
   // Bloc "familles" (1-21), inchange -- 5 rangees x 5 colonnes (premiere et
   // derniere rangee incompletes).
   6: [769, 610], 13: [843, 610], 14: [917, 610], 21: [991, 610],

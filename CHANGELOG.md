@@ -3,6 +3,14 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.15.3] — 2026-08-24
+
+### Corrigé
+- `components/FloorPlan.tsx` : correction de l'emplacement des tables 34, 35, 36 et 37 sur le plan interactif (`/plan-table`). L'ordre visuel de haut en bas dans cette colonne était 36/35/34/37 ; corrigé en 37/36/35/34 pour correspondre à l'agencement réel de la salle, confirmé par Gersom après relecture du rendu de l'app (« la correction est au niveau de l'emplacement des tables 34,35,36 et 37 »). Aucun changement de numérotation des invités ni de données Supabase — uniquement les coordonnées `[x, y]` de ces 4 tables dans `FLOOR_PLAN_TABLE_POSITIONS`. La table 16 reste inchangée (confirmée correcte).
+
+### Tests
+- `npx tsc --noEmit`, `npm run test:floorplan` (13/13) et `npm run build` réexécutés avec succès après la correction des positions.
+
 ## [1.15.2] — 2026-08-23
 
 ### Sécurité et permissions
