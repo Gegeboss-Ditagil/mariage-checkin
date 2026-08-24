@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.14.0] — 2026-08-23
+
+### Ajouté
+- Les listes détaillées du tableau de bord affichent désormais le nombre de personnes réparti entre côté Nelly et côté Gégé, comme le plan de table.
+- Le décompte s'adapte à la catégorie consultée : personnes arrivées, restantes, supplémentaires ou prévues selon la liste.
+
+### Tests
+- `npm run test:roles`, `npx tsc --noEmit` et `npm run build`.
+- Aucune migration ni écriture Supabase.
+
 ## Données — 2026-08-23 (réimport complet, guestlist_25.csv)
 
 ### Réimport complet de la liste d'invités

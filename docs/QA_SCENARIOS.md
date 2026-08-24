@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.13.0**
+**Version documentaire : 1.14.0**
 **Dernière mise à jour : 2026-08-23**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -20,7 +20,7 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 9. Affectation puis réorganisation d'un débordement selon les permissions.
 10. Déplacement d'une invitation selon les permissions.
 10bis. Transfert et échange en lot sur `/table/[tableId]` et `/tables/[tableId]` : sélection multiple visible seulement selon permission ; transfert de N invitations vers une seule table ; échange A↔B avec des tailles de groupe différentes (ex. 2 contre 4) ; une invitation déjà déplacée entre-temps par quelqu'un d'autre est ignorée sans faire échouer le reste du lot ; `agent_checkin` ne doit atteindre ni `/tables/move-multiple` ni `/api/move-invitations`/`/api/swap-invitations`, y compris par URL directe.
-11. Dashboard, historique, exceptions et export selon les permissions.
+11. Dashboard, historique, exceptions et export selon les permissions. Dans chaque liste détaillée du dashboard, vérifier la répartition côté Nelly/Gégé et la bonne unité selon la vue : arrivés, restants, supplémentaires ou prévus.
 12. Écran Staff : accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité (consultation seule, bouton de check-in absent); admin/directeur/visibilité voient les onglets « Sans table » et « Avec table », avec « Sans table » sélectionné par défaut; placeur/agent scan ne voient aucun onglet et seulement les personnes `notable` sans table; vérifier directement `GET /api/staff` pour confirmer que les lignes avec table ne sont pas envoyées à ces deux rôles; badge Sans table; numéro de table dans l'onglet Avec table; recherche et téléphone absent/présent; staff affiché par personne.
 13. QR `STAFF` en casse variée : redirection vers `/staff` pour admin/directeur/placeur/agent scan; visibilité ne doit jamais accéder à la caméra. Tester aussi un scan immédiatement après l'arrivée sur `/scan`, badge déjà présenté : aucun refus ne doit apparaître avant le chargement du rôle.
 14. Première création des membres : partir d'une invitation prévue à 2, retirer une ligne du brouillon avant l'enregistrement et vérifier le passage à 1 prévu avec statut recalculé; ajouter une ligne au brouillon ne doit jamais augmenter implicitement `nombre_prevu`; un second enregistrement concurrent doit recevoir `already_initialized`.
