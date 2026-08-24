@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.15.1**
+**Version actuelle : 1.15.2**
 **Dernière mise à jour documentaire : 2026-08-23**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.15.1-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.15.2-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,7 +25,7 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.15.1
+## État fonctionnel v1.15.2
 
 - **41 tables au total**.
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
@@ -118,4 +118,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.15.1** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.15.2** et l'historique des versions.

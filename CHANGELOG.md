@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.15.2] — 2026-08-23
+
+### Sécurité et permissions
+- Nouvelle capacité dédiée `callStaff` dans `lib/permissions.ts`, réservée à admin et directeur. Signalé par Gersom : le bouton d'appel direct (📞) sur `/staff` et sur le panneau « personnel d'une zone » de `/plan-table` ne doit être utilisable que par le directeur de festin (et admin) — les autres rôles (placeur, agent scan, visibilité) n'ont pas besoin d'appeler qui que ce soit.
+- `app/staff/page.tsx` et `app/plan-table/page.tsx` : le bouton 📞 (`tel:`) n'est désormais rendu que si `hasCapability(role, 'callStaff')`, en plus de la présence d'un numéro de téléphone. Aucun autre changement de comportement (les lignes restent visibles et cliquables pour le check-in selon `checkin`, inchangé).
+
+### Corrigé
+- `/scan` retravaillé pour tenir sur un seul écran sans défilement, y compris sur les petits téléphones (ex. iPhone SE) : caméra passée d'un ratio carré à 3/2 (moins haute, toujours fonctionnelle pour le scan — `html5-qrcode` dimensionne la vidéo sur le conteneur quel que soit son ratio), titres et espacements resserrés. Demande explicite de Gersom : « arrange-toi pour que ça soit tous dans une page sans qu'on ait besoin de défiler ».
+- Le composant `components/QrScanner.tsx` est partagé avec `/placement` : la caméra y est légèrement plus petite aussi, sans changement de comportement.
+
+### Documentation
+- Synchronisation avec l'état vérifié de la migration `0026_import_replace_invitations` (PR #36 puis correctif PR #37, déjà fusionnées dans `main` avant ce lot) : `docs/BUSINESS_RULES.md` et `docs/DATA_CHANGE_INSTRUCTIONS.md` désignent désormais `/admin/import-withjoy` et la RPC `admin_replace_invitations` comme le chemin de référence pour un futur réimport complet, plutôt que la transcription manuelle de SQL utilisée pour les réimports `guestlist_*` de cette même journée. `docs/QE_QA_PROCESS.md` documente la leçon retenue : dans ce projet Supabase, `pgcrypto` est installé dans le schéma `extensions` (jamais dans le `search_path` sécurisé des RPC) — tout futur appel à `digest()`/`gen_random_uuid()` etc. dans une fonction doit le qualifier explicitement (`extensions.digest(...)`), pour éviter l'échec transactionnel rencontré lors de la première tentative d'application de la migration 0026 (annulée entièrement sans aucun impact, avant correctif).
+- État vérifié directement en production le 23/08/2026 après la fusion de la PR #37 (aucune écriture Supabase faite par Claude dans ce lot, uniquement des lectures de contrôle) : migration `0026_import_replace_invitations` enregistrée; table `import_backups` avec RLS active et 0 sauvegarde; fonctions `admin_import_invitations_state`/`admin_replace_invitations` accessibles uniquement à `service_role` (aucun droit `anon`/`authenticated`); données inchangées (232 invitations, 386 personnes prévues, 0 arrivée); empreinte de concurrence `fbb00be4d0e53b64f7d594accdb0b5016bd50185a0ff9f576254385c34944f0d` confirmée identique à celle rapportée; advisors Supabase sans problème critique (seules des notes `INFO` déjà connues : RLS sans policy sur les tables de sauvegarde, clés étrangères non indexées sur `import_backups`).
+
+### Tests
+- Nouveau test : `callStaff` est réservé à admin/directeur (placeur, agent scan et visibilité ne l'ont pas), et les deux pages utilisent bien `hasCapability(role, 'callStaff')` pour garder le bouton d'appel.
+- `npx tsc --noEmit`, `npm run test:roles` (14/14), `npm run test:withjoy` (6/6), `npm run test:members` (3/3), `npm run test:floorplan` (13/13), `npm run test:diffusion` (5/5), `python3 -m unittest tests.test_import_scripts` (11/11) et `npm run build` exécutés avec succès.
+
 ## [1.15.1] — 2026-08-23
 
 ### Corrigé

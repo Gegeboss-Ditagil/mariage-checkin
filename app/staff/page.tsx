@@ -47,6 +47,9 @@ export default function StaffPage() {
   // ligne pour cocher une arrivee.
   const canCheckin = hasCapability(role, 'checkin');
   const canSeeAllStaff = hasCapability(role, 'viewAllStaff');
+  // Bouton d'appel direct reserve admin/directeur -- demande explicite de
+  // Gersom le 23/08/2026 : les autres roles n'ont pas besoin d'appeler.
+  const canCall = hasCapability(role, 'callStaff');
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -230,8 +233,9 @@ export default function StaffPage() {
                   passer par le check-in -- utile pour joindre un
                   photographe/DJ/MC en retard sans devoir d'abord toucher la
                   ligne. Empeche la propagation pour ne pas declencher le
-                  clic sur toute la ligne (qui ouvrirait le check-in). */}
-              {inv.telephone && (
+                  clic sur toute la ligne (qui ouvrirait le check-in).
+                  Reserve admin/directeur (capacite callStaff). */}
+              {canCall && inv.telephone && (
                 <a
                   href={'tel:' + inv.telephone}
                   onClick={(e) => e.stopPropagation()}

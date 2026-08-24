@@ -14,6 +14,7 @@ export type Capability =
   | 'manageOverflow'
   | 'manageMembers'
   | 'manageTags'
+  | 'callStaff'
   | 'markNoShow'
   | 'addInvitation'
   | 'viewHistory'
@@ -23,7 +24,7 @@ export type Capability =
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
-  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags',
+  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'exportData', 'adminPanel',
 ];
@@ -36,7 +37,12 @@ const OPERATIONAL_CAPABILITIES: Capability[] = [
 
 export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   admin: ALL_CAPABILITIES,
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff'],
+  // callStaff (appeler directement le staff/prestataires depuis /staff et
+  // /plan-table) reserve a admin/directeur -- demande explicite de Gersom
+  // le 23/08/2026 : "c'est au directeur de festin, les autres n'ont pas
+  // besoin d'appeler les gens". Retire de OPERATIONAL_CAPABILITIES pour ne
+  // pas le donner implicitement a placeur/agent_checkin.
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff'],
   placeur: OPERATIONAL_CAPABILITIES,
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.

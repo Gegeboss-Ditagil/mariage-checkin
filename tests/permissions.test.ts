@@ -107,6 +107,24 @@ test('agent scan ne peut pas gerer les etiquettes (mais garde le reste de manage
   assert.match(checkinPageSource, /\{canManageTags && \(/);
 });
 
+test('le bouton d appel du staff est reserve a admin et directeur', () => {
+  // Demande explicite de Gersom le 23/08/2026 : appeler le staff/les
+  // prestataires est reserve au directeur de festin (et admin) -- les
+  // autres roles n'ont pas besoin d'appeler.
+  assert.equal(hasCapability('admin', 'callStaff'), true);
+  assert.equal(hasCapability('directeur', 'callStaff'), true);
+  for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'callStaff'), false, role + ' ne doit pas avoir callStaff');
+  }
+
+  const staffPageSource = readFileSync(new URL('../app/staff/page.tsx', import.meta.url), 'utf8');
+  const planTablePageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+  assert.match(staffPageSource, /const canCall = hasCapability\(role, ['"]callStaff['"]\)/);
+  assert.match(staffPageSource, /\{canCall && inv\.telephone && \(/);
+  assert.match(planTablePageSource, /const canCall = hasCapability\(role, ['"]callStaff['"]\)/);
+  assert.match(planTablePageSource, /\{canCall && inv\.telephone && \(/);
+});
+
 test('visibilite reste strictement en lecture seule', () => {
   assert.equal(hasCapability('visibilite', 'viewDashboard'), true);
   assert.equal(hasCapability('visibilite', 'viewTables'), true);

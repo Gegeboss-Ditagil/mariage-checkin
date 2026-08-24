@@ -1,6 +1,6 @@
 # Processus QE/QA pour les bugs
 
-**Version documentaire : 1.15.1**
+**Version documentaire : 1.15.2**
 **Dernière mise à jour : 2026-08-23**
 
 Ce document distingue deux moments différents et fixe ce qui est obligatoire à chacun :
@@ -66,6 +66,7 @@ Cas découverts hors de la matrice de la section 4, valables pour tout le projet
 - **Une restriction d'accès doit suivre le scénario d'usage réel.** `/staff` a été restreint puis rouvert à placeur/agent scan le 22/08/2026 après confirmation que le staff sans table se présente à l'entrée générale. Ne pas réintroduire cette restriction sans une nouvelle décision métier explicite.
 - **Ne jamais retranscrire à la main un gros bloc SQL contenant des données réelles.** Après toute écriture de masse, comparer automatiquement la base au fichier source vérifié, ligne par ligne et champ par champ; une exécution SQL réussie ne prouve pas que les données sont exactes.
 - **Un hook chargé dans un `useEffect` expose d'abord un état vide.** Sur `/scan`, la caméra doit rester démontée tant que `useSessionRole()` renvoie `null`; sinon un QR déjà présenté peut être refusé avant le chargement du rôle.
+- **`pgcrypto` n'est pas dans `public` sur ce projet Supabase — toujours qualifier `extensions.` dans une fonction.** Découvert le 23-24/08/2026 pendant la migration `0026_import_replace_invitations` : un premier `apply_migration` appelait `digest(...)` sans qualifier de schéma et a échoué à l'exécution (pas à la création — la fonction se crée sans erreur, l'échec n'apparaît qu'au premier appel), car l'extension `pgcrypto` est installée dans le schéma `extensions` sur ce projet, volontairement exclu du `search_path` sécurisé (`set search_path = public, pg_temp`) utilisé par les fonctions `SECURITY DEFINER`/`INVOKER` de ce projet. La transaction a échoué proprement, sans état partiel. Correctif : qualifier explicitement, ex. `extensions.digest(...)`, `extensions.gen_random_uuid()`. Toute future fonction Postgres de ce projet appelant `pgcrypto` doit faire de même — vérifié en production le 24/08/2026 (voir `CHANGELOG.md` v1.15.1/v1.15.2).
 
 ## Rattachement
 

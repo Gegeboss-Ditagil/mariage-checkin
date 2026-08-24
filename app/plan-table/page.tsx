@@ -206,8 +206,10 @@ export default function PlanTablePage() {
 
   // Comme sur /staff : tout le monde qui peut voir cet ecran voit le
   // personnel d'une zone, seuls ceux qui ont "checkin" peuvent toucher une
-  // ligne pour aller la cocher.
+  // ligne pour aller la cocher. Le bouton d'appel reste reserve
+  // admin/directeur (capacite callStaff), meme regle que sur /staff.
   const canCheckin = hasCapability(role, 'checkin');
+  const canCall = hasCapability(role, 'callStaff');
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -307,7 +309,7 @@ export default function PlanTablePage() {
                               ) : (
                                 row
                               )}
-                              {inv.telephone && (
+                              {canCall && inv.telephone && (
                                 <a
                                   href={'tel:' + inv.telephone}
                                   onClick={(e) => e.stopPropagation()}

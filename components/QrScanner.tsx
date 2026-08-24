@@ -95,7 +95,11 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
 
   return (
     <div className="overflow-hidden rounded-xl2 bg-black">
-      <div id="qr-scanner-viewport" ref={containerRef} className="aspect-square w-full" />
+      {/* Ratio 3/2 (plutot que carre) : demande de Gersom le 23/08/2026,
+          pour que /scan tienne entierement sur un ecran sans defiler --
+          html5-qrcode dimensionne la video sur ce conteneur, quel que soit
+          son ratio, le scan reste fonctionnel. */}
+      <div id="qr-scanner-viewport" ref={containerRef} className="aspect-[3/2] w-full" />
       {error && (
         <div className="space-y-3 p-4 text-center">
           <p className="text-sm text-white">{ERROR_MESSAGES[error]}</p>

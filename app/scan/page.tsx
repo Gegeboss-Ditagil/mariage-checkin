@@ -110,32 +110,35 @@ export default function ScanPage() {
   return (
     <div className="flex min-h-dvh flex-col">
       <UserMenu />
-      <div className="px-4 pt-4">
+      {/* Bloc compacte (moins de marge, camera moins haute) pour que tout
+          tienne sur un seul ecran sans defiler, y compris sur un iPhone SE
+          -- demande explicite de Gersom le 23/08/2026. */}
+      <div className="px-4 pt-2">
         <p className="eyebrow">Staff</p>
-        <h1 className="font-display text-2xl ">Scanner un QR code</h1>
-        <p className="text-sm text-black/50">Présentez le QR de l'invité devant la caméra</p>
+        <h1 className="font-display text-xl">Scanner un QR code</h1>
+        <p className="text-xs text-black/50">Présentez le QR de l'invité devant la caméra</p>
       </div>
 
-      <div className="px-4 py-4">
+      <div className="px-4 py-2">
         {roleReady ? (
           <QrScanner onScan={handleScan} />
         ) : (
-          <div className="flex aspect-square items-center justify-center rounded-xl2 bg-black/5 text-black/40">
+          <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-black/5 text-black/40">
             Chargement…
           </div>
         )}
       </div>
 
       {status === 'looking' && (
-        <p className="px-4 text-center text-black/60">Recherche de la table…</p>
+        <p className="px-4 text-center text-sm text-black/60">Recherche de la table…</p>
       )}
       {status === 'error' && message && (
-        <p className="mx-4 rounded-xl2 bg-status-over/10 p-3 text-center text-sm font-medium text-status-over">
+        <p className="mx-4 rounded-xl2 bg-status-over/10 p-2.5 text-center text-sm font-medium text-status-over">
           {message}
         </p>
       )}
 
-      <div className="mt-auto space-y-3 px-4 pb-6">
+      <div className="mt-auto space-y-2 px-4 pb-4">
         {/* Les deux boutons "Rechercher un invite" et "Invite sans Code QR"
             menaient tous les deux a /search (juste un mode de depart
             different) : fusionnes en un seul bouton le 19/08/2026 a la
@@ -144,7 +147,7 @@ export default function ScanPage() {
         <Link href="/search" className="btn-secondary w-full">
           Rechercher un invité
         </Link>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <Link href="/tables" className="btn-secondary">
             Tables
           </Link>

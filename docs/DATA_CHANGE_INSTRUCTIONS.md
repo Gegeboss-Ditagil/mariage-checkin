@@ -1,6 +1,6 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.15.1**
+**Version documentaire : 1.15.2**
 **Dernière mise à jour : 2026-08-23**
 
 ## 1. Principe général
@@ -35,7 +35,7 @@ L'agent doit :
 8. prévoir un retour arrière ;
 9. déterminer l'impact de version.
 
-## 4. État de référence v1.15.1
+## 4. État de référence v1.15.2
 
 - 41 tables au total ;
 - tables 1 à 40 normales ;
@@ -43,7 +43,7 @@ L'agent doit :
 - capacité officielle : 400 places ;
 - capacité absolue : 410 places.
 
-Ces chiffres décrivent la version 1.15.1 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
+Ces chiffres décrivent la version 1.15.2 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
 
 ## 5. Identifiants
 
@@ -54,6 +54,8 @@ Les relations doivent continuer à utiliser les UUID (`event_id`, `table_id`, `i
 Avant un import : travailler sur une copie, préserver les identifiants, zéros initiaux et accents, détecter doublons/tables inexistantes/nombres invalides, et afficher un aperçu avant validation.
 
 L'import complet `/admin/import-withjoy` constitue l'exception explicitement destructive réservée aux phases Préparation/Test : double confirmation, sauvegarde complète, transaction atomique et refus si l'état a changé depuis l'aperçu. Son utilisation en production reste soumise à l'autorisation explicite de Gersom.
+
+**Depuis la migration `0026_import_replace_invitations` (v1.15.0, corrigée en v1.15.1) : `/admin/import-withjoy` (RPC `admin_replace_invitations`) est le chemin de référence pour tout futur réimport complet**, plutôt que la transcription manuelle de SQL en `apply_migration` (utilisée pour les réimports `guestlist_20`/`24`/`25` du 22-23/08/2026, avant que ce chemin n'existe). La RPC gère elle-même : sauvegarde privée complète dans `import_backups` (RLS activée, jamais lisible par `anon`/`authenticated`, uniquement `service_role`), contrôle de concurrence par empreinte (`admin_import_invitations_state`), transaction atomique, validation ligne par ligne et journal d'audit. Ne jamais réappliquer cette migration ni recréer ses objets manuellement.
 
 Un import ne doit jamais par défaut effacer les invitations absentes, remettre `nombre_arrive` à zéro, supprimer les membres, annuler les débordements, changer les UUID, supprimer l'audit ou écraser les modifications du jour J.
 
