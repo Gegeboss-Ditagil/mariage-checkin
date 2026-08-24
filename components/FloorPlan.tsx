@@ -92,6 +92,20 @@ const ROOMS: Room[] = [
   { x: 1055, y: 600, w: 335, h: 340, label: "Vin d'honneur" },
 ];
 
+// Repartition cote Nelly/Gege d'une table, en nombre de personnes prevues.
+export interface TableCoteCounts {
+  nelly: number;
+  gege: number;
+}
+
+// Egalite stricte, y compris 0/0, ou absence de donnees : gris neutre.
+export function tableCoteClass(counts: TableCoteCounts | undefined): string {
+  if (!counts) return 'fill-black/10 stroke-black/30';
+  if (counts.nelly > counts.gege) return 'fill-nelly/25 stroke-nelly';
+  if (counts.gege > counts.nelly) return 'fill-gege/25 stroke-gege';
+  return 'fill-black/10 stroke-black/30';
+}
+
 interface FloorPlanProps {
   selectedNumber: number | null;
   onSelectNumber: (number: number) => void;
@@ -101,6 +115,7 @@ interface FloorPlanProps {
   // cliquables (comportement inchange).
   selectedZoneTag?: string | null;
   onSelectZone?: (room: Room) => void;
+  coteByNumber?: Map<number, TableCoteCounts>;
 }
 
 export function FloorPlan({
@@ -109,6 +124,7 @@ export function FloorPlan({
   occupied,
   selectedZoneTag,
   onSelectZone,
+  coteByNumber,
 }: FloorPlanProps) {
   return (
     <svg
@@ -190,6 +206,7 @@ export function FloorPlan({
         const number = Number(numStr);
         const selected = selectedNumber === number;
         const hasGuests = occupied?.has(number);
+        const coteClass = tableCoteClass(coteByNumber?.get(number));
         return (
           <g
             key={number}
@@ -217,7 +234,7 @@ export function FloorPlan({
               r={26}
               className={clsx(
                 'stroke-2',
-                selected ? 'fill-status-complete stroke-status-complete' : 'fill-white stroke-gold-500',
+                selected ? 'fill-status-complete stroke-status-complete' : coteClass,
                 !selected && hasGuests && 'stroke-[3]'
               )}
             />
