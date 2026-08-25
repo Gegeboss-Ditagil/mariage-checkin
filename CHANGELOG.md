@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-25 (correction v2, atelier famille — mise à jour du tableur)
+
+### Deuxième correction du plan de table (même atelier, tableur remis à jour par Gersom)
+- Le Google Sheet de l'atelier famille (même lien, `gid=2119594618`) a été remis à jour par Gersom après le premier réimport (« mis a jours ») ; ce lot applique les changements de cette nouvelle version par-dessus l'état des 242 invitations du lot précédent.
+- Avant : 242 invitations, 381 personnes prévues. Après : 241 invitations, 380 personnes prévues, 9 sans table. Aucune table au-dessus de la capacité de 10.
+- **Conflit « Hadelin Yezi » (table 1 / table 4) confirmé résolu** : la ligne table 4 a été vidée par la famille dans le tableur mis à jour — confirme que l'interprétation retenue au lot précédent (reliquat à ignorer, table 1 = table du cortège) était correcte.
+- **Jael Kippo réapparaît**, table 26, sans côté renseigné dans le tableur — son côté (Gege) et son téléphone/email (récupérés dans l'historique d'avant le premier réimport, puisqu'elle avait totalement disparu de l'état intermédiaire à 242 lignes) ont été restaurés.
+- **Denise Landu et Rémy Landu ont disparu du tableur** (auparavant table 30) — rejoignent Dylan Landu et Abigail Ferreira sur la liste des personnes retirées. **À confirmer avec Gersom si volontaire.**
+- **Nouveau conflit détecté et résolu** : « Brady Landu » listé deux fois (table 26, catégorie Staff/Sécurité — et table 30, sans catégorie, aux côtés de Victoria Landu qui y a été déplacée proprement). Interprété comme un déplacement vers la table 30 avec perte accidentelle de la catégorie Staff/Sécurité lors de la recopie — la ligne table 26 a été ignorée et la catégorie Staff a été conservée sur la ligne table 30. **À confirmer avec Gersom.**
+- « Vieux Richard Landu » renommé « Richard Landu » dans le tableur (même personne, table inchangée).
+- **6 téléphones communiqués par Gersom en message** appliqués : Lina Kumpesa (+33 6 14 64 24 00), Guillaume Mayimakanda (+33 7 60 60 86 50), Esmeralda Vemba (même numéro que Helder Vemba) ont reçu un téléphone ; Tchecka Mbulu et Estelle Okito partageaient déjà le numéro de la personne citée dans leur propre invitation (aucune action nécessaire) ; Suzie Vemba reste sans téléphone (aucune donnée communiquée).
+- Méthode identique au lot précédent (correspondance par nom, avec repli sur l'état pré-atelier à 235 lignes pour les personnes temporairement absentes de l'état à 242 lignes, afin de ne pas perdre leurs coordonnées historiques), même discipline d'écriture (verrou, contrôle de concurrence par empreinte, sauvegarde dans `import_backups`, vérification du nombre inséré, journal d'audit `import_withjoy_replace` avec `source: 'family_workshop_google_sheet_v2'`).
+- Vérification : comparaison automatisée champ par champ contre le jeu de données reconstruit — correspondance parfaite sur les 241 lignes. Sauvegarde `import_backups` confirmée (242 invitations, état juste avant ce lot).
+- Le CSV au format With Joy de la correction précédente est désormais dépassé d'une correction — à régénérer avant tout réimport dans With Joy.
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## Données — 2026-08-25 (correction complète, atelier famille via Google Sheet)
 
 ### Correction complète du plan de table (source : atelier famille)
