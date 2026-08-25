@@ -1,10 +1,12 @@
 # Assignation des tables — méthode et résultat
 
 **Version documentaire : 1.15.3**
-**Dernière mise à jour : 2026-08-23**
+**Dernière mise à jour : 2026-08-25**
 **Statut : appliqué en base et vérifié.**
 
-Import réalisé à partir de l'export With Joy `guestlist_8.csv`. Les places marquées `confirmée` viennent des labels With Joy; les places `provisoire` restent à valider. `/plan-table` reflète l'état courant de la base.
+Import initial réalisé à partir de l'export With Joy `guestlist_8.csv`. Les places marquées `confirmée` viennent des labels With Joy; les places `provisoire` restent à valider. `/plan-table` reflète l'état courant de la base.
+
+**Depuis le 25/08/2026, la source de vérité des tables/placements n'est plus With Joy mais un tableur corrigé directement par la famille lors d'ateliers de réorganisation** (voir `docs/DATA_CHANGE_INSTRUCTIONS.md` section 6 et `CHANGELOG.md`, entrée « atelier famille »). With Joy reste utilisé uniquement pour les coordonnées de contact.
 
 ## Capacité cible actuelle
 

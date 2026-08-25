@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-25 (correction complète, atelier famille via Google Sheet)
+
+### Correction complète du plan de table (source : atelier famille)
+- Remplacement complet des invitations à partir du Google Sheet corrigé par la famille lors d'un atelier de réorganisation (export de `Plan_de_tables_Nelly_Gersom.xlsx` envoyé le 24/08, réédité dans Google Sheets par Gersom), avec autorisation explicite (« update everything, update and correct a superbase if you need to »).
+- **Changement de source de vérité** : à partir de ce lot, With Joy n'est plus la source de vérité pour les tables/placements — la famille corrige directement le tableur (table, invitation, personnes, côté), et Supabase est mis à jour depuis ce tableur. With Joy reste utilisé uniquement comme répertoire de contact (téléphone/email), backfillé par correspondance de nom lors de cette correction. Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` section 6 pour la procédure mise à jour.
+- Avant : 235 invitations, 387 personnes prévues. Après : 242 invitations, 381 personnes prévues, 233 avec table, 9 Staff/notable sans table, 0 arrivée (statut test, aucune conséquence sur du vrai check-in).
+- **Table 1 devient la table du cortège** (demoiselles et garçons d'honneur) : 7 personnes extraites individuellement de leurs groupes familiaux d'origine (Lys Landu, Erika Dos Goncalves, Jean-Clivens Le Caous, Deborah Yezi, Hadelin Yezi, Herve Menga, Domingas Ferreira — cette dernière sortie du groupe « Famille Ferreira »).
+- **Conflit détecté et résolu** : « Hadelin Yezi » apparaissait deux fois dans le tableur (table 1 et table 4, à côté de « Famille Yezi »). Interprété comme un reliquat de l'ancienne affectation non supprimé lors de l'extraction vers la table 1 — la ligne table 4 a été ignorée. **À confirmer avec Gersom.**
+- **Personnes disparues du tableur par rapport à l'état précédent** (absentes de toute table ou du « sans table ») : Dylan Landu, Abigail Ferreira (un des 6 membres de l'ancienne « Famille Ferreira »), Jael Kippo. Ne figurent plus nulle part dans le tableur — à confirmer si volontaire (retrait de la liste) ou oubli.
+- **6 personnes sans téléphone/email de secours** (nouvelles dans le tableur ou renommées sans correspondance trouvée dans l'historique With Joy) : Tchecka Mbulu, Suzie Vemba, Lina (« Tia Lina »), Guillaume Mayimakanda, Esmeralda Vemba (« Bana Vemba »), Estelle Okito (« Bana Okito »).
+- **1 anomalie de donnée reportée telle quelle** : une ligne « Accompagnant non-nommé » sans nom ni tag (déjà signalée lors du réimport `guestlist_27.csv`) reste présente, toujours sans table.
+- Aucune table ne dépasse la capacité de 10 ; 39 tables sur 41 utilisées (aucune personne sur la réserve).
+- Méthode : correspondance par nom entre le tableur et l'état précédent pour recomposer chaque invitation (numéro de table, regroupement, nombre de personnes depuis le tableur ; téléphone, email et étiquettes de rôle staff — dont les étiquettes de zone `Photographe`/`DJ_Animation`/`Bar`/`Traiteur` utilisées par `/plan-table` — récupérées par correspondance individuelle avec l'historique). Écriture avec la même discipline que `admin_replace_invitations` (verrou de l'événement, contrôle de concurrence par empreinte, sauvegarde transactionnelle dans `import_backups`, vérification du nombre inséré, journal d'audit).
+- Vérification : comparaison automatisée champ par champ (nom, groupe, nombre prévu, téléphone, email, notes, tags, côté, catégorie, statut de placement, numéro de table) contre le jeu de données reconstruit — correspondance parfaite sur les 242 lignes.
+- Un CSV au format With Joy (`tags, envelope name, first name, last name, phone number, email, ..., party, rsvp`) a été généré pour réimporter cette correction dans With Joy (contacts uniquement) — RSVP repris de l'historique quand disponible, sinon supposé confirmé par défaut (à vérifier).
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## Données — 2026-08-24 (réimport complet, guestlist_27.csv)
 
 ### Réimport complet de la liste d'invités
