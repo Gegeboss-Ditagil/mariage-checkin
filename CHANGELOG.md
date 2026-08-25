@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-25 (correction v5, atelier famille — tableau transmis)
+
+### Mise à jour ciblée du plan de table
+- Tableau transmis directement par Gersom appliqué à l'événement « Mariage Nelly & Gersom », la colonne `Table` restant la source de vérité du placement conformément à `docs/DATA_CHANGE_INSTRUCTIONS.md`.
+- Avant : 243 invitations, 382 personnes prévues, 0 arrivée, 11 invitations sans table. Après : **241 invitations, 380 personnes prévues, 0 arrivée, 11 invitations sans table**.
+- Permutations appliquées : tables **4 ↔ 8** et **5 ↔ 6**. Les capacités indiquées par le tableau sont respectées (10/10, 8/10, 10/10 et 9/10 respectivement).
+- **Brady Landu** figurait encore deux fois dans le tableau (table 26 et table 30) : conformément aux corrections v2/v3 déjà documentées, seule la ligne Staff de la table 30 est conservée ; la ligne table 26 est ignorée.
+- **Jean-Clivens Le Caous** et **Lys Landu**, absents du nouveau tableau, ont été retirés. Aucun check-in ni membre détaillé ne leur était rattaché.
+- Les **11 invitations sans table ont été conservées intégralement**, car le tableau transmis ne contient que les tables numérotées et leur omission ne doit pas supprimer le staff accueilli via le QR `STAFF`.
+- Trois écarts déjà présents entre `Nb personnes` et la liste textuelle des noms ont été laissés tels quels, le nombre étant la valeur opérationnelle : Famille Pello (2 pour 4 noms listés), Famille Mpiassa (3 pour 4), Famille Culumbu table 36 (3 pour 4).
+- Écriture transactionnelle avec contrôle de concurrence, sauvegarde préalable `import_backups` (`bb2c2552-750a-4bc4-b170-7576e98b09bd`) et journal d'audit `family_workshop_pasted_table_v5`. Vérification après écriture : 241 invitations / 380 personnes / 0 arrivée / 11 sans table ; Brady uniquement table 30.
+- Aucun changement de code applicatif ni de schéma — données uniquement, version inchangée.
+
 ## Données — 2026-08-25 (correction v4, atelier famille — mise à jour du tableur, tables/noms uniquement)
 
 ### Quatrième correction du plan de table (nouvelle mise à jour du tableur)
