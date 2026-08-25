@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-25 (correction v4, atelier famille — mise à jour du tableur, tables/noms uniquement)
+
+### Quatrième correction du plan de table (nouvelle mise à jour du tableur)
+- Nouvelle mise à jour du même Google Sheet appliquée par-dessus l'état des 243 invitations du lot v3. Demande explicite de Gersom : se baser sur ce tableur pour les tables/noms, garder la même logique qu'avant pour téléphone/tags/côté.
+- Avant : 243 invitations, 382 personnes prévues. Après : 243 invitations, 382 personnes prévues, 11 sans table (compte inchangé — une ligne « reliquat » vidée compense la suppression d'un doublon). Aucune table au-dessus de la capacité de 10.
+- **Conflit Brady Landu définitivement résolu par la famille dans le sens inverse de l'hypothèse retenue aux lots v2/v3** : le tableur ne le liste plus qu'une seule fois, à la table 26 (Staff/Sécurité) — la ligne table 30 a été supprimée. Corrigé : Brady Landu est donc en table 26 (SERVICES, Staff, Sécurité), et non plus table 30 comme dans les lots précédents.
+- Vérification : comparaison automatisée champ par champ contre le jeu de données reconstruit — correspondance parfaite sur les 243 lignes. Sauvegarde `import_backups` confirmée (243 invitations, état juste avant ce lot).
+- CSV format With Joy régénéré avec les tags `T0XX` (numéro de table courant) restaurés dans la colonne Tags — retirés par erreur lors de la correction du modèle d'import (voir entrée suivante), remis sur demande explicite de Gersom : « si quelqu'un était dans la table 39, mais maintenant est dans la table 13, j'attends T013 au lieu de T039 dans les tags ».
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## Données — 2026-08-25 (correction v3, atelier famille — mise à jour du tableur)
 
 ### Troisième correction du plan de table (même atelier, tableur remis à jour par Gersom)
