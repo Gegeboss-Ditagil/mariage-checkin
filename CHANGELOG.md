@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-25 (correction v3, atelier famille — mise à jour du tableur)
+
+### Troisième correction du plan de table (même atelier, tableur remis à jour par Gersom)
+- Nouvelle mise à jour du même Google Sheet (« mis a jours ») appliquée par-dessus l'état des 241 invitations du lot v2.
+- Avant : 241 invitations, 380 personnes prévues. Après : 243 invitations, 382 personnes prévues, 11 sans table. Aucune table au-dessus de la capacité de 10.
+- **Denise Landu et Rémy Landu sont de retour**, cette fois en « Sans table » avec catégorie Staff — ce qui clarifie leur statut du lot v2 (ils n'avaient pas été retirés intentionnellement, seulement déplacés hors tableau temporairement). Leur téléphone/email d'origine ont été restaurés depuis l'historique.
+- **Conflit Brady Landu confirmé côté famille** : le tableur porte désormais explicitement la catégorie Staff sur la ligne table 30 (absente au lot v2, où elle avait été déduite). Le doublon table 26/Staff-Sécurité persiste dans le tableur — toujours résolu en ne gardant que la ligne table 30 (catégorie Staff conservée), comme au lot v2.
+- **Côté de Jael Kippo confirmé** : le tableur indique désormais explicitement « Gege » (déduit par défaut au lot v2, maintenant renseigné par la famille elle-même).
+- Vérification : comparaison automatisée champ par champ — correspondance parfaite sur les 243 lignes. Sauvegarde `import_backups` confirmée (241 invitations, état juste avant ce lot).
+- Le CSV au format With Joy des lots précédents est désormais dépassé de deux corrections — à régénérer avant tout réimport dans With Joy.
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## Données — 2026-08-25 (correction v2, atelier famille — mise à jour du tableur)
 
 ### Deuxième correction du plan de table (même atelier, tableur remis à jour par Gersom)
