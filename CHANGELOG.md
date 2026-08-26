@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## Données — 2026-08-26 (correction v6, rôles staff corrigés depuis With Joy + tables 4/8 et 5/6 réappliquées)
+
+### Correction des tags de rôle staff + réparation d'une régression sur le lot v5
+- **Régression détectée et corrigée** : le lot v5 (`family_workshop_pasted_table_v5`, ci-dessous) avait supprimé Lys Landu et Jean-Clivens Le Caous (tous deux de la table du cortège, table 1) et déplacé Brady Landu de la table 26 (confirmée à deux reprises via le Google Sheet familial, lots v3/v4) vers la table 30. Ce lot restaure les deux : Lys Landu et Jean-Clivens Le Caous de nouveau présents table 1 ; Brady Landu de nouveau table 26.
+- **Tags de rôle staff corrigés à partir d'un export With Joy frais** (`guestlist_32.csv`, fourni par Gersom, corrigé à la main dans With Joy) — signalé par Gersom : « Messie Matoko n'a jamais été photographe », tags SERVICES manquants pour plusieurs personnes, tags Traiteur/Bar pas à jour. Diagnostic : ces tags de rôle (Photographe/Traiteur/Bar/DJ_Animation/SERVICES) n'ont jamais été dérivés du tableur familial (qui ne porte qu'une catégorie Staff générique) — ils venaient de l'import With Joy d'origine et étaient recopiés tels quels à chaque réimport, jamais revérifiés. Corrections appliquées (9 personnes) :
+  - Messie Matoko et DJ Alain Diakuanu : tag `Photographe` retiré (n'ont jamais fait ce rôle) ;
+  - Augustin, Aurelie, Moise, Noel et Veronique Nsenda : tag `Traiteur` ajouté (équipe traiteur, non taguée auparavant) ;
+  - Dylan Pierrefitte : tag `SERVICES` ajouté (manquait alors qu'il a le tag de zone `Bar`) ;
+  - Daeve Landu : tag `Bar` retiré, `SERVICES` conservé.
+- Plusieurs téléphones/emails également rafraîchis depuis `guestlist_32.csv` (source la plus récente et la plus fiable pour les coordonnées).
+- **Permutation de tables 4 ↔ 8 et 5 ↔ 6 réappliquée** : confirmée par la structure même de `guestlist_32.csv` (numéro de table encodé dans l'identifiant de groupe With Joy, indépendant des tags), donc traitée comme fiable et distincte du reste — contrairement au placement de Brady Landu dans ce même fichier (resté à l'ancienne table 30, probablement un export non resynchronisé depuis la dernière correction), qui n'a pas été repris. 25 personnes concernées ; capacités après permutation : table 4 = 10/10, table 5 = 10/10, table 6 = 9/10, table 8 = 8/10.
+- Les tables/noms des autres invitations restent pilotés par le Google Sheet familial (lot v4) — `guestlist_32.csv` n'a servi que pour les coordonnées, les tags de rôle, et la permutation 4/8 · 5/6 ci-dessus, conformément à la règle « With Joy = contacts et rôles, plus les tables en général ».
+- Vérification : comparaison automatisée champ par champ — correspondance parfaite après chaque étape (correction des rôles : 243/243 lignes ; permutation de tables : exactement les 25 lignes attendues modifiées, rien d'autre). Sauvegardes `import_backups` confirmées à chaque étape.
+- Aucun changement de code applicatif — réimport de données uniquement.
+
 ## Données — 2026-08-25 (correction v5, atelier famille — tableau transmis)
 
 ### Mise à jour ciblée du plan de table
