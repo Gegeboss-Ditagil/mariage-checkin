@@ -11,7 +11,7 @@
 // - Seule la coquille minimale de l'app (offline, manifest, icones) est mise en
 //   cache pour fournir un ecran hors ligne propre.
 
-const CACHE_NAME = 'checkin-shell-v2';
+const CACHE_NAME = 'checkin-shell-v3';
 const APP_SHELL = ['/', '/offline', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -35,6 +35,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Les extensions de navigateur et ressources d'une autre origine ne font
+  // pas partie de la PWA. CacheStorage refuse notamment chrome-extension://.
+  if (!['http:', 'https:'].includes(url.protocol) || url.origin !== self.location.origin) return;
 
   // Jamais de cache pour les ecritures/lectures API, Supabase ou les assets
   // Next.js. Le navigateur gere son propre cache HTTP pour /_next/* et les noms
@@ -64,11 +68,11 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           if (res && res.ok) {
             const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            void caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => undefined);
           }
           return res;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
       return cached || network;
     })
   );

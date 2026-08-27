@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.16.0**
+**Version documentaire : 1.17.0**
 **Dernière mise à jour : 2026-08-27**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -56,6 +56,17 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Double validation simultanée.
 - Perte de réseau avant confirmation et pendant une lecture.
 - Rafraîchissement PWA/service worker sur une URL devenue interdite.
+
+## Navigation, compte et écrans — v1.17.0
+
+- Pour chaque rôle, ouvrir le menu du compte au clavier et au toucher : nom et rôle visibles; Historique selon `viewHistory`; Administration selon `adminPanel`; déconnexion toujours disponible.
+- Confirmer qu'Historique et Administration ne sont plus dupliqués dans la barre inférieure et que le raccourci Plan ouvre `/plan-table`.
+- Ouvrir un ancien favori `/tables` et confirmer la redirection vers `/plan-table`; les routes de détail et de déplacement restent accessibles uniquement selon leurs capacités.
+- Sur `/plan-table`, vérifier recherche table/ville/vol/invité, tri numéro/places libres, codes Vol-F/Vol-T, places prévues, arrivées, placement provisoire/confirmé et présence non arrivé/partiel/arrivé/excédent.
+- Enchaîner rapidement Scan → Plan → détail → retour → Scan au moins dix fois : aucune page blanche, aucune caméra laissée active, aucune promesse rejetée dans la console.
+- Refuser la caméra, tester sans caméra, puis réessayer; répéter avec une webcam d'ordinateur si disponible.
+- Tester 390×844, 768×1024 et 1440×900 dans Chrome/Edge; compléter sur Safari iOS/iPadOS et Chrome Android avant le jour J. Aucun débordement horizontal ni cible tactile difficile à atteindre.
+- Passer hors ligne puis en ligne, mettre la PWA en arrière-plan puis la rouvrir : les données se réactualisent et le service worker ne tente jamais de mettre en cache une extension, une API ou une origine externe.
 
 ## Commandes minimales
 

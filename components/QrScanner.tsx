@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 type ScannerErrorKind = 'denied' | 'not_found' | 'in_use' | 'unknown';
 
@@ -39,6 +39,7 @@ const ERROR_MESSAGES: Record<ScannerErrorKind, string> = {
  * demande sans avoir a recharger toute la page.
  */
 export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
+  const elementId = 'qr-scanner-' + useId().replace(/:/g, '');
   const containerRef = useRef<HTMLDivElement>(null);
   const scannerRef = useRef<import('html5-qrcode').Html5Qrcode | null>(null);
   const [error, setError] = useState<ScannerErrorKind | null>(null);
@@ -53,7 +54,6 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
       const { Html5Qrcode } = await import('html5-qrcode');
       if (cancelled || !containerRef.current) return;
 
-      const elementId = 'qr-scanner-viewport';
       const scanner = new Html5Qrcode(elementId, { verbose: false });
       scannerRef.current = scanner;
 
@@ -74,6 +74,16 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
             // erreur de decodage par frame — ignorer silencieusement
           }
         );
+        // start() peut finir après le démontage lors d'un retour très rapide.
+        // Dans ce cas, arrêter immédiatement le flux nouvellement ouvert.
+        if (cancelled && scanner.isScanning) {
+          try {
+            await scanner.stop();
+            scanner.clear();
+          } catch {
+            // Le navigateur a déjà libéré la caméra.
+          }
+        }
       } catch (err) {
         if (cancelled) return;
         console.error(err);
@@ -85,13 +95,25 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
 
     return () => {
       cancelled = true;
-      scannerRef.current
-        ?.stop()
-        .then(() => scannerRef.current?.clear())
-        .catch(() => {});
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
+      if (!scanner) return;
+      // html5-qrcode peut lever synchroniquement si la navigation démonte le
+      // composant pendant start(), avant que la caméra soit effectivement en
+      // marche. Vérifier l'état et envelopper aussi l'appel synchrone évite
+      // l'exception client lors de clics rapides entre Scan/Plan/Retour.
+      try {
+        if (scanner.isScanning) {
+          void scanner.stop().then(() => scanner.clear()).catch(() => {});
+        } else {
+          scanner.clear();
+        }
+      } catch {
+        // Le composant est déjà démonté : aucune action restante nécessaire.
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retryKey]);
+  }, [elementId, retryKey]);
 
   return (
     <div className="overflow-hidden rounded-xl2 bg-black">
@@ -99,7 +121,7 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
           pour que /scan tienne entierement sur un ecran sans defiler --
           html5-qrcode dimensionne la video sur ce conteneur, quel que soit
           son ratio, le scan reste fonctionnel. */}
-      <div id="qr-scanner-viewport" ref={containerRef} className="aspect-[3/2] w-full" />
+      <div id={elementId} ref={containerRef} className="aspect-[3/2] w-full" />
       {error && (
         <div className="space-y-3 p-4 text-center">
           <p className="text-sm text-white">{ERROR_MESSAGES[error]}</p>

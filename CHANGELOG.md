@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.17.0] — 2026-08-27
+
+### Ajouté
+- Menu de compte unifié : nom, rôle, Historique selon `viewHistory`, Administration selon `adminPanel`, déconnexion.
+- `/plan-table` regroupe recherche table/ville/vol/invité, tris, codes vol, capacité prévue et présence réelle.
+- Tests de navigation/résilience pour les rôles, le scanner, le service worker et la redirection `/tables`.
+
+### Modifié
+- Les raccourcis Tables ouvrent directement `/plan-table`; `/tables` redirige côté serveur pour préserver les favoris.
+- La barre inférieure admin reste compacte; Historique et Administration sont déplacés dans le menu de compte.
+- Placement et présence sont affichés séparément afin de ne pas confondre confirmé/provisoire avec arrivé/partiel.
+
+### Corrigé
+- Le scanner ne tente plus de s'arrêter avant son démarrage lors de navigations rapides.
+- Le service worker ignore les extensions/origines externes et garantit une réponse valide en cas d'échec réseau.
+
 ## [1.16.0] — 2026-08-27
 
 ### Ajouté

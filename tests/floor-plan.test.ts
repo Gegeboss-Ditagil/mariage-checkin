@@ -79,7 +79,7 @@ test('la table de reserve a desormais un bouton "localiser sur le plan"', () => 
   // onLocate comme normales.map, garde par tablesSurLePlan.has(t.number).
   // Ancrage precis sur l'appel JSX (le fichier contient aussi
   // "reserve.map" plus haut, dans "new Set(reserve.map((t) => t.id))").
-  const reserveBlock = pageSource.slice(pageSource.indexOf('{reserve.map((t) => ('));
+  const reserveBlock = pageSource.slice(pageSource.indexOf('{reserveVisibles.map((t) => ('));
   assert.match(reserveBlock.slice(0, reserveBlock.indexOf('/>')), /onLocate/);
 });
 
@@ -130,4 +130,17 @@ test('un pincement ou un glissement sur le plan ne declenche jamais la selection
   assert.match(zoomSource, /if \(pointers\.current\.size === 0\) moved\.current = false/);
   // Pas de division par zéro si les deux pointeurs démarrent au même pixel.
   assert.match(zoomSource, /Math\.max\(1, distance\(a, b\)\)/);
+});
+
+test('le plan regroupe recherche tris vol capacite et arrivees sans confondre les statuts', () => {
+  assert.match(pageSource, /Rechercher table, ville, vol ou invité/);
+  assert.match(pageSource, /Trier par numéro/);
+  assert.match(pageSource, /Trier par places libres/);
+  assert.match(pageSource, /Placement prévu/);
+  assert.match(pageSource, /Présence actuelle/);
+  assert.match(pageSource, /Vol-/);
+  assert.match(pageSource, /places prévues/);
+  assert.match(pageSource, /arrivées/);
+  assert.match(pageSource, /PLACEMENT_LABELS\[inv\.placement_status\]/);
+  assert.match(pageSource, /inv\.statut === 'complet'/);
 });

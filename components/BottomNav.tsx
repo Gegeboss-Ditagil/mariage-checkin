@@ -13,7 +13,7 @@ import { Role } from '@/lib/types';
 const STAFF_ITEMS = [
   { href: '/scan', label: 'Scan', icon: '▣' },
   { href: '/search', label: 'Recherche', icon: '⌕' },
-  { href: '/tables', label: 'Tables', icon: '▦' },
+  { href: '/plan-table', label: 'Plan', icon: '▦' },
   { href: '/dashboard', label: 'Bord', icon: '◔' },
 ];
 
@@ -25,7 +25,7 @@ const SCAN_ONLY_ITEMS = STAFF_ITEMS;
 // visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.
 const READ_ONLY_ITEMS = [
   { href: '/dashboard', label: 'Bord', icon: '◔' },
-  { href: '/tables', label: 'Tables', icon: '▦' },
+  { href: '/plan-table', label: 'Plan', icon: '▦' },
   { href: '/search', label: 'Recherche', icon: '⌕' },
 ];
 
@@ -37,9 +37,8 @@ const ITEMS: Record<string, { href: string; label: string; icon: string }[]> = {
   admin: [
     { href: '/scan', label: 'Scan', icon: '▣' },
     { href: '/dashboard', label: 'Bord', icon: '◔' },
-    { href: '/tables', label: 'Tables', icon: '▦' },
-    { href: '/history', label: 'Historique', icon: '≡' },
-    { href: '/admin', label: 'Admin', icon: '⚙' },
+    { href: '/plan-table', label: 'Plan', icon: '▦' },
+    { href: '/search', label: 'Recherche', icon: '⌕' },
   ],
 };
 

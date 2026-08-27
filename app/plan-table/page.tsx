@@ -23,6 +23,12 @@ import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
+type Tri = 'numero' | 'libres';
+
+function volCode(number: number): string | null {
+  if (number < 1 || number > 40) return null;
+  return 'Vol-' + (number <= 7 ? 'F' : 'T') + String(number).padStart(3, '0');
+}
 
 const PULL_THRESHOLD = 70;
 
@@ -37,7 +43,11 @@ export default function PlanTablePage() {
   const [tables, setTables] = useState<TableRow[]>([]);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const loadInProgressRef = useRef(false);
   const [filtre, setFiltre] = useState<Filtre>('toutes');
+  const [query, setQuery] = useState('');
+  const [tri, setTri] = useState<Tri>('numero');
 
   // -- Plan de salle interactif -----------------------------------------------
   // Replie par defaut (demande explicite de Gersom le 23/08/2026) : un
@@ -63,14 +73,27 @@ export default function PlanTablePage() {
   const touchStartY = useRef<number | null>(null);
 
   const load = useCallback(async () => {
+    if (loadInProgressRef.current) return;
+    loadInProgressRef.current = true;
     const supabase = createClient();
-    const [{ data: t }, { data: i }] = await Promise.all([
-      supabase.from('tables').select('*').order('number'),
-      supabase.from('invitations').select('*').order('nom_affichage'),
-    ]);
-    setTables((t as TableRow[]) || []);
-    setInvitations((i as InvitationRow[]) || []);
-    setLoading(false);
+    try {
+      const [tablesResult, invitationsResult] = await Promise.all([
+        supabase.from('tables').select('*').order('number'),
+        supabase.from('invitations').select('*').order('nom_affichage'),
+      ]);
+      if (tablesResult.error || invitationsResult.error) {
+        setLoadError("Impossible d'actualiser les tables. Vérifiez la connexion puis réessayez.");
+        return;
+      }
+      setTables((tablesResult.data as TableRow[]) || []);
+      setInvitations((invitationsResult.data as InvitationRow[]) || []);
+      setLoadError(null);
+    } catch {
+      setLoadError("Impossible d'actualiser les tables. Vérifiez la connexion puis réessayez.");
+    } finally {
+      loadInProgressRef.current = false;
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -83,7 +106,15 @@ export default function PlanTablePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, load)
       .subscribe();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    const refreshWhenOnline = () => void load();
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    window.addEventListener('online', refreshWhenOnline);
     return () => {
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.removeEventListener('online', refreshWhenOnline);
       supabase.removeChannel(channel);
     };
   }, [load]);
@@ -134,6 +165,25 @@ export default function PlanTablePage() {
 
   const normales = tables.filter((t) => !t.is_reserve);
   const reserve = tables.filter((t) => t.is_reserve);
+  const tablesVisibles = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase('fr');
+    let list = tables.filter((table) => {
+      if (!normalized) return true;
+      const invitationsTable = invitationsByTable.get(table.id) || [];
+      return [String(table.number), table.label || '', table.zone || '', volCode(table.number) || '', ...invitationsTable.map((inv) => inv.nom_affichage)]
+        .some((value) => value.toLocaleLowerCase('fr').includes(normalized));
+    });
+    if (tri === 'libres') {
+      list = [...list].sort((a, b) => {
+        const occA = (invitationsByTable.get(a.id) || []).reduce((sum, inv) => sum + inv.nombre_prevu, 0);
+        const occB = (invitationsByTable.get(b.id) || []).reduce((sum, inv) => sum + inv.nombre_prevu, 0);
+        return (b.capacity - occB) - (a.capacity - occA) || a.number - b.number;
+      });
+    }
+    return list;
+  }, [tables, invitationsByTable, query, tri]);
+  const normalesVisibles = tablesVisibles.filter((table) => !table.is_reserve);
+  const reserveVisibles = tablesVisibles.filter((table) => table.is_reserve);
 
   const stats = useMemo(() => {
     const normalesIds = new Set(normales.map((t) => t.id));
@@ -237,7 +287,7 @@ export default function PlanTablePage() {
     <div className="flex min-h-dvh flex-col">
       <TopBar
         title="Plan de table"
-        backHref={role && hasCapability(role, 'scan') ? '/scan' : '/tables'}
+        backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
       />
 
       {/* Indicateur de tire-pour-rafraichir */}
@@ -255,6 +305,14 @@ export default function PlanTablePage() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
+        {loadError && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">
+            <span>{loadError}</span>
+            <button type="button" className="shrink-0 font-semibold underline" onClick={() => void load()}>
+              Réessayer
+            </button>
+          </div>
+        )}
         {loading && <p className="py-8 text-center text-black/50">Chargement…</p>}
 
         {!loading && (
@@ -364,6 +422,17 @@ export default function PlanTablePage() {
               </div>
             )}
 
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="card py-3">
+                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-black/45">Placement prévu</p><p className="font-bold">{stats.officielles}/{CAPACITE_OFFICIELLE}</p></div>
+                <div className="mt-2 h-2 rounded-full bg-black/5"><div className="h-full rounded-full bg-gold-500" style={{ width: Math.min(100, (stats.officielles / CAPACITE_OFFICIELLE) * 100) + '%' }} /></div>
+              </div>
+              <div className="card py-3">
+                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-black/45">Présence actuelle</p><p className="font-bold text-status-complete">{invitations.reduce((sum, inv) => sum + inv.nombre_arrive, 0)}/{stats.totalPersonnes}</p></div>
+                <div className="mt-2 h-2 rounded-full bg-black/5"><div className="h-full rounded-full bg-status-complete" style={{ width: (stats.totalPersonnes ? Math.min(100, invitations.reduce((sum, inv) => sum + inv.nombre_arrive, 0) / stats.totalPersonnes * 100) : 0) + '%' }} /></div>
+              </div>
+            </div>
+
             {/* Stats compactes */}
             <div className="mb-4 grid grid-cols-3 gap-2 text-center">
               <div className="card py-2">
@@ -429,6 +498,8 @@ export default function PlanTablePage() {
               </span>
             </div>
 
+            <input aria-label="Rechercher une table, un vol ou un invité" className="mb-3 w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 placeholder:text-black/30 focus:border-gold-500 focus:outline-none" placeholder="Rechercher table, ville, vol ou invité…" value={query} onChange={(event) => setQuery(event.target.value)} />
+
             {/* Filtres */}
             <div className="mb-4 flex gap-2 overflow-x-auto">
               {(['toutes', 'confirmee', 'provisoire'] as Filtre[]).map((f) => (
@@ -445,9 +516,20 @@ export default function PlanTablePage() {
               ))}
             </div>
 
-            <p className="mb-2 text-sm font-semibold text-black/50">Tables familiales &amp; soirée</p>
-            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {normales.map((t) => (
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setTri('numero')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'numero' ? 'border-gold-500 bg-gold-400/10' : 'border-gold-300/30 bg-white text-black/60')}>Trier par numéro</button>
+              <button type="button" onClick={() => setTri('libres')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'libres' ? 'border-gold-500 bg-gold-400/10' : 'border-gold-300/30 bg-white text-black/60')}>Trier par places libres</button>
+            </div>
+
+            {tablesVisibles.length === 0 && (
+              <div className="card mb-6 py-6 text-center text-sm text-black/50">
+                Aucune table ni invitation ne correspond à cette recherche.
+              </div>
+            )}
+
+            {normalesVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-black/50">Tables familiales &amp; soirée</p>}
+            <div className={clsx('grid grid-cols-1 gap-3 sm:grid-cols-2', normalesVisibles.length > 0 && 'mb-6')}>
+              {normalesVisibles.map((t) => (
                 <TableCard
                   key={t.id}
                   table={t}
@@ -459,11 +541,11 @@ export default function PlanTablePage() {
               ))}
             </div>
 
-            <p className="mb-2 text-sm font-semibold text-black/50">
+            {reserveVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-black/50">
               Tables de réserve <span className="font-normal text-black/40">— excédentaire au-delà des 400</span>
-            </p>
+            </p>}
             <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {reserve.map((t) => (
+              {reserveVisibles.map((t) => (
                 <TableCard
                   key={t.id}
                   table={t}
@@ -524,7 +606,10 @@ function TableCard({
 }) {
   const visibles = filtre === 'toutes' ? invitations : invitations.filter((i) => i.placement_status === filtre);
   const occ = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
+  const arrives = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
   const pct = Math.min(100, (occ / (table.capacity || 10)) * 100);
+  const arrivalPct = occ > 0 ? Math.min(100, (arrives / occ) * 100) : 0;
+  const vol = volCode(table.number);
 
   return (
     <div
@@ -559,8 +644,16 @@ function TableCard({
             {occ}/{table.capacity}
           </p>
         </div>
+        {vol && <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">{vol}</p>}
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-black/50">
+          <span>{occ}/{table.capacity} places prévues</span>
+          <span className="font-semibold text-status-complete">{arrives}/{occ} arrivées</span>
+        </div>
         <div className="mt-1.5 h-1.5 rounded-full bg-black/5">
           <div className="h-full rounded-full bg-gold-500" style={{ width: pct + '%' }} />
+        </div>
+        <div className="mt-1 h-1.5 rounded-full bg-black/5">
+          <div className="h-full rounded-full bg-status-complete" style={{ width: arrivalPct + '%' }} />
         </div>
 
         {visibles.length === 0 && (
@@ -571,7 +664,7 @@ function TableCard({
 
         <ul className="mt-2.5 space-y-1.5">
           {visibles.map((inv) => (
-            <li key={inv.id} className="flex items-center gap-1.5 text-sm">
+            <li key={inv.id} className="flex flex-wrap items-center gap-1.5 text-sm">
               <span
                 className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
                 title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
@@ -586,6 +679,9 @@ function TableCard({
                 </span>
               )}
               <span className="shrink-0 text-xs text-black/40">×{inv.nombre_prevu}</span>
+              <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold', inv.statut === 'complet' ? 'bg-status-complete/15 text-status-complete' : inv.statut === 'partiel' ? 'bg-status-partial/15 text-status-partial' : inv.statut === 'excedent' ? 'bg-status-over/15 text-status-over' : 'bg-black/5 text-black/45')}>
+                {inv.statut === 'complet' ? 'Arrivé' : inv.statut === 'partiel' ? 'Partiel' : inv.statut === 'excedent' ? 'Excédent' : 'Non arrivé'}
+              </span>
               <span
                 className={clsx(
                   'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',

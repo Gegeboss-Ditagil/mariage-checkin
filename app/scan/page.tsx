@@ -148,8 +148,8 @@ export default function ScanPage() {
           Rechercher un invité
         </Link>
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/tables" className="btn-secondary">
-            Tables
+          <Link href="/plan-table" className="btn-secondary">
+            Plan de table
           </Link>
           <Link href="/dashboard" className="btn-secondary text-center">
             Tableau de bord
