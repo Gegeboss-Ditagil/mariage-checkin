@@ -1,7 +1,7 @@
 # Transmission Claude — accès sécurisé à `/staff`
 
-**Version documentaire : 1.15.3**
-**Dernière mise à jour : 2026-08-23**
+**Version documentaire : 1.16.0**
+**Dernière mise à jour : 2026-08-27**
 
 Ce fichier explique la logique d'accès Staff à conserver lors des prochains changements. Il ne contient volontairement aucun code PIN ni secret.
 

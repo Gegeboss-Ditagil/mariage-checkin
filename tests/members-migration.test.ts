@@ -28,4 +28,3 @@ test('la route d initialisation utilise la capacite centrale manageMembers', () 
   assert.match(initializeRoute, /hasCapability\(user\.role, 'manageMembers'\)/);
   assert.doesNotMatch(initializeRoute, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
 });
-

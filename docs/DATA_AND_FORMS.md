@@ -1,7 +1,7 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.15.3**
-**Dernière mise à jour : 2026-08-23**
+**Version documentaire : 1.16.0**
+**Dernière mise à jour : 2026-08-27**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
@@ -28,10 +28,10 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Déplacer/retirer débordement | overflow_assignments, audit | Admin, directeur, placeur |
 | Déplacer invitation | invitations, audit | Admin, directeur, placeur |
 | Transférer/échanger en lot | invitations, audit | Admin, directeur, placeur |
-| Ajouter invitation | invitations | Admin, directeur, placeur |
+| Ajouter invitation | invitations | Admin uniquement |
 | Renommer invitation | invitations, audit | Admin, directeur, placeur, agent scan |
-| Fusionner deux invitations | invitations, checkins, overflow_assignments, invitation_guests, exceptions, audit | Admin, directeur, placeur |
-| Ajouter/retirer une étiquette | invitations, audit | Admin, directeur, placeur |
+| Fusionner deux invitations | invitations, checkins, overflow_assignments, invitation_guests, exceptions, audit | Admin uniquement |
+| Ajouter/retirer une étiquette | invitations, audit | Admin uniquement |
 | Import/administration | tables, invitations, users, événement | Admin uniquement |
 | Diffusion des invitations | Excel/CSV local en mémoire, aucune écriture serveur | Admin uniquement |
 

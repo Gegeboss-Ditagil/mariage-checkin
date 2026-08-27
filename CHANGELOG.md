@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.16.0] — 2026-08-27
+
+### Ajouté
+- `/checkin/[invitationId]` : sélection directe d'une ou plusieurs personnes qui ne viendront pas, en réutilisant les routes sécurisées de gestion des membres.
+- Bouton message avec choix WhatsApp/SMS sur `/staff` et `/plan-table`, réservé à `admin`.
+- Le nom de l'invitation dans la barre supérieure ouvre directement le renommage.
+
+### Modifié
+- Ajout, fusion d'invitations et modification des étiquettes sont réservés à `admin`. Les étiquettes restent visibles en lecture seule aux autres rôles.
+- La fusion utilise désormais la capacité distincte `mergeInvitations`; `moveGuests` reste disponible à admin/directeur/placeur pour préserver les déplacements et échanges de tables.
+- Les routes API d'invitations et de membres utilisent les capacités centralisées au lieu de listes de rôles locales.
+- `/plan-table` affiche les invitations sans table, notamment avec le filtre provisoire.
+
+### Sécurité et tests
+- Les numéros utilisés par les liens WhatsApp/SMS sont normalisés.
+- Tests de permissions mis à jour; TypeScript, rôles, membres, plan, diffusion et build vérifiés avant fusion.
+
 ## Données — 2026-08-26 (correction v6, rôles staff corrigés depuis With Joy + tables 4/8 et 5/6 réappliquées)
 
 ### Correction des tags de rôle staff + réparation d'une régression sur le lot v5

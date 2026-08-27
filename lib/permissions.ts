@@ -10,11 +10,13 @@ export type Capability =
   | 'checkin'
   | 'placement'
   | 'moveGuests'
+  | 'mergeInvitations'
   | 'assignOverflow'
   | 'manageOverflow'
   | 'manageMembers'
   | 'manageTags'
   | 'callStaff'
+  | 'messageContacts'
   | 'markNoShow'
   | 'addInvitation'
   | 'viewHistory'
@@ -24,15 +26,16 @@ export type Capability =
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
-  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
+  'moveGuests', 'mergeInvitations', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
+  'messageContacts',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'exportData', 'adminPanel',
 ];
 
 const OPERATIONAL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
-  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags',
-  'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
+  'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
+  'markNoShow', 'viewHistory', 'resolveExceptions',
 ];
 
 export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {

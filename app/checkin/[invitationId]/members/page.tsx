@@ -6,40 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { GuestRow, InvitationRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { useOnline } from '@/hooks/useOnline';
-
-interface DraftMember {
-  key: string;
-  prenom: string;
-  nom: string;
-}
-
-let draftKeyCounter = 0;
-function newDraftKey(): string {
-  draftKeyCounter += 1;
-  return 'd' + draftKeyCounter;
-}
-
-/** Extrait un depart raisonnable depuis le texte libre "Membres: A B, C D" des
- * imports existants -- juste une suggestion modifiable, pas une source de
- * verite (les donnees importees contiennent parfois des doublons ou des
- * comptes qui ne correspondent pas exactement au nombre prevu). */
-function parseMembersFromNotes(notes: string | null): DraftMember[] {
-  if (!notes) return [];
-  const marker = 'Membres:';
-  const idx = notes.indexOf(marker);
-  if (idx === -1) return [];
-  const after = notes.slice(idx + marker.length).trim();
-  if (!after) return [];
-  return after
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((full) => {
-      const spaceIdx = full.indexOf(' ');
-      if (spaceIdx === -1) return { key: newDraftKey(), prenom: full, nom: '' };
-      return { key: newDraftKey(), prenom: full.slice(0, spaceIdx), nom: full.slice(spaceIdx + 1) };
-    });
-}
+import { parseMembersFromNotes, newDraftKey, type DraftMember } from '@/lib/membersNotes';
 
 export default function MembresInvitationPage() {
   const { invitationId } = useParams<{ invitationId: string }>();

@@ -17,6 +17,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import clsx from 'clsx';
@@ -191,6 +192,10 @@ export default function PlanTablePage() {
     ? invitations.filter((inv) => inv.category === 'Staff' && inv.tags.includes(selectedZoneTag))
     : [];
   const staffPeopleForZone = staffForZone.reduce((sum, inv) => sum + inv.nombre_prevu, 0);
+  const sansTableInvitations = useMemo(() => invitations.filter((inv) => !inv.table_id), [invitations]);
+  const sansTableVisibles = filtre === 'toutes'
+    ? sansTableInvitations
+    : sansTableInvitations.filter((inv) => inv.placement_status === filtre);
 
   function scrollToFloorPlan() {
     // requestAnimationFrame : laisse le temps au bloc de s'ouvrir (showFloorPlan)
@@ -226,6 +231,7 @@ export default function PlanTablePage() {
   // admin/directeur (capacite callStaff), meme regle que sur /staff.
   const canCheckin = hasCapability(role, 'checkin');
   const canCall = hasCapability(role, 'callStaff');
+  const canMessage = hasCapability(role, 'messageContacts');
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -347,6 +353,7 @@ export default function PlanTablePage() {
                                   📞
                                 </a>
                               )}
+                              {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
                             </li>
                           );
                         })}
@@ -455,7 +462,7 @@ export default function PlanTablePage() {
             <p className="mb-2 text-sm font-semibold text-black/50">
               Tables de réserve <span className="font-normal text-black/40">— excédentaire au-delà des 400</span>
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {reserve.map((t) => (
                 <TableCard
                   key={t.id}
@@ -468,6 +475,25 @@ export default function PlanTablePage() {
                 />
               ))}
             </div>
+
+            {sansTableInvitations.length > 0 && (
+              <>
+                <p className="mb-2 text-sm font-semibold text-black/50">Sans table <span className="font-normal text-black/40">— staff accueilli directement</span></p>
+                <div className="card p-4">
+                  {sansTableVisibles.length === 0 ? <p className="text-xs italic text-black/40">Aucune place de ce type</p> : (
+                    <ul className="divide-y divide-gold-400/10">
+                      {sansTableVisibles.map((inv) => (
+                        <li key={inv.id} className="flex items-center gap-2 py-2">
+                          {canCheckin ? <Link href={'/checkin/' + inv.id} className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p><p className="text-xs text-black/50">{inv.tags.filter((tag) => tag !== 'SERVICES' && tag !== 'notable' && !tag.startsWith('Côté_')).join(' · ')}</p></Link> : <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p></div>}
+                          {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
+                          {canCall && inv.telephone && <a href={'tel:' + inv.telephone} aria-label={'Appeler ' + inv.nom_affichage} className="shrink-0 rounded-full bg-gold-100 p-2 text-sm text-gold-700">📞</a>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

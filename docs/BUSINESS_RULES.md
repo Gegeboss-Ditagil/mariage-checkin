@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.15.3**
-**Dernière mise à jour : 2026-08-23**
+**Version documentaire : 1.16.0**
+**Dernière mise à jour : 2026-08-27**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -53,10 +53,12 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Déplacer un groupe | Oui | Oui | Oui | Non | Non |
 | Transférer/échanger plusieurs invitations en lot | Oui | Oui | Oui | Non | Non |
 | Réorganiser un débordement déjà affecté | Oui | Oui | Oui | Non | Non |
-| Ajouter une invitation individuelle | Oui | Oui | Oui | Non | Non |
+| Ajouter une invitation individuelle | Oui | Non | Non | Non | Non |
 | Renommer une invitation | Oui | Oui | Oui | Oui | Non |
-| Ajouter/retirer une étiquette | Oui | Oui | Oui | **Non** (retiré le 23/08/2026) | Non |
-| Fusionner deux invitations | Oui | Oui | Oui | Non | Non |
+| Voir les étiquettes déjà posées | Oui | Oui | Oui | Oui | Oui |
+| Ajouter/retirer une étiquette | Oui | Non | Non | Non | Non |
+| Fusionner deux invitations | Oui | Non | Non | Non | Non |
+| Envoyer un message WhatsApp/SMS | Oui | Non | Non | Non | Non |
 | Utiliser l'écran Placement | Oui | Oui | Oui | Non | Non |
 | Écran Staff (consultation + check-in) | Oui | Oui | Oui | Oui | Oui (lecture seule) |
 | Historique et exceptions | Oui | Oui | Oui | Oui | Non |

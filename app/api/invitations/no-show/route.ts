@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
+import { hasCapability } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !['admin', 'directeur', 'placeur', 'agent_checkin'].includes(user.role)) {
+  if (!user || !hasCapability(user.role, 'markNoShow')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

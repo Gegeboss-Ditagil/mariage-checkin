@@ -11,6 +11,7 @@ import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { useOnline } from '@/hooks/useOnline';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { LiberationPlacesPanel } from '@/components/LiberationPlacesPanel';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
@@ -40,7 +41,7 @@ export default function CheckinPage() {
   const canReorganizeExcedent = hasCapability(role, 'manageOverflow');
   const canRename = hasCapability(role, 'manageMembers');
   const canManageTags = hasCapability(role, 'manageTags');
-  const canMerge = hasCapability(role, 'moveGuests');
+  const canMerge = hasCapability(role, 'mergeInvitations');
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   // Valeur affichee par le compteur +/- : represente directement le nombre
@@ -707,7 +708,7 @@ export default function CheckinPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={invitation.nom_affichage} backHref="/scan" />
+      <TopBar title={invitation.nom_affichage} backHref="/scan" onTitleClick={canRename ? startRename : undefined} />
 
       <div className="flex-1 px-4 py-6">
         <div className="card mb-4 space-y-1 text-center">
@@ -726,10 +727,8 @@ export default function CheckinPage() {
           )}
         </div>
 
-        {canRename && (
-          <div className="mb-3">
-            {renaming ? (
-              <div className="space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3">
+        {canRename && renaming && (
+          <div className="mb-3 space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3">
                 <input
                   className="w-full rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
                   placeholder="Nom affiché"
@@ -755,25 +754,15 @@ export default function CheckinPage() {
                     Annuler
                   </button>
                 </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
-                onClick={startRename}
-              >
-                ✎ Renommer cette invitation
-              </button>
-            )}
           </div>
         )}
 
-        {canManageTags && (
+        {(invitation.tags.length > 0 || canManageTags) && (
           <div className="mb-4 rounded-xl2 border-2 border-gold-300/30 bg-white p-3">
             <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
-            {invitation.tags.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {invitation.tags.map((tag) => (
+            {invitation.tags.length === 0 && <p className="mb-2 text-xs text-black/40">Aucune étiquette pour l'instant.</p>}
+            <div className={canManageTags ? 'mb-2 flex flex-wrap gap-2' : 'flex flex-wrap gap-2'}>
+              {invitation.tags.map((tag) => canManageTags ? (
                   <span
                     key={tag}
                     className="flex items-center gap-1 rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700"
@@ -789,10 +778,12 @@ export default function CheckinPage() {
                       ×
                     </button>
                   </span>
+                ) : (
+                  <span key={tag} className="rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700">{libelleEtiquette(tag)}</span>
                 ))}
-              </div>
-            )}
-            <div className="mb-2 flex flex-wrap gap-2">
+            </div>
+            {canManageTags && <>
+              <div className="mb-2 flex flex-wrap gap-2">
               {ETIQUETTES_RAPIDES.filter((e) => !invitation.tags.includes(e.value)).map((e) => (
                 <button
                   key={e.value}
@@ -822,8 +813,11 @@ export default function CheckinPage() {
               </button>
             </div>
             {tagError && <p className="mt-2 text-xs font-medium text-status-over">{tagError}</p>}
+            </>}
           </div>
         )}
+
+        <LiberationPlacesPanel invitation={invitation} onInvitationUpdate={setInvitation} />
 
         <button
           type="button"

@@ -10,6 +10,7 @@ import { restants } from '@/lib/statusLogic';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { isStaffWithoutTable } from '@/lib/staffVisibility';
+import { MessageButton } from '@/components/MessageButton';
 
 // Une invitation est "staff" si elle porte la categorie Staff.
 function isStaff(inv: InvitationRow): boolean {
@@ -50,6 +51,7 @@ export default function StaffPage() {
   // Bouton d'appel direct reserve admin/directeur -- demande explicite de
   // Gersom le 23/08/2026 : les autres roles n'ont pas besoin d'appeler.
   const canCall = hasCapability(role, 'callStaff');
+  const canMessage = hasCapability(role, 'messageContacts');
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -245,6 +247,7 @@ export default function StaffPage() {
                   📞
                 </a>
               )}
+              {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} />}
             </li>
           );
         })}

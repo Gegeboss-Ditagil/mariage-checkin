@@ -81,21 +81,26 @@ test('agent scan ne peut pas fusionner deux invitations (mais peut renommer)', (
   assert.equal(canAccessPath('agent_checkin', '/api/invitations/rename'), true);
 });
 
-test('agent scan ne peut pas gerer les etiquettes (mais garde le reste de manageMembers)', () => {
+test('les operations sensibles sont reservees a admin sans bloquer les deplacements de table', () => {
   // Retire le 23/08/2026 sur demande explicite de Gersom : ce role est la
   // pour scanner/checker, pas pour reclassifier les invites (cote, roles
   // staff, notable...). manageMembers (renommer, gerer les membres du
   // groupe) reste inchange pour ce role.
-  assert.equal(hasCapability('agent_checkin', 'manageTags'), false);
-  assert.equal(hasCapability('agent_checkin', 'manageMembers'), true);
-  for (const role of ['admin', 'directeur', 'placeur'] as const) {
-    assert.equal(hasCapability(role, 'manageTags'), true, role + ' doit garder manageTags');
+  for (const capability of ['manageTags', 'mergeInvitations', 'addInvitation'] as const) {
+    assert.equal(hasCapability('admin', capability), true);
+    for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+      assert.equal(hasCapability(role, capability), false, role + ' ne doit pas avoir ' + capability);
+    }
   }
-  assert.equal(hasCapability('visibilite', 'manageTags'), false);
+  assert.equal(hasCapability('agent_checkin', 'manageMembers'), true);
+  assert.equal(hasCapability('directeur', 'moveGuests'), true);
+  assert.equal(hasCapability('placeur', 'moveGuests'), true);
 
   const tagsAddSource = readFileSync(new URL('../app/api/invitations/tags/add/route.ts', import.meta.url), 'utf8');
   const tagsRemoveSource = readFileSync(new URL('../app/api/invitations/tags/remove/route.ts', import.meta.url), 'utf8');
   const renameSource = readFileSync(new URL('../app/api/invitations/rename/route.ts', import.meta.url), 'utf8');
+  const mergeSource = readFileSync(new URL('../app/api/invitations/merge/route.ts', import.meta.url), 'utf8');
+  const addSource = readFileSync(new URL('../app/api/invitations/add/route.ts', import.meta.url), 'utf8');
   const checkinPageSource = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
   for (const source of [tagsAddSource, tagsRemoveSource]) {
     assert.match(source, /hasCapability\(user\.role, ['"]manageTags['"]\)/);
@@ -103,8 +108,21 @@ test('agent scan ne peut pas gerer les etiquettes (mais garde le reste de manage
     assert.doesNotMatch(source, /agent_checkin/);
   }
   assert.match(renameSource, /hasCapability\(user\.role, ['"]manageMembers['"]\)/);
+  assert.match(mergeSource, /hasCapability\(user\.role, ['"]mergeInvitations['"]\)/);
+  assert.match(addSource, /hasCapability\(user\.role, ['"]addInvitation['"]\)/);
   assert.match(checkinPageSource, /const canManageTags = hasCapability\(role, ['"]manageTags['"]\)/);
-  assert.match(checkinPageSource, /\{canManageTags && \(/);
+  assert.match(checkinPageSource, /invitation\.tags\.length > 0 \|\| canManageTags/);
+});
+
+test('le bouton message WhatsApp ou SMS est reserve a admin', () => {
+  assert.equal(hasCapability('admin', 'messageContacts'), true);
+  for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'messageContacts'), false);
+  }
+  const staffSource = readFileSync(new URL('../app/staff/page.tsx', import.meta.url), 'utf8');
+  const planSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+  assert.match(staffSource, /hasCapability\(role, ['"]messageContacts['"]\)/);
+  assert.match(planSource, /hasCapability\(role, ['"]messageContacts['"]\)/);
 });
 
 test('le bouton d appel du staff est reserve a admin et directeur', () => {
@@ -142,7 +160,7 @@ test('visibilite reste strictement en lecture seule', () => {
 });
 
 test('directeur et placeur ont les memes droits operationnels', () => {
-  for (const capability of ['scan', 'checkin', 'placement', 'moveGuests', 'manageOverflow', 'addInvitation'] as const) {
+  for (const capability of ['scan', 'checkin', 'placement', 'moveGuests', 'manageOverflow'] as const) {
     assert.equal(hasCapability('directeur', capability), true);
     assert.equal(hasCapability('placeur', capability), true);
   }

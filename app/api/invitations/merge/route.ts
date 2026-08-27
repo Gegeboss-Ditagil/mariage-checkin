@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
+import { hasCapability } from '@/lib/permissions';
 
 /**
  * Fusionne une invitation source dans une invitation cible (ex: regrouper
@@ -10,7 +11,7 @@ import { getSessionUser } from '@/lib/session';
  */
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !['admin', 'directeur', 'placeur'].includes(user.role)) {
+  if (!user || !hasCapability(user.role, 'mergeInvitations')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

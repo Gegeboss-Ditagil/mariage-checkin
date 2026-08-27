@@ -9,10 +9,12 @@ export function TopBar({
   title,
   backHref,
   right,
+  onTitleClick,
 }: {
   title: string;
   backHref?: string;
   right?: React.ReactNode;
+  onTitleClick?: () => void;
 }) {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -47,9 +49,14 @@ export function TopBar({
               ‹
             </Link>
           )}
-          <h1 className="truncate font-display text-lg font-semibold uppercase tracking-wide text-cream">
-            {title}
-          </h1>
+          {onTitleClick ? (
+            <button type="button" onClick={onTitleClick} aria-label={'Modifier « ' + title + ' »'} className="flex min-w-0 items-center gap-1.5 truncate font-display text-lg font-semibold uppercase tracking-wide text-cream">
+              <span className="truncate">{title}</span>
+              <span aria-hidden className="shrink-0 text-sm text-gold-300">✎</span>
+            </button>
+          ) : (
+            <h1 className="truncate font-display text-lg font-semibold uppercase tracking-wide text-cream">{title}</h1>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {right}
