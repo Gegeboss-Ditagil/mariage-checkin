@@ -6,25 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Cote, InvitationRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
-
-function extractPrenoms(notes: string | null): string | null {
-  if (!notes) return null;
-  const marker = 'Membres:';
-  const idx = notes.indexOf(marker);
-  if (idx === -1) return null;
-  const after = notes.slice(idx + marker.length).trim();
-  if (!after) return null;
-  const noms = after
-    .split(',')
-    .map(function (part) {
-      const trimmed = part.trim();
-      const premierMot = trimmed.split(' ')[0];
-      return premierMot;
-    })
-    .filter(Boolean);
-  if (noms.length === 0) return null;
-  return noms.join(', ');
-}
+import { extractPrenoms } from '@/lib/membersNotes';
 
 const TITRES: Record<string, string> = {
   tous: 'Tous les invités',

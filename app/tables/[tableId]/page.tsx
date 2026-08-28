@@ -8,6 +8,7 @@ import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { extractPrenoms } from '@/lib/membersNotes';
 import {
   clearBulkMoveSelection,
   readBulkMoveSelection,
@@ -19,25 +20,6 @@ function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
   const padded = String(number).padStart(3, '0');
   return number <= 7 ? 'Vol-F' + padded : 'Vol-T' + padded;
-}
-
-function extractPrenoms(notes: string | null): string | null {
-  if (!notes) return null;
-  const marker = 'Membres:';
-  const idx = notes.indexOf(marker);
-  if (idx === -1) return null;
-  const after = notes.slice(idx + marker.length).trim();
-  if (!after) return null;
-  const noms = after
-    .split(',')
-    .map(function (part) {
-      const trimmed = part.trim();
-      const premierMot = trimmed.split(' ')[0];
-      return premierMot;
-    })
-    .filter(Boolean);
-  if (noms.length === 0) return null;
-  return noms.join(', ');
 }
 
 export default function TableDetailPage() {

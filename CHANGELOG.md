@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.18.3] — 2026-08-28
+
+### Corrigé
+- `/plan-table` recherche désormais aussi les noms individuels présents dans `notes` pour retrouver un membre d'un couple ou d'une famille à partir de son prénom.
+- Les prénoms des membres sont affichés sous le nom du groupe sur chaque carte de table.
+- `extractPrenoms` et `extractMembresComplet` sont centralisés dans `lib/membersNotes.ts` et réutilisés par les six écrans concernés.
+
+### Tests
+- Nouveau test `tests/search-member-names.test.ts` (4 scénarios) couvrant l'extraction, la recherche, l'affichage et l'absence de duplication locale.
+
 ## [1.18.2] — 2026-08-28
 
 ### Corrigé

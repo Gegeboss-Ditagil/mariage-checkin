@@ -11,6 +11,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { isStaffWithoutTable } from '@/lib/staffVisibility';
 import { MessageButton } from '@/components/MessageButton';
+import { extractPrenoms } from '@/lib/membersNotes';
 
 // Une invitation est "staff" si elle porte la categorie Staff.
 function isStaff(inv: InvitationRow): boolean {
@@ -19,25 +20,6 @@ function isStaff(inv: InvitationRow): boolean {
 
 interface StaffInvitation extends InvitationRow {
   table?: TableRow | null;
-}
-
-function extractPrenoms(notes: string | null): string | null {
-  if (!notes) return null;
-  const marker = 'Membres:';
-  const idx = notes.indexOf(marker);
-  if (idx === -1) return null;
-  const after = notes.slice(idx + marker.length).trim();
-  if (!after) return null;
-  const noms = after
-    .split(',')
-    .map(function (part) {
-      const trimmed = part.trim();
-      const premierMot = trimmed.split(' ')[0];
-      return premierMot;
-    })
-    .filter(Boolean);
-  if (noms.length === 0) return null;
-  return noms.join(', ');
 }
 
 export default function StaffPage() {
