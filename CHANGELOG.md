@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.18.1] — 2026-08-28
+
+### Corrigé
+- `app/checkin/[invitationId]/page.tsx` : un déplacement de table effectué par un autre agent/admin pendant que cette fiche restait ouverte ne mettait à jour que `invitation.table_id` (via le patch temps réel) — la table affichée en haut de page (`invitationTable`, un JOIN séparé chargé une seule fois au montage) restait sur l'ancienne table jusqu'à un rechargement manuel. Le gestionnaire temps réel re-synchronise désormais `invitationTable` dès que `table_id` change réellement (nouvelle requête si non nul, remise à `null` sinon).
+- `app/checkin/[invitationId]/members/page.tsx` : un renommage de l'invitation par un autre agent pendant que cette sous-page restait ouverte n'était pas reflété (le nom affiché en haut de page provient de `invitation.nom_affichage`, mais la page ne s'abonnait qu'aux changements de `invitation_guests`/`guests`, pas `invitations`). Nouvel abonnement `invitations` filtré sur cette invitation, avec le même regroupement (debounce) que le reste de la page.
+- Corrige deux angles morts trouvés en vérifiant la demande explicite de Gersom : « peu importe l'info que je donne avec nom ou table ou tag changé, l'application se met à jour rapidement ». Le reste (tags, changements sur les écrans de liste) était déjà correctement propagé.
+
+### Tests
+- `tests/realtime-debounce.test.ts` complété (6 tests) : re-synchronisation de la table affichée sur `/checkin/[invitationId]`, propagation d'un renommage sur `/checkin/[invitationId]/members`.
+- `npx tsc --noEmit`, `npm run test:roles` (15/15), `npm run test:floorplan` (14/14), `npm run test:members` (3/3), `npm run test:diffusion` (5/5), `npm run test:withjoy` (6/6), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6) et `npm run build` tous exécutés avec succès.
+
 ## [1.18.0] — 2026-08-28
 
 ### Ajouté

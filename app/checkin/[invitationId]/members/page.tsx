@@ -72,6 +72,11 @@ export default function MembresInvitationPage() {
       .channel('members-' + invitationId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'invitation_guests', filter: 'invitation_id=eq.' + invitationId }, debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, debouncedLoad)
+      // Sans cet abonnement, un renommage (ou tout autre changement) de
+      // l'invitation elle-meme par un autre agent pendant que cette page est
+      // ouverte restait affiche a l'ancienne valeur jusqu'a une navigation
+      // manuelle -- `load()` rafraichit deja l'invitation et les membres.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations', filter: 'id=eq.' + invitationId }, debouncedLoad)
       .subscribe();
 
     return () => {

@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.18.0**
+**Version documentaire : 1.18.1**
 **Dernière mise à jour : 2026-08-28**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -73,6 +73,7 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Réimporter un CSV With Joy volumineux (ou corriger plusieurs invitations en lot) pendant que `/dashboard`, `/plan-table`, `/table/[tableId]`, `/tables/[tableId]`, `/checkin/[invitationId]/members` et `/exceptions` sont ouverts sur plusieurs téléphones : chaque écran doit se mettre à jour, sans rafale de rechargements ni ralentissement notable — un seul rechargement groupé par écran juste après la fin de la rafale d'écriture, pas un par ligne modifiée.
 - Depuis `/admin/import-withjoy` sur iPhone, télécharger un export CSV dans Mail/Drive puis « Enregistrer dans Fichiers », et vérifier qu'il apparaît bien sélectionnable (non grisé) dans le sélecteur « Parcourir » de Safari.
 - Simuler un crash dans le layout racine (ex. lever une exception dans un composant monté par `app/layout.tsx`) : `app/global-error.tsx` doit s'afficher et renvoyer vers `/login` après nettoyage de session, jamais une page blanche.
+- (v1.18.1) Ouvrir `/checkin/[invitationId]` sur un téléphone, puis déplacer cette invitation vers une autre table depuis un second téléphone : le numéro/libellé de table affiché sur le premier doit se mettre à jour sans rechargement manuel. Répéter avec un renommage pendant que `/checkin/[invitationId]/members` est ouvert.
 
 ## Commandes minimales
 

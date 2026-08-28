@@ -49,3 +49,29 @@ test('un crash dans le layout racine reste rattrapable (filet global)', () => {
 test('l import With Joy accepte plusieurs alias MIME pour rester utilisable depuis le selecteur de fichiers iOS', () => {
   assert.match(importPageSource, /accept="\.csv,text\/csv,text\/comma-separated-values/);
 });
+
+test('un deplacement de table pendant que /checkin/[invitationId] est ouvert met a jour la table affichee', () => {
+  // /checkin/[invitationId] applique la mise a jour Realtime directement sur
+  // `invitation` (payload.new, tout `InvitationRow` y compris `table_id`),
+  // mais `invitationTable` (numero/libelle affiches en haut de page) est un
+  // JOIN separe charge une seule fois au montage -- sans re-synchronisation
+  // explicite, une invitation deplacee vers une autre table par un autre
+  // agent pendant que cette fiche reste ouverte continuait d'afficher
+  // l'ancienne table jusqu'a un rechargement manuel de la page.
+  const src = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
+  const handlerBlock = src.slice(
+    src.indexOf("filter: 'id=eq.' + invitationId"),
+    src.indexOf('.subscribe()')
+  );
+  assert.match(handlerBlock, /updated\.table_id !== invitationTableIdRef\.current/);
+  assert.match(handlerBlock, /invitationTableIdRef\.current === requestedTableId/);
+  assert.match(handlerBlock, /setInvitationTable/);
+});
+
+test('un renommage pendant que /checkin/[invitationId]/members est ouvert met a jour le nom affiche', () => {
+  const src = readFileSync(new URL('../app/checkin/[invitationId]/members/page.tsx', import.meta.url), 'utf8');
+  assert.match(
+    src,
+    /table: 'invitations', filter: 'id=eq\.' \+ invitationId \}, debouncedLoad/
+  );
+});

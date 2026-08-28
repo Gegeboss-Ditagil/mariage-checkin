@@ -70,6 +70,7 @@ export default function CheckinPage() {
   // sur la fiche (utile pour informer l'invite retrouve via une recherche
   // telephone/email de sa table, sans avoir a naviguer ailleurs).
   const [invitationTable, setInvitationTable] = useState<TableRow | null>(null);
+  const invitationTableIdRef = useRef<string | null>(null);
   const [noShowSubmitting, setNoShowSubmitting] = useState(false);
 
   // -- Renommer l'invitation (pas un membre detaille -- voir /members) ------
@@ -94,6 +95,7 @@ export default function CheckinPage() {
         const inv = data as InvitationRow | null;
         setInvitation(inv);
         if (inv) {
+          invitationTableIdRef.current = inv.table_id;
           setArriveValue(inv.nombre_arrive);
           if (inv.table_id) {
             supabase
@@ -123,6 +125,27 @@ export default function CheckinPage() {
         { event: 'UPDATE', schema: 'public', table: 'invitations', filter: 'id=eq.' + invitationId },
         (payload) => {
           const updated = payload.new as InvitationRow;
+          // Garder la requete hors du setter React : un updater peut etre
+          // rejoue en mode strict. La ref empeche aussi une reponse lente de
+          // l'ancienne table d'ecraser un second deplacement plus recent.
+          if (updated.table_id !== invitationTableIdRef.current) {
+            invitationTableIdRef.current = updated.table_id;
+            if (updated.table_id) {
+              const requestedTableId = updated.table_id;
+              void supabase
+                .from('tables')
+                .select('*')
+                .eq('id', requestedTableId)
+                .maybeSingle()
+                .then(({ data: t }) => {
+                  if (invitationTableIdRef.current === requestedTableId) {
+                    setInvitationTable((t as TableRow) || null);
+                  }
+                });
+            } else {
+              setInvitationTable(null);
+            }
+          }
           setInvitation((prev) => {
             if (prev && updated.nombre_arrive !== prev.nombre_arrive) {
               if (arriveValueRef.current === prev.nombre_arrive) {
