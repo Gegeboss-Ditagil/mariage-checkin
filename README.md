@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.19.0**
+**Version actuelle : 1.19.1**
 **Dernière mise à jour documentaire : 2026-08-28**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.19.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.19.1-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,7 +25,7 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.19.0
+## État fonctionnel v1.19.1
 
 - **41 tables au total**.
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
@@ -45,7 +45,7 @@ Avant toute modification, lire :
 - La recherche de `/plan-table` trouve désormais aussi un invité par son prénom au sein d'un couple/groupe (ex. « Karl » dans « Couple Isolokele »), et affiche les prénoms des membres sous le nom du groupe — comme le faisaient déjà `/search`, `/staff` et les fiches table.
 - La liste des tables de `/plan-table` rappelle maintenant explicitement le mode de tri actif (numéro ou places libres) juste au-dessus des cartes, pour éviter de croire l'ordre incohérent quand les boutons « Trier par… » sont remontés hors de l'écran.
 - `placement_status` (« Confirmée »/« Provisoire ») reflète désormais la confiance RSVP plutôt que le fait que la table vienne d'un tag CSV explicite ou de l'algorithme.
-- Sur `/plan-table`, les tuiles de statistiques (personnes, côté Nelly/Gégé, confirmées/provisoires) sont devenues des filtres tapables, remplaçant l'ancienne rangée de boutons dédiée et une paire de barres par une seule barre de progression compacte (capacité/prévu/présence, rouge en cas de dépassement) — même principe repris sur chaque carte de table.
+- Sur `/plan-table`, une paire de barres est devenue une seule barre de progression compacte (capacité/prévu/présence, rouge en cas de dépassement) — même principe repris sur chaque carte de table. Les filtres côté Nelly/Gégé et confirmées/provisoires vivent dans une rangée de pastilles dédiée, près des boutons de tri (état actif net, fond plein) ; les tuiles de statistiques restent un simple affichage mais reflètent désormais le filtre actif.
 - Sur `/checkin/[invitationId]`, libérer une place dans « Qui ne vient pas dans ce groupe ? » propose désormais un bouton « ↩️ Annuler » ; « Cet invité ne viendra pas » se cache quand ce panneau par-membre prend déjà le relais, mais reste disponible pour une invitation seule ou pour annuler un marquage déjà posé.
 
 ## Sessions et mises à jour
@@ -128,4 +128,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.19.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.19.1** et l'historique des versions.
