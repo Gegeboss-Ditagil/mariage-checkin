@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.18.0] — 2026-08-28
+
+### Ajouté
+- `lib/debounce.ts` : regroupe une rafale d'événements Supabase Realtime (`postgres_changes`) en un seul rechargement, appliqué aux 7 écrans qui rechargent tout leur état sur un changement temps réel (`/dashboard`, `/plan-table`, `/table/[tableId]`, `/tables/[tableId]`, `/tables/move/[invitationId]`, `/checkin/[invitationId]/members`, `/exceptions`). Un réimport CSV ou une correction en lot modifie des dizaines/centaines de lignes en quelques centaines de millisecondes ; sans regroupement, chaque écran ouvert relançait un rechargement complet par ligne modifiée — avec ~20 personnes connectées en même temps, cela multipliait les requêtes Supabase en parallèle juste après un import au lieu d'être rapide (demande explicite de Gersom). `/checkin/[invitationId]` n'est pas concerné : il applique déjà la mise à jour reçue directement sur son état, sans rechargement complet.
+- `app/global-error.tsx` : filet de secours si le layout racine (`app/layout.tsx`) lui-même plante — `app/error.tsx` ne rattrape que les erreurs sous ce layout, pas une erreur dans le layout lui-même. Même stratégie de récupération (nettoyage de session puis retour à `/login`), avec son propre `<html>`/`<body>` et des styles en ligne (aucune dépendance à Tailwind, au cas où le CSS global soit la cause du plantage).
+
+### Corrigé
+- `public/sw.js` : le repli hors ligne sur une navigation pouvait toujours résoudre en `undefined` si ni `/offline` ni `/` n'étaient en cache (ex. première installation interrompue avant la fin de `cache.addAll`) — un `event.respondWith()` résolu en `undefined` fait planter la requête côté navigateur. Ajout d'un dernier filet (`Response.error()`), cohérent avec celui déjà utilisé pour les autres assets.
+- `/admin/import-withjoy` : le sélecteur de fichier accepte désormais plusieurs alias MIME (`text/comma-separated-values`, `application/csv`, `application/vnd.ms-excel`, `text/plain` en plus de `.csv`/`text/csv`) — un CSV With Joy téléchargé sur iPhone puis « Enregistré dans Fichiers » peut se voir attribuer un type différent selon sa provenance (Mail, Drive...), ce qui pouvait le faire apparaître grisé dans le sélecteur « Parcourir » de Safari iOS. La lecture reste par contenu (`file.text()`), sans vérification stricte du type ensuite — demande explicite de Gersom : « le prochain import sera directement depuis le CSV With Joy, je vais le télécharger sur iPhone et ajouter le fichier directement dans l'app ». La propagation à tous les écrans ouverts passe déjà par les abonnements Supabase Realtime existants sur `invitations`/`tables`, désormais protégés par le regroupement ci-dessus.
+
+### Tests
+- Nouveau `tests/realtime-debounce.test.ts` (`npm run test:realtime`, 4 tests) : regroupement (debounce) des 7 écrans temps réel concernés, garde-fou du service worker sur le repli hors ligne, présence de `app/global-error.tsx`, alias MIME de l'import With Joy.
+- `npx tsc --noEmit`, `npm run test:roles` (15/15), `npm run test:floorplan` (14/14), `npm run test:members` (3/3), `npm run test:diffusion` (5/5), `npm run test:withjoy` (6/6), `npm run test:navigation` (4/4), `npm run test:realtime` (4/4) et `npm run build` tous exécutés avec succès.
+
 ## [1.17.0] — 2026-08-27
 
 ### Ajouté

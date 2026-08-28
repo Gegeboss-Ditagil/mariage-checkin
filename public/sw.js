@@ -52,10 +52,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation : reseau d'abord, fallback offline si echec.
+  // Navigation : reseau d'abord, fallback offline si echec -- et un dernier
+  // filet non vide si meme '/offline' et '/' sont absents du cache (ex:
+  // premiere installation interrompue avant la fin de cache.addAll) : un
+  // respondWith() resolu en undefined fait planter la requete cote
+  // navigateur (souvent une page blanche), jamais acceptable ici.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/offline').then((res) => res || caches.match('/')))
+      fetch(request).catch(() =>
+        caches
+          .match('/offline')
+          .then((res) => res || caches.match('/'))
+          .then((res) => res || Response.error())
+      )
     );
     return;
   }

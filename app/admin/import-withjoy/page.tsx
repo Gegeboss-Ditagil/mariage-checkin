@@ -90,7 +90,18 @@ export default function ImportWithJoyPage() {
 
         <label className="btn-secondary block cursor-pointer text-center">
           {fileName || 'Choisir le CSV With Joy'}
-          <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
+          {/* iOS/Safari (iPhone) rapporte parfois un type MIME different pour
+              un CSV telecharge puis "Enregistre dans Fichiers" (mail, Drive,
+              With Joy...) selon sa provenance -- lister plusieurs alias
+              plutot que le seul text/csv evite qu'il apparaisse grise dans
+              le selecteur "Parcourir" iOS. La lecture reste par contenu
+              (file.text()), aucune verification stricte du type ensuite. */}
+          <input
+            type="file"
+            accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel,text/plain"
+            className="hidden"
+            onChange={handleFile}
+          />
         </label>
 
         {status === 'previewing' && <p className="text-center text-black/50">Analyse du fichier…</p>}

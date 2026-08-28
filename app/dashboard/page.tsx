@@ -11,6 +11,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
+import { debounce } from '@/lib/debounce';
 
 export default function DashboardPage() {
   const role = useSessionRole();
@@ -43,10 +44,13 @@ export default function DashboardPage() {
 
     load();
 
+    // Regroupe une rafale d'evenements (reimport CSV, correction en lot) en
+    // un seul rechargement -- voir lib/debounce.ts.
+    const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, debouncedLoad)
       .subscribe();
 
     return () => {

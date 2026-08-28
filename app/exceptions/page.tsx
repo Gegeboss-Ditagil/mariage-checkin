@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { debounce } from '@/lib/debounce';
 
 const TYPE_LABELS: Record<string, string> = {
   pas_de_qr: 'Pas de QR',
@@ -45,7 +46,7 @@ export default function ExceptionsPage() {
     load();
     const channel = supabase
       .channel('exceptions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'exceptions' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'exceptions' }, debounce(load, 400))
       .subscribe();
 
     return () => {

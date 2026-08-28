@@ -7,6 +7,7 @@ import { GuestRow, InvitationRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { useOnline } from '@/hooks/useOnline';
 import { parseMembersFromNotes, newDraftKey, type DraftMember } from '@/lib/membersNotes';
+import { debounce } from '@/lib/debounce';
 
 export default function MembresInvitationPage() {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -64,10 +65,13 @@ export default function MembresInvitationPage() {
   useEffect(() => {
     load();
     const supabase = createClient();
+    // Regroupe une rafale d'evenements (reimport CSV, correction en lot) en
+    // un seul rechargement -- voir lib/debounce.ts.
+    const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('members-' + invitationId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitation_guests', filter: 'invitation_id=eq.' + invitationId }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitation_guests', filter: 'invitation_id=eq.' + invitationId }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, debouncedLoad)
       .subscribe();
 
     return () => {

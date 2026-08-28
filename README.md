@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.17.0**
-**Dernière mise à jour documentaire : 2026-08-27**
+**Version actuelle : 1.18.0**
+**Dernière mise à jour documentaire : 2026-08-28**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.17.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.18.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,7 +25,7 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.17.0
+## État fonctionnel v1.18.0
 
 - **41 tables au total**.
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
@@ -37,6 +37,9 @@ Avant toute modification, lire :
 - `/plan-table` affiche la capacité officielle sur 400 places.
 - Les cartes du plan de table ouvrent le détail de chaque table.
 - Le plan de salle interactif de `/plan-table` se zoome (pincement à deux doigts ou boutons +/−) pour distinguer les tables d'un coup d'œil, notamment pour appeler quelqu'un rapidement.
+- Les écrans abonnés au temps réel regroupent (debounce) une rafale d'événements — utile lors d'un réimport CSV ou d'une correction en lot — pour rester rapides avec une vingtaine de personnes connectées en même temps au lieu de multiplier les requêtes en parallèle.
+- `app/global-error.tsx` ajoute un filet de secours si le layout racine lui-même plante, en plus de `app/error.tsx`.
+- Le sélecteur de fichier de `/admin/import-withjoy` accepte plusieurs alias MIME pour rester utilisable depuis le sélecteur « Parcourir » de Safari iOS après un téléchargement sur iPhone.
 
 ## Sessions et mises à jour
 
@@ -118,4 +121,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.17.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.18.0** et l'historique des versions.

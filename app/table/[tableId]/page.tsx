@@ -14,6 +14,7 @@ import {
   readBulkMoveSelection,
   saveBulkMoveSelection,
 } from '@/lib/bulkMoveSession';
+import { debounce } from '@/lib/debounce';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -214,17 +215,20 @@ export default function TablePage() {
 
     load();
 
+    // Regroupe une rafale d'evenements (reimport CSV, correction en lot) en
+    // un seul rechargement -- voir lib/debounce.ts.
+    const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('table-' + tableId)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId },
-        () => load()
+        debouncedLoad
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'overflow_assignments', filter: 'reserve_table_id=eq.' + tableId },
-        () => load()
+        debouncedLoad
       )
       .subscribe();
 

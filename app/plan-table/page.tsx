@@ -20,6 +20,7 @@ import { hasCapability } from '@/lib/permissions';
 import { MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
+import { debounce } from '@/lib/debounce';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
@@ -101,10 +102,13 @@ export default function PlanTablePage() {
     load();
     // Realtime : toute nouvelle importation CSV met a jour cette page seule,
     // sans action de l'utilisateur (voir aussi le tire-pour-rafraichir ci-dessous).
+    // `debounce` regroupe une rafale d'evenements (reimport CSV, correction
+    // en lot) en un seul rechargement -- voir lib/debounce.ts.
+    const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('plan-table')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, debouncedLoad)
       .subscribe();
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') void load();

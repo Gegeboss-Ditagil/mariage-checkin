@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.17.0**
-**Dernière mise à jour : 2026-08-27**
+**Version documentaire : 1.18.0**
+**Dernière mise à jour : 2026-08-28**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -68,10 +68,22 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Tester 390×844, 768×1024 et 1440×900 dans Chrome/Edge; compléter sur Safari iOS/iPadOS et Chrome Android avant le jour J. Aucun débordement horizontal ni cible tactile difficile à atteindre.
 - Passer hors ligne puis en ligne, mettre la PWA en arrière-plan puis la rouvrir : les données se réactualisent et le service worker ne tente jamais de mettre en cache une extension, une API ou une origine externe.
 
+## Charge à ~20 personnes et import CSV depuis iPhone — v1.18.0
+
+- Réimporter un CSV With Joy volumineux (ou corriger plusieurs invitations en lot) pendant que `/dashboard`, `/plan-table`, `/table/[tableId]`, `/tables/[tableId]`, `/checkin/[invitationId]/members` et `/exceptions` sont ouverts sur plusieurs téléphones : chaque écran doit se mettre à jour, sans rafale de rechargements ni ralentissement notable — un seul rechargement groupé par écran juste après la fin de la rafale d'écriture, pas un par ligne modifiée.
+- Depuis `/admin/import-withjoy` sur iPhone, télécharger un export CSV dans Mail/Drive puis « Enregistrer dans Fichiers », et vérifier qu'il apparaît bien sélectionnable (non grisé) dans le sélecteur « Parcourir » de Safari.
+- Simuler un crash dans le layout racine (ex. lever une exception dans un composant monté par `app/layout.tsx`) : `app/global-error.tsx` doit s'afficher et renvoyer vers `/login` après nettoyage de session, jamais une page blanche.
+
 ## Commandes minimales
 
 ```bash
 npm run test:roles
+npm run test:floorplan
+npm run test:members
+npm run test:diffusion
+npm run test:withjoy
+npm run test:navigation
+npm run test:realtime
 npx tsc --noEmit
 npm run build
 ```

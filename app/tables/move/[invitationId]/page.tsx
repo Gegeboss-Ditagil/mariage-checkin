@@ -8,6 +8,7 @@ import { TopBar } from '@/components/TopBar';
 import { TablePicker } from '@/components/TablePicker';
 import { useOnline } from '@/hooks/useOnline';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
+import { debounce } from '@/lib/debounce';
 
 export default function DeplacerInvitationPage() {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -66,10 +67,13 @@ export default function DeplacerInvitationPage() {
 
     load();
 
+    // Regroupe une rafale d'evenements (reimport CSV, correction en lot) en
+    // un seul rechargement -- voir lib/debounce.ts.
+    const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('move-' + invitationId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, debouncedLoad)
       .subscribe();
 
     return () => {
