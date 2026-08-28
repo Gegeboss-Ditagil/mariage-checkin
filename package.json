@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.18.4",
+  "version": "1.19.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,6 +16,7 @@
     "test:realtime": "node --test tests/realtime-debounce.test.ts",
     "test:searchnames": "node --test tests/search-member-names.test.ts",
     "test:sortlabel": "node --test tests/plan-table-sort-label.test.ts",
+    "test:liberation": "node --test tests/liberation-undo.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"
   },

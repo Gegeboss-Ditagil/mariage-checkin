@@ -111,6 +111,29 @@ test('des lignes completement sans nom sont comptees et signalees (emptyNameCoun
   assert.match(source, /report\.emptyNameCount === 0/);
 });
 
+test('placement_status suit desormais la confiance RSVP, plus le fait que la table soit un tag explicite ou auto-assignee', () => {
+  // v1.19.0 (28/08/2026, demande explicite de Gersom) : avant cette
+  // version, un tag T0xx/F0xx explicite suffisait a rendre confirmee, sans
+  // egard au RSVP. Le vrai texte With Joy est "Oui, embarquement confirme"
+  // -- prefixe, jamais une egalite stricte avec "Oui".
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['p1', 'Ana', 'Dos', '', '', 'Oui, embarquement confirmé', 'Côté_Nelly,T010'],
+    ['p2', 'Bob', 'Fils', '', '', 'Peut-être, on verra', 'Côté_Nelly,T011'],
+    ['p3', 'Cara', 'Neige', '', '', '', 'Côté_Nelly,T012'],
+    ['p4', 'Dan', 'Roc', '', '', 'Oui, embarquement confirmé', 'Côté_Nelly'],
+    ['p5', 'Eve', 'Sable', '', '', 'Peut-être, on verra', 'Côté_Nelly'],
+    ['p6', 'Finn', 'Terre', '', '', 'Oui, embarquement confirmé', 'Côté_Nelly'],
+    ['p6', 'Gia', 'Terre', '', '', 'Peut-être, on verra', 'Côté_Nelly'],
+  ])));
+  const byLabel = new Map(plan.tableAssignments.map((a) => [a.group.label, a.placementStatus]));
+  assert.equal(byLabel.get('Ana Dos'), 'confirmee'); // tag explicite + RSVP Oui -> confirmee
+  assert.equal(byLabel.get('Bob Fils'), 'provisoire'); // tag explicite mais RSVP Peut-être -> provisoire desormais
+  assert.equal(byLabel.get('Cara Neige'), 'provisoire'); // tag explicite mais aucune reponse RSVP -> provisoire
+  assert.equal(byLabel.get('Dan Roc'), 'confirmee'); // sans tag (auto-assigne) mais RSVP Oui -> confirmee quand meme
+  assert.equal(byLabel.get('Eve Sable'), 'provisoire'); // sans tag et RSVP Peut-être -> provisoire
+  assert.equal(byLabel.get('Famille Terre'), 'provisoire'); // groupe mixte (un Oui, un Peut-être) -> provisoire
+});
+
 test('un party vide n agrege jamais deux personnes sans lien entre elles', () => {
   const plan = buildImportPlan(parseCsvText(csv([
     ['', 'Alice', 'Martin', '', '', 'Oui', 'Côté_Gege'],

@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.18.4**
+**Version documentaire : 1.19.0**
 **Dernière mise à jour : 2026-08-28**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -11,7 +11,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - `/admin/import-withjoy` est réservé à l'admin. Il produit d'abord un aperçu sans écriture; le remplacement complet est autorisé uniquement en mode Préparation/Test, après confirmation explicite, sauvegarde complète et contrôle de concurrence.
 - Depuis le 23/08/2026, `/plan-table` propose un plan de salle interactif (bouton dédié, replié par défaut) : schéma SVG redessiné à partir des photos annotées de Gersom (`components/FloorPlan.tsx`), avec les 41 tables numérotées et cliquables — la réserve (41) a désormais un emplacement défini (confirmé par Gersom le 23/08/2026; avant cette date elle n'apparaissait pas sur le plan). Le plan se zoome (pincement à deux doigts ou boutons +/−, `components/ZoomableFloorPlan.tsx`). Sélection bidirectionnelle purement côté client, sur les données déjà chargées — aucune nouvelle capacité, aucun nouvel appel réseau : appuyer sur une table du plan la surligne en vert et affiche sa fiche juste en dessous; le bouton 📍 sur une carte de la liste habituelle sélectionne la même table et fait défiler jusqu'au plan. Le clic normal sur une carte continue de naviguer vers `/tables/[tableId]`, inchangé.
 - Certaines zones du plan (Cuisine, Bar, DJ et animation, Prestataires & staff) sont également cliquables et affichent le personnel de catégorie `Staff` portant le tag correspondant (`Traiteur`, `Bar`, `DJ_Animation`, `Photographe` — tags déjà posés lors de l'import CSV, aucune nouvelle liste de rôles). Sélectionner une zone efface la table sélectionnée et inversement : un seul panneau s'affiche sous le plan à la fois.
-- Un label With Joy `F0xx` ou `T0xx` produit un placement `confirmee`; un placement calculé reste `provisoire` ou `provisoire_reserve`.
+- Depuis le 28/08/2026 (v1.19.0), `placement_status` reflète la confiance **RSVP**, pas le placement : `confirmee` seulement si CHAQUE membre du groupe a répondu par un texte commençant par « Oui » (le texte With Joy réel est « Oui, embarquement confirmé »), sinon `provisoire` (réponse « Peut-être », absence de réponse, ou aucune donnée RSVP disponible pour cette invitation). Un tag `F0xx`/`T0xx` explicite choisit toujours la table, mais ne rend plus `confirmee` à lui seul. `provisoire_reserve` reste dans le type/la contrainte pour compatibilité mais n'est plus jamais produit par l'import — la valeur « en réserve » se lit directement via `table_id` + `tables.is_reserve`, indépendamment de `placement_status`.
 - Les tables 1 à 40 sont normales et représentent 400 places officielles.
 - La table 41 est l'unique table de réserve; la capacité absolue est donc 410 places.
 - `cote`, `tags` et `placement_status` expliquent le placement et ne modifient jamais les totaux de check-in.

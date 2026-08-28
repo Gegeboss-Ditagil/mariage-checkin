@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.18.4**
+**Version documentaire : 1.19.0**
 **Dernière mise à jour : 2026-08-28**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -77,6 +77,13 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 
 ## Commandes minimales
 
+## Placement RSVP et plan de table — v1.19.0
+
+- `placement_status` suit désormais le RSVP (« Confirmée » seulement si chaque membre du groupe a répondu « Oui... », sinon « Provisoire ») et non plus le fait que la table vienne d'un tag CSV explicite ou de l'algorithme — vérifier qu'un groupe avec un tag `T0xx`/`F0xx` mais RSVP « Peut-être » (ou sans réponse) s'affiche bien « Provisoire ».
+- Sur `/plan-table`, taper les tuiles « X côté Nelly »/« X côté Gégé » filtre les invitations affichées dans chaque table (sans masquer les tables elles-mêmes) — retaper la même tuile revient à « toutes ». Idem pour les tuiles « places confirmées »/« places provisoires », qui remplacent l'ancienne rangée de boutons dédiée.
+- Vérifier qu'une seule barre de progression (capacité/prévu/présence) s'affiche par table et en haut de page, avec un trait pour le nombre prévu et un remplissage qui passe au rouge dès que les arrivées dépassent le prévu.
+- `/checkin/[invitationId]` : libérer une place dans « Qui ne vient pas dans ce groupe ? » doit proposer un bouton « ↩️ Annuler » qui remet la personne exactement (prénom + nom) ; « Cet invité ne viendra pas » doit se cacher pour un groupe dont le détail des membres est connu, mais rester visible pour une invitation solo et pour annuler un marquage déjà posé.
+
 ```bash
 npm run test:roles
 npm run test:floorplan
@@ -85,6 +92,9 @@ npm run test:diffusion
 npm run test:withjoy
 npm run test:navigation
 npm run test:realtime
+npm run test:searchnames
+npm run test:sortlabel
+npm run test:liberation
 npx tsc --noEmit
 npm run build
 ```

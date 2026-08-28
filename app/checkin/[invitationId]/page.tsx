@@ -72,6 +72,14 @@ export default function CheckinPage() {
   const [invitationTable, setInvitationTable] = useState<TableRow | null>(null);
   const invitationTableIdRef = useRef<string | null>(null);
   const [noShowSubmitting, setNoShowSubmitting] = useState(false);
+  // Vrai des que LiberationPlacesPanel affiche effectivement sa liste de
+  // membres a decocher -- dans ce cas "Cet invité ne viendra pas" (qui gere
+  // l'invitation ENTIERE) devient redondant et se cache (sauf si deja
+  // marque, pour garder un moyen d'annuler). Part de false : le bouton
+  // reste visible tant que le panneau n'a pas confirme le prendre en
+  // charge (solo, groupe encore en chargement, ou sans detail de membres
+  // connu) -- jamais de flash-disparition au premier affichage.
+  const [panelVisible, setPanelVisible] = useState(false);
 
   // -- Renommer l'invitation (pas un membre detaille -- voir /members) ------
   const [renaming, setRenaming] = useState(false);
@@ -840,7 +848,7 @@ export default function CheckinPage() {
           </div>
         )}
 
-        <LiberationPlacesPanel invitation={invitation} onInvitationUpdate={setInvitation} />
+        <LiberationPlacesPanel invitation={invitation} onInvitationUpdate={setInvitation} onVisibilityChange={setPanelVisible} />
 
         <button
           type="button"
@@ -874,8 +882,14 @@ export default function CheckinPage() {
         {/* Ne propose de marquer "ne viendra pas" que tant que personne de ce
             groupe n'est arrive : une fois une arrivee enregistree, ce n'est
             plus pertinent (et record_checkin leve deja le marqueur tout seul
-            si un groupe marque absent se presente quand meme). */}
-        {invitation.nombre_arrive === 0 && (
+            si un groupe marque absent se presente quand meme).
+            Cache aussi quand LiberationPlacesPanel ci-dessus prend deja le
+            relais (groupe avec detail de membres connu) -- redondant sinon,
+            demande de Gersom le 28/08/2026. Toujours visible pour une
+            invitation solo (le panneau ne s'affiche jamais dans ce cas), et
+            toujours visible si deja marquee (pour garder un moyen
+            d'annuler), quel que soit l'etat du panneau. */}
+        {invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || !panelVisible) && (
           <button
             type="button"
             disabled={noShowSubmitting || !online}

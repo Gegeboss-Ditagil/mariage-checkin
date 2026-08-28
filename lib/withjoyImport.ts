@@ -55,6 +55,14 @@ export interface ImportGroup {
   fixedTable: number | null;
   noTable: boolean;
   category: 'Staff' | null;
+  // Vrai seulement si CHAQUE membre du groupe a repondu "Oui" (le texte With
+  // Joy reel est "Oui, embarquement confirme" -- prefixe, pas egalite
+  // stricte). Determine desormais placementStatus (v1.19.0, demande de
+  // Gersom le 28/08/2026) : "confirmee"/"provisoire" reflete la confiance
+  // RSVP, plus le fait que la table ait ete assignee via un tag CSV
+  // explicite ou par l'algorithme -- ce dernier signal reste disponible
+  // (fixedTable !== null) mais ne pilote plus le badge.
+  rsvpConfirmed: boolean;
 }
 
 export interface TableAssignment {
@@ -207,6 +215,7 @@ function buildGroup(gid: string, members: Record<string, string>[], warnings: st
   }
   const roles = tags.filter((tag) => isStaff([tag]) && normalizeTag(tag) !== 'services');
   const rsvps = Array.from(new Set(members.map((member) => member.rsvp || 'Sans réponse')));
+  const rsvpConfirmed = members.every((member) => (member.rsvp || '').trim().startsWith('Oui'));
   const noteParts = [`RSVP: ${rsvps.join(' / ')}`];
   if (tags.some((tag) => normalizeTag(tag) === 'services') || roles.length) {
     noteParts.push(`Rôle: ${[...(tags.some((tag) => normalizeTag(tag) === 'services') ? ['SERVICES'] : []), ...roles].join(', ')}`);
@@ -226,6 +235,7 @@ function buildGroup(gid: string, members: Record<string, string>[], warnings: st
     fixedTable,
     noTable,
     category: isStaff(tags) ? 'Staff' : null,
+    rsvpConfirmed,
   };
 }
 
@@ -307,7 +317,7 @@ export function buildImportPlan(rows: Record<string, string>[]): ImportPlan {
       unplaced.push(group);
     } else if ((tableUsed.get(table) || 0) + group.size <= CAPACITY) {
       tableUsed.set(table, (tableUsed.get(table) || 0) + group.size);
-      assignments.push({ tableNumber: table, placementStatus: 'confirmee', group });
+      assignments.push({ tableNumber: table, placementStatus: group.rsvpConfirmed ? 'confirmee' : 'provisoire', group });
     } else {
       warnings.push(`${group.label} ne tient pas à la table ${table} et passe dans le placement provisoire.`);
       overflow.push(group);
@@ -337,7 +347,11 @@ export function buildImportPlan(rows: Record<string, string>[]): ImportPlan {
       tableUsed.set(table, (tableUsed.get(table) || 0) + group.size);
       assignments.push({
         tableNumber: table,
-        placementStatus: table > NB_TABLES_INVITES ? 'provisoire_reserve' : 'provisoire',
+        // Le placement (table choisie par l'algorithme vs tag CSV explicite)
+        // ne pilote plus ce statut -- seule la confiance RSVP compte
+        // desormais. Le fait d'etre en reserve reste visible ailleurs via
+        // table_id + tables.is_reserve (voir /plan-table), inchange.
+        placementStatus: group.rsvpConfirmed ? 'confirmee' : 'provisoire',
         group,
       });
     }

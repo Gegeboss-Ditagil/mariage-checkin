@@ -25,11 +25,39 @@ import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
+type CoteFiltre = 'toutes' | Cote;
 type Tri = 'numero' | 'libres';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
   return 'Vol-' + (number <= 7 ? 'F' : 'T') + String(number).padStart(3, '0');
+}
+
+// Une seule barre pour capacite/prevu/present (demande de Gersom le
+// 28/08/2026, pour remplacer deux barres separees et gagner de la place) :
+// le trait vertical marque le nombre prevu, le remplissage suit les
+// arrivees -- en rouge des que les arrivees depassent le prevu, pour
+// signaler visuellement un depassement sans texte supplementaire.
+function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: number; present: number }) {
+  const safeCapacity = capacity > 0 ? capacity : 1;
+  const prevuPct = Math.min(100, (prevu / safeCapacity) * 100);
+  const presentPct = Math.min(100, (present / safeCapacity) * 100);
+  const over = present > prevu;
+  return (
+    <div className="relative h-2.5 rounded-full bg-black/5">
+      <div
+        className={clsx('h-full rounded-full transition-[width]', over ? 'bg-status-over' : 'bg-status-complete')}
+        style={{ width: presentPct + '%' }}
+      />
+      {prevu > 0 && (
+        <div
+          className="absolute top-0 h-full w-0.5 bg-ink/50"
+          style={{ left: 'calc(' + prevuPct + '% - 1px)' }}
+          title={prevu + ' prévu'}
+        />
+      )}
+    </div>
+  );
 }
 
 const PULL_THRESHOLD = 70;
@@ -48,6 +76,11 @@ export default function PlanTablePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadInProgressRef = useRef(false);
   const [filtre, setFiltre] = useState<Filtre>('toutes');
+  // Filtre par cote, declenche en tapant les tuiles "X côté Nelly/Gégé"
+  // (demande de Gersom le 28/08/2026) : meme mecanique que `filtre`, filtre
+  // les invitations affichees DANS chaque table plutot que de masquer des
+  // tables entieres -- la vue reste organisee par table.
+  const [coteFiltre, setCoteFiltre] = useState<CoteFiltre>('toutes');
   const [query, setQuery] = useState('');
   const [tri, setTri] = useState<Tri>('numero');
 
@@ -194,6 +227,7 @@ export default function PlanTablePage() {
     const normalesIds = new Set(normales.map((t) => t.id));
     const reserveIds = new Set(reserve.map((t) => t.id));
     const totalPersonnes = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
+    const totalArrivees = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
     const parCote: Record<Cote, number> = { Nelly: 0, Gege: 0, Neutre: 0 };
     let confirmees = 0;
     let provisoires = 0;
@@ -212,7 +246,7 @@ export default function PlanTablePage() {
       else if (i.table_id && reserveIds.has(i.table_id)) excedentaire += i.nombre_prevu;
       else sansTable += i.nombre_prevu;
     }
-    return { totalPersonnes, parCote, confirmees, provisoires, officielles, excedentaire, sansTable };
+    return { totalPersonnes, totalArrivees, parCote, confirmees, provisoires, officielles, excedentaire, sansTable };
   }, [invitations, normales, reserve]);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
@@ -248,9 +282,11 @@ export default function PlanTablePage() {
     : [];
   const staffPeopleForZone = staffForZone.reduce((sum, inv) => sum + inv.nombre_prevu, 0);
   const sansTableInvitations = useMemo(() => invitations.filter((inv) => !inv.table_id), [invitations]);
-  const sansTableVisibles = filtre === 'toutes'
-    ? sansTableInvitations
-    : sansTableInvitations.filter((inv) => inv.placement_status === filtre);
+  const sansTableVisibles = sansTableInvitations.filter(
+    (inv) =>
+      (filtre === 'toutes' || inv.placement_status === filtre) &&
+      (coteFiltre === 'toutes' || inv.cote === coteFiltre)
+  );
 
   function scrollToFloorPlan() {
     // requestAnimationFrame : laisse le temps au bloc de s'ouvrir (showFloorPlan)
@@ -366,6 +402,7 @@ export default function PlanTablePage() {
                       table={selectedTable}
                       invitations={invitationsByTable.get(selectedTable.id) || []}
                       filtre={filtre}
+                      coteFiltre={coteFiltre}
                       selected
                     />
                   </div>
@@ -427,67 +464,73 @@ export default function PlanTablePage() {
               </div>
             )}
 
-            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="card py-3">
-                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-black/45">Placement prévu</p><p className="font-bold">{stats.officielles}/{CAPACITE_OFFICIELLE}</p></div>
-                <div className="mt-2 h-2 rounded-full bg-black/5"><div className="h-full rounded-full bg-gold-500" style={{ width: Math.min(100, (stats.officielles / CAPACITE_OFFICIELLE) * 100) + '%' }} /></div>
+            {/* Une seule barre (demande de Gersom le 28/08/2026) : capacite
+                officielle (400, +10 en reserve), trait = prevu, remplissage
+                = present. Rouge des que le present depasse le prevu. */}
+            <div className="mb-4 card py-3">
+              <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                <p className="text-xs font-semibold uppercase text-black/45">Placement &amp; présence</p>
+                <p className={clsx('text-sm font-bold', stats.totalArrivees > stats.officielles ? 'text-status-over' : 'text-ink')}>
+                  {stats.totalArrivees} arrivé{stats.totalArrivees > 1 ? 's' : ''} · {stats.officielles}/{CAPACITE_OFFICIELLE} prévu
+                </p>
               </div>
-              <div className="card py-3">
-                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase text-black/45">Présence actuelle</p><p className="font-bold text-status-complete">{invitations.reduce((sum, inv) => sum + inv.nombre_arrive, 0)}/{stats.totalPersonnes}</p></div>
-                <div className="mt-2 h-2 rounded-full bg-black/5"><div className="h-full rounded-full bg-status-complete" style={{ width: (stats.totalPersonnes ? Math.min(100, invitations.reduce((sum, inv) => sum + inv.nombre_arrive, 0) / stats.totalPersonnes * 100) : 0) + '%' }} /></div>
-              </div>
+              <CapacityBar capacity={CAPACITE_OFFICIELLE} prevu={stats.officielles} present={stats.totalArrivees} />
+              {(stats.excedentaire > 0 || stats.sansTable > 0) && (
+                <p className="mt-1.5 text-[11px] text-black/50">
+                  {stats.excedentaire > 0 && stats.excedentaire + ' en réserve (+10) — à couper au prochain import'}
+                  {stats.excedentaire > 0 && stats.sansTable > 0 && ' · '}
+                  {stats.sansTable > 0 && stats.sansTable + ' sans table (staff, voir /staff)'}
+                </p>
+              )}
             </div>
 
-            {/* Stats compactes */}
+            {/* Stats compactes, devenues des filtres tapables (demande de
+                Gersom le 28/08/2026) : retape la meme tuile pour revenir à
+                "toutes". Remplace l'ancienne rangée de boutons Confirmée/
+                Provisoire, redondante avec les deux tuiles du bas. */}
             <div className="mb-4 grid grid-cols-3 gap-2 text-center">
-              <div className="card py-2">
+              <button
+                type="button"
+                onClick={() => { setCoteFiltre('toutes'); setFiltre('toutes'); }}
+                className="card py-2"
+              >
                 <p className="text-xl font-bold">{stats.totalPersonnes}</p>
                 <p className="text-[11px] text-black/50">personnes</p>
-              </div>
-              <div className="card py-2">
+              </button>
+              <button
+                type="button"
+                onClick={() => setCoteFiltre((c) => (c === 'Nelly' ? 'toutes' : 'Nelly'))}
+                className={clsx('card py-2', coteFiltre === 'Nelly' && 'border-2 border-nelly')}
+              >
                 <p className="text-xl font-bold text-nelly">{stats.parCote.Nelly}</p>
                 <p className="text-[11px] text-black/50">côté Nelly</p>
-              </div>
-              <div className="card py-2">
+              </button>
+              <button
+                type="button"
+                onClick={() => setCoteFiltre((c) => (c === 'Gege' ? 'toutes' : 'Gege'))}
+                className={clsx('card py-2', coteFiltre === 'Gege' && 'border-2 border-gege')}
+              >
                 <p className="text-xl font-bold text-gege">{stats.parCote.Gege}</p>
                 <p className="text-[11px] text-black/50">côté Gégé</p>
-              </div>
+              </button>
             </div>
             <div className="mb-5 grid grid-cols-2 gap-2 text-center">
-              <div className="card py-2">
+              <button
+                type="button"
+                onClick={() => setFiltre((f) => (f === 'confirmee' ? 'toutes' : 'confirmee'))}
+                className={clsx('card py-2', filtre === 'confirmee' && 'border-2 border-status-complete')}
+              >
                 <p className="text-lg font-bold text-status-complete">{stats.confirmees}</p>
                 <p className="text-[11px] text-black/50">places confirmées</p>
-              </div>
-              <div className="card py-2">
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltre((f) => (f === 'provisoire' ? 'toutes' : 'provisoire'))}
+                className={clsx('card py-2', filtre === 'provisoire' && 'border-2 border-status-partial')}
+              >
                 <p className="text-lg font-bold text-status-partial">{stats.provisoires}</p>
                 <p className="text-[11px] text-black/50">places provisoires</p>
-              </div>
-            </div>
-
-            {/* Capacite officielle : 40 tables x 10 = 400. Au-dela -> reserve/excedentaire. */}
-            <div
-              className={clsx(
-                'card mb-5 flex items-center justify-between gap-3 py-3',
-                stats.officielles > CAPACITE_OFFICIELLE && 'border-2 border-status-over/50'
-              )}
-            >
-              <div>
-                <p className="text-sm font-semibold">
-                  {stats.officielles} / {CAPACITE_OFFICIELLE} places officielles (40 tables)
-                </p>
-                <p className="text-[11px] text-black/50">
-                  {stats.excedentaire > 0
-                    ? stats.excedentaire + ' personnes excédentaires actuellement en réserve — à couper au prochain import CSV'
-                    : 'Sous la barre des 400, la réserve reste libre pour le jour J'}
-                  {stats.sansTable > 0 &&
-                    ' · ' + stats.sansTable + ' sans table (staff accueilli directement, voir /staff)'}
-                </p>
-              </div>
-              {stats.officielles > CAPACITE_OFFICIELLE && (
-                <span className="shrink-0 rounded-full bg-status-over/15 px-2.5 py-1 text-xs font-bold text-status-over">
-                  Dépassé
-                </span>
-              )}
+              </button>
             </div>
 
             {/* Legende */}
@@ -504,22 +547,6 @@ export default function PlanTablePage() {
             </div>
 
             <input aria-label="Rechercher une table, un vol ou un invité" className="mb-3 w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 placeholder:text-black/30 focus:border-gold-500 focus:outline-none" placeholder="Rechercher table, ville, vol ou invité…" value={query} onChange={(event) => setQuery(event.target.value)} />
-
-            {/* Filtres */}
-            <div className="mb-4 flex gap-2 overflow-x-auto">
-              {(['toutes', 'confirmee', 'provisoire'] as Filtre[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFiltre(f)}
-                  className={clsx(
-                    'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold',
-                    filtre === f ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white text-black/50'
-                  )}
-                >
-                  {f === 'toutes' ? 'Toutes les places' : PLACEMENT_LABELS[f]}
-                </button>
-              ))}
-            </div>
 
             <div className="mb-4 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setTri('numero')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'numero' ? 'border-gold-500 bg-gold-400/10' : 'border-gold-300/30 bg-white text-black/60')}>Trier par numéro</button>
@@ -548,6 +575,7 @@ export default function PlanTablePage() {
                   table={t}
                   invitations={invitationsByTable.get(t.id) || []}
                   filtre={filtre}
+                  coteFiltre={coteFiltre}
                   selected={selectedTableId === t.id}
                   onLocate={tablesSurLePlan.has(t.number) ? () => locateOnPlan(t) : undefined}
                 />
@@ -564,6 +592,7 @@ export default function PlanTablePage() {
                   table={t}
                   invitations={invitationsByTable.get(t.id) || []}
                   filtre={filtre}
+                  coteFiltre={coteFiltre}
                   reserve
                   selected={selectedTableId === t.id}
                   onLocate={tablesSurLePlan.has(t.number) ? () => locateOnPlan(t) : undefined}
@@ -602,6 +631,7 @@ function TableCard({
   table,
   invitations,
   filtre,
+  coteFiltre,
   reserve,
   selected,
   onLocate,
@@ -609,6 +639,7 @@ function TableCard({
   table: TableRow;
   invitations: InvitationRow[];
   filtre: Filtre;
+  coteFiltre: CoteFiltre;
   reserve?: boolean;
   // Table actuellement selectionnee sur le plan de salle interactif -- carte
   // encadree en vert, meme convention de couleur que le plan lui-meme.
@@ -617,11 +648,14 @@ function TableCard({
   // futur ajout hors plan) : bouton "localiser" masque plutot que desactive.
   onLocate?: () => void;
 }) {
-  const visibles = filtre === 'toutes' ? invitations : invitations.filter((i) => i.placement_status === filtre);
+  const visibles = invitations.filter(
+    (i) => (filtre === 'toutes' || i.placement_status === filtre) && (coteFiltre === 'toutes' || i.cote === coteFiltre)
+  );
+  // Places prevues/arrivees toujours calculees sur TOUTE la table (jamais
+  // filtrees par cote/placement) : ces filtres decident qui apparait dans
+  // la liste ci-dessous, pas la capacite reelle de la table.
   const occ = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const arrives = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
-  const pct = Math.min(100, (occ / (table.capacity || 10)) * 100);
-  const arrivalPct = occ > 0 ? Math.min(100, (arrives / occ) * 100) : 0;
   const vol = volCode(table.number);
 
   return (
@@ -660,13 +694,12 @@ function TableCard({
         {vol && <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">{vol}</p>}
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-black/50">
           <span>{occ}/{table.capacity} places prévues</span>
-          <span className="font-semibold text-status-complete">{arrives}/{occ} arrivées</span>
+          <span className={clsx('font-semibold', arrives > occ ? 'text-status-over' : 'text-status-complete')}>
+            {arrives}/{occ} arrivées
+          </span>
         </div>
-        <div className="mt-1.5 h-1.5 rounded-full bg-black/5">
-          <div className="h-full rounded-full bg-gold-500" style={{ width: pct + '%' }} />
-        </div>
-        <div className="mt-1 h-1.5 rounded-full bg-black/5">
-          <div className="h-full rounded-full bg-status-complete" style={{ width: arrivalPct + '%' }} />
+        <div className="mt-1.5">
+          <CapacityBar capacity={table.capacity || 10} prevu={occ} present={arrives} />
         </div>
 
         {visibles.length === 0 && (
