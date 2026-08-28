@@ -7,6 +7,12 @@ import { Cote, InvitationRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { extractPrenoms } from '@/lib/membersNotes';
+import clsx from 'clsx';
+
+// 'Nelly'/'Gege' filtrent par cote; 'staff' isole category === 'Staff' --
+// demande de Gersom le 28/08/2026 : le total "399 personnes" mélange
+// invités et staff sans distinction possible jusqu'ici sur cette page.
+type ListeFiltre = 'toutes' | 'Nelly' | 'Gege' | 'staff';
 
 const TITRES: Record<string, string> = {
   tous: 'Tous les invités',
@@ -54,6 +60,12 @@ function ListeContent() {
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // Filtre par cote/staff, demande de Gersom le 28/08/2026 sur ces memes
+  // tuiles : taper "côté Nelly"/"côté Gégé"/"Staff" doit filtrer la liste
+  // juste en dessous, avec un etat actif net (pastille dediee, meme design
+  // que /plan-table) plutot qu'une tuile cliquable dont l'etat actif se
+  // voit mal.
+  const [listeFiltre, setListeFiltre] = useState<ListeFiltre>('toutes');
 
   useEffect(() => {
     const supabase = createClient();
@@ -76,11 +88,28 @@ function ListeContent() {
     };
   }, []);
 
+  // Repart de "toutes" en changeant de liste (restants/arrivés/...) : un
+  // filtre de cote/staff laisse actif d'une liste a l'autre serait une
+  // source de confusion silencieuse (ex. "Invités arrivés" qui semble
+  // incomplet).
+  useEffect(() => {
+    setListeFiltre('toutes');
+  }, [type]);
+
   const tableParId = new Map(tables.map((t) => [t.id, t]));
-  const filtres = invitations.filter((inv) => filtreInvitation(type, inv));
+  const filtres = invitations.filter(
+    (inv) =>
+      filtreInvitation(type, inv) &&
+      (listeFiltre === 'toutes' ||
+        (listeFiltre === 'staff' ? inv.category === 'Staff' : inv.cote === listeFiltre))
+  );
   const totalPersonnes = filtres.reduce((s, i) => s + i.nombre_arrive, 0);
   const titre = TITRES[type] || 'Invités';
 
+  // Les tuiles refletent le filtre actif (comme /plan-table, v1.19.1 --
+  // demande de Gersom le 28/08/2026) : selectionner "Côté Nelly" ou "Staff"
+  // reduit aussi le chiffre de la tuile "personnes", pas seulement la
+  // liste.
   const parCote = useMemo(() => {
     const totaux: Record<Cote, number> = { Nelly: 0, Gege: 0, Neutre: 0 };
     for (const inv of filtres) {
@@ -99,6 +128,35 @@ function ListeContent() {
           {filtres.length} invitation{filtres.length > 1 ? 's' : ''}
           {(type === 'arrives' || type === 'tous') && ' · ' + totalPersonnes + ' personne' + (totalPersonnes > 1 ? 's' : '') + ' arrivée' + (totalPersonnes > 1 ? 's' : '')}
         </p>
+
+        {/* Filtre par cote/staff -- pastilles dediees (meme design que
+            /plan-table, v1.19.1) : jamais masquees meme si le filtre actif
+            ne donne aucun resultat, sinon aucun moyen de revenir a
+            "Toutes". "Staff" isole category === 'Staff' -- demande de
+            Gersom le 28/08/2026, le total "399 personnes" melangeait
+            invites et staff sans distinction possible. */}
+        {!loading && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {([
+              { key: 'toutes', label: 'Toutes', valeur: 'toutes' as ListeFiltre },
+              { key: 'nelly', label: 'Côté Nelly', valeur: 'Nelly' as ListeFiltre },
+              { key: 'gege', label: 'Côté Gégé', valeur: 'Gege' as ListeFiltre },
+              { key: 'staff', label: 'Staff', valeur: 'staff' as ListeFiltre },
+            ]).map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setListeFiltre(f.valeur)}
+                className={clsx(
+                  'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold',
+                  listeFiltre === f.valeur ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white text-black/50'
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {!loading && filtres.length > 0 && (
           <div className="mb-4 grid grid-cols-3 gap-2 text-center">

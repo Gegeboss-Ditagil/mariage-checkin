@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.19.3] — 2026-08-28
+
+Gersom a signalé, juste après l'ajout du filtre par côté sur `/dashboard/liste`, que le total « 399 personnes » mélange invités et staff sans distinction possible.
+
+### Ajouté
+- `app/dashboard/liste/page.tsx` : quatrième pastille « Staff » dans la rangée de filtre (Toutes/Côté Nelly/Côté Gégé/Staff), isolant les invitations `category === 'Staff'` — même comportement que les filtres de côté : les tuiles de stats reflètent le filtre actif, y compris quand « Staff » est sélectionné.
+
+### Tests
+- `tests/dashboard-liste-cote-filter.test.ts` : +1 test pour le filtre Staff (4 tests au total).
+- `npx tsc --noEmit`, `npm run test:listecote` (4/4), `npm run test:roles` (15/15), `npm run test:floorplan` (18/18), `npm run test:members` (3/3), `npm run test:diffusion` (5/5), `npm run test:withjoy` (12/12), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6), `npm run test:searchnames` (4/4), `npm run test:sortlabel` (1/1), `npm run test:liberation` (4/4) et `npm run build` tous exécutés avec succès.
+
+## [1.19.2] — 2026-08-28
+
+Gersom a demandé le même filtre par côté (Nelly/Gégé) sur les listes détaillées du dashboard (`/dashboard/liste` — invités restants, arrivés, tous, etc.), qui affichent les mêmes tuiles personnes/côté Nelly/côté Gégé que `/plan-table` sans aucun moyen de filtrer.
+
+### Ajouté
+- `app/dashboard/liste/page.tsx` : filtre par côté (Toutes/Côté Nelly/Côté Gégé), même design que `/plan-table` depuis v1.19.1 — pastilles dédiées avec état actif net (fond plein), pas des tuiles cliquables à l'état peu visible. Les tuiles de stats (personnes, côté Nelly, côté Gégé) reflètent le filtre actif, comme la liste juste en dessous. Le filtre est toujours visible même sans résultat pour cette combinaison (sinon aucun moyen de revenir à « Toutes »), et se réinitialise en changeant de liste (restants → arrivés, etc.) pour éviter qu'un filtre oublié fasse croire une liste incomplète.
+
+### Tests
+- `tests/dashboard-liste-cote-filter.test.ts` (nouveau, 3 tests) : filtre présent avec le bon design, réinitialisation au changement de `type`, rangée de filtre jamais masquée par l'absence de résultat.
+- `npx tsc --noEmit`, `npm run test:listecote` (3/3), `npm run test:roles` (15/15), `npm run test:floorplan` (18/18), `npm run test:members` (3/3), `npm run test:diffusion` (5/5), `npm run test:withjoy` (12/12), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6), `npm run test:searchnames` (4/4), `npm run test:sortlabel` (1/1), `npm run test:liberation` (4/4) et `npm run build` tous exécutés avec succès.
+
 ## [1.19.1] — 2026-08-28
 
 Gersom a fait un vrai import CSV (`guestlist_38.csv`) via `/admin/import-withjoy` et confirmé que l'aperçu (points à vérifier, avertissements) fonctionnait bien. Retour ensuite sur les tuiles cliquables de `/plan-table` ajoutées en v1.19.0 : trop grosses, aucun état actif visible (impossible de voir sur quelle tuile on vient de cliquer), et l'incohérence de position (les tuiles ne sont pas toutes à la même place selon leur contenu) rendait l'interaction peu claire.
