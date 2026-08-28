@@ -12,6 +12,22 @@ with open(args.input, encoding='utf-8') as source:
     data = json.load(source)
 invitations = data['invitations']
 
+# v1.19.0 (28/08/2026) : placement_status reflete desormais la confiance
+# RSVP, pas le fait que la table vienne d'un tag CSV explicite ou de
+# l'algorithme -- meme regle que lib/withjoyImport.ts::rsvpConfirmed et la
+# migration 0028_rsvp_based_placement_status.sql. "Oui" seul ne suffit pas a
+# l'egalite stricte : le texte With Joy reel est "Oui, embarquement
+# confirme" -- prefixe. Toute autre reponse (Peut-etre) ou absence de
+# donnee RSVP vaut provisoire.
+def rsvp_confirmed(inv):
+    notes = inv.get('notes') or ''
+    if not notes.startswith('RSVP: '):
+        return False
+    segment = notes.split('|', 1)[0][len('RSVP: '):].strip()
+    if not segment:
+        return False
+    return all(v.strip().startswith('Oui') for v in segment.split(' / '))
+
 # Modele v1.1.0 : 40 tables officielles (1-40) et une reserve (41).
 TABLE_NUMBERS = list(range(1, 42))
 RESERVE = {41}
@@ -48,7 +64,7 @@ for tnum in sorted(by_table):
             overflow_pool.append(inv)
     final_assignment[tnum] = kept_here
     for inv in kept_here:
-        inv['placement_status'] = 'confirmee'
+        inv['placement_status'] = 'confirmee' if rsvp_confirmed(inv) else 'provisoire'
         inv['table_final'] = tnum
         confirmed_ids.add(id(inv))
 
@@ -60,7 +76,7 @@ for o in overflow_pool:
 # Les groupes "notable" sans tag de table restent volontairement sans table.
 sans_table = [i for i in invitations if i.get('no_table')]
 for inv in sans_table:
-    inv['placement_status'] = 'provisoire'
+    inv['placement_status'] = 'confirmee' if rsvp_confirmed(inv) else 'provisoire'
     inv['table_final'] = None
 
 reste = [i for i in invitations if not i['table_num_explicit'] and not i.get('no_table')] + overflow_pool
@@ -81,7 +97,7 @@ for inv in reste:
         if remaining_capacity[t] >= inv['nombre_prevu']:
             final_assignment[t].append(inv)
             remaining_capacity[t] -= inv['nombre_prevu']
-            inv['placement_status'] = 'provisoire'
+            inv['placement_status'] = 'confirmee' if rsvp_confirmed(inv) else 'provisoire'
             inv['table_final'] = t
             placed = True
             break
@@ -99,7 +115,7 @@ if unplaced:
             if rem_res[t] >= inv['nombre_prevu']:
                 final_assignment[t].append(inv)
                 rem_res[t] -= inv['nombre_prevu']
-                inv['placement_status'] = 'provisoire_reserve'
+                inv['placement_status'] = 'confirmee' if rsvp_confirmed(inv) else 'provisoire'
                 inv['table_final'] = t
                 placed = True
                 break

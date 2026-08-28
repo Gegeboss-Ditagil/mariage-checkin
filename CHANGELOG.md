@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.19.0] — 2026-08-28
+
+Demande vocale de Gersom en testant l'app comme un invité, sur `/plan-table` et `/checkin/[invitationId]` : filtrer rapidement par côté, réduire l'espace pris par les stats/barres/boutons redondants, corriger le sens de « Provisoire », et pouvoir annuler une libération de place. Détail des décisions ci-dessous.
+
+### Changé (règle métier)
+- **`placement_status` reflète désormais la confiance RSVP, plus le fait que la table vienne d'un tag CSV explicite ou de l'algorithme.** Avant cette version, un tag `T0xx`/`F0xx` suffisait à rendre une invitation « Confirmée », sans égard au RSVP — ce qui rendait le filtre « Provisoire » quasi vide (11 personnes sur 380) et ne correspondait pas à ce qu'on voulait y voir. Nouvelle règle (confirmée avec Gersom avant d'y toucher, car elle change un comportement documenté et utilisé ailleurs dans l'app) : `confirmee` seulement si CHAQUE membre du groupe a une réponse RSVP commençant par « Oui » (le texte With Joy réel est « Oui, embarquement confirmé », pas une égalité stricte), sinon `provisoire` (réponse « Peut-être », ou aucune donnée RSVP disponible). Appliquée dans `lib/withjoyImport.ts` (import CSV), `app/api/admin/import-withjoy/route.ts` (invitations sans table) et `scripts/assign_tables_from_labels.py` (script offline), pour éviter la divergence entre ces trois implémentations de la même règle.
+- `supabase/migrations/0028_rsvp_based_placement_status.sql` (**appliquée en production**) recalcule les 243 invitations existantes avec la nouvelle règle, pour que l'affichage reste cohérent immédiatement plutôt que d'attendre le prochain réimport CSV. Prévisualisé avant application (170 restent confirmée, 62 passent confirmée→provisoire, 7 passent provisoire→confirmée, 4 restent provisoire) puis vérifié après (177/261 confirmée, 66/119 provisoire). L'état pré-migration est sauvegardé dans `placement_status_backup_20260828` (accès `service_role` uniquement) pour un retour arrière exact si nécessaire.
+
+### Ajouté
+- `/plan-table` : les tuiles de statistiques (« X côté Nelly »/« X côté Gégé ») filtrent désormais les invitations affichées dans chaque table (sans masquer les tables elles-mêmes, l'organisation par table reste intacte) — retaper la même tuile revient à « toutes ». Même mécanique pour les tuiles « places confirmées »/« places provisoires », qui remplacent l'ancienne rangée de boutons « Toutes les places / Confirmée / Provisoire ».
+- Une seule barre de progression (`CapacityBar`) remplace les deux barres séparées, à la fois sur chaque carte de table et dans le récapitulatif en haut de page : un trait marque le nombre prévu, le remplissage suit les arrivées et passe au rouge dès qu'il dépasse ce trait — sans texte supplémentaire à lire. Le texte « 369/400 places officielles (40 tables) » et les deux anciennes barres séparées (« Placement prévu »/« Présence actuelle ») sont retirés, leur contenu utile (réserve, sans-table) réduit à une seule ligne de légende.
+- `/checkin/[invitationId]` (`components/LiberationPlacesPanel.tsx`) : libérer une ou plusieurs places dans « Qui ne vient pas dans ce groupe ? » propose désormais un bouton « ↩️ Annuler » qui remet exactement les mêmes personnes (prénom + nom capturés avant la suppression, pas redécoupés depuis le nom affiché). Avant cette version, une fois une place libérée, la seule façon de revenir en arrière était de repasser par « Gérer les membres du groupe » et retaper le nom à la main.
+- « Cet invité ne viendra pas » (qui gère l'invitation entière) se cache désormais quand `LiberationPlacesPanel` affiche déjà sa liste de membres à décocher pour ce groupe — redondant sinon. Reste toujours visible pour une invitation seule (le panneau par-membre ne s'affiche jamais dans ce cas) et pour annuler un marquage déjà posé, quel que soit l'état du panneau.
+
+### Tests
+- `tests/withjoy-import.test.ts` : +1 test couvrant la nouvelle règle RSVP (tag explicite + RSVP Peut-être → provisoire ; sans tag + RSVP Oui → confirmee ; groupe mixte → provisoire).
+- `tests/floor-plan.test.ts` : +3 tests (tuiles de stats devenues des filtres, filtre par côté appliqué table par table et sur sans-table, `CapacityBar` unique réutilisée 2 fois avec dépassement en rouge) ; test existant sur « Placement prévu »/« Présence actuelle » mis à jour pour la barre unique.
+- `tests/liberation-undo.test.ts` (nouveau, 4 tests) : bouton Annuler présent et fonctionnel, prénom/nom capturés avant suppression, `lastReleased` jamais effacé par un rechargement temps réel, visibilité correcte de « Cet invité ne viendra pas ».
+- `npx tsc --noEmit`, `npm run test:roles` (15/15), `npm run test:floorplan` (17/17), `npm run test:members` (3/3), `npm run test:diffusion` (5/5), `npm run test:withjoy` (12/12), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6), `npm run test:searchnames` (4/4), `npm run test:sortlabel` (1/1), `npm run test:liberation` (4/4) et `npm run build` tous exécutés avec succès.
+
 ## [1.18.4] — 2026-08-28
 
 ### Corrigé

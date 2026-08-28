@@ -94,7 +94,9 @@ export async function POST(req: NextRequest) {
       tags: group.tags,
       cote: group.cote,
       category: group.category,
-      placement_status: 'provisoire',
+      // Meme regle que les invitations avec table (v1.19.0) : la confiance
+      // RSVP pilote ce statut, plus le fait d'etre sans table.
+      placement_status: group.rsvpConfirmed ? 'confirmee' : 'provisoire',
     });
   }
   if (missingTables.size) {

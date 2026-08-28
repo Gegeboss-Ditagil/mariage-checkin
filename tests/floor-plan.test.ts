@@ -136,11 +136,42 @@ test('le plan regroupe recherche tris vol capacite et arrivees sans confondre le
   assert.match(pageSource, /Rechercher table, ville, vol ou invité/);
   assert.match(pageSource, /Trier par numéro/);
   assert.match(pageSource, /Trier par places libres/);
-  assert.match(pageSource, /Placement prévu/);
-  assert.match(pageSource, /Présence actuelle/);
+  // v1.19.0 (28/08/2026) : "Placement prévu"/"Présence actuelle" (deux
+  // barres separees) fusionnees en une seule barre "Placement & présence"
+  // (CapacityBar) pour gagner de la place -- voir le test dedie plus bas.
+  assert.match(pageSource, /Placement &amp; présence/);
   assert.match(pageSource, /Vol-/);
   assert.match(pageSource, /places prévues/);
   assert.match(pageSource, /arrivées/);
   assert.match(pageSource, /PLACEMENT_LABELS\[inv\.placement_status\]/);
   assert.match(pageSource, /inv\.statut === 'complet'/);
+});
+
+test('les tuiles de stats sont des filtres tapables au lieu de la rangee de boutons Confirmee/Provisoire', () => {
+  // v1.19.0 (28/08/2026, demande de Gersom) : "Toutes les places / Confirmée
+  // / Provisoire" (une rangee de boutons dediee) est retiree -- les tuiles
+  // de stats (personnes/côté Nelly/côté Gégé/confirmées/provisoires) sont
+  // devenues elles-memes des <button> qui pilotent filtre/coteFiltre, pour
+  // liberer de l'espace vertical.
+  assert.doesNotMatch(pageSource, /Toutes les places/);
+  assert.match(pageSource, /setCoteFiltre\(\(c\) => \(c === 'Nelly' \? 'toutes' : 'Nelly'\)\)/);
+  assert.match(pageSource, /setCoteFiltre\(\(c\) => \(c === 'Gege' \? 'toutes' : 'Gege'\)\)/);
+  assert.match(pageSource, /setFiltre\(\(f\) => \(f === 'confirmee' \? 'toutes' : 'confirmee'\)\)/);
+  assert.match(pageSource, /setFiltre\(\(f\) => \(f === 'provisoire' \? 'toutes' : 'provisoire'\)\)/);
+});
+
+test('le filtre par cote (Nelly/Gege) est applique dans chaque table et sur la liste sans-table, jamais en masquant des tables entieres', () => {
+  assert.match(pageSource, /type CoteFiltre = 'toutes' \| Cote;/);
+  assert.match(pageSource, /coteFiltre === 'toutes' \|\| i\.cote === coteFiltre/);
+  assert.match(pageSource, /coteFiltre === 'toutes' \|\| inv\.cote === coteFiltre/);
+});
+
+test('une seule barre de capacite (CapacityBar) remplace les deux barres separees, avec un depassement visible en rouge', () => {
+  assert.match(pageSource, /function CapacityBar/);
+  // Le composant est reutilise a la fois pour la carte de table (capacite
+  // de la table) et pour le recapitulatif en haut de page (capacite
+  // officielle) -- une seule implementation, pas deux copies.
+  const capacityBarUsages = pageSource.match(/<CapacityBar\b/g) || [];
+  assert.equal(capacityBarUsages.length, 2, 'CapacityBar doit etre utilise exactement 2 fois (carte de table + recapitulatif de page)');
+  assert.match(pageSource, /const over = present > prevu;/);
 });
