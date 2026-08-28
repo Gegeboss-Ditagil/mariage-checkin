@@ -3,6 +3,14 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.18.4] — 2026-08-28
+
+### Corrigé
+- `/plan-table` affiche maintenant le mode de tri actif juste au-dessus des cartes : « triées par numéro, 1 → 40 » ou « triées par places libres (pas par numéro) ». La logique de tri elle-même reste inchangée.
+
+### Tests
+- Nouveau test `tests/plan-table-sort-label.test.ts` vérifiant que les deux libellés dépendent bien de l'état `tri`.
+
 ## [1.18.3] — 2026-08-28
 
 ### Corrigé

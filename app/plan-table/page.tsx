@@ -532,7 +532,15 @@ export default function PlanTablePage() {
               </div>
             )}
 
-            {normalesVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-black/50">Tables familiales &amp; soirée</p>}
+            {normalesVisibles.length > 0 && (
+              <p className="mb-2 text-sm font-semibold text-black/50">
+                Tables familiales &amp; soirée
+                <span className="font-normal text-black/40">
+                  {' '}
+                  — {tri === 'libres' ? 'triées par places libres (pas par numéro)' : 'triées par numéro, 1 → 40'}
+                </span>
+              </p>
+            )}
             <div className={clsx('grid grid-cols-1 gap-3 sm:grid-cols-2', normalesVisibles.length > 0 && 'mb-6')}>
               {normalesVisibles.map((t) => (
                 <TableCard
