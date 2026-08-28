@@ -77,7 +77,7 @@ export default function ImportWithJoyPage() {
   }
 
   const blocked = !!report && (report.unplacedCount > 0 || report.overCapacity.length > 0);
-  const clean = !!report && report.ok && report.warnings.length === 0 && !blocked;
+  const clean = !!report && report.ok && report.warnings.length === 0 && report.emptyNameCount === 0 && !blocked;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -138,6 +138,11 @@ export default function ImportWithJoyPage() {
               <p>{report.withoutTable} personnes volontairement sans table</p>
               <p>{report.declinedCount} personnes ayant décliné, exclues de l’import</p>
               {report.unplacedCount > 0 && <p className="font-semibold text-status-over">{report.unplacedCount} personnes non placées</p>}
+              {report.emptyNameCount > 0 && (
+                <p className="font-semibold text-status-partial">
+                  {report.emptyNameCount} ligne{report.emptyNameCount > 1 ? 's' : ''} sans aucun nom (« Accompagnant non-nommé ») — vérifier avant de confirmer, notamment si elles sont classées Staff (chaque ligne devient alors une entrée d'arrivée séparée sur /staff).
+                </p>
+              )}
             </div>
 
             {report.warnings.length > 0 && (

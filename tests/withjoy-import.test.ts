@@ -64,6 +64,64 @@ test('une capacité totale dépassée bloque au lieu de surcharger une table', (
   assert.equal(plan.tableAssignments.reduce((sum, item) => sum + item.group.size, 0), 410);
 });
 
+test('Cortege/Need_Contact/Mail restent synchronises entre import CSV, ajout manuel et script Python', () => {
+  const migrationSource = readFileSync(new URL('../supabase/migrations/0027_sync_non_role_tags_cortege_contact_mail.sql', import.meta.url), 'utf8');
+  assert.match(migrationSource, /'Cortege','Cortège','Need_Contact','Mail'/);
+  const pythonSource = readFileSync(new URL('../scripts/build_plan_from_csv.py', import.meta.url), 'utf8');
+  assert.match(pythonSource, /"Cortege"/);
+  assert.match(pythonSource, /"Need_Contact"/);
+  assert.match(pythonSource, /"Mail"/);
+});
+
+test('Cortege, Need_Contact et Mail ne rendent jamais quelqu un Staff', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['p1', 'Jean', 'Dupont', '', '', 'Oui', 'Côté_Gege,F001,Cortege'],
+    ['p2', 'Marie', 'Curie', '', '', 'Oui', 'Côté_Nelly,T005,Need_Contact'],
+    ['p3', 'Ana', 'Silva', '', '', 'Oui', 'Côté_Nelly,T006,Mail'],
+  ])));
+  const groups = [...plan.tableAssignments.map((item) => item.group), ...plan.sansTable];
+  const byName = new Map(groups.map((group) => [group.label, group]));
+  assert.equal(byName.get('Jean Dupont')?.category, null);
+  assert.equal(byName.get('Marie Curie')?.category, null);
+  assert.equal(byName.get('Ana Silva')?.category, null);
+});
+
+test('une meme personne repetee dans un groupe declenche un avertissement, jamais les accompagnants sans nom', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['p1', 'Keziah', 'Malungu', '+1', '', 'Oui', 'Côté_Gege,T015'],
+    ['p1', 'Ruben', 'Malungu', '', '', 'Oui', 'Côté_Gege,T015'],
+    ['p1', 'Keziah', 'Malungu', '+1', '', 'Oui', 'Côté_Gege,T015'],
+    ['p2', 'Famille', 'Culumbu', '', '', 'Oui', 'Côté_Gege,F007'],
+    ['p2', 'Accompagnant', 'non-nommé', '', '', 'Oui', 'Côté_Gege,F007'],
+    ['p2', 'Accompagnant', 'non-nommé', '', '', 'Oui', 'Côté_Gege,F007'],
+  ])));
+  const joined = plan.report.warnings.join('\n');
+  assert.match(joined, /« Keziah Malungu » apparaît 2 fois/);
+  assert.doesNotMatch(joined, /Accompagnant non-nommé/);
+});
+
+test('des lignes completement sans nom sont comptees et signalees (emptyNameCount)', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['p1', '', '', '', '', 'Oui', 'Côté_Gege,T010'],
+    ['p2', '', '', '', '', 'Oui', 'Côté_Nelly,T011'],
+  ])));
+  assert.equal(plan.report.emptyNameCount, 2);
+  const source = readFileSync(new URL('../app/admin/import-withjoy/page.tsx', import.meta.url), 'utf8');
+  assert.match(source, /report\.emptyNameCount > 0/);
+  assert.match(source, /report\.emptyNameCount === 0/);
+});
+
+test('un party vide n agrege jamais deux personnes sans lien entre elles', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['', 'Alice', 'Martin', '', '', 'Oui', 'Côté_Gege'],
+    ['', 'Bob', 'Durand', '', '', 'Oui', 'Côté_Nelly'],
+  ])));
+  const labels = [...plan.tableAssignments.map((item) => item.group), ...plan.sansTable].map((group) => group.label);
+  assert.ok(labels.includes('Alice Martin'));
+  assert.ok(labels.includes('Bob Durand'));
+  assert.equal(plan.report.groupCount, 2);
+});
+
 test('route et migration gardent le remplacement réservé et atomique', () => {
   const route = readFileSync(new URL('../app/api/admin/import-withjoy/route.ts', import.meta.url), 'utf8');
   const migration = readFileSync(new URL('../supabase/migrations/0026_import_replace_invitations.sql', import.meta.url), 'utf8');
