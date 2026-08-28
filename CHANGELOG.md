@@ -3,6 +3,27 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.18.3] — 2026-08-28
+
+### Corrigé
+- `/plan-table` recherche désormais aussi les noms individuels présents dans `notes` pour retrouver un membre d'un couple ou d'une famille à partir de son prénom.
+- Les prénoms des membres sont affichés sous le nom du groupe sur chaque carte de table.
+- `extractPrenoms` et `extractMembresComplet` sont centralisés dans `lib/membersNotes.ts` et réutilisés par les six écrans concernés.
+
+### Tests
+- Nouveau test `tests/search-member-names.test.ts` (4 scénarios) couvrant l'extraction, la recherche, l'affichage et l'absence de duplication locale.
+
+## [1.18.2] — 2026-08-28
+
+### Corrigé
+- `lib/withjoyImport.ts` : `Cortège`, `Need_Contact` et `Mail` ne sont plus interprétés comme des rôles de staff. La même règle est synchronisée dans l'import TypeScript, le script Python et les fonctions SQL d'ajout/retrait manuel de tags.
+- L'aperçu With Joy avertit lorsqu'un même nom apparaît plusieurs fois dans un groupe, sans faux positif pour les accompagnants volontairement non nommés.
+- Les lignes sans aucun nom sont désormais affichées dans l'aperçu et empêchent celui-ci d'être présenté comme « propre » sans vérification.
+- `supabase/migrations/0027_sync_non_role_tags_cortege_contact_mail.sql` documente l'état déjà appliqué en production; aucune réapplication Supabase n'est requise dans ce lot.
+
+### Tests
+- `tests/withjoy-import.test.ts` passe de 6 à 11 scénarios et couvre les tags non-role, les doublons, les noms vides, les groupes sans identifiant et la synchronisation des trois implémentations.
+
 ## [1.18.1] — 2026-08-28
 
 ### Corrigé

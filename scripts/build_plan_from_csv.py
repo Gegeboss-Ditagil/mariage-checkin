@@ -39,8 +39,9 @@ CLOSE_FAMILY_TAGS = {"Parents Culumbu","Parents Gege","Parents Nelly","Famille K
 # Groomsman/Bridesmaid designent le cortege (garcons/demoiselles d'honneur),
 # pas le staff operationnel (service, securite, DJ...) -- ne comptent jamais
 # comme un tag de role staff, meme si ce sont des "roles" au sens large.
-WEDDING_PARTY_TAGS = {"Groomsman", "Bridesmaid"}
-NON_ROLE_TAGS = {"Côté_Nelly","Côté_Gege","SMS_1506","SMSGEGE_1506","SMS_nelly1606","SMS_1506AA","SMS_Late_Gege","2evague","Maybe","Amis_Gege","notable"} | CLOSE_FAMILY_TAGS | WEDDING_PARTY_TAGS
+WEDDING_PARTY_TAGS = {"Groomsman", "Bridesmaid", "Cortege", "Cortège"}
+ADMIN_TODO_TAGS = {"Need_Contact", "Mail"}
+NON_ROLE_TAGS = {"Côté_Nelly","Côté_Gege","SMS_1506","SMSGEGE_1506","SMS_nelly1606","SMS_1506AA","SMS_Late_Gege","2evague","Maybe","Amis_Gege","notable"} | CLOSE_FAMILY_TAGS | WEDDING_PARTY_TAGS | ADMIN_TODO_TAGS
 
 def is_role_tag(t):
     if TABLE_RE.match(t): return False

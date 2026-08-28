@@ -21,6 +21,7 @@ import { MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
+import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
 import clsx from 'clsx';
 
 type Filtre = 'toutes' | PlacementStatus;
@@ -174,7 +175,7 @@ export default function PlanTablePage() {
     let list = tables.filter((table) => {
       if (!normalized) return true;
       const invitationsTable = invitationsByTable.get(table.id) || [];
-      return [String(table.number), table.label || '', table.zone || '', volCode(table.number) || '', ...invitationsTable.map((inv) => inv.nom_affichage)]
+      return [String(table.number), table.label || '', table.zone || '', volCode(table.number) || '', ...invitationsTable.map((inv) => inv.nom_affichage), ...invitationsTable.flatMap((inv) => extractMembresComplet(inv.notes))]
         .some((value) => value.toLocaleLowerCase('fr').includes(normalized));
     });
     if (tri === 'libres') {
@@ -667,13 +668,18 @@ function TableCard({
         )}
 
         <ul className="mt-2.5 space-y-1.5">
-          {visibles.map((inv) => (
+          {visibles.map((inv) => {
+            const prenoms = extractPrenoms(inv.notes);
+            return (
             <li key={inv.id} className="flex flex-wrap items-center gap-1.5 text-sm">
               <span
                 className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
                 title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
               />
-              <span className="min-w-0 flex-1 truncate">{inv.nom_affichage}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{inv.nom_affichage}</span>
+                {prenoms && <span className="block truncate text-xs font-medium text-gold-600">{prenoms}</span>}
+              </span>
               {inv.category === 'Staff' && (
                 <span className="flex shrink-0 items-center gap-1 rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
                   Staff
@@ -695,7 +701,8 @@ function TableCard({
                 {PLACEMENT_LABELS[inv.placement_status]}
               </span>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </Link>
     </div>

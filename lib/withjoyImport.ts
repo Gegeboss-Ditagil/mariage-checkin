@@ -34,6 +34,9 @@ const NON_ROLE_TAGS = new Set([
   'needstablenelly', 'parentsculumbu', 'parentsgege', 'parentsnelly',
   'famillekumpesavemba', 'famillembididos', 'parentsnellytontonmbiki',
   'groomsman', 'bridesmaid',
+  // Tags administratifs : cortege de mariage ou pense-betes de contact,
+  // jamais des roles de staff operationnel.
+  'cortege', 'needcontact', 'mail',
 ]);
 
 export type ImportCote = 'Nelly' | 'Gege' | 'Neutre';
@@ -179,6 +182,29 @@ function buildGroup(gid: string, members: Record<string, string>[], warnings: st
     .map((name) => ({ name, count: lastNames.filter((candidate) => candidate === name).length }))
     .sort((a, b) => b.count - a.count)[0]?.name || null;
   const label = members.length === 1 ? names[0] : dominantLast ? `Famille ${dominantLast}` : `Groupe (${names[0]}…)`;
+
+  // Signale les noms strictement repetes dans un meme groupe. Cela reste
+  // non bloquant (deux homonymes sont possibles), mais evite qu'une ligne
+  // dupliquee gonfle silencieusement le nombre prevu. Les accompagnants
+  // volontairement non nommes sont une convention legitime et sont exclus.
+  const nameCounts = new Map<string, number>();
+  for (const member of members) {
+    const first = (member['first name'] || '').trim();
+    const last = (member['last name'] || '').trim();
+    if (!first && !last) continue;
+    if (normalizeTag(first) === 'accompagnant' || normalizeTag(last) === 'nonnomme') continue;
+    const key = `${first} ${last}`.trim().toLowerCase();
+    nameCounts.set(key, (nameCounts.get(key) || 0) + 1);
+  }
+  for (const [key, count] of nameCounts) {
+    if (count <= 1) continue;
+    const sample = members.find(
+      (member) => `${(member['first name'] || '').trim()} ${(member['last name'] || '').trim()}`.trim().toLowerCase() === key
+    );
+    warnings.push(
+      `Groupe « ${label} » : « ${displayName(sample!)} » apparaît ${count} fois avec le même nom — vérifier qu'il ne s'agit pas d'un doublon avant de confirmer (compté ${count}× dans le nombre prévu).`
+    );
+  }
   const roles = tags.filter((tag) => isStaff([tag]) && normalizeTag(tag) !== 'services');
   const rsvps = Array.from(new Set(members.map((member) => member.rsvp || 'Sans réponse')));
   const noteParts = [`RSVP: ${rsvps.join(' / ')}`];

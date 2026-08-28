@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.18.1",
+  "version": "1.18.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,6 +14,7 @@
     "test:diffusion": "node --test tests/invitation-diffusion.test.ts",
     "test:navigation": "node --test tests/navigation-resilience.test.ts",
     "test:realtime": "node --test tests/realtime-debounce.test.ts",
+    "test:searchnames": "node --test tests/search-member-names.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"
   },
