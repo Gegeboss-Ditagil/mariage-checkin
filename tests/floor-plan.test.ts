@@ -147,17 +147,34 @@ test('le plan regroupe recherche tris vol capacite et arrivees sans confondre le
   assert.match(pageSource, /inv\.statut === 'complet'/);
 });
 
-test('les tuiles de stats sont des filtres tapables au lieu de la rangee de boutons Confirmee/Provisoire', () => {
-  // v1.19.0 (28/08/2026, demande de Gersom) : "Toutes les places / Confirmée
-  // / Provisoire" (une rangee de boutons dediee) est retiree -- les tuiles
-  // de stats (personnes/côté Nelly/côté Gégé/confirmées/provisoires) sont
-  // devenues elles-memes des <button> qui pilotent filtre/coteFiltre, pour
-  // liberer de l'espace vertical.
-  assert.doesNotMatch(pageSource, /Toutes les places/);
+test('les filtres cote/placement vivent dans une rangee dediee, pas dans les tuiles de stats', () => {
+  // v1.19.0 avait rendu les tuiles de stats elles-memes cliquables --
+  // Gersom a signale le 28/08/2026, apres un vrai import CSV, que les
+  // grosses tuiles ne montraient pas clairement laquelle etait active.
+  // Retour a une rangee de pastilles dediee (comme l'ancienne "Toutes les
+  // places / Confirmée / Provisoire"), etendue a Côté Nelly/Gégé, toujours
+  // au meme endroit pres des boutons de tri, avec un etat actif net (fond
+  // plein `border-ink bg-ink text-white`) plutot qu'un simple contour.
   assert.match(pageSource, /setCoteFiltre\(\(c\) => \(c === 'Nelly' \? 'toutes' : 'Nelly'\)\)/);
   assert.match(pageSource, /setCoteFiltre\(\(c\) => \(c === 'Gege' \? 'toutes' : 'Gege'\)\)/);
   assert.match(pageSource, /setFiltre\(\(f\) => \(f === 'confirmee' \? 'toutes' : 'confirmee'\)\)/);
   assert.match(pageSource, /setFiltre\(\(f\) => \(f === 'provisoire' \? 'toutes' : 'provisoire'\)\)/);
+  assert.match(pageSource, /border-ink bg-ink text-white/);
+  // Les tuiles de stats elles-memes ne sont plus des boutons.
+  const tuilesBlock = pageSource.slice(pageSource.indexOf('{/* Stats compactes'), pageSource.indexOf('{/* Legende */}'));
+  assert.doesNotMatch(tuilesBlock, /<button/);
+});
+
+test('les tuiles de stats refletent le filtre actif (tileStats), pas seulement les cartes de table', () => {
+  // "ça élimine sur l'espèce de bouton en haut aussi" (Gersom, 28/08/2026) :
+  // cliquer un filtre doit visiblement reduire les chiffres affiches dans
+  // les tuiles du haut, pas seulement la liste des tables en dessous.
+  assert.match(pageSource, /const tileStats = useMemo/);
+  assert.match(pageSource, /\{tileStats\.totalPersonnes\}/);
+  assert.match(pageSource, /\{tileStats\.parCote\.Nelly\}/);
+  assert.match(pageSource, /\{tileStats\.parCote\.Gege\}/);
+  assert.match(pageSource, /\{tileStats\.confirmees\}/);
+  assert.match(pageSource, /\{tileStats\.provisoires\}/);
 });
 
 test('le filtre par cote (Nelly/Gege) est applique dans chaque table et sur la liste sans-table, jamais en masquant des tables entieres', () => {

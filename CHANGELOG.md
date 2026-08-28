@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.19.1] — 2026-08-28
+
+Gersom a fait un vrai import CSV (`guestlist_38.csv`) via `/admin/import-withjoy` et confirmé que l'aperçu (points à vérifier, avertissements) fonctionnait bien. Retour ensuite sur les tuiles cliquables de `/plan-table` ajoutées en v1.19.0 : trop grosses, aucun état actif visible (impossible de voir sur quelle tuile on vient de cliquer), et l'incohérence de position (les tuiles ne sont pas toutes à la même place selon leur contenu) rendait l'interaction peu claire.
+
+### Corrigé
+- `/plan-table` : les filtres côté Nelly/Gégé et confirmées/provisoires quittent les tuiles de statistiques (qui redeviennent un simple affichage, plus des `<button>`) pour une **rangée de pastilles dédiée**, positionnée près des boutons « Trier par… » — même emplacement stable pour tous les filtres, avec un état actif net (fond plein `border-ink bg-ink text-white`, repris de l'ancienne rangée « Toutes les places / Confirmée / Provisoire ») au lieu d'un simple contour peu visible autour d'une tuile.
+- Les tuiles de statistiques (personnes, côté Nelly/Gégé, confirmées/provisoires) reflètent désormais le filtre actif (`tileStats`, calculé sur le sous-ensemble filtré) — cliquer un filtre « élimine » visiblement le reste directement dans ces chiffres, pas seulement dans les cartes de table plus bas.
+- Corrigé au passage : deux mentions de version internes à `docs/BUSINESS_RULES.md` et `docs/QA_SCENARIOS.md` avaient été bumpées par erreur de 1.19.0 à 1.19.1 par un remplacement global ; remises à 1.19.0 (date réelle de ces règles).
+
+### Tests
+- `tests/floor-plan.test.ts` : le test des tuiles-boutons est remplacé par deux tests (rangée de filtres dédiée avec état actif net ; tuiles reflétant `tileStats`) — 18 tests au total (+1).
+- `npx tsc --noEmit`, `npm run test:roles` (15/15), `npm run test:floorplan` (18/18), `npm run test:members` (3/3), `npm run test:diffusion` (5/5), `npm run test:withjoy` (12/12), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6), `npm run test:searchnames` (4/4), `npm run test:sortlabel` (1/1), `npm run test:liberation` (4/4) et `npm run build` tous exécutés avec succès.
+
 ## [1.19.0] — 2026-08-28
 
 Demande vocale de Gersom en testant l'app comme un invité, sur `/plan-table` et `/checkin/[invitationId]` : filtrer rapidement par côté, réduire l'espace pris par les stats/barres/boutons redondants, corriger le sens de « Provisoire », et pouvoir annuler une libération de place. Détail des décisions ci-dessous.

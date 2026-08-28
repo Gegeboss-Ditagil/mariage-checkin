@@ -249,6 +249,32 @@ export default function PlanTablePage() {
     return { totalPersonnes, totalArrivees, parCote, confirmees, provisoires, officielles, excedentaire, sansTable };
   }, [invitations, normales, reserve]);
 
+  // Chiffres des tuiles (personnes/côté Nelly/côté Gégé/confirmées/
+  // provisoires), recalcules a partir du SOUS-ENSEMBLE actuellement filtre
+  // -- demande de Gersom le 28/08/2026 : cliquer un filtre doit aussi
+  // "eliminer" visiblement le reste dans ces tuiles, pas seulement dans les
+  // cartes de table plus bas. La barre de capacite/presence (stats)
+  // au-dessus reste volontairement globale (capacite reelle de la salle).
+  const tileStats = useMemo(() => {
+    const filtered = invitations.filter(
+      (i) => (filtre === 'toutes' || i.placement_status === filtre) && (coteFiltre === 'toutes' || i.cote === coteFiltre)
+    );
+    const parCote: Record<Cote, number> = { Nelly: 0, Gege: 0, Neutre: 0 };
+    let confirmees = 0;
+    let provisoires = 0;
+    for (const i of filtered) {
+      if (i.cote) parCote[i.cote] += i.nombre_prevu;
+      if (i.placement_status === 'confirmee') confirmees += i.nombre_prevu;
+      else provisoires += i.nombre_prevu;
+    }
+    return {
+      totalPersonnes: filtered.reduce((s, i) => s + i.nombre_prevu, 0),
+      parCote,
+      confirmees,
+      provisoires,
+    };
+  }, [invitations, filtre, coteFiltre]);
+
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
   // Tables presentes sur le plan interactif -- 1 a 40 plus la reserve (41,
   // qui a desormais une position definie, voir FLOOR_PLAN_TABLE_POSITIONS).
@@ -484,53 +510,35 @@ export default function PlanTablePage() {
               )}
             </div>
 
-            {/* Stats compactes, devenues des filtres tapables (demande de
-                Gersom le 28/08/2026) : retape la meme tuile pour revenir à
-                "toutes". Remplace l'ancienne rangée de boutons Confirmée/
-                Provisoire, redondante avec les deux tuiles du bas. */}
+            {/* Stats compactes -- simple affichage, plus des boutons (retour
+                en arriere demande par Gersom le 28/08/2026 : les grosses
+                tuiles ne montraient pas clairement laquelle etait active).
+                Les chiffres suivent quand meme le filtre actif ci-dessous
+                (tileStats), pour "eliminer" visiblement le reste sans avoir
+                a cliquer directement sur une tuile. */}
             <div className="mb-4 grid grid-cols-3 gap-2 text-center">
-              <button
-                type="button"
-                onClick={() => { setCoteFiltre('toutes'); setFiltre('toutes'); }}
-                className="card py-2"
-              >
-                <p className="text-xl font-bold">{stats.totalPersonnes}</p>
+              <div className="card py-2">
+                <p className="text-xl font-bold">{tileStats.totalPersonnes}</p>
                 <p className="text-[11px] text-black/50">personnes</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCoteFiltre((c) => (c === 'Nelly' ? 'toutes' : 'Nelly'))}
-                className={clsx('card py-2', coteFiltre === 'Nelly' && 'border-2 border-nelly')}
-              >
-                <p className="text-xl font-bold text-nelly">{stats.parCote.Nelly}</p>
+              </div>
+              <div className="card py-2">
+                <p className="text-xl font-bold text-nelly">{tileStats.parCote.Nelly}</p>
                 <p className="text-[11px] text-black/50">côté Nelly</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCoteFiltre((c) => (c === 'Gege' ? 'toutes' : 'Gege'))}
-                className={clsx('card py-2', coteFiltre === 'Gege' && 'border-2 border-gege')}
-              >
-                <p className="text-xl font-bold text-gege">{stats.parCote.Gege}</p>
+              </div>
+              <div className="card py-2">
+                <p className="text-xl font-bold text-gege">{tileStats.parCote.Gege}</p>
                 <p className="text-[11px] text-black/50">côté Gégé</p>
-              </button>
+              </div>
             </div>
             <div className="mb-5 grid grid-cols-2 gap-2 text-center">
-              <button
-                type="button"
-                onClick={() => setFiltre((f) => (f === 'confirmee' ? 'toutes' : 'confirmee'))}
-                className={clsx('card py-2', filtre === 'confirmee' && 'border-2 border-status-complete')}
-              >
-                <p className="text-lg font-bold text-status-complete">{stats.confirmees}</p>
+              <div className="card py-2">
+                <p className="text-lg font-bold text-status-complete">{tileStats.confirmees}</p>
                 <p className="text-[11px] text-black/50">places confirmées</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltre((f) => (f === 'provisoire' ? 'toutes' : 'provisoire'))}
-                className={clsx('card py-2', filtre === 'provisoire' && 'border-2 border-status-partial')}
-              >
-                <p className="text-lg font-bold text-status-partial">{stats.provisoires}</p>
+              </div>
+              <div className="card py-2">
+                <p className="text-lg font-bold text-status-partial">{tileStats.provisoires}</p>
                 <p className="text-[11px] text-black/50">places provisoires</p>
-              </button>
+              </div>
             </div>
 
             {/* Legende */}
@@ -547,6 +555,35 @@ export default function PlanTablePage() {
             </div>
 
             <input aria-label="Rechercher une table, un vol ou un invité" className="mb-3 w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 placeholder:text-black/30 focus:border-gold-500 focus:outline-none" placeholder="Rechercher table, ville, vol ou invité…" value={query} onChange={(event) => setQuery(event.target.value)} />
+
+            {/* Filtres -- rangee dediee (retour en arriere demande par
+                Gersom le 28/08/2026, remplace les tuiles cliquables :
+                toujours au meme endroit, pres des boutons de tri, avec un
+                etat actif net (fond plein) plutot qu'un simple contour peu
+                visible). Cote et placement sont deux filtres independants,
+                combines en ET dans TableCard -- plusieurs pastilles peuvent
+                donc etre actives a la fois. */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              {[
+                { key: 'toutes', label: 'Toutes', active: filtre === 'toutes' && coteFiltre === 'toutes', onClick: () => { setFiltre('toutes'); setCoteFiltre('toutes'); } },
+                { key: 'nelly', label: 'Côté Nelly', active: coteFiltre === 'Nelly', onClick: () => setCoteFiltre((c) => (c === 'Nelly' ? 'toutes' : 'Nelly')) },
+                { key: 'gege', label: 'Côté Gégé', active: coteFiltre === 'Gege', onClick: () => setCoteFiltre((c) => (c === 'Gege' ? 'toutes' : 'Gege')) },
+                { key: 'confirmee', label: 'Confirmée', active: filtre === 'confirmee', onClick: () => setFiltre((f) => (f === 'confirmee' ? 'toutes' : 'confirmee')) },
+                { key: 'provisoire', label: 'Provisoire', active: filtre === 'provisoire', onClick: () => setFiltre((f) => (f === 'provisoire' ? 'toutes' : 'provisoire')) },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={f.onClick}
+                  className={clsx(
+                    'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold',
+                    f.active ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white text-black/50'
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
             <div className="mb-4 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setTri('numero')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'numero' ? 'border-gold-500 bg-gold-400/10' : 'border-gold-300/30 bg-white text-black/60')}>Trier par numéro</button>
