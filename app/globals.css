@@ -13,7 +13,8 @@ html, body {
 }
 
 body {
-  @apply bg-parchment text-ink antialiased;
+  @apply bg-parchment text-ink antialiased
+    dark:bg-charcoal-950 dark:text-[#f4f3f1];
 }
 
 /* Boutons tactiles larges, faciles a utiliser debout d'une seule main */
@@ -23,11 +24,13 @@ body {
 }
 
 .btn-primary {
-  @apply btn-tap bg-ink text-white shadow-card;
+  @apply btn-tap bg-ink text-white shadow-card
+    dark:bg-gradient-to-br dark:from-gold-400 dark:to-teal-400 dark:text-charcoal-950 dark:shadow-glow;
 }
 
 .btn-secondary {
-  @apply btn-tap bg-white text-ink border border-black/10 shadow-card;
+  @apply btn-tap bg-white text-ink border border-black/10 shadow-card
+    dark:bg-white/[0.06] dark:text-[#f4f3f1] dark:border-white/10 dark:backdrop-blur-xl dark:shadow-none;
 }
 
 .btn-danger {
@@ -35,7 +38,26 @@ body {
 }
 
 .card {
-  @apply bg-white rounded-xl2 shadow-card border border-gold-300/50 p-4;
+  @apply bg-white rounded-xl2 shadow-card border border-gold-300/50 p-4
+    dark:bg-white/[0.055] dark:border-white/10 dark:backdrop-blur-2xl dark:shadow-none;
+}
+
+/* Actions secondaires qui etaient de simples liens soulignes (ex: "Gerer les
+   membres du groupe", "Cet invite ne viendra pas") -- retour Gersom le
+   29/08/2026 : elles doivent se lire comme de vrais boutons cliquables, pas
+   comme du texte. Rangee pleine largeur, fond/bordure visibles dans les deux
+   themes ; .action-row-muted pour la variante moins engageante ("ne viendra
+   pas") sans dupliquer toute la regle. */
+.action-row {
+  @apply block w-full rounded-xl2 border border-gold-300/40 bg-white px-4 py-3 text-center text-sm font-semibold text-gold-700 shadow-card
+    active:scale-[0.98] transition-transform
+    dark:border-white/10 dark:bg-white/[0.06] dark:text-gold-200 dark:backdrop-blur-xl dark:shadow-none;
+}
+
+.action-row-muted {
+  @apply block w-full rounded-xl2 border border-gold-300/40 bg-white px-4 py-3 text-center text-sm font-semibold text-black/55 shadow-card
+    active:scale-[0.98] transition-transform
+    dark:border-white/10 dark:bg-white/[0.06] dark:text-[#f4f3f1]/55 dark:backdrop-blur-xl dark:shadow-none;
 }
 
 /* Variante sombre de .card, pour les ecrans staff sur fond nuit (tables,

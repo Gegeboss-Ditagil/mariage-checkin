@@ -1,6 +1,10 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  // Bascule manuelle (menu de compte -> hooks/useTheme.ts), jamais liee a
+  // prefers-color-scheme du systeme : une equipe de staff ne doit pas voir
+  // l'appli changer d'apparence toute seule pendant l'evenement.
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,6 +14,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Palette du theme sombre "Glass" (charte separee du night/gold
+        // existant, qui reste reserve a l'ecran de connexion) : charbon
+        // neutre + accent sarcelle, valide sur la maquette approuvee.
+        charcoal: {
+          950: '#050506',
+          900: '#0a0a0c',
+          800: '#111114',
+        },
+        teal: {
+          200: '#8fe6d9',
+          400: '#64d8cb',
+        },
         ink: '#1a2942',
         'ink-dark': '#0f1a2e',
         parchment: '#faf8f4',
@@ -56,6 +72,7 @@ const config: Config = {
       boxShadow: {
         card: '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)',
         gold: '0 8px 24px rgba(212,175,106,0.25)',
+        glow: '0 0 28px rgba(201,168,105,0.32)',
       },
       backgroundImage: {
         'night-radial': 'radial-gradient(120% 90% at 50% -10%, #1a3324 0%, #0c1912 55%, #070f0a 100%)',

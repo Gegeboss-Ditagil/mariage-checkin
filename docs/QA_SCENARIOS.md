@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.19.3**
-**Dernière mise à jour : 2026-08-28**
+**Version documentaire : 1.20.0**
+**Dernière mise à jour : 2026-08-29**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -84,6 +84,14 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Vérifier qu'une seule barre de progression (capacité/prévu/présence) s'affiche par table et en haut de page, avec un trait pour le nombre prévu et un remplissage qui passe au rouge dès que les arrivées dépassent le prévu.
 - `/checkin/[invitationId]` : libérer une place dans « Qui ne vient pas dans ce groupe ? » doit proposer un bouton « ↩️ Annuler » qui remet la personne exactement (prénom + nom) ; « Cet invité ne viendra pas » doit se cacher pour un groupe dont le détail des membres est connu, mais rester visible pour une invitation solo et pour annuler un marquage déjà posé.
 
+## Thème clair/sombre — v1.20.0
+
+- Menu de compte (icône en haut à droite) : le sélecteur « ☀ Clair / ● Sombre » change l'apparence immédiatement, sans rechargement, et l'état actif (fond plein) suit bien le thème réellement affiché.
+- Recharger la page (ou fermer/rouvrir l'appli) après avoir choisi « Sombre » : pas de flash clair avant le passage au thème sombre (le script bloquant de `app/layout.tsx` doit poser `data-theme` avant le premier rendu).
+- Le choix persiste après déconnexion/reconnexion sur le même appareil (stocké en local), mais ne doit PAS suivre le mode sombre/clair du système d'exploitation tout seul.
+- Sur `/checkin/[invitationId]` en thème sombre : « Gérer les membres du groupe » et « Cet invité ne viendra pas » doivent se lire comme de vrais boutons (fond, bordure) et non comme du texte souligné — vérifier aussi en thème clair, où ils ont reçu le même traitement.
+- Vérifier la lisibilité (contraste texte/fond) du thème sombre sur : la carte d'information (table/prévu/arrivées), les étiquettes, le formulaire de renommage, la notice de synchronisation. Les autres pages (`/dashboard`, `/plan-table`, `/search`, `/tables`, `/staff`, `/admin/*`) n'ont reçu que l'habillage sombre générique de `.card`/`.btn-primary`/`.btn-secondary` — pas de vérification écran par écran à ce jour, à signaler si quelque chose choque.
+
 ```bash
 npm run test:roles
 npm run test:floorplan
@@ -95,6 +103,7 @@ npm run test:realtime
 npm run test:searchnames
 npm run test:sortlabel
 npm run test:liberation
+npm run test:listecote
 npx tsc --noEmit
 npm run build
 ```

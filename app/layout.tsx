@@ -48,6 +48,20 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={displayFont.variable + ' ' + sansFont.variable}>
+      <head>
+        {/*
+          Pose data-theme avant le premier rendu pour eviter un flash
+          clair->sombre a l'ouverture (le choix vit en localStorage, voir
+          hooks/useTheme.ts -- meme cle et memes valeurs a garder en phase).
+          Script minimal et synchrone : pas de dependance, pas de hook ici.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('checkin-theme');if(t==='dark'){document.documentElement.dataset.theme='dark';}}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         <ServiceWorkerRegister />
         <OnlineIndicator />

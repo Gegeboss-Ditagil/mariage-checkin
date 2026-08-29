@@ -750,18 +750,18 @@ export default function CheckinPage() {
               {invitationTable.is_reserve ? ' (réserve)' : ''}
             </p>
           )}
-          <p className="text-sm uppercase tracking-wide text-black/40">Personnes prévues</p>
+          <p className="text-sm uppercase tracking-wide text-black/40 dark:text-[#f4f3f1]/45">Personnes prévues</p>
           <p className="font-display text-4xl font-bold ">{invitation.nombre_prevu}</p>
-          <p className="text-sm text-black/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
+          <p className="text-sm text-black/50 dark:text-[#f4f3f1]/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
           {invitation.ne_viendra_pas && (
             <p className="text-sm font-semibold text-status-over">Marqué "ne viendra pas"</p>
           )}
         </div>
 
         {canRename && renaming && (
-          <div className="mb-3 space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3">
+          <div className="mb-3 space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3 dark:border-white/10 dark:bg-white/[0.06] dark:backdrop-blur-xl">
                 <input
-                  className="w-full rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                  className="w-full rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:text-[#f4f3f1] dark:placeholder:text-[#f4f3f1]/30"
                   placeholder="Nom affiché"
                   value={renameValue}
                   onChange={(e) => setRenameValue(e.target.value)}
@@ -789,14 +789,14 @@ export default function CheckinPage() {
         )}
 
         {(invitation.tags.length > 0 || canManageTags) && (
-          <div className="mb-4 rounded-xl2 border-2 border-gold-300/30 bg-white p-3">
+          <div className="mb-4 rounded-xl2 border-2 border-gold-300/30 bg-white p-3 dark:border-white/10 dark:bg-white/[0.06] dark:backdrop-blur-xl">
             <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
-            {invitation.tags.length === 0 && <p className="mb-2 text-xs text-black/40">Aucune étiquette pour l'instant.</p>}
+            {invitation.tags.length === 0 && <p className="mb-2 text-xs text-black/40 dark:text-[#f4f3f1]/40">Aucune étiquette pour l'instant.</p>}
             <div className={canManageTags ? 'mb-2 flex flex-wrap gap-2' : 'flex flex-wrap gap-2'}>
               {invitation.tags.map((tag) => canManageTags ? (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700"
+                    className="flex items-center gap-1 rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700 dark:bg-teal-400/15 dark:text-teal-200"
                   >
                     {libelleEtiquette(tag)}
                     <button
@@ -810,7 +810,7 @@ export default function CheckinPage() {
                     </button>
                   </span>
                 ) : (
-                  <span key={tag} className="rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700">{libelleEtiquette(tag)}</span>
+                  <span key={tag} className="rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700 dark:bg-teal-400/15 dark:text-teal-200">{libelleEtiquette(tag)}</span>
                 ))}
             </div>
             {canManageTags && <>
@@ -820,7 +820,7 @@ export default function CheckinPage() {
                   key={e.value}
                   type="button"
                   disabled={tagSubmitting || !online}
-                  className="rounded-full border border-gold-300/50 px-3 py-1 text-xs font-medium text-black/60 disabled:opacity-40"
+                  className="rounded-full border border-gold-300/50 px-3 py-1 text-xs font-medium text-black/60 disabled:opacity-40 dark:border-white/15 dark:text-[#f4f3f1]/70"
                   onClick={() => handleAddTag(e.value)}
                 >
                   + {e.label}
@@ -829,7 +829,7 @@ export default function CheckinPage() {
             </div>
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                className="flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm placeholder:text-black/30 focus:border-gold-500 focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:text-[#f4f3f1] dark:placeholder:text-[#f4f3f1]/30"
                 placeholder="Autre étiquette"
                 value={customTag}
                 onChange={(e) => setCustomTag(e.target.value)}
@@ -852,7 +852,7 @@ export default function CheckinPage() {
 
         <button
           type="button"
-          className="mb-3 block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
+          className="action-row mb-3"
           onClick={() => router.push('/checkin/' + invitation.id + '/members')}
         >
           Gérer les membres du groupe (ajouter, retirer, nommer)
@@ -861,7 +861,7 @@ export default function CheckinPage() {
         {canMerge && (
           <button
             type="button"
-            className="mb-3 block w-full text-center text-sm font-medium text-gold-600 underline underline-offset-2"
+            className="action-row mb-3"
             onClick={() => router.push('/checkin/' + invitation.id + '/merge')}
           >
             ⇄ Fusionner avec un autre groupe
@@ -893,7 +893,7 @@ export default function CheckinPage() {
           <button
             type="button"
             disabled={noShowSubmitting || !online}
-            className="mb-6 block w-full text-center text-sm font-medium text-black/50 underline underline-offset-2 disabled:opacity-40"
+            className="action-row-muted mb-6 disabled:opacity-40"
             onClick={() => handleToggleNoShow(!invitation.ne_viendra_pas)}
           >
             {invitation.ne_viendra_pas
@@ -919,7 +919,7 @@ export default function CheckinPage() {
         )}
 
         {syncNotice && (
-          <p className="mt-3 rounded-xl2 border-2 border-gold-400/40 bg-gold-400/10 p-3 text-center text-sm font-medium text-gold-700">
+          <p className="mt-3 rounded-xl2 border-2 border-gold-400/40 bg-gold-400/10 p-3 text-center text-sm font-medium text-gold-700 dark:border-gold-400/25 dark:bg-white/[0.06] dark:text-gold-200">
             {syncNotice}
           </p>
         )}

@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.20.0] — 2026-08-29
+
+Gersom a demandé un thème sombre façon Liquid Glass/iOS après avoir comparé 3 pistes visuelles sur un canevas de maquettes, avec un choix explicite laissé aux utilisateurs (menu de compte) plutôt qu'un thème unique imposé.
+
+### Ajouté
+- `hooks/useTheme.ts` (nouveau) : préférence clair/sombre par appareil, persistée dans `localStorage` (`checkin-theme`), jamais liée à `prefers-color-scheme` du système — l'appli ne doit pas changer d'apparence toute seule pendant l'événement.
+- `app/layout.tsx` : script bloquant minimal dans `<head>` posant `data-theme="dark"` avant le premier rendu (évite un flash clair→sombre à l'ouverture), en phase avec `hooks/useTheme.ts` (même clé, mêmes valeurs).
+- `tailwind.config.ts` : `darkMode: ['selector', '[data-theme="dark"]']` + nouvelle palette `charcoal`/`teal` (charbon neutre + accent sarcelle) pour le thème sombre, distincte de la palette `night`/`gold` déjà utilisée sur l'écran de connexion (non touchée).
+- `components/AccountMenu.tsx` : sélecteur « ☀ Clair / ● Sombre » dans le menu de compte (à côté de la déconnexion), état actif visible, changement immédiat sans rechargement.
+- `app/globals.css` : variantes `dark:` pour `.btn-primary` (dégradé or→sarcelle), `.btn-secondary`, `.card`, `body` ; deux nouvelles classes `.action-row`/`.action-row-muted` — les actions secondaires du check-in (« Gérer les membres du groupe », « Cet invité ne viendra pas ») étaient de simples liens soulignés, elles se lisent maintenant comme de vrais boutons cliquables (fond, bordure, ombre) dans les deux thèmes, retour direct de Gersom sur la maquette.
+- `app/checkin/[invitationId]/page.tsx`, `components/TopBar.tsx` : déclinaison sombre complète de l'écran de check-in (carte info, étiquettes, formulaire de renommage, notice de synchronisation) en plus des deux boutons d'action ci-dessus.
+
+### Non fait (portée volontairement limitée à cette version)
+- Seul l'écran de check-in a reçu une déclinaison sombre complète et bespoke. Les autres pages (`/dashboard`, `/plan-table`, `/search`, `/tables`, `/staff`, `/admin/*`...) héritent automatiquement des variantes sombres de `.card`/`.btn-primary`/`.btn-secondary` (utilisées par 35 fichiers) mais n'ont pas été vérifiées écran par écran — à faire au fur et à mesure des retours.
+- L'écran de connexion garde son apparence actuelle (déjà sombre en permanence) quel que soit le thème choisi : le sélecteur n'est accessible qu'après connexion.
+
+### Tests
+- `npx tsc --noEmit`, `npm run build` (compile les classes `dark:` — vérifié dans le CSS généré), `npm run test:roles` (15/15), `npm run test:withjoy` (12/12), `npm run test:members` (3/3), `npm run test:floorplan` (18/18), `npm run test:diffusion` (5/5), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6), `npm run test:searchnames` (4/4), `npm run test:sortlabel` (1/1), `npm run test:liberation` (4/4), `npm run test:listecote` (4/4) — tous exécutés avec succès. Pas de test automatisé dédié au rendu visuel du thème (composants React non couverts par la suite actuelle, comme le reste de l'UI) — à vérifier à l'œil dans l'appli réelle.
+
 ## [1.19.3] — 2026-08-28
 
 Gersom a signalé, juste après l'ajout du filtre par côté sur `/dashboard/liste`, que le total « 399 personnes » mélange invités et staff sans distinction possible.

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useSessionName } from '@/hooks/useSessionName';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { useTheme } from '@/hooks/useTheme';
 import { hasCapability } from '@/lib/permissions';
 import { ROLE_LABELS } from '@/lib/types';
 
@@ -19,6 +20,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   const router = useRouter();
   const name = useSessionName();
   const role = useSessionRole();
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +60,37 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
         <div role="menu" className="absolute right-0 top-12 w-64 overflow-hidden rounded-xl2 border border-gold-400/20 bg-night-800 p-3 text-left shadow-card">
           <p className="truncate text-sm font-semibold text-cream">{name}</p>
           <p className="mb-3 truncate text-xs text-cream/45">{role ? ROLE_LABELS[role] : 'Compte connecté'}</p>
+
+          <div className="border-t border-cream/10 pt-2">
+            <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-wide text-cream/40">Thème</p>
+            <div role="radiogroup" aria-label="Thème de l'application" className="flex gap-1.5 px-3 pb-2">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={theme === 'light'}
+                onClick={() => setTheme('light')}
+                className={
+                  'flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ' +
+                  (theme === 'light' ? 'bg-white text-ink' : 'bg-white/10 text-cream/60 hover:bg-white/15')
+                }
+              >
+                ☀ Clair
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={theme === 'dark'}
+                onClick={() => setTheme('dark')}
+                className={
+                  'flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ' +
+                  (theme === 'dark' ? 'bg-gradient-to-br from-gold-400 to-teal-400 text-charcoal-950' : 'bg-white/10 text-cream/60 hover:bg-white/15')
+                }
+              >
+                ● Sombre
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-1 border-y border-cream/10 py-2">
             {canHistory && <Link role="menuitem" href="/history" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-cream hover:bg-white/10">≡ Historique</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-cream hover:bg-white/10">⚙ Administration</Link>}

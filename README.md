@@ -1,7 +1,7 @@
 # Check-in Mariage Nelly & Gersom
 
 **Version actuelle : 1.19.3**
-**Dernière mise à jour documentaire : 2026-08-28**
+**Dernière mise à jour documentaire : 2026-08-29**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
