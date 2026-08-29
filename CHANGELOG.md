@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.21.0] — 2026-08-29
+
+Gersom, en regardant le panneau « Qui ne vient pas dans ce groupe ? » (déjà par-membre) sur un groupe de 5 : « on ne veut pas savoir le nombre de personnes, on veut savoir c'est qui ». Le compteur agrégé « Personnes arrivées » (+/-) ne dit jamais QUI parmi les personnes nommées est arrivé — juste un total. Remplacé par une case à cocher par personne, à trois états, réversible à tout moment.
+
+### Changé (rupture de comportement pour les groupes)
+- **`supabase/migrations/0029_guest_arrival_status.sql`** : nouvelle colonne `guests.arrival_status` (`attendu` par défaut, `arrive`, `ne_viendra_pas`) et nouvelle RPC `set_guest_arrival_status` — calcule elle-même les deltas sur `nombre_prevu`/`nombre_arrive` à partir de l'ancien ET du nouvel état (gère `attendu↔arrive`, `attendu↔ne_viendra_pas`, et le cas direct `arrive↔ne_viendra_pas`), idempotente, journalise dans `checkins`/`audit_logs` comme le reste de l'app. **Contrairement à l'ancien panneau « Qui ne vient pas » (`LiberationPlacesPanel`, retiré) : la personne n'est jamais supprimée** — son état reste visible (grisé si `ne_viendra_pas`) et se rebascule en retapant le même bouton, sans mécanisme d'annulation séparé à part.
+- `remove_invitation_member` (mise à jour) : une suppression définitive depuis « Gérer les membres du groupe » reste maintenant cohérente avec `arrival_status` — ne redécompte plus `nombre_prevu` pour une personne déjà `ne_viendra_pas` (sinon double-décompte), et sort aussi `nombre_arrive` pour une personne `arrive` (sinon `nombre_arrive` pouvait dépasser `nombre_prevu` après suppression).
+- `components/GuestArrivalPanel.tsx` (nouveau, remplace `LiberationPlacesPanel.tsx`, retiré) : matérialise la liste « Membres: ... » en lignes réelles dès l'ouverture de la fiche (plus besoin d'une première action pour avoir des noms), puis un bouton ✓ (vert, arrivé) et ✕ (rouge, ne viendra pas) par personne — mise à jour optimiste, instantanée, sans écran de confirmation plein écran.
+- `app/checkin/[invitationId]/page.tsx` : pour un groupe (`nombre_prevu > 1`), le compteur +/- et le bouton « Confirmer l'arrivée » disparaissent complètement au profit de `GuestArrivalPanel` — seul reste un bouton explicite « + Invité supplémentaire (non prévu) » pour le cas d'un invité non prévu qui se présente (réutilise le flux d'excédent/débordement existant, inchangé). **Pour une invitation solo (`nombre_prevu <= 1`), rien ne change** : compteur, bouton « Confirmer » et « Cet invité ne viendra pas » restent exactement comme avant — cas déjà non ambigu (0 ou 1 personne), hors du périmètre de la demande.
+- « Cet invité ne viendra pas » (l'invitation entière) se cache désormais dès qu'il y a plusieurs personnes nommées (le détail par personne suffit), au lieu de dépendre d'un signal asynchrone du panneau — condition simplifiée, purement synchrone.
+
+### Non fait (portée volontairement limitée à cette version)
+- Aucune tentative de reconstituer QUI était arrivé pour les groupes ayant déjà un `nombre_arrive > 0` avant cette version (impossible à déduire d'un simple total) — sans impact aujourd'hui : production toujours en statut `test`, 0 arrivée réelle au moment du déploiement.
+- Les invitations solo gardent l'ancien mécanisme inchangé (voir ci-dessus).
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` (nouveau, 8 tests, remplace `tests/liberation-undo.test.ts` retiré) : absence de `CounterStepper`/suppression de membre dans le nouveau panneau, bascule vers `attendu` si déjà actif, matérialisation immédiate depuis les notes, calcul des deltas et idempotence côté SQL, garde anti double-décompte dans `remove_invitation_member`, condition de repli synchrone pour « ne viendra pas », bouton « + Invité supplémentaire » pour les groupes.
+- Migration `0029` appliquée et vérifiée en production par un scénario de bout en bout sur une invitation de test (créée puis entièrement supprimée après coup) : `attendu→arrive` (+1 arrivée), `attendu→ne_viendra_pas` (place libérée), rejeu du même état (idempotent, aucune ligne d'audit dupliquée), annulation dans les deux sens, transition directe `arrive→ne_viendra_pas` (les deux compteurs bougent ensemble), puis suppression définitive dans les deux états (`ne_viendra_pas` : pas de double-décompte de `nombre_prevu` ; `arrive` : `nombre_arrive` sort bien) — tous les totaux obtenus correspondent exactement au calcul attendu.
+- `npx tsc --noEmit`, `npm run build`, `npm run test:roles` (15/15), `npm run test:withjoy` (12/12), `npm run test:members` (3/3), `npm run test:floorplan` (18/18), `npm run test:diffusion` (5/5), `npm run test:navigation` (4/4), `npm run test:realtime` (6/6), `npm run test:searchnames` (4/4), `npm run test:sortlabel` (1/1), `npm run test:arrival` (8/8), `npm run test:listecote` (4/4) — tous exécutés avec succès.
+
 ## [1.20.0] — 2026-08-29
 
 Gersom a demandé un thème sombre façon Liquid Glass/iOS après avoir comparé 3 pistes visuelles sur un canevas de maquettes, avec un choix explicite laissé aux utilisateurs (menu de compte) plutôt qu'un thème unique imposé.

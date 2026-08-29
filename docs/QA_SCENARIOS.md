@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.20.0**
+**Version documentaire : 1.21.0**
 **Dernière mise à jour : 2026-08-29**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -102,11 +102,22 @@ npm run test:navigation
 npm run test:realtime
 npm run test:searchnames
 npm run test:sortlabel
-npm run test:liberation
+npm run test:arrival
 npm run test:listecote
 npx tsc --noEmit
 npm run build
 ```
+
+## Arrivée par personne sur le check-in de groupe — v1.21.0
+
+- Ouvrir `/checkin/[invitationId]` pour un groupe (`nombre_prevu > 1`) : la liste des membres nommés apparaît immédiatement (pas de compteur +/-, pas de bouton « Confirmer l'arrivée » en bas), même si c'est la toute première ouverture de cette fiche (matérialisation automatique depuis « Membres: ... »).
+- Taper ✓ sur une personne : elle passe en vert, le total « Actuellement enregistrées » de la carte au-dessus augmente de 1 immédiatement (pas de rechargement). Retaper ✓ annule (retour à l'état neutre, le total redescend de 1).
+- Taper ✕ sur une personne : elle se grise (nom barré), `nombre_prevu` diminue de 1 (place libérée), la personne reste visible dans la liste — jamais supprimée. Retaper ✕ annule (place restaurée).
+- Taper ✓ directement sur une personne déjà en ✕ (sans repasser par le neutre) : les deux totaux bougent en même temps (place restaurée ET comptée arrivée).
+- « Cet invité ne viendra pas » (tout le groupe) ne doit plus apparaître dès que `nombre_prevu > 1`, sauf s'il était déjà marqué avant (moyen de l'annuler).
+- « + Invité supplémentaire (non prévu) » : déclenche le flux d'excédent/débordement existant, inchangé (proposition de table de réserve si besoin).
+- Depuis « Gérer les membres du groupe », supprimer définitivement une personne déjà marquée ✕ ne doit PAS faire baisser `nombre_prevu` une seconde fois ; supprimer une personne marquée ✓ doit aussi faire baisser `nombre_arrive`.
+- Invitation solo (`nombre_prevu <= 1`) : aucun changement, le compteur +/- et « Cet invité ne viendra pas » se comportent exactement comme avant v1.21.0.
 
 ## Contrôle de version avant merge
 

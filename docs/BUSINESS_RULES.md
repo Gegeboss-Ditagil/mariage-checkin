@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.20.0**
+**Version documentaire : 1.21.0**
 **Dernière mise à jour : 2026-08-29**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -154,6 +154,7 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 - Les listes détaillées de `/dashboard` répartissent les personnes par côté Nelly/Gégé. Le total représente les arrivés pour la liste « Arrivés », les personnes encore attendues pour « Restants », l'excédent réel pour « Supplémentaires » et le nombre prévu pour les autres listes.
 
 - `nombre_prevu` est le nombre attendu; `nombre_arrive` est le total enregistré.
+- Pour un groupe (`nombre_prevu > 1`), l'arrivée se suit PAR PERSONNE (`guests.arrival_status` : `attendu`/`arrive`/`ne_viendra_pas`), pas via un simple compteur — voir `CHANGELOG.md` v1.21.0. `nombre_arrive`/`nombre_prevu` restent les totaux dérivés, recalculés à chaque bascule d'une personne (`set_guest_arrival_status`), jamais modifiés directement. Une personne marquée `ne_viendra_pas` reste visible (grisée) et reversible, jamais supprimée. Une invitation solo (`nombre_prevu <= 1`) garde le compteur +/- classique — cas non ambigu.
 - Retirer un membre diminue `nombre_prevu`; le renommer ne le modifie pas.
 - Lors de la toute première création de la liste détaillée, retirer une ligne du brouillon puis enregistrer diminue également `nombre_prevu` au nombre de membres effectivement sauvegardés. Cette initialisation ne peut jamais augmenter `nombre_prevu`; un ajout passe par l'action dédiée « Ajouter une personne ».
 - Déplacer une invitation conserve ses arrivées, membres et historique.

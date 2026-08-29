@@ -11,7 +11,7 @@ import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { useOnline } from '@/hooks/useOnline';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { LiberationPlacesPanel } from '@/components/LiberationPlacesPanel';
+import { GuestArrivalPanel } from '@/components/GuestArrivalPanel';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
@@ -72,14 +72,6 @@ export default function CheckinPage() {
   const [invitationTable, setInvitationTable] = useState<TableRow | null>(null);
   const invitationTableIdRef = useRef<string | null>(null);
   const [noShowSubmitting, setNoShowSubmitting] = useState(false);
-  // Vrai des que LiberationPlacesPanel affiche effectivement sa liste de
-  // membres a decocher -- dans ce cas "Cet invité ne viendra pas" (qui gere
-  // l'invitation ENTIERE) devient redondant et se cache (sauf si deja
-  // marque, pour garder un moyen d'annuler). Part de false : le bouton
-  // reste visible tant que le panneau n'a pas confirme le prendre en
-  // charge (solo, groupe encore en chargement, ou sans detail de membres
-  // connu) -- jamais de flash-disparition au premier affichage.
-  const [panelVisible, setPanelVisible] = useState(false);
 
   // -- Renommer l'invitation (pas un membre detaille -- voir /members) ------
   const [renaming, setRenaming] = useState(false);
@@ -848,7 +840,7 @@ export default function CheckinPage() {
           </div>
         )}
 
-        <LiberationPlacesPanel invitation={invitation} onInvitationUpdate={setInvitation} onVisibilityChange={setPanelVisible} />
+        <GuestArrivalPanel invitation={invitation} onInvitationUpdate={setInvitation} />
 
         <button
           type="button"
@@ -883,13 +875,14 @@ export default function CheckinPage() {
             groupe n'est arrive : une fois une arrivee enregistree, ce n'est
             plus pertinent (et record_checkin leve deja le marqueur tout seul
             si un groupe marque absent se presente quand meme).
-            Cache aussi quand LiberationPlacesPanel ci-dessus prend deja le
-            relais (groupe avec detail de membres connu) -- redondant sinon,
+            Cache aussi des qu'il y a plusieurs personnes nommees : le
+            detail par personne de GuestArrivalPanel ci-dessus (etat
+            "ne_viendra_pas" par membre) prend le relais, redondant sinon --
             demande de Gersom le 28/08/2026. Toujours visible pour une
-            invitation solo (le panneau ne s'affiche jamais dans ce cas), et
-            toujours visible si deja marquee (pour garder un moyen
-            d'annuler), quel que soit l'etat du panneau. */}
-        {invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || !panelVisible) && (
+            invitation solo (aucun detail de membres a afficher dans ce
+            cas), et toujours visible si deja marquee (pour garder un moyen
+            d'annuler), quel que soit nombre_prevu. */}
+        {invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || invitation.nombre_prevu <= 1) && (
           <button
             type="button"
             disabled={noShowSubmitting || !online}
@@ -902,20 +895,37 @@ export default function CheckinPage() {
           </button>
         )}
 
-        <p className="mb-3 text-center font-semibold ">Personnes arrivées</p>
-        <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
+        {invitation.nombre_prevu > 1 ? (
+          // Groupe : chaque personne se coche individuellement dans
+          // GuestArrivalPanel ci-dessus (instantane, pas de bouton
+          // "Confirmer" a part) -- seul reste a couvrir le cas d'un invite
+          // qui se presente sans etre sur la liste nominative.
+          <button
+            type="button"
+            className="action-row mb-3"
+            disabled={submitting || !online}
+            onClick={() => handleAdd(1)}
+          >
+            {submitting ? '…' : !online ? 'HORS LIGNE' : '+ Invité supplémentaire (non prévu)'}
+          </button>
+        ) : (
+          <>
+            <p className="mb-3 text-center font-semibold ">Personnes arrivées</p>
+            <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
 
-        {delta !== 0 && (
-          <p className="mt-3 text-center text-sm font-medium text-gold-700">
-            {delta > 0 ? '+' : ''}
-            {delta} par rapport à maintenant
-          </p>
-        )}
+            {delta !== 0 && (
+              <p className="mt-3 text-center text-sm font-medium text-gold-700">
+                {delta > 0 ? '+' : ''}
+                {delta} par rapport à maintenant
+              </p>
+            )}
 
-        {arriveValue > invitation.nombre_prevu && (
-          <p className="mt-3 text-center text-sm font-medium text-status-over">
-            ⚠️ {arriveValue - invitation.nombre_prevu} personne{arriveValue - invitation.nombre_prevu > 1 ? 's' : ''} de plus que prévu
-          </p>
+            {arriveValue > invitation.nombre_prevu && (
+              <p className="mt-3 text-center text-sm font-medium text-status-over">
+                ⚠️ {arriveValue - invitation.nombre_prevu} personne{arriveValue - invitation.nombre_prevu > 1 ? 's' : ''} de plus que prévu
+              </p>
+            )}
+          </>
         )}
 
         {syncNotice && (
@@ -927,15 +937,17 @@ export default function CheckinPage() {
         {error && <p className="mt-3 text-center text-sm font-medium text-status-over">{error}</p>}
       </div>
 
-      <div className="space-y-3 px-4 pb-6">
-        <button
-          className="btn-primary w-full"
-          disabled={delta === 0 || submitting || !online}
-          onClick={handleConfirm}
-        >
-          {boutonLabel}
-        </button>
-      </div>
+      {invitation.nombre_prevu <= 1 && (
+        <div className="space-y-3 px-4 pb-6">
+          <button
+            className="btn-primary w-full"
+            disabled={delta === 0 || submitting || !online}
+            onClick={handleConfirm}
+          >
+            {boutonLabel}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

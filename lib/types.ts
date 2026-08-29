@@ -76,6 +76,8 @@ export const PLACEMENT_COLORS: Record<PlacementStatus, string> = {
   provisoire_reserve: 'bg-status-partial/15 text-status-partial',
 };
 
+export type GuestArrivalStatus = 'attendu' | 'arrive' | 'ne_viendra_pas';
+
 export interface GuestRow {
   id: string;
   event_id: string;
@@ -87,6 +89,7 @@ export interface GuestRow {
   vip: boolean;
   notes: string | null;
   created_at: string;
+  arrival_status: GuestArrivalStatus;
 }
 
 export interface QrCodeRow {
