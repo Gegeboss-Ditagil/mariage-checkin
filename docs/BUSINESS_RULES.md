@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.24.0**
+**Version documentaire : 1.25.0**
 **Dernière mise à jour : 2026-08-30**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -25,6 +25,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - **Échanger** : un groupe quitte la table A pour la table B pendant qu'un autre groupe quitte B pour A, dans la même transaction (`swap_invitations_between_tables`). Les deux groupes n'ont pas besoin de la même taille (ex. 2 personnes contre 4) — ce n'est pas un échange strictement 1 pour 1, seulement deux mouvements groupés exécutés ensemble.
 - Comme le déplacement individuel, le lot n'est jamais bloqué par la capacité de la table (avertissement affiché, pas de blocage) : le placement pendant l'événement doit rester rapide, souvent provisoire, en attendant le placement final.
 - Une invitation disparue entre-temps (déjà déplacée par quelqu'un d'autre) est ignorée dans le lot plutôt que de faire échouer tout le transfert/échange.
+- Depuis le 30/08/2026 (v1.25.0), une **personne seule** d'un groupe peut aussi être déplacée individuellement (bouton ⇄ dans « Qui est arrivé ? », même capacité `moveGuests`) : elle est détachée dans une nouvelle invitation à une seule personne à la table choisie (`split_guest_to_new_invitation`), sans toucher au reste de son groupe d'origine. Pour la regrouper ensuite avec une invitation déjà présente à la table cible, utiliser « Fusionner avec un autre groupe » depuis la nouvelle fiche (voir section suivante) — pas de logique de fusion dupliquée.
 
 ## Renommer et fusionner des invitations
 

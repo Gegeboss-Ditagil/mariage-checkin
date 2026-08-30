@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.24.0**
+**Version documentaire : 1.25.0**
 **Dernière mise à jour : 2026-08-30**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -147,6 +147,15 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Groupe déjà complet (`nombre_arrive = nombre_prevu`) : taper « + Invité supplémentaire (non prévu) », remplir un nom, « Ajouter, déjà arrivé » → la personne apparaît dans « Qui est arrivé ? » (✓ déjà coché), `nombre_prevu` ne bouge pas, et l'écran d'assignation à une table de réserve s'ouvre (comme avant, pour le +1 anonyme).
 - Groupe pas encore complet : même bouton, la personne apparaît dans la liste sans ouvrir l'assignation de table (pas de dépassement).
 - Vérifier `/history` : l'entrée apparaît comme une arrivée normale (delta +1, même format que les autres check-in).
+
+## Déplacement d'une personne seule + bouton central par rôle — v1.25.0
+
+- Rôle avec `moveGuests` (admin/directeur/placeur) : dans « Qui est arrivé ? » d'un groupe de 2+, bouton ⇄ sur une personne → choisir une table différente de la table actuelle → confirmer → redirigé vers une **nouvelle fiche à une seule personne** à la table choisie ; la fiche d'origine ne contient plus que les autres membres, `nombre_prevu` de la source diminue de 1 (sauf si la personne était déjà « ne viendra pas »).
+- Rôle sans `moveGuests` (ex. agent scan) : bouton ⇄ absent de la liste.
+- Personne qui était `arrive` avant le déplacement : reste `arrive` sur la nouvelle fiche (jamais réinitialisée à « attendu »), et `nombre_arrive` de la source diminue de 1.
+- Après déplacement, utiliser « Fusionner avec un autre groupe » depuis la nouvelle fiche pour la regrouper avec une invitation déjà présente à la table cible — vérifier que la fusion fonctionne comme avant.
+- Connexion en tant que directeur/placeur (ex. Remy, Tuzola) : le bouton doré central de la barre de navigation ouvre `/dashboard`, pas `/scan` ; Scan reste accessible en onglet latéral.
+- Connexion avec un autre rôle (agent_checkin, visibilité, admin) : le bouton central reste `/scan` (ou comportement inchangé pour visibilité/admin) comme avant.
 
 ## Contrôle de version avant merge
 
