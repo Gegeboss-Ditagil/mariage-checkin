@@ -32,10 +32,15 @@ const ALL_CAPABILITIES: Capability[] = [
   'exportData', 'adminPanel',
 ];
 
+// viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
+// demande explicite de Gersom le 30/08/2026 : "ce n'est pas tous les roles
+// qui ont acces a l'historique, donne l'acces seulement aux admins". Reste
+// disponible pour admin via ALL_CAPABILITIES seulement (ci-dessus), retire
+// de directeur/placeur/agent_checkin qui l'avaient via ce socle commun.
 const OPERATIONAL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
   'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
-  'markNoShow', 'viewHistory', 'resolveExceptions',
+  'markNoShow', 'resolveExceptions',
 ];
 
 export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
@@ -55,7 +60,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // reclassifier les invites.
   agent_checkin: [
     'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin',
-    'assignOverflow', 'manageMembers', 'markNoShow', 'viewHistory',
+    'assignOverflow', 'manageMembers', 'markNoShow',
     'resolveExceptions',
   ],
   visibilite: ['search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff'],
@@ -72,14 +77,19 @@ export function landingPathForRole(role: Role): string {
 // L'acces a la route reste protege par le middleware. La granularite du
 // contenu est centralisee dans les capacites viewStaff/viewAllStaff et doit
 // aussi etre verifiee dans l'API, jamais seulement dans l'interface.
+// '/history' n'est plus dans ces listes (30/08/2026) : reserve a l'admin
+// (role qui court-circuite ces prefixes plus haut, `if (role === 'admin')
+// return true;`), plus dans le socle operationnel de directeur/placeur/
+// agent_checkin. Un acces direct par URL est donc renvoye vers l'ecran par
+// defaut du role, comme n'importe quel chemin hors matrice.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/history', '/placement', '/api',
+  '/plan-table', '/exceptions', '/placement', '/api',
 ];
 
 const SCAN_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/history', '/api',
+  '/plan-table', '/exceptions', '/api',
 ];
 
 const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/api'];

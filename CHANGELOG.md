@@ -3,6 +3,35 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.26.0] — 2026-08-30
+
+Retour vocal de Gersom sur l'usage réel de la barre de navigation, plus deux demandes ponctuelles.
+
+### Changé
+- **Barre de navigation redessinée en « verre liquide ».** « La barre qui est en bas, je ne la trouve pas assez accessible... c'est difficile à voir » — comparée explicitement au style de barre d'onglets iOS récent : plus grande, ronde, claire.
+  - `components/BottomNav.tsx` : icônes agrandies (`h-5`→`h-6`), libellés inactifs passés de `text-text-faint` (42 % d'opacité, jugé illisible sur fond sombre) à `text-text-muted` (55 %). La barre devient une **pilule flottante** en verre dépoli (`rounded-3xl`, ombre, flou, légèrement surélevée du bord) au lieu d'une bande plate collée au bord de l'écran.
+  - `app/globals.css` : nouvelle utilité `.safe-right` (`env(safe-area-inset-right)`), miroir de `.safe-bottom`/`.safe-top`, pour la variante paysage ci-dessous.
+- **Bascule en bande verticale à droite quand le téléphone est tourné (ou sur iPad en paysage).** « Si je tourne le téléphone sur le côté, je veux que ça fasse vraiment comme une bascule... les boutons vont à la droite au lieu de rester en bas... figés à droite mais qu'on peut scroll de haut en bas... la même chose sur un iPad. »
+  - `components/BottomNav.tsx` : variante Tailwind `landscape:` (media query `orientation: landscape` native, sans configuration) — la pilule horizontale devient une bande verticale pleine hauteur fixée au bord droit ; le bouton central se soulève vers le contenu (gauche) plutôt que vers le haut.
+  - Patron d'écran (`flex h-dvh flex-col overflow-hidden` → `... landscape:flex-row`) appliqué aux 9 écrans qui utilisent `BottomNav` (`/dashboard`, `/staff`, `/scan`, `/search`, `/plan-table`, `/exceptions`, `/placement`, `/history`, `/admin`) : `TopBar` + contenu regroupés dans un conteneur colonne dédié pour que `BottomNav` devienne un vrai second enfant en ligne (`flex-row`) plutôt qu'un troisième élément écrasé. Le contenu garde son propre défilement vertical (`overflow-y-auto`), indépendant de la barre.
+
+### Ajouté
+- **`components/ScanStatsStrip.tsx`** (nouveau) : bande compacte entre l'écran de scan et la barre de navigation — « en dessous de l'écran scan, les boutons du bas vont être un peu plus haut, il va rester un petit espace avec de l'information de base du tableau de bord, par exemple le nombre d'invités, le nombre arrivés, la progression du remplissage de la salle. » Reprend les mêmes agrégats que `/dashboard` (`nombre_prevu`/`nombre_arrive`, capacité des tables), version résumée d'une ligne + jauge compacte (`CapacityGauge` `size="sm"`), abonnée au temps réel ; ouvre `/dashboard` au tap.
+- Câblée dans `app/scan/page.tsx`, entre le scanner QR et `BottomNav`.
+
+### Sécurité / permissions
+- **`/history` réservé à l'admin.** « Ce n'est pas toutes les rôles qui ont accès à l'historique, donne l'accès seulement aux admins. »
+  - `lib/permissions.ts` : `viewHistory` retiré de `OPERATIONAL_CAPABILITIES` (socle commun à directeur/placeur/agent scan) — ne reste que sur `admin` via `ALL_CAPABILITIES`. `/history` retiré de `FULL_STAFF_PREFIXES`/`SCAN_STAFF_PREFIXES` : un accès direct par URL pour un rôle non-admin est désormais renvoyé vers l'écran par défaut du rôle par le middleware, comme n'importe quel chemin hors matrice.
+  - `app/api/history/route.ts` : remplace la liste de rôles en dur (`['admin', 'directeur', 'placeur', 'agent_checkin']`) par `hasCapability(user.role, 'viewHistory')` — capacité centralisée au lieu d'une liste dispersée (voir `CLAUDE.md`). Le raccourci du menu du compte (`AccountMenu.tsx`) n'a pas eu besoin de changer : il lisait déjà `hasCapability(role, 'viewHistory')`, donc il se met à jour tout seul.
+
+### Tests
+- `tests/navigation-resilience.test.ts` : 3 nouveaux tests (contraste/taille de la barre, bascule paysage sur les 9 écrans, bande d'info sur `/scan`).
+- `tests/permissions.test.ts` : 1 nouveau test (`/history` réservé à l'admin, capacité centralisée sur la route API).
+- `npx tsc --noEmit`, `npm run build`, 13 suites de tests (`node --test`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune (changements d'interface et de capacités uniquement).
+
 ## [1.25.0] — 2026-08-30
 
 Deux demandes de Gersom le 30/08/2026, à la suite du reste de la journée (v1.23.0/v1.24.0).

@@ -63,8 +63,8 @@ const CENTRAL_HREF: Record<string, string> = {
 };
 
 // Ordre canonique pour repartir les onglets restants 2 a gauche/2 a droite
-// autour du bouton central, quel que soit celui qui a ete choisi comme
-// central pour ce role.
+// (portrait) ou 2 en haut/2 en bas (paysage) autour du bouton central, quel
+// que soit celui qui a ete choisi comme central pour ce role.
 const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/staff'];
 
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
@@ -73,16 +73,29 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       className={clsx(
-        'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium',
-        active ? 'text-accent' : 'text-text-faint'
+        'flex flex-1 flex-col items-center gap-1 rounded-2xl py-2.5 text-[11px] font-semibold transition-colors landscape:py-0',
+        active ? 'text-accent' : 'text-text-muted active:text-text'
       )}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className="h-6 w-6" />
       {item.label}
     </Link>
   );
 }
 
+// Barre "verre liquide" (30/08/2026, demande de Gersom : le bar precedent
+// etait trop discret -- "difficile a voir", contraste trop faible, cibles
+// trop petites). Repris du langage visuel iOS recent : pilule flottante en
+// verre depoli, legerement surelevee du bord, icones plus grandes, libelles
+// en text-muted (55% d'opacite) plutot que text-faint (42%, illisible sur
+// fond sombre) pour les onglets inactifs.
+//
+// En paysage (telephone tourne, ou iPad), la pilule horizontale devient une
+// bande verticale fixee au bord droit -- "les boutons vont a la droite au
+// lieu de rester en bas", le contenu de la page reste seul responsable du
+// defilement vertical (voir le patron de page h-dvh + landscape:flex-row
+// applique aux ecrans qui utilisent ce composant). Le bouton central se
+// souleve alors vers la gauche (vers le contenu) plutot que vers le haut.
 export function BottomNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const items = ITEMS[role] ?? ITEMS.agent_checkin;
@@ -93,10 +106,18 @@ export function BottomNav({ role }: { role: Role }) {
 
   // Pas de bouton central quand le role n'a pas l'onglet vise (visibilite,
   // qui n'a ni Scan ni Bord en central ici puisqu'il n'a pas Scan du tout) :
-  // barre plate a onglets, comme avant.
+  // pilule/bande a onglets plats, comme avant.
   if (!centralItem) {
     return (
-      <nav className="sticky bottom-0 z-10 flex border-t border-hairline bg-glass backdrop-blur safe-bottom">
+      <nav
+        className={clsx(
+          'z-10 mx-auto mb-3 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center justify-between',
+          'rounded-3xl border border-hairline bg-glass px-2 py-1.5 shadow-elev-2 backdrop-blur-2xl safe-bottom',
+          'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
+          'landscape:justify-center landscape:gap-2 landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0',
+          'landscape:border-r-0 landscape:px-1 landscape:py-4 landscape:safe-right'
+        )}
+      >
         {items.map((item) => (
           <SideLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
         ))}
@@ -118,21 +139,30 @@ export function BottomNav({ role }: { role: Role }) {
   const centralActive = pathname.startsWith(centralItem.href);
 
   return (
-    <nav className="sticky bottom-0 z-10 flex items-end border-t border-hairline bg-glass backdrop-blur safe-bottom">
+    <nav
+      className={clsx(
+        'z-10 mx-auto mb-3 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center',
+        'rounded-3xl border border-hairline bg-glass px-2 py-1.5 shadow-elev-2 backdrop-blur-2xl safe-bottom',
+        'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
+        'landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0 landscape:border-r-0 landscape:px-1',
+        'landscape:py-4 landscape:safe-right'
+      )}
+    >
       {left.map((item) => (
         <SideLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
       ))}
 
-      <div className="flex flex-1 justify-center">
+      <div className="flex flex-1 justify-center landscape:w-full landscape:flex-none">
         <Link
           href={centralItem.href}
           aria-label={centralItem.label}
           className={clsx(
-            '-mt-6 mb-1.5 flex h-[66px] w-[66px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-elev-2 active:scale-[0.96] transition-transform',
+            '-mt-6 flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
+            'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
             centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
           )}
         >
-          <CentralGlyph className="h-7 w-7" />
+          <CentralGlyph className="h-8 w-8" />
         </Link>
       </div>
 

@@ -103,103 +103,105 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      <TopBar
-        title="Tableau de bord"
-        backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
-      />
+    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar
+          title="Tableau de bord"
+          backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
+        />
 
-      <PullToRefreshIndicator
-        pulling={pulling}
-        pullDistance={pullDistance}
-        refreshing={refreshing}
-        pullThreshold={pullThreshold}
-      />
+        <PullToRefreshIndicator
+          pulling={pulling}
+          pullDistance={pullDistance}
+          refreshing={refreshing}
+          pullThreshold={pullThreshold}
+        />
 
-      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
-        <div className="card">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-semibold">Remplissage de la salle</p>
-            <p className="text-xs text-text-faint">
-              {stats.arrives} / {capaciteOfficielle}
-              {capaciteTotale > capaciteOfficielle && ' (+' + (capaciteTotale - capaciteOfficielle) + ' réserve)'}
+        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
+          <div className="card">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold">Remplissage de la salle</p>
+              <p className="text-xs text-text-faint">
+                {stats.arrives} / {capaciteOfficielle}
+                {capaciteTotale > capaciteOfficielle && ' (+' + (capaciteTotale - capaciteOfficielle) + ' réserve)'}
+              </p>
+            </div>
+            <CapacityGauge percent={remplissageSalle} size="lg" warningAt={seuilOfficielPct} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <StatTile label="Invités attendus" value={stats.attendus} onClick={() => voir('tous')} />
+            <StatTile
+              label="Arrivés"
+              value={stats.arrives}
+              accent="text-status-complete"
+              onClick={() => voir('arrives')}
+            />
+            <StatTile
+              label="Restants"
+              value={stats.restants}
+              accent="text-status-partial"
+              onClick={() => voir('restants')}
+            />
+            <StatTile label="Taux d'arrivée" value={stats.taux.toFixed(1) + '%'} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <MiniStat label="Complètes" value={stats.tablesCompletes} color="bg-status-complete" onClick={() => voir('complet')} />
+            <MiniStat label="Partielles" value={stats.tablesPartielles} color="bg-status-partial" onClick={() => voir('partiel')} />
+            <MiniStat label="Non arrivées" value={stats.nonArrives} color="bg-status-none" onClick={() => voir('non_arrive')} />
+            <MiniStat
+              label="Supplémentaires"
+              value={stats.supplementaires}
+              color="bg-status-over"
+              onClick={() => voir('supplementaire')}
+            />
+          </div>
+
+          <div>
+            {/* En-tete combine (maquette Atrium/Maison) : Staff et Tables de
+                reserve vivaient dans deux blocs separes avec un titre normal
+                -- regroupes sous un seul intitule uppercase, comme les autres
+                en-tetes de section de la maquette (ex: "Placement & presence"
+                sur /plan-table), accent en Maison. Le libelle s'adapte si
+                Staff n'est pas visible pour ce role (canSeeStaffSection). */}
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint dark:text-accent">
+              {canSeeStaffSection ? 'Staff & réserve' : 'Tables de réserve'}
             </p>
-          </div>
-          <CapacityGauge percent={remplissageSalle} size="lg" warningAt={seuilOfficielPct} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Invités attendus" value={stats.attendus} onClick={() => voir('tous')} />
-          <StatTile
-            label="Arrivés"
-            value={stats.arrives}
-            accent="text-status-complete"
-            onClick={() => voir('arrives')}
-          />
-          <StatTile
-            label="Restants"
-            value={stats.restants}
-            accent="text-status-partial"
-            onClick={() => voir('restants')}
-          />
-          <StatTile label="Taux d'arrivée" value={stats.taux.toFixed(1) + '%'} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <MiniStat label="Complètes" value={stats.tablesCompletes} color="bg-status-complete" onClick={() => voir('complet')} />
-          <MiniStat label="Partielles" value={stats.tablesPartielles} color="bg-status-partial" onClick={() => voir('partiel')} />
-          <MiniStat label="Non arrivées" value={stats.nonArrives} color="bg-status-none" onClick={() => voir('non_arrive')} />
-          <MiniStat
-            label="Supplémentaires"
-            value={stats.supplementaires}
-            color="bg-status-over"
-            onClick={() => voir('supplementaire')}
-          />
-        </div>
-
-        <div>
-          {/* En-tete combine (maquette Atrium/Maison) : Staff et Tables de
-              reserve vivaient dans deux blocs separes avec un titre normal
-              -- regroupes sous un seul intitule uppercase, comme les autres
-              en-tetes de section de la maquette (ex: "Placement & presence"
-              sur /plan-table), accent en Maison. Le libelle s'adapte si
-              Staff n'est pas visible pour ce role (canSeeStaffSection). */}
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint dark:text-accent">
-            {canSeeStaffSection ? 'Staff & réserve' : 'Tables de réserve'}
-          </p>
-          {canSeeStaffSection && (
-            <button
-              type="button"
-              onClick={() => router.push('/staff')}
-              className="card mb-2 flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
-            >
-              <span className="font-semibold">Staff</span>
-              <span className="text-text-muted">
-                {staffArrive} / {staffPrevu} arrivés
-              </span>
-            </button>
-          )}
-          <div className="space-y-2">
-            {reserveTables.map((t) => {
-              const used = usageByTable.get(t.id) || 0;
-              const full = used >= t.capacity;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => router.push('/tables/' + t.id)}
-                  className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
-                >
-                  <span className="font-semibold">Table {t.number}</span>
-                  <span className={full ? 'font-bold text-status-over' : 'text-text-muted'}>
-                    {full ? 'COMPLET' : used + ' / ' + t.capacity + ' places utilisées'}
-                  </span>
-                </button>
-              );
-            })}
+            {canSeeStaffSection && (
+              <button
+                type="button"
+                onClick={() => router.push('/staff')}
+                className="card mb-2 flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+              >
+                <span className="font-semibold">Staff</span>
+                <span className="text-text-muted">
+                  {staffArrive} / {staffPrevu} arrivés
+                </span>
+              </button>
+            )}
+            <div className="space-y-2">
+              {reserveTables.map((t) => {
+                const used = usageByTable.get(t.id) || 0;
+                const full = used >= t.capacity;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => router.push('/tables/' + t.id)}
+                    className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+                  >
+                    <span className="font-semibold">Table {t.number}</span>
+                    <span className={full ? 'font-bold text-status-over' : 'text-text-muted'}>
+                      {full ? 'COMPLET' : used + ' / ' + t.capacity + ' places utilisées'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
+
       </div>
-
       {role && <BottomNav role={role} />}
     </div>
   );

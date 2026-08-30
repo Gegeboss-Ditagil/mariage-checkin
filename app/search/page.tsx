@@ -248,153 +248,155 @@ function SearchInner() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      <TopBar title="Rechercher un invité" backHref={readOnly ? '/dashboard' : '/scan'} />
+    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar title="Rechercher un invité" backHref={readOnly ? '/dashboard' : '/scan'} />
 
-      <div className="px-4 pt-3">
-        <div className="mb-3 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setMode('nom')}
-            className={
-              'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'nom' ? 'border-accent bg-accent text-on-accent ' : 'border-hairline bg-surface text-text-muted')
-            }
-          >
-            Nom / table
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('telephone')}
-            className={
-              'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'telephone'
-                ? 'border-accent bg-accent text-on-accent '
-                : 'border-hairline bg-surface text-text-muted')
-            }
-          >
-            Téléphone
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('email')}
-            className={
-              'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'email' ? 'border-accent bg-accent text-on-accent ' : 'border-hairline bg-surface text-text-muted')
-            }
-          >
-            Email
-          </button>
-        </div>
-
-        {mode === 'nom' && (
-          <input
-            autoFocus
-            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
-            placeholder="Prénom, nom, table, téléphone…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        )}
-
-        {mode === 'telephone' && (
-          <div className="space-y-2">
-            <select
-              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3  focus:border-accent focus:outline-none"
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-            >
-              {PHONE_COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.nom} ({c.indicatif})
-                </option>
-              ))}
-            </select>
-            <div className="flex items-center gap-2">
-              <span className="shrink-0 rounded-xl2 border-2 border-hairline bg-surface px-3 py-3.5 text-lg text-text-muted">
-                {country.indicatif}
-              </span>
-              <input
-                autoFocus
-                inputMode="tel"
-                className="min-w-0 flex-1 rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
-                placeholder={'ex : ' + country.exemple}
-                value={phoneNational}
-                onChange={(e) => setPhoneNational(e.target.value)}
-              />
-            </div>
-            <p className="text-xs text-text-faint">
-              Choisissez le pays puis saisissez le numéro sans le 0 initial — exemple pour {country.nom} :{' '}
-              {country.indicatif} {country.exemple}
-            </p>
-          </div>
-        )}
-
-        {mode === 'email' && (
-          <input
-            autoFocus
-            type="email"
-            autoCapitalize="none"
-            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
-            placeholder="prenom.nom@exemple.com"
-            value={emailInput}
-            onChange={(e) => setEmailInput(e.target.value)}
-          />
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-      {loading && <p className="p-4 text-center text-text-faint">Recherche…</p>}
-      {browsing && loadingAll && <p className="p-4 text-center text-text-faint">Chargement…</p>}
-
-      {!loading && hasQuery && tableResults.length === 0 && results.length === 0 && (
-        <p className="p-6 text-center text-text-faint">Aucun résultat pour « {query} »</p>
-      )}
-
-      {tableResults.length > 0 && (
         <div className="px-4 pt-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint">Tables</p>
-          <div className="space-y-2">
-            {tableResults.map((t) => {
-              const vol = volCode(t.number);
-              return (
-                <button
-                  key={t.id}
-                  className="flex w-full items-center justify-between rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-left"
-                  onClick={() => router.push('/tables/' + t.id)}
-                >
-                  <span>
-                    <span className="block font-semibold ">
-                      Table {t.number}
-                      {t.label ? ' — ' + t.label : ''}
-                    </span>
-                    {vol && <span className="block text-xs text-text-faint">{vol}</span>}
-                  </span>
-                  {t.is_reserve && <span className="text-xs text-status-partial">Réserve</span>}
-                </button>
-              );
-            })}
+          <div className="mb-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('nom')}
+              className={
+                'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
+                (mode === 'nom' ? 'border-accent bg-accent text-on-accent ' : 'border-hairline bg-surface text-text-muted')
+              }
+            >
+              Nom / table
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('telephone')}
+              className={
+                'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
+                (mode === 'telephone'
+                  ? 'border-accent bg-accent text-on-accent '
+                  : 'border-hairline bg-surface text-text-muted')
+              }
+            >
+              Téléphone
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('email')}
+              className={
+                'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
+                (mode === 'email' ? 'border-accent bg-accent text-on-accent ' : 'border-hairline bg-surface text-text-muted')
+              }
+            >
+              Email
+            </button>
           </div>
-        </div>
-      )}
 
-      {listeAffichee.length > 0 && (
-        <div className="mt-2 px-4">
-          {tableResults.length > 0 && (
-            <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-text-faint">Invités</p>
+          {mode === 'nom' && (
+            <input
+              autoFocus
+              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
+              placeholder="Prénom, nom, table, téléphone…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
           )}
-          {browsing && (
-            <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-text-faint">
-              Toutes les invitations ({listeAffichee.length}) — appuyez pour voir qui est dedans et ses tags
-            </p>
+
+          {mode === 'telephone' && (
+            <div className="space-y-2">
+              <select
+                className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3  focus:border-accent focus:outline-none"
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+              >
+                {PHONE_COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.nom} ({c.indicatif})
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 rounded-xl2 border-2 border-hairline bg-surface px-3 py-3.5 text-lg text-text-muted">
+                  {country.indicatif}
+                </span>
+                <input
+                  autoFocus
+                  inputMode="tel"
+                  className="min-w-0 flex-1 rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
+                  placeholder={'ex : ' + country.exemple}
+                  value={phoneNational}
+                  onChange={(e) => setPhoneNational(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-text-faint">
+                Choisissez le pays puis saisissez le numéro sans le 0 initial — exemple pour {country.nom} :{' '}
+                {country.indicatif} {country.exemple}
+              </p>
+            </div>
           )}
-          <ul className="divide-y divide-hairline pb-6">
-            {listeAffichee.map((r) => <InvitationItem key={r.id} r={r} />)}
-          </ul>
+
+          {mode === 'email' && (
+            <input
+              autoFocus
+              type="email"
+              autoCapitalize="none"
+              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
+              placeholder="prenom.nom@exemple.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+            />
+          )}
         </div>
-      )}
+
+        <div className="flex-1 overflow-y-auto">
+        {loading && <p className="p-4 text-center text-text-faint">Recherche…</p>}
+        {browsing && loadingAll && <p className="p-4 text-center text-text-faint">Chargement…</p>}
+
+        {!loading && hasQuery && tableResults.length === 0 && results.length === 0 && (
+          <p className="p-6 text-center text-text-faint">Aucun résultat pour « {query} »</p>
+        )}
+
+        {tableResults.length > 0 && (
+          <div className="px-4 pt-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint">Tables</p>
+            <div className="space-y-2">
+              {tableResults.map((t) => {
+                const vol = volCode(t.number);
+                return (
+                  <button
+                    key={t.id}
+                    className="flex w-full items-center justify-between rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-left"
+                    onClick={() => router.push('/tables/' + t.id)}
+                  >
+                    <span>
+                      <span className="block font-semibold ">
+                        Table {t.number}
+                        {t.label ? ' — ' + t.label : ''}
+                      </span>
+                      {vol && <span className="block text-xs text-text-faint">{vol}</span>}
+                    </span>
+                    {t.is_reserve && <span className="text-xs text-status-partial">Réserve</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {listeAffichee.length > 0 && (
+          <div className="mt-2 px-4">
+            {tableResults.length > 0 && (
+              <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-text-faint">Invités</p>
+            )}
+            {browsing && (
+              <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-text-faint">
+                Toutes les invitations ({listeAffichee.length}) — appuyez pour voir qui est dedans et ses tags
+              </p>
+            )}
+            <ul className="divide-y divide-hairline pb-6">
+              {listeAffichee.map((r) => <InvitationItem key={r.id} r={r} />)}
+            </ul>
+          </div>
+        )}
+        </div>
+
       </div>
-
       {role && <BottomNav role={role} />}
     </div>
   );
