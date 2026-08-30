@@ -167,19 +167,22 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Connexion avec un rôle autre qu'admin (directeur, placeur, agent scan) : `/history` n'apparaît plus dans le menu du compte, et une navigation directe par URL vers `/history` renvoie vers l'écran par défaut du rôle au lieu d'afficher la page.
 - Connexion en tant qu'admin : `/history` reste accessible normalement (menu du compte et URL directe).
 
-## Invité surprise avec approbation SMS à distance — v1.27.0
+## Invité surprise avec approbation SMS/WhatsApp à distance — v1.27.0
 
 - Bouton « 📷 Invité surprise (non prévu) » visible sur `/scan` uniquement pour admin/directeur/placeur — absent pour agent scan et visibilité.
 - Rôle sans `guestApproval` (agent scan) : `POST /api/guest-approvals` en appel direct (sans passer par le bouton) → rejeté (401), pas seulement caché côté interface. Idem pour `/api/guest-approvals/[id]/assign-table`.
-- Flux complet : photo → côté (Nelly/Gégé) → nom/nombre → « Envoyer la demande » → SMS reçu par l'approbateur configuré (`guest_approvers`) → clic sur le lien `/approve/[token]` → photo visible, sans connexion → Approuver → statut « Approuvé » visible dans `/approbations` (sondage, quelques secondes).
-- Un deuxième clic sur le même lien après décision → « déjà traité », jamais une erreur technique brute (`409`).
-- Refus → statut « Refusé », aucun bouton « Assigner une table », visible dans `/approbations`.
-- Après approbation, l'approbateur reçoit un second SMS : « il vous reste maintenant N places » en réserve — vérifier que N correspond au calcul déjà utilisé par `/dashboard`/`/plan-table` (places de réserve libres maintenant).
+- Flux complet : photo → côté (Nelly/Gégé) → nom/nombre → « Envoyer la demande » → SMS **et** WhatsApp reçus par l'approbateur configuré (`guest_approvers`) → clic sur le lien `/approve/[token]` → photo visible, sans connexion → Approuver → statut « Approuvé » visible dans `/approbations` (sondage, quelques secondes).
+- **Décider par réponse WhatsApp** : répondre « Oui »/« O »/« Y » (approuve) ou « Non »/« N » (refuse) au message WhatsApp reçu, sans cliquer le lien → même effet que le clic web (statut mis à jour, `decided_via = 'whatsapp'` visible dans `/approbations`) ; réponse en TwiML confirmant la décision directement dans la conversation. Une réponse illisible (ni Oui ni Non) → l'app redemande de répondre OUI ou NON, sans planter. Une réponse WhatsApp pour un numéro sans demande en attente → message clair, pas d'erreur technique.
+- Un deuxième clic/une deuxième réponse (web ou WhatsApp, dans n'importe quel ordre) après décision → « déjà traité », jamais une erreur technique brute (`409` côté web).
+- Refus (web ou WhatsApp) → statut « Refusé », aucun bouton « Assigner une table », visible dans `/approbations`.
+- Après approbation (quel que soit le canal de décision), l'approbateur reçoit un SMS de confirmation : « il vous reste maintenant N places » en réserve — vérifier que N correspond au calcul déjà utilisé par `/dashboard`/`/plan-table` (places de réserve libres maintenant).
 - « Assigner une table » depuis `/approbations` (demande approuvée) → sélection d'une table (`TablePicker`, capacités en direct) → confirme → nouvelle invitation créée, visible sur sa fiche `/checkin/[invitationId]` (`nombre_arrive = 0`, à confirmer manuellement comme n'importe quel invité) ; un deuxième essai d'assignation sur la même demande → refusé (déjà assignée).
 - Rémy Landu et Tuzola (`festin_directors`) reçoivent tous deux le SMS de rapport après cette assignation — nom de l'approbateur, table, places de réserve restantes.
-- Vérifier qu'aucun MMS n'est tenté (numéro Twilio français) — uniquement un SMS texte avec le lien.
+- Vérifier qu'aucun MMS/média n'est tenté sur aucun des deux canaux (numéro Twilio français pour le SMS ; Content Template obligatoire pour le WhatsApp) — uniquement du texte avec le lien.
+- Vérifier qu'une requête webhook WhatsApp sans signature Twilio valide (`X-Twilio-Signature`) est rejetée (403), jamais traitée comme une vraie décision.
 - Vérifier que `SUPABASE_SERVICE_ROLE_KEY` n'apparaît jamais côté client sur `/approve/[token]` (page publique).
-- Sans les variables d'environnement Twilio configurées sur Vercel : la demande est quand même créée (photo/infos conservées), l'agent voit un message clair indiquant que le SMS n'est pas parti et doit prévenir l'approbateur autrement.
+- Sans les variables d'environnement Twilio SMS configurées sur Vercel : la demande est quand même créée (photo/infos conservées), l'agent voit un message clair indiquant que le SMS n'est pas parti et doit prévenir l'approbateur autrement.
+- Sans `TWILIO_WHATSAPP_NUMBER`/`TWILIO_WHATSAPP_CONTENT_SID_REQUEST` configurés : le canal WhatsApp est silencieusement absent, le SMS continue de fonctionner seul (pas d'erreur visible pour l'agent).
 
 ## Contrôle de version avant merge
 

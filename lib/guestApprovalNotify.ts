@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { computeTableCapacities } from '@/lib/capacity';
 import { GuestApprovalRequestRow, InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
-import { sendSms, TwilioConfigError, TwilioSendError } from '@/lib/twilio';
+import { sendSms, sendWhatsApp, TwilioConfigError, TwilioSendError } from '@/lib/twilio';
 
 /**
  * Places encore libres MAINTENANT sur l'ensemble des tables de réserve --
@@ -28,21 +28,57 @@ function placesLabel(n: number): string {
 }
 
 /**
- * SMS initial à l'approbateur (Papa Gégé ou Papa David selon `guest_approvers`)
- * -- jamais de photo en pièce jointe (numéro français, pas de MMS), juste le
+ * SMS + WhatsApp initial à l'approbateur (Papa Gégé ou Papa David selon
+ * `guest_approvers`) -- jamais de photo en pièce jointe sur aucun des deux
+ * canaux (le SMS français ne supporte pas les MMS ; un message WhatsApp
+ * initié par l'app doit rester dans son Content Template approuvé), juste le
  * lien vers /approve/[token] qui l'affiche à l'ouverture.
+ *
+ * Les deux canaux sont envoyés en parallèle, chacun best-effort (l'échec de
+ * l'un n'empêche jamais l'autre) -- demande de Gersom le 30/08/2026 : "donne
+ * l'option par whatsapp ou message... au cas où il n'a pas de réseau [cellulaire]
+ * et est connecté au wifi" (WhatsApp passe par data/wifi, contrairement au
+ * SMS qui a besoin du réseau cellulaire). Le canal WhatsApp est un pur
+ * complément : sans TWILIO_WHATSAPP_NUMBER/TWILIO_WHATSAPP_CONTENT_SID
+ * configurés, sendWhatsApp ne fait rien (voir lib/twilio.ts), le SMS
+ * continue de fonctionner seul comme avant.
+ *
+ * Le template WhatsApp attendu (Content Template Twilio, 4 variables) :
+ *   "Mariage Nelly & Gersom
+ *    {{1}} souhaite venir avec {{2}} invité(s) (côté {{3}}).
+ *    Répondez OUI ou NON à ce message, ou voir la photo : {{4}}"
+ * Répondre "Oui"/"O"/"Y" ou "Non"/"N" à ce message est traité par
+ * app/api/public/twilio/whatsapp-inbound/route.ts -- pas besoin de cliquer
+ * le lien pour décider, seulement pour voir la photo.
  */
 export async function notifyApprover(request: GuestApprovalRequestRow, approveUrl: string): Promise<void> {
-  const body =
+  const coteLabel = request.cote === 'Gege' ? 'Gégé' : 'Nelly';
+  const smsBody =
     'Mariage Nelly & Gersom : ' +
     request.nom_invite +
     ' souhaite venir avec ' +
     request.nombre_invites +
     ' invité(s) (côté ' +
-    (request.cote === 'Gege' ? 'Gégé' : 'Nelly') +
+    coteLabel +
     '). Voir la photo et répondre : ' +
     approveUrl;
-  await sendSms(request.approver_phone, body);
+
+  const results = await Promise.allSettled([
+    sendSms(request.approver_phone, smsBody),
+    sendWhatsApp(request.approver_phone, process.env.TWILIO_WHATSAPP_CONTENT_SID_REQUEST, {
+      '1': request.nom_invite,
+      '2': String(request.nombre_invites),
+      '3': coteLabel,
+      '4': approveUrl,
+    }),
+  ]);
+
+  // Le SMS reste le canal de référence (celui documenté/testé) : si LUI a
+  // échoué, l'appelant (POST /api/guest-approvals) doit le savoir pour
+  // avertir l'agent -- l'échec de WhatsApp seul (canal optionnel, encore non
+  // configuré tant que le Content Template n'est pas approuvé par Meta)
+  // reste silencieux.
+  if (results[0].status === 'rejected') throw results[0].reason;
 }
 
 /**

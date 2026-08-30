@@ -178,6 +178,9 @@ export interface GuestApprovalRequestRow {
   approver_phone: string;
   statut: GuestApprovalStatut;
   decided_at: string | null;
+  // Canal utilise pour la decision : lien web (/approve/[token]) ou reponse
+  // texte WhatsApp ("Oui"/"Non") -- migration 0034. NULL tant que en_attente.
+  decided_via: 'web' | 'whatsapp' | null;
   table_id: string | null;
   assigned_by: string | null;
   assigned_at: string | null;

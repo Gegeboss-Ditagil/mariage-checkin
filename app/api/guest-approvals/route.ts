@@ -7,6 +7,7 @@ import { uploadGuestApprovalPhoto, getSignedPhotoUrl } from '@/lib/guestApproval
 import { notifyApprover } from '@/lib/guestApprovalNotify';
 import { GuestApprovalRequestRow, GuestApproverRow } from '@/lib/types';
 import { TwilioConfigError, TwilioSendError } from '@/lib/twilio';
+import { baseUrl } from '@/lib/requestUrl';
 
 /**
  * Invité surprise avec approbation SMS à distance (v1.27.0) -- demande de
@@ -15,17 +16,6 @@ import { TwilioConfigError, TwilioSendError } from '@/lib/twilio';
  * des personnes en plus, il ne fait rien, il va voir le placeur"). Voir
  * supabase/migrations/0032_guest_approvals.sql pour le schéma complet.
  */
-
-function baseUrl(req: NextRequest): string {
-  // Vercel expose l'URL du déploiement courant -- fonctionne aussi bien en
-  // preview qu'en production, sans variable d'environnement dédiée.
-  const fromHeader = req.headers.get('origin') || req.headers.get('x-forwarded-host');
-  if (fromHeader) {
-    return fromHeader.startsWith('http') ? fromHeader : 'https://' + fromHeader;
-  }
-  if (process.env.VERCEL_URL) return 'https://' + process.env.VERCEL_URL;
-  return 'https://mariage-checkin.vercel.app';
-}
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
@@ -138,7 +128,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('guest_approval_requests')
     .select(
-      'id, cote, nom_invite, nombre_invites, photo_url, statut, decided_at, table_id, assigned_at, created_at, ' +
+      'id, cote, nom_invite, nombre_invites, photo_url, statut, decided_at, decided_via, table_id, assigned_at, created_at, ' +
       'requested_by:requested_by(nom_affichage), table:table_id(number)'
     )
     .order('created_at', { ascending: false })
@@ -156,6 +146,7 @@ export async function GET() {
       nombre_invites: row.nombre_invites,
       statut: row.statut,
       decided_at: row.decided_at,
+      decided_via: row.decided_via,
       table_id: row.table_id,
       table_number: row.table?.number ?? null,
       assigned_at: row.assigned_at,

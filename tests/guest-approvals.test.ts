@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { canAccessPath, hasCapability } from '../lib/permissions.ts';
+import { validateTwilioSignature } from '../lib/twilio.ts';
+import { createHmac } from 'node:crypto';
 
 // Invité surprise avec approbation SMS à distance (v1.27.0) -- demande de
 // Gersom le 30/08/2026. Inspection du code source, même convention que les
@@ -36,6 +38,15 @@ const approbationsPageSource = readFileSync(new URL('../app/approbations/page.ts
 const approveTokenPageSource = readFileSync(new URL('../app/approve/[token]/page.tsx', import.meta.url), 'utf8');
 const middlewareSource = readFileSync(new URL('../middleware.ts', import.meta.url), 'utf8');
 const accountMenuSource = readFileSync(new URL('../components/AccountMenu.tsx', import.meta.url), 'utf8');
+const whatsappInboundSource = readFileSync(
+  new URL('../app/api/public/twilio/whatsapp-inbound/route.ts', import.meta.url),
+  'utf8'
+);
+const decideLibSource = readFileSync(new URL('../lib/guestApprovalDecide.ts', import.meta.url), 'utf8');
+const whatsappMigrationSource = readFileSync(
+  new URL('../supabase/migrations/0034_guest_approval_whatsapp.sql', import.meta.url),
+  'utf8'
+);
 
 test('la capacite guestApproval est reservee a admin/directeur/placeur, jamais agent scan ni visibilite', () => {
   // Confirme par Gersom : "admin + directeur + placeur" (pas placeur seul --
@@ -93,10 +104,11 @@ test('la cle de service Supabase ne quitte jamais le serveur -- jamais reference
 });
 
 test('la decision (approuver/refuser) est atomique et invalide le token apres usage', () => {
-  // Le UPDATE est garde par statut = 'en_attente' dans le WHERE -- un
-  // deuxieme appel touche 0 ligne (verrouillage de ligne Postgres implicite),
-  // jamais une double decision silencieuse.
-  assert.match(publicDecideSource, /\.eq\('statut', 'en_attente'\)/);
+  // Le UPDATE (dans la logique partagee lib/guestApprovalDecide.ts, voir plus
+  // bas) est garde par statut = 'en_attente' dans le WHERE -- un deuxieme
+  // appel touche 0 ligne (verrouillage de ligne Postgres implicite), jamais
+  // une double decision silencieuse.
+  assert.match(publicDecideSource, /applyGuestApprovalDecision/);
   assert.match(publicDecideSource, /already_decided/);
   assert.match(publicDecideSource, /status: 409/);
 });
@@ -105,7 +117,7 @@ test('aucun MMS n\'est jamais tente (numero Twilio francais) -- texte seul + lie
   // Les commentaires du fichier PARLENT de MediaUrl pour expliquer pourquoi
   // on ne l'utilise jamais -- la regle porte sur le corps de la requete
   // envoyee a Twilio, pas sur le mot lui-meme n'importe ou dans le fichier.
-  assert.match(twilioSource, /new URLSearchParams\(\{ To: to, From: from, Body: body \}\)/);
+  assert.match(twilioSource, /postMessage\(accountSid, authToken, \{ To: to, From: from, Body: body \}\)/);
   assert.doesNotMatch(twilioSource, /MediaUrl:/);
   assert.doesNotMatch(notifySource, /\.photo_url/); // le SMS ne transporte jamais la photo elle-meme
   assert.match(notifySource, /approveUrl/);
@@ -158,4 +170,82 @@ test('festin_directors contient Remy et Tuzola -- confirme par Gersom le 30/08/2
   assert.match(directorsMigrationSource, /\('Rémy Landu', '\+33651874779'\)/);
   assert.match(directorsMigrationSource, /\('Tuzola', '\+33669016803'\)/);
   assert.match(directorsMigrationSource, /insert into festin_directors/);
+});
+
+// Canal WhatsApp (v1.27.0, migration 0034) -- "donne l'option par whatsapp
+// ou message... au cas ou il n'a pas de reseau et est connecte au wifi".
+
+test('validateTwilioSignature refuse tout sans authToken/signature (fail closed), jamais un webhook accepte par defaut', () => {
+  const originalToken = process.env.TWILIO_AUTH_TOKEN;
+  try {
+    delete process.env.TWILIO_AUTH_TOKEN;
+    assert.equal(validateTwilioSignature('https://example.com/x', { a: '1' }, 'anything'), false);
+
+    process.env.TWILIO_AUTH_TOKEN = 'test-token';
+    assert.equal(validateTwilioSignature('https://example.com/x', { a: '1' }, null), false);
+    assert.equal(validateTwilioSignature('https://example.com/x', { a: '1' }, 'wrong-signature'), false);
+
+    // Signature correcte (meme algorithme que Twilio : HMAC-SHA1 base64 de
+    // l'URL + paires cle+valeur triees par cle, concatenees).
+    const url = 'https://example.com/x';
+    const params = { b: '2', a: '1' };
+    const data = url + Object.keys(params).sort().map((k) => k + (params as any)[k]).join('');
+    const validSignature = createHmac('sha1', 'test-token').update(Buffer.from(data, 'utf-8')).digest('base64');
+    assert.equal(validateTwilioSignature(url, params, validSignature), true);
+  } finally {
+    if (originalToken === undefined) delete process.env.TWILIO_AUTH_TOKEN;
+    else process.env.TWILIO_AUTH_TOKEN = originalToken;
+  }
+});
+
+test('sendWhatsApp utilise un Content Template (jamais de texte libre pour un message initie par l\'app)', () => {
+  assert.match(twilioSource, /export async function sendWhatsApp/);
+  assert.match(twilioSource, /ContentSid: contentSid/);
+  assert.match(twilioSource, /ContentVariables/);
+  assert.doesNotMatch(twilioSource, /MediaUrl:/);
+  // No-op silencieux (pas d'exception) sans config -- le SMS continue seul.
+  assert.match(twilioSource, /if \(!config \|\| !contentSid\) return;/);
+});
+
+test('notifyApprover envoie SMS et WhatsApp en parallele, best-effort chacun (l\'echec de l\'un ne bloque pas l\'autre)', () => {
+  assert.match(notifySource, /Promise\.allSettled/);
+  assert.match(notifySource, /sendWhatsApp\(request\.approver_phone, process\.env\.TWILIO_WHATSAPP_CONTENT_SID_REQUEST/);
+  // Seul l'echec du SMS (canal de reference) remonte une exception.
+  assert.match(notifySource, /if \(results\[0\]\.status === 'rejected'\) throw results\[0\]\.reason;/);
+});
+
+test('le webhook WhatsApp entrant est PUBLIC (signature Twilio, pas de session/capacite) et reutilise la logique de decision partagee', () => {
+  assert.doesNotMatch(whatsappInboundSource, /getSessionUser/);
+  assert.doesNotMatch(whatsappInboundSource, /hasCapability/);
+  assert.match(whatsappInboundSource, /validateTwilioSignature/);
+  assert.match(whatsappInboundSource, /invalid_signature/);
+  assert.match(whatsappInboundSource, /applyGuestApprovalDecision/);
+  assert.match(whatsappInboundSource, /phoneMostRecentPending: from/);
+  assert.match(whatsappInboundSource, /'whatsapp'/);
+});
+
+test('la reponse WhatsApp reconnait Oui/O/Y/Yes comme approbation et Non/N/No comme refus, insensible a la casse/aux accents', () => {
+  assert.match(whatsappInboundSource, /\['oui', 'o', 'y', 'yes', '1'/);
+  assert.match(whatsappInboundSource, /\['non', 'n', 'no', '0'/);
+  assert.match(whatsappInboundSource, /\.normalize\('NFD'\)/);
+  assert.match(whatsappInboundSource, /\.toLowerCase\(\)/);
+});
+
+test('applyGuestApprovalDecision est la seule logique de decision atomique, partagee entre /approve/[token] et le webhook WhatsApp', () => {
+  assert.match(decideLibSource, /eq\('statut', 'en_attente'\)/);
+  assert.match(publicDecideSource, /applyGuestApprovalDecision\(supabase, \{ token \}, decision, 'web'\)/);
+  assert.match(whatsappInboundSource, /applyGuestApprovalDecision\(supabase, \{ phoneMostRecentPending: from \}, decision, 'whatsapp'\)/);
+  // La route publique ne duplique plus sa propre logique de UPDATE.
+  assert.doesNotMatch(publicDecideSource, /\.update\(\{ statut: decision/);
+});
+
+test('decided_via (web/whatsapp) est une colonne additive (migration 0034), jamais retirer de donnee existante', () => {
+  assert.match(whatsappMigrationSource, /alter table guest_approval_requests/);
+  assert.match(whatsappMigrationSource, /add column decided_via text check \(decided_via in \('web', 'whatsapp'\)\)/);
+  assert.doesNotMatch(whatsappMigrationSource, /drop /i);
+  assert.doesNotMatch(whatsappMigrationSource, /delete from/i);
+});
+
+test('le webhook WhatsApp entrant reste sous le prefixe public /api/public (deja couvert par middleware.ts)', () => {
+  assert.match(middlewareSource, /'\/api\/public'/);
 });

@@ -14,6 +14,7 @@ interface ApprovalListItem {
   nombre_invites: number;
   statut: 'en_attente' | 'approuve' | 'refuse';
   decided_at: string | null;
+  decided_via: 'web' | 'whatsapp' | null;
   table_id: string | null;
   table_number: number | null;
   assigned_at: string | null;
@@ -107,6 +108,7 @@ export default function ApprobationsPage() {
                 <p className="text-xs text-text-faint">
                   {r.nombre_invites} invité{r.nombre_invites > 1 ? 's' : ''} · Côté {r.cote === 'Gege' ? 'Gégé' : 'Nelly'}
                   {r.requested_by_nom ? ' · demandé par ' + r.requested_by_nom : ''}
+                  {r.decided_via ? ' · via ' + (r.decided_via === 'whatsapp' ? 'WhatsApp' : 'lien web') : ''}
                 </p>
                 {r.table_number ? (
                   <p className="mt-1 text-xs font-semibold text-status-complete">Table {r.table_number} assignée</p>
