@@ -94,6 +94,15 @@ export default function CheckinPage() {
   const [tagError, setTagError] = useState<string | null>(null);
   const [customTag, setCustomTag] = useState('');
 
+  // -- Invite imprevu ("+ Invite supplementaire") -- ajout NOMME depuis
+  // v1.23.0 (demande de Gersom le 30/08/2026) : ne touche jamais
+  // nombre_prevu (add_unplanned_arrival, migration 0030), pour continuer a
+  // declencher l'assignation de table de reserve en cas de depassement,
+  // comme le faisait l'ancien "+1" anonyme.
+  const [addingUnplanned, setAddingUnplanned] = useState(false);
+  const [unplannedPrenom, setUnplannedPrenom] = useState('');
+  const [unplannedNom, setUnplannedNom] = useState('');
+
   useEffect(() => {
     const supabase = createClient();
     supabase
@@ -264,6 +273,54 @@ export default function CheckinPage() {
       setArriveValue(updated.nombre_arrive);
       setLastDelta(nombrePersonnes);
       setSyncNotice(null);
+      const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
+
+      if (exc > 0) {
+        await openOverflowFlow(exc);
+      } else {
+        setStep('success');
+      }
+    } catch {
+      setError('Erreur réseau — réessayez');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleAddUnplanned() {
+    if (!invitation) return;
+    if (!unplannedPrenom.trim() && !unplannedNom.trim()) { setAddingUnplanned(false); return; }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/members/add-unplanned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invitation_id: invitation.id,
+          prenom: unplannedPrenom.trim() || null,
+          nom: unplannedNom.trim() || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Échec de l'ajout");
+        return;
+      }
+
+      const updated = data.invitation as InvitationRow;
+      setInvitation(updated);
+      setArriveValue(updated.nombre_arrive);
+      setLastDelta(1);
+      setSyncNotice(null);
+      setAddingUnplanned(false);
+      setUnplannedPrenom('');
+      setUnplannedNom('');
       const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
 
       if (exc > 0) {
@@ -915,15 +972,47 @@ export default function CheckinPage() {
           // Groupe : chaque personne se coche individuellement dans
           // GuestArrivalPanel ci-dessus (instantane, pas de bouton
           // "Confirmer" a part) -- seul reste a couvrir le cas d'un invite
-          // qui se presente sans etre sur la liste nominative.
-          <button
-            type="button"
-            className="action-row mb-3"
-            disabled={submitting || !online}
-            onClick={() => handleAdd(1)}
-          >
-            {submitting ? '…' : !online ? 'HORS LIGNE' : '+ Invité supplémentaire (non prévu)'}
-          </button>
+          // qui se presente sans etre sur la liste nominative. Ajout NOMME
+          // depuis v1.23.0 (add_unplanned_arrival, migration 0030) : ne
+          // touche jamais nombre_prevu, pour continuer a declencher
+          // l'assignation de table de reserve en cas de depassement.
+          addingUnplanned ? (
+            <div className="card mb-3">
+              <p className="mb-2 text-sm font-semibold">Invité supplémentaire (non prévu)</p>
+              <div className="flex gap-1.5">
+                <input
+                  autoFocus
+                  className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                  placeholder="Prénom"
+                  value={unplannedPrenom}
+                  onChange={(e) => setUnplannedPrenom(e.target.value)}
+                />
+                <input
+                  className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                  placeholder="Nom"
+                  value={unplannedNom}
+                  onChange={(e) => setUnplannedNom(e.target.value)}
+                />
+              </div>
+              <div className="mt-2 flex justify-end gap-3 text-xs font-semibold">
+                <button type="button" className="text-text-faint" onClick={() => setAddingUnplanned(false)} disabled={submitting}>
+                  Annuler
+                </button>
+                <button type="button" className="text-accent" onClick={handleAddUnplanned} disabled={submitting || !online}>
+                  {submitting ? '…' : !online ? 'HORS LIGNE' : 'Ajouter, déjà arrivé'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="action-row mb-3"
+              disabled={submitting || !online}
+              onClick={() => setAddingUnplanned(true)}
+            >
+              {!online ? 'HORS LIGNE' : '+ Invité supplémentaire (non prévu)'}
+            </button>
+          )
         ) : (
           <>
             <p className="mb-3 text-center font-semibold ">Personnes arrivées</p>

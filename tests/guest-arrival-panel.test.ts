@@ -86,7 +86,22 @@ test('la visibilite du panneau/compteur repose sur hasMemberList (etat reel), ja
 
 test('un groupe propose "+ Invité supplémentaire" au lieu du compteur/bouton "Confirmer"', () => {
   assert.match(checkinSource, /\+ Invité supplémentaire \(non prévu\)/);
-  assert.match(checkinSource, /onClick=\{\(\) => handleAdd\(1\)\}/);
+});
+
+test('"+ Invité supplémentaire" est un ajout NOMME (add-unplanned), pas un +1 anonyme, pour garder le declenchement de la table de reserve', () => {
+  // v1.23.0 : add_invitation_member (utilise par le "+" de GuestArrivalPanel)
+  // augmente nombre_prevu en meme temps qu'il ajoute la personne, ce qui ne
+  // cree jamais de depassement -- add_unplanned_arrival (migration 0030) ne
+  // touche jamais nombre_prevu, pour continuer a declencher l'assignation de
+  // table comme le faisait l'ancien "+1" anonyme (/api/checkin).
+  assert.match(checkinSource, /members\/add-unplanned/);
+  assert.match(checkinSource, /const exc = Math\.max\(0, updated\.nombre_arrive - updated\.nombre_prevu\);\s*\n\s*if \(exc > 0\) \{\s*\n\s*await openOverflowFlow\(exc\);/);
+  const migrationSource = readFileSync(
+    new URL('../supabase/migrations/0030_add_unplanned_arrival.sql', import.meta.url),
+    'utf8'
+  );
+  assert.match(migrationSource, /v_new_arrive := v_inv\.nombre_arrive \+ 1;/);
+  assert.doesNotMatch(migrationSource, /nombre_prevu = /);
 });
 
 test('GuestArrivalPanel se base sur members.length (pas nombre_prevu) pour decider s\'il affiche la liste', () => {

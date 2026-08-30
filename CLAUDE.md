@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.23.0**
+**Version documentaire : 1.24.0**
 **Dernière mise à jour : 2026-08-30**
 
 Avant toute modification, lire dans cet ordre :

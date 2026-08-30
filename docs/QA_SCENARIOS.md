@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.23.0**
+**Version documentaire : 1.24.0**
 **Dernière mise à jour : 2026-08-30**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -141,6 +141,12 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Rôle avec `manageMembers` : taper le nom d'une personne dans « Qui est arrivé ? » fait apparaître les champs prénom/nom en édition ; « Enregistrer » met à jour le nom affiché immédiatement.
 - Rôle avec `manageMembers` : bouton « + » sous la liste → mini-formulaire prénom/nom → « Ajouter » fait apparaître la personne dans la liste avec ses boutons ✓/✕.
 - Rôle sans `manageMembers` (ex. agent scan) : ni le nom ni le bouton « + » ne sont cliquables/visibles pour éditer — la liste reste consultable.
+
+## Invité imprévu nommé — v1.24.0
+
+- Groupe déjà complet (`nombre_arrive = nombre_prevu`) : taper « + Invité supplémentaire (non prévu) », remplir un nom, « Ajouter, déjà arrivé » → la personne apparaît dans « Qui est arrivé ? » (✓ déjà coché), `nombre_prevu` ne bouge pas, et l'écran d'assignation à une table de réserve s'ouvre (comme avant, pour le +1 anonyme).
+- Groupe pas encore complet : même bouton, la personne apparaît dans la liste sans ouvrir l'assignation de table (pas de dépassement).
+- Vérifier `/history` : l'entrée apparaît comme une arrivée normale (delta +1, même format que les autres check-in).
 
 ## Contrôle de version avant merge
 

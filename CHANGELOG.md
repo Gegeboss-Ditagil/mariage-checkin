@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.24.0] — 2026-08-30
+
+Suite de [1.23.0] : Gersom a confirmé vouloir que « + Invité supplémentaire (non prévu) » ajoute une personne **nommée** tout en gardant le déclenchement de l'assignation de table de réserve en cas de dépassement — l'option que j'avais recommandée (par opposition à réutiliser tel quel `add_invitation_member`, qui augmente `nombre_prevu` et n'aurait donc jamais créé de dépassement).
+
+### Ajouté
+- **`supabase/migrations/0030_add_unplanned_arrival.sql`** : nouvelle RPC `add_unplanned_arrival(invitation_id, prenom, nom, agent_id)` — crée la personne directement en `arrival_status = 'arrive'`, incrémente `nombre_arrive` **sans jamais toucher `nombre_prevu`** (à la différence de `add_invitation_member`), recalcule `statut`, journalise dans `checkins` (pour rester cohérent dans `/history`) et `audit_logs` (`unplanned_arrival`). Un groupe déjà complet passe donc naturellement en excédent, exactement comme le faisait l'ancien `record_checkin` anonyme. **Appliquée en production** (migration purement additive, aucune donnée existante modifiée).
+- **`app/api/members/add-unplanned/route.ts`** (nouveau) : capacité `checkin` (pas `manageMembers` — tout agent qui fait l'entrée doit pouvoir logger une arrivée imprévue, cohérent avec `/api/checkin`).
+- `app/checkin/[invitationId]/page.tsx` : le bouton « + Invité supplémentaire (non prévu) » ouvre désormais un mini-formulaire prénom/nom (même style que le panneau « Qui est arrivé ? ») au lieu d'incrémenter directement un total anonyme ; après ajout, même logique qu'avant (vérifie le dépassement, ouvre l'assignation de table de réserve si besoin).
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` : 15 tests (1 nouveau, 1 mis à jour pour retirer l'assertion sur l'ancien `onClick={() => handleAdd(1)}`).
+- `npx tsc --noEmit`, `npm run build`, 12 suites de tests — tous exécutés avec succès.
+
 ## [1.23.0] — 2026-08-30
 
 Gersom, avec deux captures d'écran d'une fiche de groupe (« Famille David Lukau ») : en ouvrant une fiche, deux écrans s'affichaient l'un après l'autre — l'ancien compteur agrégé « Personnes arrivées » d'abord, puis le nouveau panneau par-personne « Qui est arrivé ? ». Il a aussi demandé deux changements d'ergonomie sur ce panneau : taper le nom d'une personne pour le modifier directement (comme le titre de la fiche), et un bouton « + » pour ajouter quelqu'un sans passer par « Gérer les membres du groupe ».
