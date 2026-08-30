@@ -52,6 +52,21 @@ const ITEMS: Record<string, NavItem[]> = {
   ],
 };
 
+// Bouton central surelevé : Scan pour la plupart des roles (leur action la
+// plus frequente), mais Tableau de bord pour le directeur de festin --
+// demande de Gersom le 30/08/2026 pour Remy et Tuzola : leur travail
+// commence par surveiller le remplissage, pas par scanner des QR (ça reste
+// accessible en onglet lateral). Roles absents de cette table gardent Scan
+// par defaut.
+const CENTRAL_HREF: Record<string, string> = {
+  directeur: '/dashboard',
+};
+
+// Ordre canonique pour repartir les onglets restants 2 a gauche/2 a droite
+// autour du bouton central, quel que soit celui qui a ete choisi comme
+// central pour ce role.
+const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/staff'];
+
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
   return (
@@ -72,12 +87,14 @@ export function BottomNav({ role }: { role: Role }) {
   const pathname = usePathname();
   const items = ITEMS[role] ?? ITEMS.agent_checkin;
 
-  const scanItem = items.find((item) => item.href === '/scan');
-  const rest = items.filter((item) => item.href !== '/scan');
+  const centralHref = CENTRAL_HREF[role] ?? '/scan';
+  const centralItem = items.find((item) => item.href === centralHref);
+  const rest = items.filter((item) => item.href !== centralHref);
 
-  // Pas de bouton central quand le role n'a pas Scan (visibilite) : barre
-  // plate a onglets, comme avant.
-  if (!scanItem) {
+  // Pas de bouton central quand le role n'a pas l'onglet vise (visibilite,
+  // qui n'a ni Scan ni Bord en central ici puisqu'il n'a pas Scan du tout) :
+  // barre plate a onglets, comme avant.
+  if (!centralItem) {
     return (
       <nav className="sticky bottom-0 z-10 flex border-t border-hairline bg-glass backdrop-blur safe-bottom">
         {items.map((item) => (
@@ -87,17 +104,18 @@ export function BottomNav({ role }: { role: Role }) {
     );
   }
 
-  // Repartition confirmee par la maquette : Recherche/Plan a gauche,
-  // Bord/Staff a droite du bouton Scan central -- pas un simple decoupage
-  // en deux moities de `rest` (l'ordre metier de STAFF_ITEMS ne colle pas
-  // exactement a l'ordre visuel voulu par la maquette).
-  const order = ['/search', '/plan-table', '/dashboard', '/staff'];
-  const sorted = [...rest].sort((a, b) => order.indexOf(a.href) - order.indexOf(b.href));
+  // Repartition confirmee par la maquette : deux onglets de chaque cote du
+  // bouton central, dans un ordre stable -- pas un simple decoupage en deux
+  // moities de `rest` (l'ordre metier de STAFF_ITEMS ne colle pas exactement
+  // a l'ordre visuel voulu par la maquette). Fonctionne quel que soit
+  // l'onglet choisi comme central pour ce role (Scan pour la plupart des
+  // roles, Tableau de bord pour le directeur de festin -- voir CENTRAL_HREF).
+  const sorted = [...rest].sort((a, b) => SIDE_ORDER.indexOf(a.href) - SIDE_ORDER.indexOf(b.href));
   const mid = Math.ceil(sorted.length / 2);
   const left = sorted.slice(0, mid);
   const right = sorted.slice(mid);
-  const ScanGlyph = scanItem.icon;
-  const scanActive = pathname.startsWith(scanItem.href);
+  const CentralGlyph = centralItem.icon;
+  const centralActive = pathname.startsWith(centralItem.href);
 
   return (
     <nav className="sticky bottom-0 z-10 flex items-end border-t border-hairline bg-glass backdrop-blur safe-bottom">
@@ -107,14 +125,14 @@ export function BottomNav({ role }: { role: Role }) {
 
       <div className="flex flex-1 justify-center">
         <Link
-          href={scanItem.href}
-          aria-label={scanItem.label}
+          href={centralItem.href}
+          aria-label={centralItem.label}
           className={clsx(
             '-mt-6 mb-1.5 flex h-[66px] w-[66px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-elev-2 active:scale-[0.96] transition-transform',
-            scanActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
+            centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
           )}
         >
-          <ScanGlyph className="h-7 w-7" />
+          <CentralGlyph className="h-7 w-7" />
         </Link>
       </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { GuestArrivalStatus, GuestRow, InvitationRow } from '@/lib/types';
 import { useOnline } from '@/hooks/useOnline';
@@ -20,6 +21,7 @@ export function GuestArrivalPanel({
   onInvitationUpdate,
   onVisibilityChange,
   canManage,
+  canMove,
 }: {
   invitation: InvitationRow;
   onInvitationUpdate: (inv: InvitationRow) => void;
@@ -36,7 +38,14 @@ export function GuestArrivalPanel({
   // demande de Gersom le 30/08/2026 : taper un nom modifie directement,
   // plus besoin de passer par "Gerer les membres du groupe" pour renommer.
   canManage?: boolean;
+  // Deplacer UNE personne vers une autre table, separement du reste du
+  // groupe -- meme capacite que le deplacement d'une invitation entiere
+  // (moveGuests). Demande de Gersom le 30/08/2026 : "ça va faciliter le
+  // transfert de personnes d'une table à une autre parce que maintenant on
+  // aura leurs noms".
+  canMove?: boolean;
 }) {
+  const router = useRouter();
   const online = useOnline();
   const [members, setMembers] = useState<GuestRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -292,6 +301,16 @@ export function GuestArrivalPanel({
                 <span className={'min-w-0 flex-1 truncate text-sm ' + (wontCome ? 'line-through' : '')}>
                   {guest.nom_affichage}
                 </span>
+              )}
+              {canMove && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/tables/move-guest/' + guest.id)}
+                  aria-label={'Déplacer ' + guest.nom_affichage + ' vers une autre table'}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-hairline text-sm text-text-faint active:scale-90 transition-transform"
+                >
+                  ⇄
+                </button>
               )}
               <button
                 type="button"

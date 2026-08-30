@@ -3,6 +3,27 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.25.0] — 2026-08-30
+
+Deux demandes de Gersom le 30/08/2026, à la suite du reste de la journée (v1.23.0/v1.24.0).
+
+### Ajouté
+- **Déplacer une personne seule vers une autre table.** Gersom, en observant que le renommage/ajout direct par personne (v1.23.0) donne enfin un nom à chaque membre : « ça va faciliter le transfert de personnes d'une table à une autre parce que maintenant on aura leurs noms » — confirmé vouloir la fonctionnalité complète, pas juste la remarque.
+  - **`supabase/migrations/0031_split_guest_to_new_invitation.sql`** (appliquée en production) : nouvelle RPC `split_guest_to_new_invitation(guest_id, table_id, agent_id)` — détache la personne de son invitation source avec la même comptabilité que `remove_invitation_member` (ne redécompte pas `nombre_prevu` si elle était déjà `ne_viendra_pas`, décrémente `nombre_arrive` si elle était `arrive`), crée une **nouvelle invitation à une seule personne** à la table cible (`nombre_prevu = 1`, copie uniquement `category`/`cote` de la source — pas les tags/téléphone/email/notes, propres au foyer et non à la personne), puis reparente le lien `invitation_guests`. `arrival_status` de la personne n'est jamais modifié, seulement reparenté. Journalise `audit_logs` (`guest_split_move`).
+  - **`app/api/members/move/route.ts`** (nouveau) : capacité `moveGuests` (mêmes rôles que le déplacement d'une invitation entière : admin/directeur/placeur).
+  - **`app/tables/move-guest/[guestId]/page.tsx`** (nouveau) : reprend la structure de `/tables/move/[invitationId]` (sélection de table via `TablePicker`, capacités en direct) pour une personne au lieu d'un groupe entier ; renvoie vers la nouvelle fiche après déplacement. Pour regrouper la personne avec une invitation déjà présente à la table cible, utiliser ensuite « Fusionner avec un autre groupe » (fonctionnalité existante, pas dupliquée).
+  - `components/GuestArrivalPanel.tsx` : bouton ⇄ par personne dans « Qui est arrivé ? », visible uniquement avec la capacité `moveGuests` (nouvelle prop `canMove`), à côté du bouton ✓.
+  - `app/checkin/[invitationId]/page.tsx` : calcule `canMoveGuest = hasCapability(role, 'moveGuests')` et le transmet au panneau.
+- **Bouton central de la barre de navigation adapté au rôle.** Gersom : « Pour le directeur des festins, Remy et Tuzola, s'assurer que… le bouton doré qui au milieu pourrait s'assurer le tableau de bord et non le scan » — leur travail commence par surveiller le remplissage des tables, pas par scanner des QR (le scan reste disponible en onglet latéral).
+  - `components/BottomNav.tsx` : nouvelle table `CENTRAL_HREF` (par rôle) — `directeur` pointe vers `/dashboard`, tous les autres rôles gardent `/scan` par défaut. La répartition des 4 onglets restants (2 à gauche/2 à droite du bouton central) suit désormais un ordre canonique (`SIDE_ORDER`) au lieu d'être câblée uniquement autour de Scan, pour fonctionner quel que soit l'onglet choisi comme central.
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` : 18 tests (3 nouveaux pour le déplacement par personne).
+- `npx tsc --noEmit`, `npm run build`, 12 suites de tests (`node --test`) — tous exécutés avec succès.
+
+### Migrations
+- `0031_split_guest_to_new_invitation.sql` — appliquée en production (purement additive : nouvelle RPC, aucune donnée existante modifiée).
+
 ## [1.24.0] — 2026-08-30
 
 Suite de [1.23.0] : Gersom a confirmé vouloir que « + Invité supplémentaire (non prévu) » ajoute une personne **nommée** tout en gardant le déclenchement de l'assignation de table de réserve en cas de dépassement — l'option que j'avais recommandée (par opposition à réutiliser tel quel `add_invitation_member`, qui augmente `nombre_prevu` et n'aurait donc jamais créé de dépassement).

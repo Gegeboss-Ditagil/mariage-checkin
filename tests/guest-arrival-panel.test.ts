@@ -135,3 +135,34 @@ test('bouton "+" pour ajouter une personne au groupe, reserve a manageMembers, m
   assert.match(panelSource, /members\/add/);
   assert.doesNotMatch(panelSource, /hasCapability/); // capacite fournie par le parent (prop canManage), pas re-decidee ici
 });
+
+test('bouton "deplacer" par personne, reserve a moveGuests (meme capacite que le deplacement d\'une invitation entiere)', () => {
+  // Demande de Gersom le 30/08/2026 : "ça va faciliter le transfert de
+  // personnes d'une table à une autre parce que maintenant on aura leurs
+  // noms" -- confirme vouloir la fonctionnalite complete (pas juste la
+  // remarque).
+  assert.match(panelSource, /canMove &&/);
+  assert.match(panelSource, /router\.push\('\/tables\/move-guest\/' \+ guest\.id\)/);
+  assert.match(checkinSource, /canMoveGuest = hasCapability\(role, 'moveGuests'\)/);
+  assert.match(checkinSource, /canMove=\{canMoveGuest\}/);
+});
+
+test("split_guest_to_new_invitation ne redecompte pas nombre_prevu sur la source pour 'ne_viendra_pas', sort nombre_arrive pour 'arrive', et NE TOUCHE JAMAIS nombre_prevu de la nouvelle invitation", () => {
+  const splitMigrationSource = readFileSync(
+    new URL('../supabase/migrations/0031_split_guest_to_new_invitation.sql', import.meta.url),
+    'utf8'
+  );
+  assert.match(splitMigrationSource, /when v_guest_status = 'ne_viendra_pas' then v_source\.nombre_prevu/);
+  assert.match(splitMigrationSource, /when v_guest_status = 'arrive' then greatest\(v_source\.nombre_arrive - 1, 0\)/);
+  // arrival_status du guest reste inchange -- on reparente, on ne rebascule pas l'etat.
+  assert.doesNotMatch(splitMigrationSource, /update guests set arrival_status/);
+});
+
+test('la route de deplacement de personne utilise la capacite moveGuests centralisee', () => {
+  const moveRouteSource = readFileSync(
+    new URL('../app/api/members/move/route.ts', import.meta.url),
+    'utf8'
+  );
+  assert.match(moveRouteSource, /hasCapability\(user\.role, 'moveGuests'\)/);
+  assert.match(moveRouteSource, /split_guest_to_new_invitation/);
+});

@@ -40,6 +40,7 @@ export default function CheckinPage() {
   const role = useSessionRole();
   const canReorganizeExcedent = hasCapability(role, 'manageOverflow');
   const canRename = hasCapability(role, 'manageMembers');
+  const canMoveGuest = hasCapability(role, 'moveGuests');
   const canManageTags = hasCapability(role, 'manageTags');
   const canMerge = hasCapability(role, 'mergeInvitations');
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
@@ -912,6 +913,7 @@ export default function CheckinPage() {
           onInvitationUpdate={setInvitation}
           onVisibilityChange={setHasMemberList}
           canManage={canRename}
+          canMove={canMoveGuest}
         />
 
         <button
