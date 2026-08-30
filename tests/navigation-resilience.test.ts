@@ -12,7 +12,11 @@ const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 
 test('la navigation principale ouvre directement le plan de table', () => {
   assert.doesNotMatch(bottomNav, /href: ['"]\/tables['"]/);
   assert.match(bottomNav, /href: ['"]\/plan-table['"], label: ['"]Plan['"]/);
-  assert.match(scanPage, /href="\/plan-table"/);
+  // /scan n'a plus ses propres boutons de navigation dupliques (retour
+  // arriere du 30/08/2026, maquette Atrium/Maison : barre du bas partagee
+  // avec Recherche/Plan/Bord/Staff, comme les autres ecrans) -- verifie
+  // qu'il utilise bien le composant partage plutot que des liens en dur.
+  assert.match(scanPage, /<BottomNav role={role} \/>/);
   assert.match(tablesPage, /redirect\(['"]\/plan-table['"]\)/);
 });
 

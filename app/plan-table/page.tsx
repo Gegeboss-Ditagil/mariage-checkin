@@ -351,7 +351,7 @@ export default function PlanTablePage() {
   const canMessage = hasCapability(role, 'messageContacts');
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Plan de table"
         backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}

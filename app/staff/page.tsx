@@ -101,7 +101,7 @@ export default function StaffPage() {
   const arrive = activeStaff.reduce((s, i) => s + i.nombre_arrive, 0);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Staff"
         backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
@@ -163,6 +163,7 @@ export default function StaffPage() {
         </div>
       )}
 
+      <div className="flex-1 overflow-y-auto">
       {!loading && filtered.length === 0 && (
         <p className="p-6 text-center text-text-faint">
           {activeStaff.length === 0
@@ -173,7 +174,7 @@ export default function StaffPage() {
         </p>
       )}
 
-      <ul className="flex-1 divide-y divide-hairline px-4">
+      <ul className="divide-y divide-hairline px-4">
         {filtered.map((inv) => {
           const prenoms = extractPrenoms(inv.notes);
           const sansTable = isStaffWithoutTable(inv);
@@ -225,6 +226,7 @@ export default function StaffPage() {
           );
         })}
       </ul>
+      </div>
 
       {role && <BottomNav role={role} />}
     </div>

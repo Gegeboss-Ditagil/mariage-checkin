@@ -103,7 +103,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Tableau de bord"
         backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
@@ -116,7 +116,7 @@ export default function DashboardPage() {
         pullThreshold={pullThreshold}
       />
 
-      <div className="flex-1 space-y-6 px-4 py-4">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold">Remplissage de la salle</p>
@@ -156,24 +156,28 @@ export default function DashboardPage() {
           />
         </div>
 
-        {canSeeStaffSection && (
-          <div>
-            <p className="mb-2 font-semibold">Staff</p>
+        <div>
+          {/* En-tete combine (maquette Atrium/Maison) : Staff et Tables de
+              reserve vivaient dans deux blocs separes avec un titre normal
+              -- regroupes sous un seul intitule uppercase, comme les autres
+              en-tetes de section de la maquette (ex: "Placement & presence"
+              sur /plan-table), accent en Maison. Le libelle s'adapte si
+              Staff n'est pas visible pour ce role (canSeeStaffSection). */}
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint dark:text-accent">
+            {canSeeStaffSection ? 'Staff & réserve' : 'Tables de réserve'}
+          </p>
+          {canSeeStaffSection && (
             <button
               type="button"
               onClick={() => router.push('/staff')}
-              className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+              className="card mb-2 flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
             >
               <span className="font-semibold">Staff</span>
               <span className="text-text-muted">
                 {staffArrive} / {staffPrevu} arrivés
               </span>
             </button>
-          </div>
-        )}
-
-        <div>
-          <p className="mb-2 font-semibold">Tables de réserve</p>
+          )}
           <div className="space-y-2">
             {reserveTables.map((t) => {
               const used = usageByTable.get(t.id) || 0;

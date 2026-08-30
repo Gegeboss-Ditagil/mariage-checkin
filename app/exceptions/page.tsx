@@ -74,7 +74,7 @@ export default function ExceptionsPage() {
   const resolved = exceptions.filter((e) => e.resolved);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Exceptions"
         right={
@@ -109,7 +109,7 @@ export default function ExceptionsPage() {
         </form>
       )}
 
-      <div className="flex-1 px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         <p className="mb-2 text-sm font-semibold text-text-faint">En attente ({open.length})</p>
         <ul className="mb-6 space-y-2">
           {open.map((e) => (

@@ -49,10 +49,10 @@ export default function AdminHome() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar title="Administration" />
 
-      <div className="flex-1 space-y-6 px-4 py-4">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         <div className="card">
           <p className="text-sm font-semibold text-text-faint">Statut de l'événement</p>
           <p className="mt-1 text-2xl font-bold">{event ? STATUS_LABELS[event.status] : '…'}</p>

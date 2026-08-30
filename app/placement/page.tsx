@@ -106,9 +106,9 @@ export default function PlacementPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <UserMenu />
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <div className="px-4 pt-4">
           <h1 className="font-display text-2xl ">Placement</h1>
         </div>

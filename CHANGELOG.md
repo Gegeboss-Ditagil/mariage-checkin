@@ -40,6 +40,18 @@ Première passe faite sans accès à la maquette (`Propositions.dc.html`, `Ecran
 - `app/plan-table/page.tsx` : le libellé « Placement & présence » passe en accent en Maison (`dark:text-accent`), confirmé sur deux captures distinctes de la même maquette (export `.dc.html` puis captures de l'app Claude Design elle-même sur iPhone).
 - `app/history/page.tsx` : ligne réorganisée en deux colonnes (nom + table à gauche, montant coloré à droite) avec une pastille de couleur devant le nom — réutilise les couleurs déjà correctes par type d'action (vert = arrivée, rouge = excédent), pas de nouvelle logique. Au passage : la correction utilisait `status-partial` (ambre, une couleur d'avertissement) alors que la maquette la montre en gris neutre — une correction n'est pas une alerte opérationnelle, changé en conséquence.
 
+### Corrigé — mise en page plein écran (web large / paysage)
+Gersom a signalé (capture d'écran à l'appui, `/scan` sur iPad en paysage) que le bouton « Staff » passait sous la ligne de flottaison sans pouvoir défiler jusqu'à lui, et a demandé que toutes les pages tiennent sur un seul écran sans défilement pour atteindre les boutons du bas, y compris après rotation de l'appareil. C'est la tâche « orientation/paysage » explicitement mise de côté le 29/08/2026 — remise sur la table pour les écrans à barre de navigation basse.
+
+- **Nouveau patron** appliqué à `/dashboard`, `/staff`, `/plan-table` (déjà conforme), `/search`, `/scan`, `/history`, `/exceptions`, `/placement`, `/admin` : conteneur racine `h-dvh overflow-hidden` (hauteur exacte de la fenêtre, plus `min-h-dvh` qui grandissait avec le contenu) au lieu de `min-h-dvh` ; la zone de contenu entre l'en-tête et la barre du bas passe en `flex-1 overflow-y-auto` (défile seule). En-tête et barre du bas restent toujours visibles, sur toute taille/orientation d'écran — pas de nouveau composant partagé, patron répété à l'identique sur chaque page pour rester cohérent avec le reste du code.
+- `app/scan/page.tsx` : les 4 boutons dupliqués (Rechercher/Plan/Tableau de bord/Staff) sont retirés au profit de la barre du bas partagée (`BottomNav`, déjà sur les autres écrans) — en plus de régler le problème signalé, ça rend `/scan` cohérent avec le reste de l'appli (bouton Scan central déjà utilisé pour y revenir depuis les autres pages).
+- `app/search/page.tsx` : n'avait jamais eu `BottomNav` alors que la maquette Atrium/Maison le montre sur cet écran (confirmé sur les deux exports) — ajouté.
+- `tests/navigation-resilience.test.ts` : assertion mise à jour (`/scan` utilise désormais `<BottomNav>` au lieu d'un lien direct vers `/plan-table`).
+
+### Corrigé — structure de contenu (pas seulement les couleurs)
+- `app/dashboard/page.tsx` : les blocs « Staff » et « Tables de réserve » (deux titres séparés) fusionnent sous un seul en-tête uppercase « Staff & réserve » (« Tables de réserve » seul si le rôle ne voit pas Staff), accent en Maison — comme les autres en-têtes de section de la maquette.
+- `app/history/page.tsx` : les entrées sont désormais regroupées par jour calendaire (« Ce soir », « Hier », ou la date) avec un compte d'actions en en-tête de groupe — au lieu d'une liste plate, comme le montre la maquette (« CE SOIR · 96 ACTIONS »).
+
 ### Contraintes respectées
 - Aucune modification de `lib/permissions.ts`, des routes `app/api/**`, des migrations SQL, ni de la logique temps réel (debounce, refetch au focus, pull-to-refresh).
 - Statuts opérationnels (`status-none/partial/complete/over`, couleurs Nelly/Gégé) inchangés dans les deux modes, comme demandé — la seule exception est la jauge de remplissage de salle elle-même (voir ci-dessus), qui n'est pas un badge de statut mais un élément décoratif de marque.

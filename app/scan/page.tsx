@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { QrScanner } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';
+import { BottomNav } from '@/components/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
@@ -104,63 +104,47 @@ export default function ScanPage() {
   );
 
   if (role === 'visibilite') {
-    return <div className="flex min-h-dvh flex-col" />;
+    return <div className="flex h-dvh flex-col" />;
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <UserMenu />
       {/* Bloc compacte (moins de marge, camera moins haute) pour que tout
           tienne sur un seul ecran sans defiler, y compris sur un iPhone SE
-          -- demande explicite de Gersom le 23/08/2026. */}
-      <div className="px-4 pt-2">
+          -- demande explicite de Gersom le 23/08/2026. Boutons de
+          navigation dupliques (Rechercher/Plan/Bord/Staff) retires le
+          30/08/2026 au profit de la barre du bas partagee (BottomNav,
+          maquette Atrium/Maison) : en plus d'etre coherent avec le reste de
+          l'appli, ca libere la hauteur qui manquait en mode paysage/web
+          large (le bouton Staff passait sous la ligne de flottaison sans
+          pouvoir defiler jusqu'a lui). */}
+      <div className="flex-1 overflow-y-auto px-4 pt-2">
         <p className="eyebrow">Staff</p>
         <h1 className="font-display text-xl">Scanner un QR code</h1>
         <p className="text-xs text-text-faint">Présentez le QR de l'invité devant la caméra</p>
-      </div>
 
-      <div className="px-4 py-2">
-        {roleReady ? (
-          <QrScanner onScan={handleScan} />
-        ) : (
-          <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
-            Chargement…
-          </div>
-        )}
-      </div>
-
-      {status === 'looking' && (
-        <p className="px-4 text-center text-sm text-text-muted">Recherche de la table…</p>
-      )}
-      {status === 'error' && message && (
-        <p className="mx-4 rounded-xl2 bg-status-over/10 p-2.5 text-center text-sm font-medium text-status-over">
-          {message}
-        </p>
-      )}
-
-      <div className="mt-auto space-y-2 px-4 pb-4">
-        {/* Les deux boutons "Rechercher un invite" et "Invite sans Code QR"
-            menaient tous les deux a /search (juste un mode de depart
-            different) : fusionnes en un seul bouton le 19/08/2026 a la
-            demande de Gersom. Le mode telephone reste choisissable depuis
-            la page de recherche elle-meme si besoin. */}
-        <Link href="/search" className="btn-secondary w-full">
-          Rechercher un invité
-        </Link>
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/plan-table" className="btn-secondary">
-            Plan de table
-          </Link>
-          <Link href="/dashboard" className="btn-secondary text-center">
-            Tableau de bord
-          </Link>
+        <div className="py-2">
+          {roleReady ? (
+            <QrScanner onScan={handleScan} />
+          ) : (
+            <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
+              Chargement…
+            </div>
+          )}
         </div>
-        {hasCapability(role, 'viewStaff') && (
-          <Link href="/staff" className="btn-secondary w-full text-center">
-            Staff
-          </Link>
+
+        {status === 'looking' && (
+          <p className="text-center text-sm text-text-muted">Recherche de la table…</p>
+        )}
+        {status === 'error' && message && (
+          <p className="rounded-xl2 bg-status-over/10 p-2.5 text-center text-sm font-medium text-status-over">
+            {message}
+          </p>
         )}
       </div>
+
+      {role && <BottomNav role={role} />}
     </div>
   );
 }

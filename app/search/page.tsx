@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { COTE_DOT_COLORS, COTE_LABELS, InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';
+import { BottomNav } from '@/components/BottomNav';
 import { PHONE_COUNTRIES } from '@/lib/countries';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
@@ -247,7 +248,7 @@ function SearchInner() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar title="Rechercher un invité" backHref={readOnly ? '/dashboard' : '/scan'} />
 
       <div className="px-4 pt-3">
@@ -342,6 +343,7 @@ function SearchInner() {
         )}
       </div>
 
+      <div className="flex-1 overflow-y-auto">
       {loading && <p className="p-4 text-center text-text-faint">Recherche…</p>}
       {browsing && loadingAll && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
@@ -386,11 +388,14 @@ function SearchInner() {
               Toutes les invitations ({listeAffichee.length}) — appuyez pour voir qui est dedans et ses tags
             </p>
           )}
-          <ul className="flex-1 divide-y divide-hairline pb-6">
+          <ul className="divide-y divide-hairline pb-6">
             {listeAffichee.map((r) => <InvitationItem key={r.id} r={r} />)}
           </ul>
         </div>
       )}
+      </div>
+
+      {role && <BottomNav role={role} />}
     </div>
   );
 }
