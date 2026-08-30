@@ -3,6 +3,55 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.27.0] — 2026-08-30
+
+Prompt de handoff complet de Gersom : invité surprise avec approbation par SMS à distance (Twilio), plus un complément vocal (décompte de places dans le SMS de confirmation, rapport au directeur de festin, confirmation que seuls admin/directeur/placeur y ont accès).
+
+### Ajouté
+- **Invité surprise depuis `/scan`** : bouton « 📷 Invité surprise (non prévu) », réservé à la nouvelle capacité `guestApproval` (admin/directeur/placeur — **jamais** agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement »). Parcours en 3 écrans : photo (`<input type="file" capture="environment">`, une seule prise) → côté (Nelly/Gégé) → nom + nombre d'invités → envoi.
+- **`supabase/migrations/0032_guest_approvals.sql`** (appliquée en production) :
+  - `guest_approvers` (cote → nom/téléphone de l'approbateur, config plutôt que variable d'environnement) — pré-rempli avec les deux numéros donnés par Gersom : **« Mon Papa » (Canada, +1 514 815 1586) = Côté Gégé**, **« Papa David » (France, +33 6 43 34 85 60) = Côté Nelly** (confirmé explicitement).
+  - `festin_directors` (nom/téléphone des destinataires du SMS de rapport) — pré-remplie via **`0033_festin_directors_contacts.sql`** (appliquée en production) dès que Gersom a confirmé les numéros : **Rémy Landu (+33 6 51 87 47 79)** et **Tuzola (+33 6 69 01 68 03)**.
+  - `guest_approval_requests` (photo, côté, nom, nombre, statut, décision, table assignée…), RLS activée mais **sans aucune policy anon** — contrairement aux tables opérationnelles historiques (0003_rls.sql) : le `token` doit rester confidentiel, une lecture anon même « pour le temps réel » l'exposerait à quiconque possède la clé anon.
+  - Bucket Storage privé `guest-approval-photos` (jamais public — toujours résolu en URL signée côté serveur, 1h de validité, `lib/guestApprovalPhotos.ts`).
+  - RPC `assign_table_to_guest_approval` : crée l'invitation à la table choisie pour une demande **déjà approuvée**, refuse sinon (409) ; jamais utilisée avant approbation.
+- **`lib/twilio.ts`** : envoi de SMS via l'API REST Twilio directement en `fetch()` (pas de SDK ajouté en dépendance). **Jamais de MMS** — un numéro Twilio français ne le supporte pas ; seuls les numéros US/Canada le permettraient. Le SMS contient toujours un lien vers `/approve/[token]`, jamais la photo elle-même.
+- **`lib/guestApprovalNotify.ts`** : trois SMS distincts, tous texte seul —
+  1. à l'approbateur, à la création de la demande (lien `/approve/[token]`) ;
+  2. à l'approbateur, après sa décision — « il vous reste maintenant N places » en réserve si approuvé (demande de Gersom), simple accusé de réception si refusé ;
+  3. au directeur de festin (`festin_directors`), après assignation de table — qui a approuvé, combien de places, quelle table, combien de places de réserve restent. Le calcul des places de réserve réutilise `computeTableCapacities` (`lib/capacity.ts`), même logique que `/dashboard`/`/plan-table`.
+- **`app/api/guest-approvals/route.ts`** (POST création + upload + SMS, GET liste pour `/approbations`) et **`app/api/guest-approvals/[id]/assign-table/route.ts`** (POST, finalise une demande approuvée) — capacité `guestApproval`, **volontairement pas** la capacité `addInvitation` (réservée à l'admin, voir `/api/invitations/add`) : action étroite qui ne peut agir que sur une demande déjà approuvée par SMS, jamais un droit général d'ajout d'invitation.
+- **`app/api/public/guest-approvals/[token]/route.ts`** et **`.../decide/route.ts`** — routes **publiques** (préfixe `/api/public`, ajouté à `middleware.ts`), sans session : la connaissance du token est l'autorisation. La décision (`POST .../decide`) est atomique (`UPDATE ... WHERE statut = 'en_attente'`) : un deuxième clic sur un lien déjà tranché reçoit `409` avec le statut réel, jamais une double décision silencieuse ni une erreur brute.
+- **`app/approve/[token]/page.tsx`** — page publique (ajoutée à `middleware.ts`), sans connexion, sans navigation : photo, nom, nombre, côté, boutons Approuver/Refuser.
+- **`app/approbations/page.tsx`** (liste des demandes, sondage 5s — pas de websocket temps réel : `guest_approval_requests` n'a pas de policy anon, voir plus haut) et **`app/approbations/[id]/assign/page.tsx`** (assignation de table via `TablePicker`, même sélecteur que `/tables/move/[invitationId]`) — nouveau raccourci « 📷 Approbations » dans le menu du compte (`AccountMenu.tsx`), capacité `guestApproval`.
+- **Canal WhatsApp en plus du SMS**, demande de Gersom : « donne l'option par WhatsApp ou message... au cas où il n'a pas de réseau [cellulaire] et est connecté au wifi » (WhatsApp passe par data/wifi, contrairement au SMS qui a besoin du réseau cellulaire).
+  - **`supabase/migrations/0034_guest_approval_whatsapp.sql`** : colonne `decided_via` (`'web'` ou `'whatsapp'`) sur `guest_approval_requests` — traçabilité du canal utilisé pour décider.
+  - `lib/twilio.ts` : `sendWhatsApp()` (Content Template Twilio + `ContentVariables`, jamais de texte libre pour un message initié par l'app — Meta l'exige hors fenêtre de session de 24h) et `validateTwilioSignature()` (HMAC-SHA1 officiel, *fail closed* sans `TWILIO_AUTH_TOKEN`/en-tête).
+  - `lib/guestApprovalNotify.ts` : le SMS et le WhatsApp initiaux partent en parallèle (`Promise.allSettled`), chacun best-effort — l'échec de l'un (WhatsApp, tant que son Content Template n'est pas encore approuvé par Meta) ne bloque jamais l'autre (SMS, canal de référence).
+  - **`app/api/public/twilio/whatsapp-inbound/route.ts`** (nouveau, public) : webhook Twilio ("A message comes in" sur le numéro WhatsApp) — l'approbateur répond directement **« Oui »/« O »/« Y »** ou **« Non »/« N »** au message WhatsApp, sans avoir besoin de cliquer le lien (celui-ci reste utile pour voir la photo). Authentifié par la signature Twilio, pas par session ni token dans l'URL (une réponse texte libre n'en porte pas) ; la demande concernée est retrouvée par numéro de téléphone (la plus récente encore `en_attente` pour ce numéro). Répond en TwiML pour confirmer la décision directement dans la conversation WhatsApp.
+  - **`lib/guestApprovalDecide.ts`** (nouveau) : logique de décision atomique **partagée** entre `/approve/[token]` (lookup par token) et le webhook WhatsApp (lookup par téléphone) — `app/api/public/guest-approvals/[token]/decide/route.ts` a été refactorisé pour l'utiliser, plus de duplication.
+  - Template WhatsApp proposé (Content Template Twilio, 4 variables — **pas encore créé/approuvé côté Twilio**, `TWILIO_WHATSAPP_CONTENT_SID_REQUEST` reste vide en attendant) :
+    ```
+    Mariage Nelly & Gersom
+    {{1}} souhaite venir avec {{2}} invité(s) (côté {{3}}).
+    Répondez OUI ou NON à ce message, ou voir la photo : {{4}}
+    ```
+    (1=nom_invite, 2=nombre_invites, 3=côté, 4=lien `/approve/[token]`)
+
+### Tests
+- `tests/guest-approvals.test.ts` (22 tests, +8) : capacité `guestApproval` correctement bornée, routes publiques sans session, clé de service jamais exposée côté client, décision atomique et partagée entre les deux canaux, aucun MMS tenté (SMS et WhatsApp), bucket privé, RLS sans policy anon, `assign_table_to_guest_approval` n'utilise pas `addInvitation`, mapping téléphone/côté des deux approbateurs et des deux destinataires du rapport, `validateTwilioSignature` fail-closed (signature valide vérifiée avec le même algorithme que Twilio), parsing Oui/Non insensible à la casse/aux accents.
+- `tests/navigation-resilience.test.ts` : `/approbations` ajouté à la liste des écrans utilisant le patron responsive paysage (10e écran).
+- `npx tsc --noEmit`, `npm run build`, 14 suites de tests (`node --test`, 125 tests) — tous exécutés avec succès.
+
+### Migrations
+- `0032_guest_approvals.sql` — appliquée en production (additive : nouvelles tables/bucket/RPC uniquement, aucune donnée existante modifiée). Les deux numéros de `guest_approvers` ont été fournis explicitement par Gersom pour cet usage précis.
+- `0033_festin_directors_contacts.sql` — écrite et testée (additive : deux lignes de configuration, numéros de Rémy Landu et Tuzola fournis explicitement par Gersom pour cet usage précis) ; application en production en attente (blocage d'approbation d'outil côté session, à relancer).
+- `0034_guest_approval_whatsapp.sql` — écrite et testée (additive : colonne `decided_via` sur `guest_approval_requests`) ; application en production également en attente, même blocage.
+
+### ⚠️ Actions manuelles requises (Vercel + Twilio)
+- **SMS** (obligatoire) : `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` dans Vercel → Settings → Environment Variables. Sans elles, une demande d'invité surprise reste créée normalement (photo + infos conservées), mais l'agent est averti explicitement que le SMS n'est pas parti.
+- **WhatsApp** (optionnel, complément au SMS) : `TWILIO_WHATSAPP_NUMBER` (numéro expéditeur WhatsApp) et `TWILIO_WHATSAPP_CONTENT_SID_REQUEST` (le Content Template ci-dessus, une fois créé et approuvé côté console Twilio/Meta) ; configurer aussi le webhook entrant du numéro WhatsApp ("A message comes in") vers `https://mariage-checkin.vercel.app/api/public/twilio/whatsapp-inbound`. Sans ces variables, `sendWhatsApp()` ne fait rien silencieusement — le SMS continue de fonctionner seul.
+
 ## [1.26.0] — 2026-08-30
 
 Retour vocal de Gersom sur l'usage réel de la barre de navigation, plus deux demandes ponctuelles.

@@ -10,9 +10,10 @@ const scanStatsStrip = readFileSync(new URL('../components/ScanStatsStrip.tsx', 
 const scanner = readFileSync(new URL('../components/QrScanner.tsx', import.meta.url), 'utf8');
 const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
 
-// Les 9 ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
+// Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
-// meme patron plutot que de le dupliquer/oublier sur l'un d'eux.
+// meme patron plutot que de le dupliquer/oublier sur l'un d'eux. 10e ecran
+// (/approbations) ajoute le 30/08/2026 avec l'invite surprise (v1.27.0).
 const LANDSCAPE_SHELL_PAGES = [
   '../app/dashboard/page.tsx',
   '../app/staff/page.tsx',
@@ -23,6 +24,7 @@ const LANDSCAPE_SHELL_PAGES = [
   '../app/placement/page.tsx',
   '../app/history/page.tsx',
   '../app/admin/page.tsx',
+  '../app/approbations/page.tsx',
 ];
 
 test('la navigation principale ouvre directement le plan de table', () => {

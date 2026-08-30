@@ -6,6 +6,7 @@ import { QrScanner } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';
 import { BottomNav } from '@/components/BottomNav';
 import { ScanStatsStrip } from '@/components/ScanStatsStrip';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
@@ -143,6 +144,16 @@ export default function ScanPage() {
             <p className="rounded-xl2 bg-status-over/10 p-2.5 text-center text-sm font-medium text-status-over">
               {message}
             </p>
+          )}
+
+          {/* Invité surprise avec approbation SMS a distance (v1.27.0) --
+              reserve a la capacite guestApproval (admin/directeur/placeur),
+              JAMAIS agent scan : "si le scanner voit des personnes en plus,
+              il ne fait rien, il va voir le placeur directement". */}
+          {role && hasCapability(role, 'guestApproval') && (
+            <Link href="/scan/guest-approval" className="action-row mt-3">
+              📷 Invité surprise (non prévu)
+            </Link>
           )}
         </div>
 

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME, verifySessionTokenEdge } from '@/lib/session-edge';
 import { canAccessPath, landingPathForRole } from '@/lib/permissions';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js'];
+// '/approve' (page publique d'approbation SMS) et '/api/public' (ses routes
+// API) n'exigent jamais de session -- la connaissance du token (lien SMS)
+// EST l'autorisation, voir supabase/migrations/0032_guest_approvals.sql.
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js', '/approve', '/api/public'];
 
 function isPublic(pathname: string) {
   return (

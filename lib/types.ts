@@ -159,6 +159,48 @@ export interface SessionUser {
   event_id: string;
 }
 
+export type GuestApprovalStatut = 'en_attente' | 'approuve' | 'refuse';
+
+// Invité surprise avec approbation SMS à distance (v1.27.0) -- voir
+// supabase/migrations/0032_guest_approvals.sql. `photo_url` est un CHEMIN
+// dans le bucket privé 'guest-approval-photos', jamais une URL publique --
+// toujours résolu en URL signée côté serveur avant d'être renvoyé à un
+// client (lib/guestApprovalPhotos.ts).
+export interface GuestApprovalRequestRow {
+  id: string;
+  event_id: string;
+  token: string;
+  requested_by: string | null;
+  cote: Exclude<Cote, 'Neutre'>;
+  nom_invite: string;
+  nombre_invites: number;
+  photo_url: string;
+  approver_phone: string;
+  statut: GuestApprovalStatut;
+  decided_at: string | null;
+  // Canal utilise pour la decision : lien web (/approve/[token]) ou reponse
+  // texte WhatsApp ("Oui"/"Non") -- migration 0034. NULL tant que en_attente.
+  decided_via: 'web' | 'whatsapp' | null;
+  table_id: string | null;
+  assigned_by: string | null;
+  assigned_at: string | null;
+  created_at: string;
+}
+
+export interface GuestApproverRow {
+  cote: Exclude<Cote, 'Neutre'>;
+  nom: string;
+  telephone: string;
+  updated_at: string;
+}
+
+export interface FestinDirectorRow {
+  id: string;
+  nom: string;
+  telephone: string;
+  created_at: string;
+}
+
 export const STATUS_LABELS: Record<InvitationStatut, string> = {
   non_arrive: 'Non arrivé',
   partiel: 'Partiellement arrivé',
