@@ -488,7 +488,7 @@ export default function PlanTablePage() {
                 = present. Rouge des que le present depasse le prevu. */}
             <div className="mb-4 card py-3">
               <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <p className="text-xs font-semibold uppercase text-text-faint">Placement &amp; présence</p>
+                <p className="text-xs font-semibold uppercase text-text-faint dark:text-accent">Placement &amp; présence</p>
                 <p className={clsx('text-sm font-bold', stats.totalArrivees > stats.officielles ? 'text-status-over' : 'text-text')}>
                   {stats.totalArrivees} arrivé{stats.totalArrivees > 1 ? 's' : ''} · {stats.officielles}/{CAPACITE_OFFICIELLE} prévu
                 </p>

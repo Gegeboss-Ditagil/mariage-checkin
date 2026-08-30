@@ -39,30 +39,48 @@ export default function HistoryPage() {
       {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
       <ul className="flex-1 divide-y divide-hairline px-4">
-        {entries.map((e) => (
-          <li key={e.id} className="py-3">
-            <div className="flex items-center justify-between text-sm text-text-faint">
-              <span>{format(new Date(e.created_at), 'HH:mm:ss', { locale: fr })}</span>
-              <span>{e.agent_name || '—'}</span>
-            </div>
-            <p className="font-medium">
-              {e.details?.nom_affichage || '—'}{' '}
-              {e.action === 'checkin' && (
-                <span className="text-status-complete">
-                  {(e.nouveau_total ?? 0) - (e.ancien_total ?? 0) >= 0 ? '+' : ''}
-                  {(e.nouveau_total ?? 0) - (e.ancien_total ?? 0)} personnes
-                </span>
-              )}
-              {e.action === 'correction' && <span className="text-status-partial">correction → {e.nouveau_total}</span>}
-              {e.action === 'overflow_assign' && (
-                <span className="text-status-over">
-                  +{e.nombre_personnes} → Table {e.reserve_table_number}
-                </span>
-              )}
-            </p>
-            {e.table_number && <p className="text-xs text-text-faint">Table {e.table_number}</p>}
-          </li>
-        ))}
+        {entries.map((e) => {
+          // Meme code couleur que le detail de l'action ci-dessous (pastille
+          // + montant), plutot que d'inventer une 4e couleur : arrivee =
+          // vert, exces place en reserve = rouge, correction = neutre (pas
+          // status-partial/ambre -- une correction n'est pas un avertissement
+          // operationnel comme une table partiellement remplie).
+          const dotClass =
+            e.action === 'checkin'
+              ? 'bg-status-complete'
+              : e.action === 'overflow_assign'
+                ? 'bg-status-over'
+                : 'bg-status-none';
+          return (
+            <li key={e.id} className="py-3">
+              <div className="flex items-center justify-between text-sm text-text-faint">
+                <span>{format(new Date(e.created_at), 'HH:mm:ss', { locale: fr })}</span>
+                <span>{e.agent_name || '—'}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-medium">
+                  <span aria-hidden className={'mr-1.5 inline-block h-2 w-2 rounded-full align-middle ' + dotClass} />
+                  {e.details?.nom_affichage || '—'}
+                  {e.table_number && <span className="block text-xs font-normal text-text-faint">Table {e.table_number}</span>}
+                </p>
+                <p className="shrink-0 text-right text-sm font-semibold">
+                  {e.action === 'checkin' && (
+                    <span className="text-status-complete">
+                      {(e.nouveau_total ?? 0) - (e.ancien_total ?? 0) >= 0 ? '+' : ''}
+                      {(e.nouveau_total ?? 0) - (e.ancien_total ?? 0)} personnes
+                    </span>
+                  )}
+                  {e.action === 'correction' && <span className="text-text-faint">correction → {e.nouveau_total}</span>}
+                  {e.action === 'overflow_assign' && (
+                    <span className="text-status-over">
+                      +{e.nombre_personnes} → Table {e.reserve_table_number}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {role && <BottomNav role={role} />}
