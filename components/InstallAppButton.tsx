@@ -67,7 +67,7 @@ export function InstallAppButton() {
       <button
         type="button"
         onClick={handleClick}
-        className="fixed bottom-5 right-5 z-20 flex items-center gap-2 rounded-full border border-gold-400/40 bg-night-800/95 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gold-200 shadow-gold backdrop-blur active:scale-[0.97] transition-transform"
+        className="fixed bottom-5 right-5 z-20 flex items-center gap-2 rounded-full border border-hairline bg-glass px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-accent shadow-elev-2 backdrop-blur active:scale-[0.97] transition-transform"
       >
         ⬇ Installer l'app
       </button>
@@ -78,26 +78,26 @@ export function InstallAppButton() {
           onClick={() => setShowHelp(false)}
         >
           <div
-            className="relative w-full max-w-sm rounded-xl3 border border-gold-400/25 bg-night-800 p-5 text-center shadow-card"
+            className="relative w-full max-w-sm rounded-xl3 border border-hairline bg-surface p-5 text-center shadow-card"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setShowHelp(false)}
               aria-label="Fermer"
-              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-cream/15 bg-night-900 text-lg leading-none text-cream active:scale-[0.95] transition-transform"
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-hairline bg-surface-2 text-lg leading-none text-text active:scale-[0.95] transition-transform"
             >
               ×
             </button>
-            <p className="pr-8 font-display text-lg font-bold text-cream">Installer l'application</p>
+            <p className="pr-8 font-display text-lg font-bold text-text">Installer l'application</p>
             {isIOS ? (
-              <div className="mt-3 space-y-2 text-left text-sm text-cream/70">
+              <div className="mt-3 space-y-2 text-left text-sm text-text-muted">
                 <p>1. Touchez l'icône de partage (le carré avec une flèche vers le haut) en bas de Safari.</p>
                 <p>2. Faites défiler puis touchez « Sur l'écran d'accueil ».</p>
                 <p>3. Touchez « Ajouter » en haut à droite.</p>
               </div>
             ) : (
-              <div className="mt-3 space-y-2 text-left text-sm text-cream/70">
+              <div className="mt-3 space-y-2 text-left text-sm text-text-muted">
                 <p>
                   Ouvrez le menu de votre navigateur (⋮ ou …) puis choisissez « Installer l'application » ou
                   « Ajouter à l'écran d'accueil ».

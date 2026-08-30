@@ -135,7 +135,7 @@ export function GuestArrivalPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  if (loading) return <div className="card mb-4 text-center text-sm text-black/40 dark:text-[#f4f3f1]/40">Chargement des membres…</div>;
+  if (loading) return <div className="card mb-4 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;
 
   return (
@@ -166,7 +166,7 @@ export function GuestArrivalPanel({
                   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold transition-transform active:scale-90 disabled:opacity-40 ' +
                   (arrived
                     ? 'border-status-complete bg-status-complete text-white'
-                    : 'border-black/15 text-black/30 dark:border-white/15 dark:text-[#f4f3f1]/30')
+                    : 'border-hairline text-text-faint')
                 }
               >
                 ✓
@@ -181,7 +181,7 @@ export function GuestArrivalPanel({
                   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold transition-transform active:scale-90 disabled:opacity-40 ' +
                   (wontCome
                     ? 'border-status-over bg-status-over text-white'
-                    : 'border-black/15 text-black/30 dark:border-white/15 dark:text-[#f4f3f1]/30')
+                    : 'border-hairline text-text-faint')
                 }
               >
                 ✕

@@ -138,7 +138,7 @@ test('le bouton d appel du staff est reserve a admin et directeur', () => {
   const staffPageSource = readFileSync(new URL('../app/staff/page.tsx', import.meta.url), 'utf8');
   const planTablePageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
   assert.match(staffPageSource, /const canCall = hasCapability\(role, ['"]callStaff['"]\)/);
-  assert.match(staffPageSource, /\{canCall && inv\.telephone && \(/);
+  assert.match(staffPageSource, /\{canCall && inv\.telephone && </);
   assert.match(planTablePageSource, /const canCall = hasCapability\(role, ['"]callStaff['"]\)/);
   assert.match(planTablePageSource, /\{canCall && inv\.telephone && \(/);
 });

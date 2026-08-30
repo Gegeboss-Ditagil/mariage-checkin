@@ -90,8 +90,8 @@ export default function PlacementPage() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
         <UserMenu />
         <p className="eyebrow">Table</p>
-        <p className="font-display text-[9rem] font-bold leading-none text-gold-700">{table.number}</p>
-        {table.zone && <p className="text-2xl text-black/60">{table.zone}</p>}
+        <p className="font-display text-[9rem] font-bold leading-none text-accent">{table.number}</p>
+        {table.zone && <p className="text-2xl text-text-muted">{table.zone}</p>}
         <button
           className="btn-secondary mt-8 w-56"
           onClick={() => {
@@ -106,9 +106,9 @@ export default function PlacementPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <UserMenu />
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <div className="px-4 pt-4">
           <h1 className="font-display text-2xl ">Placement</h1>
         </div>
@@ -118,8 +118,8 @@ export default function PlacementPage() {
           className={
             'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
             (mode === 'scan'
-              ? 'border-gold-400/70 bg-gold-400/15 text-gold-700'
-              : 'border-black/10 bg-white text-black/50')
+              ? 'border-accent bg-accent text-on-accent'
+              : 'border-hairline bg-surface text-text-faint')
           }
           onClick={() => setMode('scan')}
         >
@@ -129,8 +129,8 @@ export default function PlacementPage() {
           className={
             'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
             (mode === 'search'
-              ? 'border-gold-400/70 bg-gold-400/15 text-gold-700'
-              : 'border-black/10 bg-white text-black/50')
+              ? 'border-accent bg-accent text-on-accent'
+              : 'border-hairline bg-surface text-text-faint')
           }
           onClick={() => setMode('search')}
         >
@@ -146,7 +146,7 @@ export default function PlacementPage() {
         <div className="space-y-3 px-4">
           <input
             autoFocus
-            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
             placeholder="Nom ou n° de table"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

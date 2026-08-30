@@ -15,7 +15,7 @@ test('les listes du dashboard (restants/arrives/tous/...) ont un filtre par cote
   // cliquable dont l'etat actif se voit mal.
   assert.match(source, /const \[listeFiltre, setListeFiltre\] = useState<ListeFiltre>\('toutes'\);/);
   assert.match(source, /inv\.cote === listeFiltre/);
-  assert.match(source, /border-ink bg-ink text-white/);
+  assert.match(source, /border-accent bg-accent text-on-accent/);
 });
 
 test('un filtre "Staff" isole category === Staff, car le total "personnes" melange invites et staff', () => {

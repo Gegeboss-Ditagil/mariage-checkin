@@ -124,7 +124,7 @@ function ListeContent() {
       <TopBar title={titre} backHref="/dashboard" />
 
       <div className="px-4 py-4">
-        <p className="mb-3 text-sm text-black/50">
+        <p className="mb-3 text-sm text-text-faint">
           {filtres.length} invitation{filtres.length > 1 ? 's' : ''}
           {(type === 'arrives' || type === 'tous') && ' · ' + totalPersonnes + ' personne' + (totalPersonnes > 1 ? 's' : '') + ' arrivée' + (totalPersonnes > 1 ? 's' : '')}
         </p>
@@ -149,7 +149,7 @@ function ListeContent() {
                 onClick={() => setListeFiltre(f.valeur)}
                 className={clsx(
                   'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold',
-                  listeFiltre === f.valeur ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white text-black/50'
+                  listeFiltre === f.valeur ? 'border-accent bg-accent text-on-accent' : 'border-hairline bg-surface text-text-faint'
                 )}
               >
                 {f.label}
@@ -162,26 +162,26 @@ function ListeContent() {
           <div className="mb-4 grid grid-cols-3 gap-2 text-center">
             <div className="card py-2">
               <p className="text-xl font-bold">{totalParCote}</p>
-              <p className="text-[11px] text-black/50">personnes</p>
+              <p className="text-[11px] text-text-faint">personnes</p>
             </div>
             <div className="card py-2">
               <p className="text-xl font-bold text-nelly">{parCote.Nelly}</p>
-              <p className="text-[11px] text-black/50">côté Nelly</p>
+              <p className="text-[11px] text-text-faint">côté Nelly</p>
             </div>
             <div className="card py-2">
               <p className="text-xl font-bold text-gege">{parCote.Gege}</p>
-              <p className="text-[11px] text-black/50">côté Gégé</p>
+              <p className="text-[11px] text-text-faint">côté Gégé</p>
             </div>
           </div>
         )}
 
-        {loading && <p className="p-6 text-center text-black/50">Chargement…</p>}
+        {loading && <p className="p-6 text-center text-text-faint">Chargement…</p>}
 
         {!loading && filtres.length === 0 && (
-          <p className="p-6 text-center text-black/50">Aucun résultat pour cette catégorie.</p>
+          <p className="p-6 text-center text-text-faint">Aucun résultat pour cette catégorie.</p>
         )}
 
-        <ul className="divide-y divide-black/5">
+        <ul className="divide-y divide-hairline">
           {filtres.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
             const table = inv.table_id ? tableParId.get(inv.table_id) : null;
@@ -193,8 +193,8 @@ function ListeContent() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
-                    {prenoms && <p className="truncate text-xs font-medium text-gold-700">{prenoms}</p>}
-                    <p className="text-sm text-black/50">
+                    {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
+                    <p className="text-sm text-text-faint">
                       {inv.nombre_arrive}/{inv.nombre_prevu} personnes
                       {table ? ' · Table ' + table.number : ''}
                     </p>

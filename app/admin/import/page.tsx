@@ -106,7 +106,7 @@ export default function ImportPage() {
             {fileName || 'Choisir un fichier CSV ou XLSX'}
             <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFile} />
           </label>
-          <p className="mt-2 text-xs text-black/40">{rows.length > 0 && rows.length + ' lignes détectées'}</p>
+          <p className="mt-2 text-xs text-text-faint">{rows.length > 0 && rows.length + ' lignes détectées'}</p>
         </div>
 
         {headers.length > 0 && (
@@ -114,9 +114,9 @@ export default function ImportPage() {
             <p className="font-semibold ">Associer les colonnes</p>
             {TARGET_FIELDS.map((f) => (
               <div key={f.key} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-black/60">{f.label}</span>
+                <span className="text-sm text-text-muted">{f.label}</span>
                 <select
-                  className="rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-2 text-sm  focus:border-gold-500 focus:outline-none"
+                  className="rounded-xl2 border-2 border-hairline bg-surface px-3 py-2 text-sm  focus:border-accent focus:outline-none"
                   value={mapping[f.key] || ''}
                   onChange={(e) => setMapping((m) => ({ ...m, [f.key]: e.target.value }))}
                 >
@@ -132,7 +132,7 @@ export default function ImportPage() {
           </div>
         )}
 
-        {result && <p className="rounded-xl2 bg-white p-3 text-sm text-black/60">{result}</p>}
+        {result && <p className="rounded-xl2 bg-surface p-3 text-sm text-text-muted">{result}</p>}
       </div>
 
       {rows.length > 0 && (

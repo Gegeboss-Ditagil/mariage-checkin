@@ -48,6 +48,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Ecran de choix de theme (une seule fois apres la premiere connexion,
+  // voir app/onboarding/theme/page.tsx) : accessible a tout role authentifie,
+  // hors de la matrice de capacites -- pure preference d'affichage, aucune
+  // donnee sensible exposee. Ne pas ajouter a lib/permissions.ts pour ca.
+  if (pathname.startsWith('/onboarding')) {
+    return NextResponse.next();
+  }
+
   if (!canAccessPath(user.role, pathname)) {
     // Redirige vers l'ecran par defaut du role plutot que d'afficher une erreur
     return NextResponse.redirect(new URL(landingPathForRole(user.role), req.url));

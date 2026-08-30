@@ -103,7 +103,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Tableau de bord"
         backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
@@ -116,11 +116,11 @@ export default function DashboardPage() {
         pullThreshold={pullThreshold}
       />
 
-      <div className="flex-1 space-y-6 px-4 py-4">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold">Remplissage de la salle</p>
-            <p className="text-xs text-black/40">
+            <p className="text-xs text-text-faint">
               {stats.arrives} / {capaciteOfficielle}
               {capaciteTotale > capaciteOfficielle && ' (+' + (capaciteTotale - capaciteOfficielle) + ' réserve)'}
             </p>
@@ -156,24 +156,28 @@ export default function DashboardPage() {
           />
         </div>
 
-        {canSeeStaffSection && (
-          <div>
-            <p className="mb-2 font-semibold">Staff</p>
+        <div>
+          {/* En-tete combine (maquette Atrium/Maison) : Staff et Tables de
+              reserve vivaient dans deux blocs separes avec un titre normal
+              -- regroupes sous un seul intitule uppercase, comme les autres
+              en-tetes de section de la maquette (ex: "Placement & presence"
+              sur /plan-table), accent en Maison. Le libelle s'adapte si
+              Staff n'est pas visible pour ce role (canSeeStaffSection). */}
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint dark:text-accent">
+            {canSeeStaffSection ? 'Staff & réserve' : 'Tables de réserve'}
+          </p>
+          {canSeeStaffSection && (
             <button
               type="button"
               onClick={() => router.push('/staff')}
-              className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+              className="card mb-2 flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
             >
               <span className="font-semibold">Staff</span>
-              <span className="text-black/60">
+              <span className="text-text-muted">
                 {staffArrive} / {staffPrevu} arrivés
               </span>
             </button>
-          </div>
-        )}
-
-        <div>
-          <p className="mb-2 font-semibold">Tables de réserve</p>
+          )}
           <div className="space-y-2">
             {reserveTables.map((t) => {
               const used = usageByTable.get(t.id) || 0;
@@ -186,7 +190,7 @@ export default function DashboardPage() {
                   className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
                 >
                   <span className="font-semibold">Table {t.number}</span>
-                  <span className={full ? 'font-bold text-status-over' : 'text-black/60'}>
+                  <span className={full ? 'font-bold text-status-over' : 'text-text-muted'}>
                     {full ? 'COMPLET' : used + ' / ' + t.capacity + ' places utilisées'}
                   </span>
                 </button>
@@ -214,7 +218,7 @@ function StatTile({
 }) {
   const content = (
     <>
-      <p className="text-xs uppercase tracking-wide text-black/40">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-text-faint">{label}</p>
       <p className={'mt-1 text-4xl font-bold tabular-nums ' + (accent || '')}>{value}</p>
     </>
   );
@@ -256,14 +260,14 @@ function MiniStat({
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center justify-between rounded-xl2 bg-white p-3 text-left shadow-card active:scale-[0.98] transition-transform"
+        className="flex w-full items-center justify-between rounded-xl2 bg-surface p-3 text-left shadow-card active:scale-[0.98] transition-transform"
       >
         {content}
       </button>
     );
   }
 
-  return <div className="flex items-center justify-between rounded-xl2 bg-white p-3 shadow-card">{content}</div>;
+  return <div className="flex items-center justify-between rounded-xl2 bg-surface p-3 shadow-card">{content}</div>;
 }
 
 

@@ -20,7 +20,7 @@ export default function ExportsPage() {
         {EXPORTS.map((exp) => (
           <div key={exp.type} className="card">
             <p className="font-semibold">{exp.label}</p>
-            <p className="mb-3 text-sm text-black/50">{exp.description}</p>
+            <p className="mb-3 text-sm text-text-faint">{exp.description}</p>
             <div className="grid grid-cols-2 gap-2">
               <a href={`/api/export?type=${exp.type}&format=csv`} className="btn-secondary text-center">
                 CSV

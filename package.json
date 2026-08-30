@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.21.1",
+  "version": "1.22.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "test:searchnames": "node --test tests/search-member-names.test.ts",
     "test:sortlabel": "node --test tests/plan-table-sort-label.test.ts",
     "test:arrival": "node --test tests/guest-arrival-panel.test.ts",
+    "test:theme": "node --test tests/theme-preference.test.ts",
     "test:listecote": "node --test tests/dashboard-liste-cote-filter.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"

@@ -63,7 +63,7 @@ export default function AddInvitationPage() {
         <TopBar title="Ajouter un invité" backHref="/tables" />
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
           <p className="text-lg font-semibold">Accès réservé</p>
-          <p className="text-sm text-black/50">
+          <p className="text-sm text-text-faint">
             Seuls l'admin, les directeurs de festin et les agents placeurs peuvent ajouter un invité.
           </p>
         </div>
@@ -76,16 +76,16 @@ export default function AddInvitationPage() {
       <TopBar title="Ajouter un invité" backHref="/tables" />
 
       <div className="flex-1 space-y-4 px-4 py-4">
-        <p className="text-sm text-black/50">
+        <p className="text-sm text-text-faint">
           Pour un invité de dernière minute, absent de la liste importée. Il sera aussitôt disponible dans la
           recherche et sur sa table.
         </p>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-black/40">Nom</label>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">Nom</label>
           <input
             autoFocus
-            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 text-lg focus:border-gold-500 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
             placeholder="Prénom Nom"
             value={nom}
             onChange={(e) => setNom(e.target.value)}
@@ -93,31 +93,31 @@ export default function AddInvitationPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-black/40">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">
             Nombre de personnes
           </label>
           <input
             type="number"
             min={1}
             inputMode="numeric"
-            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 text-lg focus:border-gold-500 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
             value={nombrePrevu}
             onChange={(e) => setNombrePrevu(e.target.value)}
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-black/40">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">
             Table (optionnel)
           </label>
           <input
             inputMode="numeric"
-            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 text-lg focus:border-gold-500 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
             placeholder="Numéro de table"
             value={tableNumber}
             onChange={(e) => setTableNumber(e.target.value)}
           />
-          <p className="mt-1 text-xs text-black/40">
+          <p className="mt-1 text-xs text-text-faint">
             Laissez vide si la table n'est pas encore décidée — l'invité pourra être placé ensuite depuis sa fiche.
           </p>
         </div>

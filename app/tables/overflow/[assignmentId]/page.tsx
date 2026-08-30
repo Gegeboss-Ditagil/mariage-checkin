@@ -157,8 +157,8 @@ export default function GererExcedentPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Affectation introuvable</p>
-        <p className="text-sm text-black/50">Elle a peut-être déjà été retirée ou déplacée.</p>
+        <p className="text-lg font-semibold text-text-muted">Affectation introuvable</p>
+        <p className="text-sm text-text-faint">Elle a peut-être déjà été retirée ou déplacée.</p>
         <button className="btn-primary" onClick={() => router.push('/tables')}>
           Retour aux tables
         </button>
@@ -181,7 +181,7 @@ export default function GererExcedentPage() {
           <p className="text-sm font-bold uppercase tracking-wide text-status-over">
             {nomAffichage} · +{assignment.nombre_personnes} personne{assignment.nombre_personnes > 1 ? 's' : ''}
           </p>
-          <p className="mt-1 text-black/60">
+          <p className="mt-1 text-text-muted">
             Actuellement à {currentTable ? 'Table ' + currentTable.number : 'une table de réserve'}
           </p>
         </div>
@@ -190,7 +190,7 @@ export default function GererExcedentPage() {
           <p className="mb-2 font-semibold ">Déplacer vers une autre table</p>
           <div className="space-y-2">
             {autresTables.length === 0 && (
-              <p className="text-sm text-black/40">Aucune autre table disponible.</p>
+              <p className="text-sm text-text-faint">Aucune autre table disponible.</p>
             )}
             {autresTables.map((u) => {
               // "Complet" est un avertissement, pas un blocage : voir le
@@ -207,10 +207,10 @@ export default function GererExcedentPage() {
                   className={
                     'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
                     (selected
-                      ? 'border-gold-500 bg-gold-400/10 '
+                      ? 'border-accent bg-accent-tint '
                       : full
                       ? 'border-status-over/30 bg-status-over/5 '
-                      : 'border-gold-300/30 bg-white ')
+                      : 'border-hairline bg-surface ')
                   }
                 >
                   <span className="font-semibold">

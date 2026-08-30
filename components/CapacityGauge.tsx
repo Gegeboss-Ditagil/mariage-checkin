@@ -18,9 +18,14 @@ export function CapacityGauge({
   const pct = Math.round(rawPct);
   const overWarning = warningAt !== undefined && rawPct > warningAt;
   const isOver = warningAt !== undefined ? overWarning : pct >= 95;
-  const color = isOver ? '#ef4444' : pct >= 75 ? '#eab308' : '#22c55e';
+  // Etat "normal" (ni seuil ni alerte) : vert en Atrium, mais accent
+  // (champagne) en Maison -- choix de la maquette (jauge "hero" de
+  // /dashboard et /plan-table), confirme sur les deux ecrans. Les etats
+  // d'alerte (ambre/rouge) restent universels dans les deux modes : ce sont
+  // des couleurs de securite, pas une decision de marque.
+  const barColorClass = isOver ? 'bg-status-over' : pct >= 75 ? 'bg-status-partial' : 'bg-status-complete dark:bg-accent';
   const textColor =
-    isOver ? 'text-status-over' : pct >= 75 ? 'text-status-partial' : 'text-status-complete';
+    isOver ? 'text-status-over' : pct >= 75 ? 'text-status-partial' : 'text-status-complete dark:text-accent';
   const height = size === 'lg' ? 'h-4' : size === 'sm' ? 'h-1.5' : 'h-2.5';
 
   return (
@@ -29,10 +34,10 @@ export function CapacityGauge({
         className={'relative w-full overflow-hidden rounded-full ' + height}
         style={{ backgroundColor: 'rgba(148, 163, 184, 0.3)' }}
       >
-        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: pct + '%', backgroundColor: color }} />
+        <div className={'h-full rounded-full transition-[width] duration-500 ' + barColorClass} style={{ width: pct + '%' }} />
         {warningAt !== undefined && warningAt > 0 && warningAt < 100 && (
           <div
-            className="absolute inset-y-0 w-0.5 bg-ink/40"
+            className="absolute inset-y-0 w-0.5 bg-accent/40"
             style={{ left: warningAt + '%' }}
             title="Seuil des places officielles"
           />

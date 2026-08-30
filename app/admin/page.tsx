@@ -49,12 +49,12 @@ export default function AdminHome() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar title="Administration" />
 
-      <div className="flex-1 space-y-6 px-4 py-4">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         <div className="card">
-          <p className="text-sm font-semibold text-black/50">Statut de l'événement</p>
+          <p className="text-sm font-semibold text-text-faint">Statut de l'événement</p>
           <p className="mt-1 text-2xl font-bold">{event ? STATUS_LABELS[event.status] : '…'}</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {Object.entries(STATUS_LABELS).map(([key, label]) => (
@@ -63,14 +63,14 @@ export default function AdminHome() {
                 disabled={busy || event?.status === key}
                 onClick={() => setStatus(key)}
                 className={`rounded-xl2 border px-3 py-2 text-sm font-semibold ${
-                  event?.status === key ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white'
+                  event?.status === key ? 'border-accent bg-accent text-on-accent' : 'border-hairline bg-surface'
                 }`}
               >
                 {label}
               </button>
             ))}
           </div>
-          {message && <p className="mt-2 text-sm text-black/60">{message}</p>}
+          {message && <p className="mt-2 text-sm text-text-muted">{message}</p>}
         </div>
 
         <nav className="grid grid-cols-2 gap-3">
@@ -89,7 +89,7 @@ export default function AdminHome() {
 
         <div className="card">
           <p className="mb-2 font-semibold">Mode test</p>
-          <p className="mb-3 text-sm text-black/50">
+          <p className="mb-3 text-sm text-text-faint">
             Simule des scans et arrivées sans risque, puis remet tout à zéro avant le jour J.
           </p>
           <button className="btn-danger w-full" disabled={busy} onClick={resetTestData}>

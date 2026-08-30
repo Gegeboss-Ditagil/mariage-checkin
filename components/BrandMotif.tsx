@@ -6,7 +6,7 @@ export function GoldSeal({ size = 128, className }: { size?: number; className?:
   return (
     <div
       className={
-        'relative shrink-0 overflow-hidden rounded-full border-2 border-gold-400/70 shadow-gold ' +
+        'relative shrink-0 overflow-hidden rounded-full border-2 border-accent/70 shadow-elev-2 ' +
         (className || '')
       }
       style={{ width: size, height: size }}

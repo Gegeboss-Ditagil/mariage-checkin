@@ -10,7 +10,7 @@ import { restants } from '@/lib/statusLogic';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { isStaffWithoutTable } from '@/lib/staffVisibility';
-import { MessageButton } from '@/components/MessageButton';
+import { CallButton, MessageButton } from '@/components/MessageButton';
 import { extractPrenoms } from '@/lib/membersNotes';
 
 // Une invitation est "staff" si elle porte la categorie Staff.
@@ -101,31 +101,31 @@ export default function StaffPage() {
   const arrive = activeStaff.reduce((s, i) => s + i.nombre_arrive, 0);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Staff"
         backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
       />
 
-      {loading && <p className="p-4 text-center text-black/50">Chargement…</p>}
+      {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
       {!loading && (
         <div className="px-4 pt-3">
           <div className="card mb-2 grid grid-cols-3 text-center">
             <div>
-              <p className="text-xs uppercase text-black/40">Prévu</p>
+              <p className="text-xs uppercase text-text-faint">Prévu</p>
               <p className="text-2xl font-bold">{prevu}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-black/40">Arrivés</p>
+              <p className="text-xs uppercase text-text-faint">Arrivés</p>
               <p className="text-2xl font-bold text-status-complete">{arrive}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-black/40">Restants</p>
+              <p className="text-xs uppercase text-text-faint">Restants</p>
               <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
             </div>
           </div>
-          <p className="mb-3 text-xs text-black/40">
+          <p className="mb-3 text-xs text-text-faint">
             {tableFilter === 'sans' || !canSeeAllStaff
               ? 'Personnel et prestataires sans table assignée (photographe, MC, DJ…), accueillis directement via le QR « STAFF » — le reste du staff a une table et se check-in normalement avec son groupe.'
               : 'Personnel avec une table assignée : se présente et se check-in normalement avec son groupe, comme un invité.'}
@@ -137,7 +137,7 @@ export default function StaffPage() {
                 onClick={() => setTableFilter('sans')}
                 className={
                   'flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ' +
-                  (tableFilter === 'sans' ? 'bg-gold-500 text-white' : 'bg-gold-100 text-gold-700')
+                  (tableFilter === 'sans' ? 'bg-accent text-on-accent' : 'bg-accent-tint text-accent')
                 }
               >
                 Sans table ({staffSansTable.length})
@@ -147,7 +147,7 @@ export default function StaffPage() {
                 onClick={() => setTableFilter('avec')}
                 className={
                   'flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ' +
-                  (tableFilter === 'avec' ? 'bg-gold-500 text-white' : 'bg-gold-100 text-gold-700')
+                  (tableFilter === 'avec' ? 'bg-accent text-on-accent' : 'bg-accent-tint text-accent')
                 }
               >
                 Avec table ({staffAvecTable.length})
@@ -155,7 +155,7 @@ export default function StaffPage() {
             </div>
           )}
           <input
-            className="mb-2 w-full rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 text-base placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+            className="mb-2 w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-base placeholder:text-text-faint focus:border-accent focus:outline-none"
             placeholder="Rechercher un nom du staff…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -163,8 +163,9 @@ export default function StaffPage() {
         </div>
       )}
 
+      <div className="flex-1 overflow-y-auto">
       {!loading && filtered.length === 0 && (
-        <p className="p-6 text-center text-black/50">
+        <p className="p-6 text-center text-text-faint">
           {activeStaff.length === 0
             ? tableFilter === 'sans' || !canSeeAllStaff
               ? "Aucune personne du staff sans table pour l'instant."
@@ -173,25 +174,25 @@ export default function StaffPage() {
         </p>
       )}
 
-      <ul className="flex-1 divide-y divide-gold-400/10 px-4">
+      <ul className="divide-y divide-hairline px-4">
         {filtered.map((inv) => {
           const prenoms = extractPrenoms(inv.notes);
           const sansTable = isStaffWithoutTable(inv);
           const body = (
             <div className="min-w-0">
               <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
-              {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+              {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
               {!sansTable && (
-                <p className="text-sm text-black/50">
+                <p className="text-sm text-text-faint">
                   {inv.table ? 'Table ' + inv.table.number + (inv.table.label ? ' — ' + inv.table.label : '') : 'Sans table'}
                 </p>
               )}
-              <p className="text-sm text-black/50">
+              <p className="text-sm text-text-faint">
                 {inv.nombre_arrive}/{inv.nombre_prevu} personnes
                 {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
               </p>
               {sansTable && (
-                <span className="mt-1 inline-block rounded-full bg-gold-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold-700">
+                <span className="mt-1 inline-block rounded-full bg-accent-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                   Sans table
                 </span>
               )}
@@ -219,21 +220,13 @@ export default function StaffPage() {
                   ligne. Empeche la propagation pour ne pas declencher le
                   clic sur toute la ligne (qui ouvrirait le check-in).
                   Reserve admin/directeur (capacite callStaff). */}
-              {canCall && inv.telephone && (
-                <a
-                  href={'tel:' + inv.telephone}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={'Appeler ' + inv.nom_affichage}
-                  className="shrink-0 rounded-full bg-gold-100 p-2.5 text-gold-700"
-                >
-                  📞
-                </a>
-              )}
+              {canCall && inv.telephone && <CallButton telephone={inv.telephone} name={inv.nom_affichage} />}
               {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} />}
             </li>
           );
         })}
       </ul>
+      </div>
 
       {role && <BottomNav role={role} />}
     </div>

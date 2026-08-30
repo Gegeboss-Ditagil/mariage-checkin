@@ -47,14 +47,14 @@ export function TablePicker({
   return (
     <div className="space-y-4">
       <input
-        className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+        className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3  placeholder:text-text-faint focus:border-accent focus:outline-none"
         placeholder="Rechercher une table (numéro, ville, vol…)"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
 
       <div className="space-y-2">
-        {filtered.length === 0 && <p className="text-sm text-black/40">Aucune table trouvée.</p>}
+        {filtered.length === 0 && <p className="text-sm text-text-faint">Aucune table trouvée.</p>}
         {filtered.map((u) => {
           const selected = selectedTableId === u.table.id;
           const proche = u.occupationEstimee >= u.table.capacity;
@@ -65,7 +65,7 @@ export function TablePicker({
               onClick={() => onSelect(u.table.id)}
               className={
                 'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                (selected ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white ')
+                (selected ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface ')
               }
             >
               <span className="min-w-0">
@@ -74,9 +74,9 @@ export function TablePicker({
                   {u.table.label ? ' — ' + u.table.label : ''}
                   {u.table.is_reserve ? ' (réserve)' : ''}
                 </span>
-                {vol && <span className="block text-xs text-black/40">{vol}</span>}
+                {vol && <span className="block text-xs text-text-faint">{vol}</span>}
               </span>
-              <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-black/50')}>
+              <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-text-faint')}>
                 <span className="block">{u.occupationEstimee} / {u.table.capacity} places prévues</span>
                 <span className="block text-xs">{u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant</span>
               </span>

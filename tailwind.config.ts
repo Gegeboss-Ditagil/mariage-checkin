@@ -1,9 +1,9 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  // Bascule manuelle (menu de compte -> hooks/useTheme.ts), jamais liee a
-  // prefers-color-scheme du systeme : une equipe de staff ne doit pas voir
-  // l'appli changer d'apparence toute seule pendant l'evenement.
+  // Bascule manuelle (menu de compte -> hooks/useTheme.ts) ou "Automatique"
+  // qui suit prefers-color-scheme en direct : voir hooks/useTheme.ts pour la
+  // resolution. Le rendu reste toujours pilote par l'attribut data-theme.
   darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -14,41 +14,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Palette du theme sombre "Glass" (charte separee du night/gold
-        // existant, qui reste reserve a l'ecran de connexion) : charbon
-        // neutre + accent sarcelle, valide sur la maquette approuvee.
-        charcoal: {
-          950: '#050506',
-          900: '#0a0a0c',
-          800: '#111114',
-        },
-        teal: {
-          200: '#8fe6d9',
-          400: '#64d8cb',
-        },
-        ink: '#1a2942',
-        'ink-dark': '#0f1a2e',
-        parchment: '#faf8f4',
-        night: {
-          950: '#070f0a',
-          900: '#0c1912',
-          800: '#11241a',
-          700: '#1a3324',
-          600: '#264530',
-          500: '#3a5c42',
-        },
-        cream: '#f6f1e4',
-        gold: {
-          50: '#fbf7ee',
-          100: '#f3e9cf',
-          200: '#ecd9a8',
-          300: '#dcc07f',
-          400: '#d4af6a',
-          500: '#b8923f',
-          600: '#9a7530',
-          700: '#7a5c26',
-          900: '#4a3714',
-        },
+        // Systeme "Atrium" (clair) / "Maison" (sombre) : deux jeux de valeurs
+        // pilotes par [data-theme] dans app/globals.css, exposes ici comme
+        // couleurs Tailwind pour garder les memes utilitaires (bg-bg,
+        // text-text, border-hairline...) partout dans le JSX existant.
+        bg: 'var(--bg)',
+        surface: 'var(--surface)',
+        'surface-2': 'var(--surface-2)',
+        text: 'var(--text)',
+        'text-muted': 'var(--text-muted)',
+        'text-faint': 'var(--text-faint)',
+        hairline: 'var(--hairline)',
+        accent: 'var(--accent)',
+        'accent-strong': 'var(--accent-strong)',
+        'accent-tint': 'var(--accent-tint)',
+        'on-accent': 'var(--on-accent)',
+        glass: 'var(--glass)',
         status: {
           none: '#9ca3af',
           partial: '#e08a2c',
@@ -59,8 +40,12 @@ const config: Config = {
         gege: '#1d4ed8',
       },
       fontFamily: {
-        display: ['Georgia', 'Cambria', 'serif'],
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Titres generaux : Inter dans les deux modes (voir handoff). Seuls
+        // les noms de personnes/tables et grands nombres passent en serif en
+        // Maison via la classe .font-name (globals.css).
+        display: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        serif: ['var(--font-display-serif)', 'Georgia', 'Cambria', 'serif'],
+        sans: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       spacing: {
         tap: '3.25rem',
@@ -68,14 +53,11 @@ const config: Config = {
       borderRadius: {
         xl2: '1.25rem',
         xl3: '1.75rem',
+        xl4: '1.75rem',
       },
       boxShadow: {
-        card: '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)',
-        gold: '0 8px 24px rgba(212,175,106,0.25)',
-        glow: '0 0 28px rgba(201,168,105,0.32)',
-      },
-      backgroundImage: {
-        'night-radial': 'radial-gradient(120% 90% at 50% -10%, #1a3324 0%, #0c1912 55%, #070f0a 100%)',
+        card: 'var(--elev-1)',
+        'elev-2': 'var(--elev-2)',
       },
     },
   },
@@ -83,5 +65,3 @@ const config: Config = {
 };
 
 export default config;
-
-

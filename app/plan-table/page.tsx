@@ -17,7 +17,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { MessageButton } from '@/components/MessageButton';
+import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
@@ -44,14 +44,14 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
   const presentPct = Math.min(100, (present / safeCapacity) * 100);
   const over = present > prevu;
   return (
-    <div className="relative h-2.5 rounded-full bg-black/5">
+    <div className="relative h-2.5 rounded-full bg-surface-2">
       <div
-        className={clsx('h-full rounded-full transition-[width]', over ? 'bg-status-over' : 'bg-status-complete')}
+        className={clsx('h-full rounded-full transition-[width]', over ? 'bg-status-over' : 'bg-status-complete dark:bg-accent')}
         style={{ width: presentPct + '%' }}
       />
       {prevu > 0 && (
         <div
-          className="absolute top-0 h-full w-0.5 bg-ink/50"
+          className="absolute top-0 h-full w-0.5 bg-accent/50"
           style={{ left: 'calc(' + prevuPct + '% - 1px)' }}
           title={prevu + ' prévu'}
         />
@@ -351,7 +351,7 @@ export default function PlanTablePage() {
   const canMessage = hasCapability(role, 'messageContacts');
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar
         title="Plan de table"
         backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
@@ -359,7 +359,7 @@ export default function PlanTablePage() {
 
       {/* Indicateur de tire-pour-rafraichir */}
       <div
-        className="flex items-center justify-center overflow-hidden text-xs font-semibold text-gold-700 transition-[height]"
+        className="flex items-center justify-center overflow-hidden text-xs font-semibold text-accent transition-[height]"
         style={{ height: refreshing ? 36 : pull }}
       >
         {refreshing ? 'Actualisation…' : pull > PULL_THRESHOLD ? 'Relâchez pour actualiser' : pull > 0 ? 'Tirez pour actualiser ↓' : null}
@@ -380,7 +380,7 @@ export default function PlanTablePage() {
             </button>
           </div>
         )}
-        {loading && <p className="py-8 text-center text-black/50">Chargement…</p>}
+        {loading && <p className="py-8 text-center text-text-faint">Chargement…</p>}
 
         {!loading && (
           <>
@@ -405,12 +405,12 @@ export default function PlanTablePage() {
                   onSelectZone={selectZone}
                   coteByNumber={coteByNumber}
                 />
-                <p className="mt-2 text-center text-xs text-black/40">
+                <p className="mt-2 text-center text-xs text-text-faint">
                   Appuyez sur une table pour la sélectionner, ou sur une zone en surbrillance (Bar, Cuisine, DJ et
                   animation, Prestataires) pour voir le personnel associé · pincez avec deux doigts (ou utilisez
                   +/−) pour zoomer.
                 </p>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-black/50">
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-text-faint">
                   <span className="flex items-center gap-1.5">
                     <span className="inline-block h-3 w-3 rounded-full bg-nelly/25 ring-2 ring-nelly" /> majorité côté Nelly
                   </span>
@@ -418,7 +418,7 @@ export default function PlanTablePage() {
                     <span className="inline-block h-3 w-3 rounded-full bg-gege/25 ring-2 ring-gege" /> majorité côté Gégé
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-3 rounded-full bg-black/10 ring-2 ring-black/30" /> égalité / neutre
+                    <span className="inline-block h-3 w-3 rounded-full bg-surface-2 ring-2 ring-hairline" /> égalité / neutre
                   </span>
                 </div>
 
@@ -439,25 +439,25 @@ export default function PlanTablePage() {
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold">{selectedZone.label}</p>
-                        {selectedZone.sub && <p className="truncate text-xs text-black/40">{selectedZone.sub}</p>}
+                        {selectedZone.sub && <p className="truncate text-xs text-text-faint">{selectedZone.sub}</p>}
                       </div>
-                      <span className="shrink-0 rounded-full bg-gold-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold-700">
+                      <span className="shrink-0 rounded-full bg-accent-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                         {staffPeopleForZone} personne{staffPeopleForZone > 1 ? 's' : ''}
                       </span>
                     </div>
 
                     {staffForZone.length === 0 ? (
-                      <p className="text-sm text-black/40">
+                      <p className="text-sm text-text-faint">
                         Personne du staff n'est encore rattachée à cette zone pour l'instant.
                       </p>
                     ) : (
-                      <ul className="divide-y divide-gold-400/10">
+                      <ul className="divide-y divide-hairline">
                         {staffForZone.map((inv) => {
                           const invTable = inv.table_id ? tables.find((t) => t.id === inv.table_id) : null;
                           const row = (
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-semibold">{inv.nom_affichage}</p>
-                              <p className="text-xs text-black/50">{invTable ? 'Table ' + invTable.number : 'Sans table'}</p>
+                              <p className="text-xs text-text-faint">{invTable ? 'Table ' + invTable.number : 'Sans table'}</p>
                             </div>
                           );
                           return (
@@ -470,14 +470,7 @@ export default function PlanTablePage() {
                                 row
                               )}
                               {canCall && inv.telephone && (
-                                <a
-                                  href={'tel:' + inv.telephone}
-                                  onClick={(e) => e.stopPropagation()}
-                                  aria-label={'Appeler ' + inv.nom_affichage}
-                                  className="shrink-0 rounded-full bg-gold-100 p-2 text-sm text-gold-700"
-                                >
-                                  📞
-                                </a>
+                                <CallButton telephone={inv.telephone} name={inv.nom_affichage} compact />
                               )}
                               {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
                             </li>
@@ -495,14 +488,14 @@ export default function PlanTablePage() {
                 = present. Rouge des que le present depasse le prevu. */}
             <div className="mb-4 card py-3">
               <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <p className="text-xs font-semibold uppercase text-black/45">Placement &amp; présence</p>
-                <p className={clsx('text-sm font-bold', stats.totalArrivees > stats.officielles ? 'text-status-over' : 'text-ink')}>
+                <p className="text-xs font-semibold uppercase text-text-faint dark:text-accent">Placement &amp; présence</p>
+                <p className={clsx('text-sm font-bold', stats.totalArrivees > stats.officielles ? 'text-status-over' : 'text-text')}>
                   {stats.totalArrivees} arrivé{stats.totalArrivees > 1 ? 's' : ''} · {stats.officielles}/{CAPACITE_OFFICIELLE} prévu
                 </p>
               </div>
               <CapacityBar capacity={CAPACITE_OFFICIELLE} prevu={stats.officielles} present={stats.totalArrivees} />
               {(stats.excedentaire > 0 || stats.sansTable > 0) && (
-                <p className="mt-1.5 text-[11px] text-black/50">
+                <p className="mt-1.5 text-[11px] text-text-faint">
                   {stats.excedentaire > 0 && stats.excedentaire + ' en réserve (+10) — à couper au prochain import'}
                   {stats.excedentaire > 0 && stats.sansTable > 0 && ' · '}
                   {stats.sansTable > 0 && stats.sansTable + ' sans table (staff, voir /staff)'}
@@ -519,30 +512,30 @@ export default function PlanTablePage() {
             <div className="mb-4 grid grid-cols-3 gap-2 text-center">
               <div className="card py-2">
                 <p className="text-xl font-bold">{tileStats.totalPersonnes}</p>
-                <p className="text-[11px] text-black/50">personnes</p>
+                <p className="text-[11px] text-text-faint">personnes</p>
               </div>
               <div className="card py-2">
                 <p className="text-xl font-bold text-nelly">{tileStats.parCote.Nelly}</p>
-                <p className="text-[11px] text-black/50">côté Nelly</p>
+                <p className="text-[11px] text-text-faint">côté Nelly</p>
               </div>
               <div className="card py-2">
                 <p className="text-xl font-bold text-gege">{tileStats.parCote.Gege}</p>
-                <p className="text-[11px] text-black/50">côté Gégé</p>
+                <p className="text-[11px] text-text-faint">côté Gégé</p>
               </div>
             </div>
             <div className="mb-5 grid grid-cols-2 gap-2 text-center">
               <div className="card py-2">
                 <p className="text-lg font-bold text-status-complete">{tileStats.confirmees}</p>
-                <p className="text-[11px] text-black/50">places confirmées</p>
+                <p className="text-[11px] text-text-faint">places confirmées</p>
               </div>
               <div className="card py-2">
                 <p className="text-lg font-bold text-status-partial">{tileStats.provisoires}</p>
-                <p className="text-[11px] text-black/50">places provisoires</p>
+                <p className="text-[11px] text-text-faint">places provisoires</p>
               </div>
             </div>
 
             {/* Legende */}
-            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-black/50">
+            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-text-faint">
               <span className="flex items-center gap-1.5">
                 <span className={clsx('h-2 w-2 rounded-full', COTE_DOT_COLORS.Nelly)} /> {COTE_LABELS.Nelly}
               </span>
@@ -554,7 +547,7 @@ export default function PlanTablePage() {
               </span>
             </div>
 
-            <input aria-label="Rechercher une table, un vol ou un invité" className="mb-3 w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3 placeholder:text-black/30 focus:border-gold-500 focus:outline-none" placeholder="Rechercher table, ville, vol ou invité…" value={query} onChange={(event) => setQuery(event.target.value)} />
+            <input aria-label="Rechercher une table, un vol ou un invité" className="mb-3 w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 placeholder:text-text-faint focus:border-accent focus:outline-none" placeholder="Rechercher table, ville, vol ou invité…" value={query} onChange={(event) => setQuery(event.target.value)} />
 
             {/* Filtres -- rangee dediee (retour en arriere demande par
                 Gersom le 28/08/2026, remplace les tuiles cliquables :
@@ -577,7 +570,7 @@ export default function PlanTablePage() {
                   onClick={f.onClick}
                   className={clsx(
                     'shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold',
-                    f.active ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white text-black/50'
+                    f.active ? 'border-accent bg-accent text-on-accent' : 'border-hairline bg-surface text-text-faint'
                   )}
                 >
                   {f.label}
@@ -586,20 +579,20 @@ export default function PlanTablePage() {
             </div>
 
             <div className="mb-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setTri('numero')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'numero' ? 'border-gold-500 bg-gold-400/10' : 'border-gold-300/30 bg-white text-black/60')}>Trier par numéro</button>
-              <button type="button" onClick={() => setTri('libres')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'libres' ? 'border-gold-500 bg-gold-400/10' : 'border-gold-300/30 bg-white text-black/60')}>Trier par places libres</button>
+              <button type="button" onClick={() => setTri('numero')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'numero' ? 'border-accent bg-accent-tint' : 'border-hairline bg-surface text-text-muted')}>Trier par numéro</button>
+              <button type="button" onClick={() => setTri('libres')} className={clsx('rounded-xl2 border-2 px-2 py-2 text-sm font-semibold', tri === 'libres' ? 'border-accent bg-accent-tint' : 'border-hairline bg-surface text-text-muted')}>Trier par places libres</button>
             </div>
 
             {tablesVisibles.length === 0 && (
-              <div className="card mb-6 py-6 text-center text-sm text-black/50">
+              <div className="card mb-6 py-6 text-center text-sm text-text-faint">
                 Aucune table ni invitation ne correspond à cette recherche.
               </div>
             )}
 
             {normalesVisibles.length > 0 && (
-              <p className="mb-2 text-sm font-semibold text-black/50">
+              <p className="mb-2 text-sm font-semibold text-text-faint">
                 Tables familiales &amp; soirée
-                <span className="font-normal text-black/40">
+                <span className="font-normal text-text-faint">
                   {' '}
                   — {tri === 'libres' ? 'triées par places libres (pas par numéro)' : 'triées par numéro, 1 → 40'}
                 </span>
@@ -619,8 +612,8 @@ export default function PlanTablePage() {
               ))}
             </div>
 
-            {reserveVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-black/50">
-              Tables de réserve <span className="font-normal text-black/40">— excédentaire au-delà des 400</span>
+            {reserveVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-text-faint">
+              Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 400</span>
             </p>}
             <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {reserveVisibles.map((t) => (
@@ -639,15 +632,15 @@ export default function PlanTablePage() {
 
             {sansTableInvitations.length > 0 && (
               <>
-                <p className="mb-2 text-sm font-semibold text-black/50">Sans table <span className="font-normal text-black/40">— staff accueilli directement</span></p>
+                <p className="mb-2 text-sm font-semibold text-text-faint">Sans table <span className="font-normal text-text-faint">— staff accueilli directement</span></p>
                 <div className="card p-4">
-                  {sansTableVisibles.length === 0 ? <p className="text-xs italic text-black/40">Aucune place de ce type</p> : (
-                    <ul className="divide-y divide-gold-400/10">
+                  {sansTableVisibles.length === 0 ? <p className="text-xs italic text-text-faint">Aucune place de ce type</p> : (
+                    <ul className="divide-y divide-hairline">
                       {sansTableVisibles.map((inv) => (
                         <li key={inv.id} className="flex items-center gap-2 py-2">
-                          {canCheckin ? <Link href={'/checkin/' + inv.id} className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p><p className="text-xs text-black/50">{inv.tags.filter((tag) => tag !== 'SERVICES' && tag !== 'notable' && !tag.startsWith('Côté_')).join(' · ')}</p></Link> : <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p></div>}
+                          {canCheckin ? <Link href={'/checkin/' + inv.id} className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p><p className="text-xs text-text-faint">{inv.tags.filter((tag) => tag !== 'SERVICES' && tag !== 'notable' && !tag.startsWith('Côté_')).join(' · ')}</p></Link> : <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p></div>}
                           {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
-                          {canCall && inv.telephone && <a href={'tel:' + inv.telephone} aria-label={'Appeler ' + inv.nom_affichage} className="shrink-0 rounded-full bg-gold-100 p-2 text-sm text-gold-700">📞</a>}
+                          {canCall && inv.telephone && <CallButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
                         </li>
                       ))}
                     </ul>
@@ -707,7 +700,7 @@ function TableCard({
         <button
           type="button"
           aria-label={'Localiser la table ' + table.number + ' sur le plan de salle'}
-          className="absolute right-2 top-2 rounded-full bg-gold-100 p-1.5 text-sm leading-none text-gold-700"
+          className="absolute right-2 top-2 rounded-full bg-accent-tint p-1.5 text-sm leading-none text-accent"
           onClick={onLocate}
         >
           📍
@@ -717,19 +710,19 @@ function TableCard({
         <div className="flex items-baseline justify-between gap-2 pr-8">
           <p className="font-display text-lg">
             Table {table.number}
-            {table.label && <span className="ml-1.5 text-sm font-sans text-black/50">— {table.label}</span>}
+            {table.label && <span className="ml-1.5 text-sm font-sans text-text-faint">— {table.label}</span>}
             {reserve && (
               <span className="ml-1.5 rounded-full bg-status-over/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-status-over align-middle">
                 Excédentaire
               </span>
             )}
           </p>
-          <p className="shrink-0 text-xs tabular-nums text-black/40">
+          <p className="shrink-0 text-xs tabular-nums text-text-faint">
             {occ}/{table.capacity}
           </p>
         </div>
-        {vol && <p className="text-xs font-semibold uppercase tracking-wide text-gold-700">{vol}</p>}
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-black/50">
+        {vol && <p className="text-xs font-semibold uppercase tracking-wide text-accent">{vol}</p>}
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-faint">
           <span>{occ}/{table.capacity} places prévues</span>
           <span className={clsx('font-semibold', arrives > occ ? 'text-status-over' : 'text-status-complete')}>
             {arrives}/{occ} arrivées
@@ -740,7 +733,7 @@ function TableCard({
         </div>
 
         {visibles.length === 0 && (
-          <p className="mt-2 text-xs italic text-black/40">
+          <p className="mt-2 text-xs italic text-text-faint">
             {invitations.length === 0 ? 'Libre pour le débordement du jour J' : 'Aucune place de ce type'}
           </p>
         )}
@@ -751,23 +744,23 @@ function TableCard({
             return (
             <li key={inv.id} className="flex flex-wrap items-center gap-1.5 text-sm">
               <span
-                className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
+                className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-surface-2')}
                 title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{inv.nom_affichage}</span>
-                {prenoms && <span className="block truncate text-xs font-medium text-gold-600">{prenoms}</span>}
+                {prenoms && <span className="block truncate text-xs font-medium text-accent">{prenoms}</span>}
               </span>
               {inv.category === 'Staff' && (
-                <span className="flex shrink-0 items-center gap-1 rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-700">
+                <span className="flex shrink-0 items-center gap-1 rounded bg-accent-tint px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
                   Staff
                   <span
-                    className={clsx('h-1.5 w-1.5 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-black/20')}
+                    className={clsx('h-1.5 w-1.5 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-surface-2')}
                   />
                 </span>
               )}
-              <span className="shrink-0 text-xs text-black/40">×{inv.nombre_prevu}</span>
-              <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold', inv.statut === 'complet' ? 'bg-status-complete/15 text-status-complete' : inv.statut === 'partiel' ? 'bg-status-partial/15 text-status-partial' : inv.statut === 'excedent' ? 'bg-status-over/15 text-status-over' : 'bg-black/5 text-black/45')}>
+              <span className="shrink-0 text-xs text-text-faint">×{inv.nombre_prevu}</span>
+              <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold', inv.statut === 'complet' ? 'bg-status-complete/15 text-status-complete' : inv.statut === 'partiel' ? 'bg-status-partial/15 text-status-partial' : inv.statut === 'excedent' ? 'bg-status-over/15 text-status-over' : 'bg-surface-2 text-text-faint')}>
                 {inv.statut === 'complet' ? 'Arrivé' : inv.statut === 'partiel' ? 'Partiel' : inv.statut === 'excedent' ? 'Excédent' : 'Non arrivé'}
               </span>
               <span
