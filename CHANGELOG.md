@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.27.2] — 2026-08-30
+
+Advisory de sécurité Supabase signalé en tout début de ce chantier (avant même l'invité surprise), resté sans décision jusqu'à ce que Gersom explore le tableau de bord de sécurité aujourd'hui.
+
+### Sécurité
+- **`supabase/migrations/0036_enable_rls_user_credential_backups.sql`** (nouveau) : `public.user_credential_backups` avait RLS **désactivée** — table du schéma `public` entièrement exposée aux rôles `anon`/`authenticated` si elle porte les grants correspondants (contrairement à « RLS activée sans policy », qui refuse tout par défaut — ici rien ne refusait quoi que ce soit). Recherche complète dans le dépôt : cette table n'est référencée nulle part, ni créée ni utilisée par cette application. Correction : active RLS, sans ajouter de policy — même posture que toutes les autres tables sensibles du dépôt (`users`, `audit_logs`, `import_backups`, `invitations_backup_*`, `placement_status_backup_*` : RLS activée, zéro policy, accès réservé à `service_role`). Pas de policy basée sur `auth.uid()` : cette application n'utilise pas Supabase Auth (session PIN/cookie maison), `auth.uid()` y serait toujours nul.
+- Passage en revue des nouveaux advisories `rls_enabled_no_policy` (niveau INFO) sur `audit_logs`, `festin_directors`, `guest_approval_requests`, `guest_approvers`, `import_backups`, `invitations_backup_*`, `placement_status_backup_20260828`, `users` : **aucune action nécessaire** — ce sont exactement les tables conçues pour être fermées par défaut (`festin_directors`/`guest_approvers`/`guest_approval_requests` volontairement sans policy anon depuis `0032_guest_approvals.sql`, les autres déjà documentées comme telles avant ce chantier). « RLS activée sans policy » est l'état sécurisé recherché pour ces tables, pas une alerte.
+- Réconciliation du suivi de migrations pour l'intégration GitHub↔Supabase (Database → Migrations) : ce dépôt nomme ses fichiers `NNNN_nom.sql` (ex. `0032_guest_approvals.sql`), alors que le suivi de Supabase attend un format horodaté et compare par préfixe exact — sans correspondance, la prochaine synchronisation automatique aurait rejoué l'intégralité de l'historique des migrations contre une base déjà à jour (échec immédiat, « déjà existant »). Gersom a inséré manuellement une ligne de suivi par fichier actuellement dans `supabase/migrations/` (préfixe existant du fichier comme version), sans renommer aucun fichier ni toucher au contenu déjà appliqué — 33 lignes ajoutées, aucun conflit avec les entrées déjà suivies. « Déployer en production » (case à cocher côté Supabase) reste sûr à activer désormais.
+
+### Tests
+- Aucun changement de code applicatif — une seule instruction SQL (`enable row level security`), sans policy, sur une table inutilisée par l'application. `npx tsc --noEmit`, `npm run build`, 14 suites de tests (`node --test`, 125 tests) revérifiés sans régression.
+
+### Migrations
+- `0036_enable_rls_user_credential_backups.sql` — écrite, testée ; en attente d'application en production (même blocage d'approbation d'outil que sur les migrations précédentes — à appliquer via le SQL Editor Supabase, voir instructions ci-dessous).
+
 ## [1.27.1] — 2026-08-30
 
 Complète le déploiement de v1.27.0 : les deux migrations laissées « écrites, testées, en attente d'application » (blocage d'approbation d'outil côté session) ont été appliquées en production par Gersom lui-même via le SQL Editor Supabase.
