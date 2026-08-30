@@ -18,9 +18,19 @@ import { parseMembersFromNotes } from '@/lib/membersNotes';
 export function GuestArrivalPanel({
   invitation,
   onInvitationUpdate,
+  onVisibilityChange,
 }: {
   invitation: InvitationRow;
   onInvitationUpdate: (inv: InvitationRow) => void;
+  // Signale au parent si ce panneau affiche reellement une liste de membres,
+  // pour qu'il sache s'il doit se rabattre sur l'ancien compteur agrege
+  // (invitation vraiment solo, jamais de "Membres: ..." dans les notes).
+  // A NE PAS deduire de nombre_prevu : ce nombre baisse des qu'une personne
+  // passe en "ne_viendra_pas" (voir set_guest_arrival_status), donc un
+  // groupe de 2 tombe a nombre_prevu=1 des la premiere personne exclue --
+  // trouve par Gersom le 29/08/2026 : le panneau (et Mona dedans) disparaissait
+  // completement des ce moment-la, plus aucun moyen de l'annuler.
+  onVisibilityChange?: (visible: boolean) => void;
 }) {
   const online = useOnline();
   const [members, setMembers] = useState<GuestRow[]>([]);
@@ -119,8 +129,14 @@ export function GuestArrivalPanel({
     }
   }
 
-  if (invitation.nombre_prevu <= 1) return null;
+  const visible = !loading && members.length > 0;
+  useEffect(() => {
+    onVisibilityChange?.(visible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
   if (loading) return <div className="card mb-4 text-center text-sm text-black/40 dark:text-[#f4f3f1]/40">Chargement des membres…</div>;
+  if (!visible) return null;
 
   return (
     <div className="card mb-4">

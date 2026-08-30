@@ -72,6 +72,16 @@ export default function CheckinPage() {
   const [invitationTable, setInvitationTable] = useState<TableRow | null>(null);
   const invitationTableIdRef = useRef<string | null>(null);
   const [noShowSubmitting, setNoShowSubmitting] = useState(false);
+  // Vrai des que GuestArrivalPanel affiche reellement une liste de membres.
+  // Part de true (optimiste) : la plupart des invitations ouvertes ici sont
+  // des groupes, donc pas de flash vers l'ancien compteur pendant le
+  // premier chargement. Corrige par le panneau lui-meme une fois les
+  // membres charges -- ne JAMAIS le deduire de nombre_prevu (qui baisse des
+  // qu'une personne passe en "ne_viendra_pas" : un groupe de 2 tombe a
+  // nombre_prevu=1 des la premiere exclusion, ce qui faisait disparaitre le
+  // panneau -- et la personne exclue avec, plus aucun moyen de l'annuler --
+  // trouve par Gersom le 29/08/2026).
+  const [hasMemberList, setHasMemberList] = useState(true);
 
   // -- Renommer l'invitation (pas un membre detaille -- voir /members) ------
   const [renaming, setRenaming] = useState(false);
@@ -840,7 +850,7 @@ export default function CheckinPage() {
           </div>
         )}
 
-        <GuestArrivalPanel invitation={invitation} onInvitationUpdate={setInvitation} />
+        <GuestArrivalPanel invitation={invitation} onInvitationUpdate={setInvitation} onVisibilityChange={setHasMemberList} />
 
         <button
           type="button"
@@ -875,14 +885,15 @@ export default function CheckinPage() {
             groupe n'est arrive : une fois une arrivee enregistree, ce n'est
             plus pertinent (et record_checkin leve deja le marqueur tout seul
             si un groupe marque absent se presente quand meme).
-            Cache aussi des qu'il y a plusieurs personnes nommees : le
-            detail par personne de GuestArrivalPanel ci-dessus (etat
-            "ne_viendra_pas" par membre) prend le relais, redondant sinon --
-            demande de Gersom le 28/08/2026. Toujours visible pour une
-            invitation solo (aucun detail de membres a afficher dans ce
-            cas), et toujours visible si deja marquee (pour garder un moyen
-            d'annuler), quel que soit nombre_prevu. */}
-        {invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || invitation.nombre_prevu <= 1) && (
+            Cache des que GuestArrivalPanel ci-dessus affiche reellement une
+            liste (son etat "ne_viendra_pas" par membre prend le relais,
+            redondant sinon) -- demande de Gersom le 28/08/2026. Toujours
+            visible pour une invitation solo (aucun detail de membres a
+            afficher dans ce cas), et toujours visible si deja marquee (pour
+            garder un moyen d'annuler). Base sur hasMemberList (etat reel du
+            panneau), jamais sur nombre_prevu -- voir le commentaire sur
+            hasMemberList plus haut. */}
+        {invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || !hasMemberList) && (
           <button
             type="button"
             disabled={noShowSubmitting || !online}
@@ -895,7 +906,7 @@ export default function CheckinPage() {
           </button>
         )}
 
-        {invitation.nombre_prevu > 1 ? (
+        {hasMemberList ? (
           // Groupe : chaque personne se coche individuellement dans
           // GuestArrivalPanel ci-dessus (instantane, pas de bouton
           // "Confirmer" a part) -- seul reste a couvrir le cas d'un invite
@@ -937,7 +948,7 @@ export default function CheckinPage() {
         {error && <p className="mt-3 text-center text-sm font-medium text-status-over">{error}</p>}
       </div>
 
-      {invitation.nombre_prevu <= 1 && (
+      {!hasMemberList && (
         <div className="space-y-3 px-4 pb-6">
           <button
             className="btn-primary w-full"
