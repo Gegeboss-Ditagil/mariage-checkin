@@ -1,7 +1,7 @@
 # Check-in Mariage Nelly & Gersom
 
 **Version actuelle : 1.22.0**
-**Dernière mise à jour documentaire : 2026-08-29**
+**Dernière mise à jour documentaire : 2026-08-30**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
@@ -25,8 +25,11 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.19.3
+## État fonctionnel v1.22.0
 
+- **Thème « Atrium » (clair) / « Maison » (sombre)**, choisi une seule fois à la première connexion puis modifiable à tout moment (menu du compte), avec un mode « Automatique » qui suit le réglage clair/sombre de l'appareil en direct. Toutes les pages en profitent, y compris `/login`.
+- **Arrivée par personne** sur les fiches de groupe : un bouton ✓/✕ par personne nommée (jamais un simple compteur global), toujours réversible, place libérée sans jamais supprimer la personne.
+- **Barre de navigation à 5 icônes** (Recherche, Plan, Scan au centre, Tableau de bord, Staff) sur les écrans principaux ; toutes les pages avec cette barre tiennent sur un seul écran sans défilement pour l'atteindre, y compris en orientation paysage.
 - **41 tables au total**.
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
 - **Tables 1 à 40 : normales**.
@@ -60,8 +63,9 @@ Avant toute modification, lire :
 
 ## Fonctionnalités principales
 
-- Connexion par nom + PIN.
+- Connexion par nom + PIN, thème Atrium/Maison (clair/sombre/auto) au choix.
 - Scan QR et recherche d'invités.
+- Arrivée par personne pour les groupes (✓/✕ par membre nommé, jamais un simple compteur).
 - Suivi séparé des arrivées du staff via `/staff` et QR spécial `STAFF`.
 - Check-in, correction et annulation selon permissions.
 - Gestion des tables, déplacements et débordements.
@@ -129,4 +133,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.19.3** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.22.0** et l'historique des versions.
