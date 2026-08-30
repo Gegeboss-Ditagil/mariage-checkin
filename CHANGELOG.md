@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.21.1] — 2026-08-29
+
+Bug trouvé par Gersom **en production**, quelques minutes après le déploiement de v1.21.0 : sur « Famille Guygson Vemba » (2 prévues), marquer Mona en ✕ (« ne viendra pas ») faisait tomber `nombre_prevu` à 1 comme prévu — mais `GuestArrivalPanel` ET la page de check-in décidaient toutes les deux d'afficher la liste par personne uniquement quand `nombre_prevu > 1`. Résultat : dès que Mona passait en ✕, le panneau entier disparaissait (elle avec), l'écran retombait sur l'ancien compteur +/- (qui ne sait rien des personnes), et il n'y avait plus aucun moyen de la remettre — « on est un peu dans le pétrin ».
+
+### Corrigé
+- **Cause racine** : `nombre_prevu` n'est pas un bon signal de « ce groupe a une liste de membres » — il baisse justement à chaque personne marquée `ne_viendra_pas`, par conception (v1.21.0). Un groupe de 2 tombe à `nombre_prevu = 1` dès la première exclusion, ce qui déclenchait à tort le repli vers l'ancien compteur solo.
+- `components/GuestArrivalPanel.tsx` : la visibilité du panneau se base maintenant sur `members.length > 0` (la liste réelle chargée/initialisée), plus jamais sur `invitation.nombre_prevu`. Signale son état réel au parent via une nouvelle prop `onVisibilityChange`.
+- `app/checkin/[invitationId]/page.tsx` : nouvel état `hasMemberList` (initialisé à `true`, optimiste — pas de flash vers l'ancien compteur pour la majorité des groupes pendant le premier chargement), mis à jour par `GuestArrivalPanel`. Remplace les trois conditions qui utilisaient `invitation.nombre_prevu > 1`/`<= 1` (bouton « Cet invité ne viendra pas », choix compteur vs « + Invité supplémentaire », bouton « Confirmer » du bas).
+- **Aucune réparation de données nécessaire** : le bug était uniquement dans l'affichage — Mona existait toujours en base avec `arrival_status = 'ne_viendra_pas'`, `nombre_prevu` était correctement à 1. Une fois le correctif déployé, rouvrir la fiche réaffiche Suzie ET Mona (grisée, toujours réversible en retapant ✓ ou ✕) sans aucune intervention manuelle en base.
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` : 2 tests remplacés, 2 ajoutés (11 au total) — visibilité basée sur `members.length`, jamais sur `nombre_prevu`, dans les deux fichiers.
+- `npx tsc --noEmit`, `npm run build`, les 11 suites de tests (`test:roles`, `test:withjoy`, `test:members`, `test:floorplan`, `test:diffusion`, `test:navigation`, `test:realtime`, `test:searchnames`, `test:sortlabel`, `test:arrival`, `test:listecote`) — tous exécutés avec succès.
+
 ## [1.21.0] — 2026-08-29
 
 Gersom, en regardant le panneau « Qui ne vient pas dans ce groupe ? » (déjà par-membre) sur un groupe de 5 : « on ne veut pas savoir le nombre de personnes, on veut savoir c'est qui ». Le compteur agrégé « Personnes arrivées » (+/-) ne dit jamais QUI parmi les personnes nommées est arrivé — juste un total. Remplacé par une case à cocher par personne, à trois états, réversible à tout moment.

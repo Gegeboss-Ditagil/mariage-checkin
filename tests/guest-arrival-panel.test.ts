@@ -60,15 +60,36 @@ test("remove_invitation_member ne redecompte pas nombre_prevu pour une personne 
   assert.match(migrationSource, /when v_guest_status = 'arrive' then greatest\(v_inv\.nombre_arrive - 1, 0\)/);
 });
 
-test('"Cet invité ne viendra pas" (invitation entiere) se cache des qu\'il y a plusieurs personnes nommees, sauf si deja marque', () => {
+test('"Cet invité ne viendra pas" (invitation entiere) se cache des que GuestArrivalPanel affiche reellement une liste, sauf si deja marque', () => {
   // GuestArrivalPanel gere desormais le detail par personne pour un groupe
-  // (nombre_prevu > 1) -- redondant sinon. Reste visible pour une invitation
-  // solo et pour annuler un marquage deja pose.
-  assert.match(checkinSource, /invitation\.nombre_arrive === 0 && \(invitation\.ne_viendra_pas \|\| invitation\.nombre_prevu <= 1\) && \(/);
+  // -- redondant sinon. Reste visible pour une invitation solo et pour
+  // annuler un marquage deja pose.
+  assert.match(checkinSource, /invitation\.nombre_arrive === 0 && \(invitation\.ne_viendra_pas \|\| !hasMemberList\) && \(/);
 });
 
-test('un groupe (nombre_prevu > 1) propose "+ Invité supplémentaire" au lieu du compteur/bouton "Confirmer"', () => {
-  assert.match(checkinSource, /invitation\.nombre_prevu > 1 \? \(/);
+test('la visibilite du panneau/compteur repose sur hasMemberList (etat reel), jamais sur nombre_prevu qui fluctue', () => {
+  // Trouve par Gersom le 29/08/2026 : nombre_prevu baisse des qu'une
+  // personne passe en "ne_viendra_pas" (voir set_guest_arrival_status) --
+  // un groupe de 2 tombe a nombre_prevu=1 des la premiere exclusion. Baser
+  // la visibilite du panneau la-dessus le faisait disparaitre completement,
+  // avec la personne exclue dedans : plus aucun moyen de l'annuler.
+  assert.match(checkinSource, /const \[hasMemberList, setHasMemberList\] = useState\(true\);/);
+  assert.match(checkinSource, /onVisibilityChange=\{setHasMemberList\}/);
+  assert.match(checkinSource, /hasMemberList \? \(/);
+  assert.match(checkinSource, /!hasMemberList && \(/);
+  // "nombre_prevu > 1" / "<= 1" ne doivent plus servir a decider quoi
+  // afficher (seulement apparaitre, ailleurs, dans des messages d'excedent
+  // sans rapport) -- cible precisement les anciennes conditions de branchement.
+  assert.doesNotMatch(checkinSource, /\{invitation\.nombre_prevu > 1 \? \(/);
+  assert.doesNotMatch(checkinSource, /\{invitation\.nombre_prevu <= 1 && \(/);
+});
+
+test('un groupe propose "+ Invité supplémentaire" au lieu du compteur/bouton "Confirmer"', () => {
   assert.match(checkinSource, /\+ Invité supplémentaire \(non prévu\)/);
   assert.match(checkinSource, /onClick=\{\(\) => handleAdd\(1\)\}/);
+});
+
+test('GuestArrivalPanel se base sur members.length (pas nombre_prevu) pour decider s\'il affiche la liste', () => {
+  assert.match(panelSource, /const visible = !loading && members\.length > 0;/);
+  assert.doesNotMatch(panelSource, /invitation\.nombre_prevu/);
 });
