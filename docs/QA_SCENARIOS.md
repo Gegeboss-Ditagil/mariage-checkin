@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.26.0**
+**Version documentaire : 1.27.0**
 **Dernière mise à jour : 2026-08-30**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -166,6 +166,19 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - `/scan` : une bande compacte affiche « X / Y arrivés » et une jauge de remplissage juste au-dessus de la barre de navigation ; taper dessus ouvre `/dashboard`. Les chiffres suivent les arrivées en temps réel (comme `/dashboard`), sans recharger la page.
 - Connexion avec un rôle autre qu'admin (directeur, placeur, agent scan) : `/history` n'apparaît plus dans le menu du compte, et une navigation directe par URL vers `/history` renvoie vers l'écran par défaut du rôle au lieu d'afficher la page.
 - Connexion en tant qu'admin : `/history` reste accessible normalement (menu du compte et URL directe).
+
+## Invité surprise avec approbation SMS à distance — v1.27.0
+
+- Bouton « 📷 Invité surprise (non prévu) » visible sur `/scan` uniquement pour admin/directeur/placeur — absent pour agent scan et visibilité.
+- Rôle sans `guestApproval` (agent scan) : `POST /api/guest-approvals` en appel direct (sans passer par le bouton) → rejeté (401), pas seulement caché côté interface. Idem pour `/api/guest-approvals/[id]/assign-table`.
+- Flux complet : photo → côté (Nelly/Gégé) → nom/nombre → « Envoyer la demande » → SMS reçu par l'approbateur configuré (`guest_approvers`) → clic sur le lien `/approve/[token]` → photo visible, sans connexion → Approuver → statut « Approuvé » visible dans `/approbations` (sondage, quelques secondes).
+- Un deuxième clic sur le même lien après décision → « déjà traité », jamais une erreur technique brute (`409`).
+- Refus → statut « Refusé », aucun bouton « Assigner une table », visible dans `/approbations`.
+- Après approbation, l'approbateur reçoit un second SMS : « il vous reste maintenant N places » en réserve — vérifier que N correspond au calcul déjà utilisé par `/dashboard`/`/plan-table` (places de réserve libres maintenant).
+- « Assigner une table » depuis `/approbations` (demande approuvée) → sélection d'une table (`TablePicker`, capacités en direct) → confirme → nouvelle invitation créée, visible sur sa fiche `/checkin/[invitationId]` (`nombre_arrive = 0`, à confirmer manuellement comme n'importe quel invité) ; un deuxième essai d'assignation sur la même demande → refusé (déjà assignée).
+- Vérifier qu'aucun MMS n'est tenté (numéro Twilio français) — uniquement un SMS texte avec le lien.
+- Vérifier que `SUPABASE_SERVICE_ROLE_KEY` n'apparaît jamais côté client sur `/approve/[token]` (page publique).
+- Sans les variables d'environnement Twilio configurées sur Vercel : la demande est quand même créée (photo/infos conservées), l'agent voit un message clair indiquant que le SMS n'est pas parti et doit prévenir l'approbateur autrement.
 
 ## Contrôle de version avant merge
 

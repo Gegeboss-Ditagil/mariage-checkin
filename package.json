@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.26.0",
+  "version": "1.27.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -19,6 +19,7 @@
     "test:arrival": "node --test tests/guest-arrival-panel.test.ts",
     "test:theme": "node --test tests/theme-preference.test.ts",
     "test:listecote": "node --test tests/dashboard-liste-cote-filter.test.ts",
+    "test:guestapprovals": "node --test tests/guest-approvals.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"
   },

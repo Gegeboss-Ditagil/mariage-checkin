@@ -3,6 +3,42 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.27.0] — 2026-08-30
+
+Prompt de handoff complet de Gersom : invité surprise avec approbation par SMS à distance (Twilio), plus un complément vocal (décompte de places dans le SMS de confirmation, rapport au directeur de festin, confirmation que seuls admin/directeur/placeur y ont accès).
+
+### Ajouté
+- **Invité surprise depuis `/scan`** : bouton « 📷 Invité surprise (non prévu) », réservé à la nouvelle capacité `guestApproval` (admin/directeur/placeur — **jamais** agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement »). Parcours en 3 écrans : photo (`<input type="file" capture="environment">`, une seule prise) → côté (Nelly/Gégé) → nom + nombre d'invités → envoi.
+- **`supabase/migrations/0032_guest_approvals.sql`** (appliquée en production) :
+  - `guest_approvers` (cote → nom/téléphone de l'approbateur, config plutôt que variable d'environnement) — pré-rempli avec les deux numéros donnés par Gersom : **« Mon Papa » (Canada, +1 514 815 1586) = Côté Gégé**, **« Papa David » (France, +33 6 43 34 85 60) = Côté Nelly** (confirmé explicitement).
+  - `festin_directors` (nom/téléphone des destinataires du SMS de rapport, Remy/Tuzola) — **laissée vide** : leurs numéros n'ont pas encore été confirmés ; le SMS de rapport est un no-op silencieux tant qu'elle l'est, le reste du parcours fonctionne normalement.
+  - `guest_approval_requests` (photo, côté, nom, nombre, statut, décision, table assignée…), RLS activée mais **sans aucune policy anon** — contrairement aux tables opérationnelles historiques (0003_rls.sql) : le `token` doit rester confidentiel, une lecture anon même « pour le temps réel » l'exposerait à quiconque possède la clé anon.
+  - Bucket Storage privé `guest-approval-photos` (jamais public — toujours résolu en URL signée côté serveur, 1h de validité, `lib/guestApprovalPhotos.ts`).
+  - RPC `assign_table_to_guest_approval` : crée l'invitation à la table choisie pour une demande **déjà approuvée**, refuse sinon (409) ; jamais utilisée avant approbation.
+- **`lib/twilio.ts`** : envoi de SMS via l'API REST Twilio directement en `fetch()` (pas de SDK ajouté en dépendance). **Jamais de MMS** — un numéro Twilio français ne le supporte pas ; seuls les numéros US/Canada le permettraient. Le SMS contient toujours un lien vers `/approve/[token]`, jamais la photo elle-même.
+- **`lib/guestApprovalNotify.ts`** : trois SMS distincts, tous texte seul —
+  1. à l'approbateur, à la création de la demande (lien `/approve/[token]`) ;
+  2. à l'approbateur, après sa décision — « il vous reste maintenant N places » en réserve si approuvé (demande de Gersom), simple accusé de réception si refusé ;
+  3. au directeur de festin (`festin_directors`), après assignation de table — qui a approuvé, combien de places, quelle table, combien de places de réserve restent. Le calcul des places de réserve réutilise `computeTableCapacities` (`lib/capacity.ts`), même logique que `/dashboard`/`/plan-table`.
+- **`app/api/guest-approvals/route.ts`** (POST création + upload + SMS, GET liste pour `/approbations`) et **`app/api/guest-approvals/[id]/assign-table/route.ts`** (POST, finalise une demande approuvée) — capacité `guestApproval`, **volontairement pas** la capacité `addInvitation` (réservée à l'admin, voir `/api/invitations/add`) : action étroite qui ne peut agir que sur une demande déjà approuvée par SMS, jamais un droit général d'ajout d'invitation.
+- **`app/api/public/guest-approvals/[token]/route.ts`** et **`.../decide/route.ts`** — routes **publiques** (préfixe `/api/public`, ajouté à `middleware.ts`), sans session : la connaissance du token est l'autorisation. La décision (`POST .../decide`) est atomique (`UPDATE ... WHERE statut = 'en_attente'`) : un deuxième clic sur un lien déjà tranché reçoit `409` avec le statut réel, jamais une double décision silencieuse ni une erreur brute.
+- **`app/approve/[token]/page.tsx`** — page publique (ajoutée à `middleware.ts`), sans connexion, sans navigation : photo, nom, nombre, côté, boutons Approuver/Refuser.
+- **`app/approbations/page.tsx`** (liste des demandes, sondage 5s — pas de websocket temps réel : `guest_approval_requests` n'a pas de policy anon, voir plus haut) et **`app/approbations/[id]/assign/page.tsx`** (assignation de table via `TablePicker`, même sélecteur que `/tables/move/[invitationId]`) — nouveau raccourci « 📷 Approbations » dans le menu du compte (`AccountMenu.tsx`), capacité `guestApproval`.
+
+### Non traité dans ce lot — à confirmer
+Les numéros de téléphone de Remy et Tuzola (directeur de festin) pour le SMS de rapport : `festin_directors` est en place mais vide. Dès que Gersom les confirme, une simple insertion suffit — aucun changement de code nécessaire.
+
+### Tests
+- `tests/guest-approvals.test.ts` (nouveau, 13 tests) : capacité `guestApproval` correctement bornée, routes publiques sans session, clé de service jamais exposée côté client, décision atomique, aucun MMS tenté, bucket privé, RLS sans policy anon, `assign_table_to_guest_approval` n'utilise pas `addInvitation`, mapping téléphone/côté confirmé.
+- `tests/navigation-resilience.test.ts` : `/approbations` ajouté à la liste des écrans utilisant le patron responsive paysage (10e écran).
+- `npx tsc --noEmit`, `npm run build`, 14 suites de tests (`node --test`, 116 tests) — tous exécutés avec succès.
+
+### Migrations
+- `0032_guest_approvals.sql` — appliquée en production (additive : nouvelles tables/bucket/RPC uniquement, aucune donnée existante modifiée). Les deux numéros de `guest_approvers` ont été fournis explicitement par Gersom pour cet usage précis.
+
+### ⚠️ Action manuelle requise (Vercel)
+Trois variables d'environnement à ajouter dans Vercel → Settings → Environment Variables pour que l'envoi de SMS fonctionne : `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`. Sans elles, une demande d'invité surprise reste créée normalement (photo + infos conservées), mais l'agent est averti explicitement que le SMS n'est pas parti.
+
 ## [1.26.0] — 2026-08-30
 
 Retour vocal de Gersom sur l'usage réel de la barre de navigation, plus deux demandes ponctuelles.

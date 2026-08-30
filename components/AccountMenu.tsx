@@ -56,6 +56,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   if (!name) return null;
   const canHistory = hasCapability(role, 'viewHistory');
   const canAdmin = hasCapability(role, 'adminPanel');
+  const canGuestApproval = hasCapability(role, 'guestApproval');
 
   return (
     <div ref={containerRef} className={floating ? 'fixed right-4 top-4 z-30' : 'relative z-30'}>
@@ -92,9 +93,10 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
           </div>
 
           <div className="space-y-1 border-y border-hairline py-2">
+            {canGuestApproval && <Link role="menuitem" href="/approbations" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">📷 Approbations</Link>}
             {canHistory && <Link role="menuitem" href="/history" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">≡ Historique</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Administration</Link>}
-            {!canHistory && !canAdmin && <p className="px-3 py-2 text-xs text-text-faint">Aucun raccourci supplémentaire</p>}
+            {!canGuestApproval && !canHistory && !canAdmin && <p className="px-3 py-2 text-xs text-text-faint">Aucun raccourci supplémentaire</p>}
           </div>
           <button role="menuitem" type="button" onClick={handleLogout} disabled={loggingOut} className="mt-2 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-status-over hover:bg-status-over/10 disabled:opacity-40">
             {loggingOut ? 'Déconnexion…' : '⏻ Se déconnecter'}

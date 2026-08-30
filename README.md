@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.26.0**
+**Version actuelle : 1.27.0**
 **Dernière mise à jour documentaire : 2026-08-30**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.26.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.27.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,8 +25,9 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.26.0
+## État fonctionnel v1.27.0
 
+- **Invité surprise avec approbation SMS à distance** : depuis `/scan`, un placeur/directeur/admin peut photographier un invité non prévu, choisir son côté (Nelly/Gégé) et envoyer une demande d'approbation par SMS au parent concerné (lien vers une page publique avec la photo — jamais de MMS) avant de le laisser entrer. Une fois approuvée (`/approbations`), l'assignation de table reste manuelle. SMS de suivi automatiques : places de réserve restantes à l'approbateur, rapport complet au directeur de festin.
 - **Barre de navigation « verre liquide »** : pilule flottante en verre dépoli, icônes plus grandes et libellés inactifs mieux contrastés — l'ancienne barre plate était jugée difficile à voir. En orientation paysage (téléphone tourné, ou iPad), elle bascule en bande verticale fixée au bord droit de l'écran ; le contenu de la page défile normalement de haut en bas, indépendamment de la barre.
 - **Bande d'information de base sur `/scan`** : nombre d'invités arrivés/attendus et une jauge compacte du remplissage de la salle, juste au-dessus de la barre de navigation — ouvre le tableau de bord complet au tap.
 - **Historique (`/history`) réservé à l'admin** : les autres rôles (directeur, placeur, agent scan) n'y ont plus accès.
@@ -140,4 +141,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.26.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.27.0** et l'historique des versions.

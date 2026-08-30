@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.26.0**
+**Version documentaire : 1.27.0**
 **Dernière mise à jour : 2026-08-30**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -66,8 +66,19 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+| Invité surprise (photo + approbation SMS, `/scan`, `/approbations`) | Oui | Oui | Oui | Non | Non |
 
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
+
+## Invité surprise avec approbation SMS à distance (v1.27.0)
+
+Depuis le 30/08/2026, un placeur, un directeur de festin ou l'admin peut gérer un invité non prévu directement depuis `/scan`, avec une approbation à distance par SMS **avant** de le laisser entrer — capacité dédiée `guestApproval` (jamais agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement », demande explicite de Gersom).
+
+- **Photo** (une seule prise, appareil photo natif) → **côté** (Nelly/Gégé) → **nom + nombre d'invités** → la demande est enregistrée et un SMS part vers l'approbateur configuré pour ce côté (`guest_approvers` : « Mon Papa » pour le côté Gégé, « Papa David » pour le côté Nelly — table de configuration, pas des numéros codés en dur, modifiable depuis Supabase sans redéploiement).
+- Le SMS ne contient **jamais la photo elle-même** (un numéro Twilio français ne supporte pas les MMS) — uniquement un lien vers `/approve/[token]`, une page **publique** (sans connexion) qui l'affiche à l'ouverture.
+- Un seul clic possible sur ce lien : Approuver ou Refuser invalide le token pour tout usage futur (un second clic affiche « déjà traité », jamais une erreur technique).
+- Une fois **approuvée**, la demande apparaît dans `/approbations` (écran dédié, même capacité `guestApproval`) avec un bouton « Assigner une table » — l'ajout réel à la liste des invités et l'assignation de table restent **manuels**, jamais automatiques (demande explicite de Gersom). Cette étape crée l'invitation correspondante, mais ne la marque **pas** arrivée : le check-in se fait ensuite normalement depuis sa fiche, comme pour n'importe quel invité.
+- Après approbation, l'approbateur reçoit un SMS de confirmation indiquant combien de places de réserve il reste. Après assignation de table, un SMS de rapport part vers le directeur de festin (table `festin_directors` : nom de l'approbateur qui a validé, nombre de places, table assignée, places de réserve restantes) — table vide par défaut tant que les numéros de Remy/Tuzola ne sont pas confirmés, aucune erreur ni blocage tant qu'elle l'est.
 
 ## Comptes de connexion
 

@@ -21,6 +21,7 @@ export type Capability =
   | 'addInvitation'
   | 'viewHistory'
   | 'resolveExceptions'
+  | 'guestApproval'
   | 'exportData'
   | 'adminPanel';
 
@@ -28,7 +29,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
   'moveGuests', 'mergeInvitations', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
   'messageContacts',
-  'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
+  'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions', 'guestApproval',
   'exportData', 'adminPanel',
 ];
 
@@ -37,10 +38,16 @@ const ALL_CAPABILITIES: Capability[] = [
 // qui ont acces a l'historique, donne l'acces seulement aux admins". Reste
 // disponible pour admin via ALL_CAPABILITIES seulement (ci-dessus), retire
 // de directeur/placeur/agent_checkin qui l'avaient via ce socle commun.
+// guestApproval (invite surprise + approbation SMS a distance, /scan et
+// /approbations) : admin/directeur/placeur -- demande de Gersom le
+// 30/08/2026, confirme "admin + directeur + placeur" plutot que placeur
+// seul (le directeur reste destinataire du SMS de rapport, donc un acteur
+// legitime). JAMAIS agent_checkin ni visibilite : le scanner doit rediriger
+// vers un placeur plutot que gerer lui-meme un invite non prevu.
 const OPERATIONAL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
   'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
-  'markNoShow', 'resolveExceptions',
+  'markNoShow', 'resolveExceptions', 'guestApproval',
 ];
 
 export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
@@ -82,9 +89,12 @@ export function landingPathForRole(role: Role): string {
 // return true;`), plus dans le socle operationnel de directeur/placeur/
 // agent_checkin. Un acces direct par URL est donc renvoye vers l'ecran par
 // defaut du role, comme n'importe quel chemin hors matrice.
+// '/approbations' (invite surprise, v1.27.0) n'est QUE dans cette liste --
+// pas SCAN_STAFF_PREFIXES (agent_checkin) ni READ_ONLY_PREFIXES (visibilite)
+// -- coherent avec guestApproval, jamais accordee a ces deux roles.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/placement', '/api',
+  '/plan-table', '/exceptions', '/placement', '/approbations', '/api',
 ];
 
 const SCAN_STAFF_PREFIXES = [
