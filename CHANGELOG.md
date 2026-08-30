@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.23.0] — 2026-08-30
+
+Gersom, avec deux captures d'écran d'une fiche de groupe (« Famille David Lukau ») : en ouvrant une fiche, deux écrans s'affichaient l'un après l'autre — l'ancien compteur agrégé « Personnes arrivées » d'abord, puis le nouveau panneau par-personne « Qui est arrivé ? ». Il a aussi demandé deux changements d'ergonomie sur ce panneau : taper le nom d'une personne pour le modifier directement (comme le titre de la fiche), et un bouton « + » pour ajouter quelqu'un sans passer par « Gérer les membres du groupe ».
+
+### Corrigé
+- **Cause racine du double affichage** : `GuestArrivalPanel` prévenait le parent (`onVisibilityChange`) dès que `loading` passait à `false` — ce qui arrive dès le tout premier chargement, avant même de savoir si la liste va se matérialiser depuis les notes (« Membres: ... »). Pendant cette fenêtre, `members.length` valait `0`, donc le parent recevait à tort « pas de liste » et affichait le vieux compteur agrégé, avant de re-basculer vers le panneau par-personne une fois les données réellement arrivées.
+- `components/GuestArrivalPanel.tsx` : `onVisibilityChange` n'est plus appelé qu'une fois l'état vraiment stabilisé (chargement **et** matérialisation éventuelle depuis les notes tous les deux terminés — nouvel indicateur `settled`), jamais à une étape intermédiaire. Le message « Chargement des membres… » reste affiché pendant toute cette fenêtre au lieu de basculer prématurément.
+
+### Ajouté
+- **Renommer une personne directement** : taper son nom dans « Qui est arrivé ? » fait apparaître deux champs (prénom/nom) en édition sur place, comme le titre de la fiche (même API `/api/members/rename`) — réservé aux rôles avec la capacité `manageMembers` (même garde que « Gérer les membres du groupe »).
+- **Ajouter une personne directement** : bouton « + » sous la liste (même capacité `manageMembers`) qui ouvre un mini-formulaire prénom/nom et ajoute la personne via `/api/members/add` (`add_invitation_member`, inchangé) — apparaît aussitôt dans la liste avec ses boutons ✓/✕.
+
+### Non traité dans ce lot — à confirmer
+Gersom a aussi décrit un changement plus profond : que le bouton « + Invité supplémentaire (non prévu) » (actuellement un compteur anonyme qui incrémente `nombre_arrive` et peut déclencher l'assignation à une table de réserve en cas de dépassement) devienne lui aussi un ajout **nommé**, tout en gardant le déclenchement de l'assignation de table en cas de dépassement de capacité. `add_invitation_member` (utilisé par le bouton « + » ci-dessus) augmente `nombre_prevu` en même temps qu'il ajoute la personne — ce qui ne crée jamais de dépassement, donc ne déclenche jamais l'assignation de table, contrairement au comportement actuel de « + Invité supplémentaire ». Faire les deux à la fois (nommé **et** déclencheur d'excédent) demanderait une nouvelle règle métier/RPC — non implémenté sans confirmation explicite, pour ne pas modifier silencieusement le calcul de capacité d'un mariage en préparation.
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` : 14 tests (2 nouveaux, 1 mis à jour pour le nouveau `settled`).
+- `npx tsc --noEmit`, `npm run build`, 12 suites de tests — tous exécutés avec succès.
+
 ## [1.22.0] — 2026-08-30
 
 Gersom a fourni un prompt de handoff complet (« thème Atrium / Maison ») demandant de remplacer toute la charte visuelle par un système à deux modes — Atrium (clair, accent indigo) et Maison (sombre, accent champagne) — avec écran de choix à la première connexion et préférence Sombre/Clair/Auto. Confirmé explicitement avec lui avant de commencer : le prompt ciblait une base stale (« 1.19.3 → 1.20.0 »), alors que le thème « Glass Sombre » (charcoal/teal/or, v1.20.0) était déjà en production et en usage réel — décision prise de le remplacer entièrement plutôt que de le fusionner, sur choix explicite de Gersom.

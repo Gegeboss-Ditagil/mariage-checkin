@@ -90,6 +90,33 @@ test('un groupe propose "+ Invité supplémentaire" au lieu du compteur/bouton "
 });
 
 test('GuestArrivalPanel se base sur members.length (pas nombre_prevu) pour decider s\'il affiche la liste', () => {
-  assert.match(panelSource, /const visible = !loading && members\.length > 0;/);
+  assert.match(panelSource, /const visible = members\.length > 0;/);
   assert.doesNotMatch(panelSource, /invitation\.nombre_prevu/);
+});
+
+test('le parent n\'est prevenu de la visibilite qu\'une fois chargement ET materialisation stabilises (pas de flash "ancien compteur")', () => {
+  // Trouve par Gersom le 30/08/2026 : ouvrir une fiche affichait brievement
+  // l'ancien compteur agrege avant de basculer vers le panneau par-personne
+  // -- `loading` passait a false avant que la materialisation depuis les
+  // notes (ou le chargement reseau) ne soit vraiment terminee, donc
+  // onVisibilityChange(false) partait a tort au parent entre-temps.
+  assert.match(panelSource, /const settled = !loading && !initializing;/);
+  assert.match(panelSource, /if \(!settled\) return;/);
+  assert.doesNotMatch(panelSource, /if \(loading\) return <div/);
+});
+
+test('taper le nom d\'une personne le modifie directement (comme le titre de la fiche), reserve a manageMembers', () => {
+  // Demande de Gersom le 30/08/2026 : plus besoin de passer par "Gerer les
+  // membres du groupe" pour renommer -- meme geste que le titre de la fiche
+  // (TopBar onTitleClick), applique par personne.
+  assert.match(panelSource, /canManage \?/);
+  assert.match(panelSource, /onClick=\{\(\) => startEdit\(guest\)\}/);
+  assert.match(panelSource, /members\/rename/);
+  assert.match(checkinSource, /canManage=\{canRename\}/);
+});
+
+test('bouton "+" pour ajouter une personne au groupe, reserve a manageMembers, meme capacite que "Gerer les membres"', () => {
+  assert.match(panelSource, /canManage && !adding/);
+  assert.match(panelSource, /members\/add/);
+  assert.doesNotMatch(panelSource, /hasCapability/); // capacite fournie par le parent (prop canManage), pas re-decidee ici
 });

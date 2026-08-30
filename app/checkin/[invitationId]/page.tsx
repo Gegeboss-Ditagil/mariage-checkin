@@ -850,7 +850,12 @@ export default function CheckinPage() {
           </div>
         )}
 
-        <GuestArrivalPanel invitation={invitation} onInvitationUpdate={setInvitation} onVisibilityChange={setHasMemberList} />
+        <GuestArrivalPanel
+          invitation={invitation}
+          onInvitationUpdate={setInvitation}
+          onVisibilityChange={setHasMemberList}
+          canManage={canRename}
+        />
 
         <button
           type="button"

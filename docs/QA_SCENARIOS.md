@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.22.0**
+**Version documentaire : 1.23.0**
 **Dernière mise à jour : 2026-08-30**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -134,6 +134,13 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Barre de navigation basse : bouton Scan central surélevé, pas un onglet comme les autres ; le rôle `visibilite` (pas de capacité scan) garde une barre plate à 3 onglets sans bouton central.
 - Bouton de contact WhatsApp (fiches invités avec téléphone, `/staff`, `/search`) : pastille verte pleine (pas teintée) avec icône blanche, identique dans les deux thèmes.
 - Parcourir au moins `/dashboard`, `/plan-table`, `/search`, `/tables`, `/staff`, `/admin` dans les deux modes : pas de texte illisible (contraste), pas de couleur de l'ancienne charte (or/parchemin/nuit) qui réapparaît.
+
+## Édition directe des membres — v1.23.0
+
+- Ouvrir une fiche de groupe qui n'a jamais été ouverte depuis le déploiement (matérialisation depuis les notes à faire) : le message « Chargement des membres… » doit rester affiché jusqu'à ce que la vraie liste apparaisse — jamais un flash du vieux compteur `-/0/+` avant.
+- Rôle avec `manageMembers` : taper le nom d'une personne dans « Qui est arrivé ? » fait apparaître les champs prénom/nom en édition ; « Enregistrer » met à jour le nom affiché immédiatement.
+- Rôle avec `manageMembers` : bouton « + » sous la liste → mini-formulaire prénom/nom → « Ajouter » fait apparaître la personne dans la liste avec ses boutons ✓/✕.
+- Rôle sans `manageMembers` (ex. agent scan) : ni le nom ni le bouton « + » ne sont cliquables/visibles pour éditer — la liste reste consultable.
 
 ## Contrôle de version avant merge
 

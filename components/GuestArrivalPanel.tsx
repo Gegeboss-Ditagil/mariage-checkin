@@ -19,6 +19,7 @@ export function GuestArrivalPanel({
   invitation,
   onInvitationUpdate,
   onVisibilityChange,
+  canManage,
 }: {
   invitation: InvitationRow;
   onInvitationUpdate: (inv: InvitationRow) => void;
@@ -31,6 +32,10 @@ export function GuestArrivalPanel({
   // trouve par Gersom le 29/08/2026 : le panneau (et Mona dedans) disparaissait
   // completement des ce moment-la, plus aucun moyen de l'annuler.
   onVisibilityChange?: (visible: boolean) => void;
+  // Meme capacite que le renommage de l'invitation entiere (TopBar) --
+  // demande de Gersom le 30/08/2026 : taper un nom modifie directement,
+  // plus besoin de passer par "Gerer les membres du groupe" pour renommer.
+  canManage?: boolean;
 }) {
   const online = useOnline();
   const [members, setMembers] = useState<GuestRow[]>([]);
@@ -38,6 +43,16 @@ export function GuestArrivalPanel({
   const [initializing, setInitializing] = useState(false);
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPrenom, setEditPrenom] = useState('');
+  const [editNom, setEditNom] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const [adding, setAdding] = useState(false);
+  const [newPrenom, setNewPrenom] = useState('');
+  const [newNom, setNewNom] = useState('');
+  const [addSubmitting, setAddSubmitting] = useState(false);
 
   async function load() {
     const supabase = createClient();
@@ -129,13 +144,93 @@ export function GuestArrivalPanel({
     }
   }
 
-  const visible = !loading && members.length > 0;
+  function startEdit(guest: GuestRow) {
+    setAdding(false);
+    setEditingId(guest.id);
+    setEditPrenom(guest.prenom || '');
+    setEditNom(guest.nom || '');
+    setError(null);
+  }
+
+  async function saveEdit() {
+    if (!editingId) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) { setError('CONNEXION REQUISE'); return; }
+    setEditSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/members/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guest_id: editingId, prenom: editPrenom.trim() || null, nom: editNom.trim() || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Échec du renommage');
+        return;
+      }
+      setMembers((current) => current.map((m) => (m.id === editingId ? { ...m, ...data.guest } : m)));
+      setEditingId(null);
+    } catch {
+      setError('Erreur réseau — réessayez');
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  function startAdd() {
+    setEditingId(null);
+    setAdding(true);
+    setNewPrenom('');
+    setNewNom('');
+    setError(null);
+  }
+
+  async function saveAdd() {
+    if (!newPrenom.trim() && !newNom.trim()) { setAdding(false); return; }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) { setError('CONNEXION REQUISE'); return; }
+    setAddSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/members/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitation_id: invitation.id, prenom: newPrenom.trim() || null, nom: newNom.trim() || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Échec de l'ajout");
+        return;
+      }
+      onInvitationUpdate(data.invitation as InvitationRow);
+      await load();
+      setAdding(false);
+      setNewPrenom('');
+      setNewNom('');
+    } catch {
+      setError('Erreur réseau — réessayez');
+    } finally {
+      setAddSubmitting(false);
+    }
+  }
+
+  // Bug signale par Gersom le 30/08/2026 (deux ecrans qui s'affichent l'un
+  // apres l'autre en ouvrant une fiche) : `loading` passe a `false` des le
+  // premier chargement (members encore vide), donc `visible` valait
+  // brievement `false` -- le parent recevait "pas de liste" et affichait le
+  // vieux compteur agrege AVANT que la vraie liste (ou sa materialisation
+  // depuis les notes) n'arrive, puis re-basculait vers le nouveau panneau.
+  // Fix : ne prevenir le parent qu'une fois l'etat vraiment stabilise
+  // (chargement ET materialisation eventuelle tous les deux termines), pas
+  // a chaque etape intermediaire.
+  const settled = !loading && !initializing;
+  const visible = members.length > 0;
   useEffect(() => {
+    if (!settled) return;
     onVisibilityChange?.(visible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [settled, visible]);
 
-  if (loading) return <div className="card mb-4 text-center text-sm text-text-faint">Chargement des membres…</div>;
+  if (!settled) return <div className="card mb-4 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;
 
   return (
@@ -146,6 +241,37 @@ export function GuestArrivalPanel({
           const busy = pending.has(guest.id) || initializing;
           const arrived = guest.arrival_status === 'arrive';
           const wontCome = guest.arrival_status === 'ne_viendra_pas';
+
+          if (editingId === guest.id) {
+            return (
+              <li key={guest.id} className="rounded-xl border border-hairline p-2">
+                <div className="flex gap-1.5">
+                  <input
+                    autoFocus
+                    className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                    placeholder="Prénom"
+                    value={editPrenom}
+                    onChange={(e) => setEditPrenom(e.target.value)}
+                  />
+                  <input
+                    className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                    placeholder="Nom"
+                    value={editNom}
+                    onChange={(e) => setEditNom(e.target.value)}
+                  />
+                </div>
+                <div className="mt-1.5 flex justify-end gap-3 text-xs font-semibold">
+                  <button type="button" className="text-text-faint" onClick={() => setEditingId(null)} disabled={editSubmitting}>
+                    Annuler
+                  </button>
+                  <button type="button" className="text-accent" onClick={saveEdit} disabled={editSubmitting || !online}>
+                    Enregistrer
+                  </button>
+                </div>
+              </li>
+            );
+          }
+
           return (
             <li
               key={guest.id}
@@ -153,9 +279,20 @@ export function GuestArrivalPanel({
                 'flex items-center gap-2 rounded-xl px-1.5 py-1.5 ' + (wontCome ? 'opacity-45' : '')
               }
             >
-              <span className={'min-w-0 flex-1 truncate text-sm ' + (wontCome ? 'line-through' : '')}>
-                {guest.nom_affichage}
-              </span>
+              {canManage ? (
+                <button
+                  type="button"
+                  onClick={() => startEdit(guest)}
+                  aria-label={'Modifier le nom de ' + guest.nom_affichage}
+                  className={'min-w-0 flex-1 truncate text-left text-sm ' + (wontCome ? 'line-through' : '')}
+                >
+                  {guest.nom_affichage}
+                </button>
+              ) : (
+                <span className={'min-w-0 flex-1 truncate text-sm ' + (wontCome ? 'line-through' : '')}>
+                  {guest.nom_affichage}
+                </span>
+              )}
               <button
                 type="button"
                 aria-label={(arrived ? 'Annuler l’arrivée de ' : 'Marquer arrivé : ') + guest.nom_affichage}
@@ -189,7 +326,47 @@ export function GuestArrivalPanel({
             </li>
           );
         })}
+
+        {canManage && adding && (
+          <li className="rounded-xl border border-hairline p-2">
+            <div className="flex gap-1.5">
+              <input
+                autoFocus
+                className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                placeholder="Prénom"
+                value={newPrenom}
+                onChange={(e) => setNewPrenom(e.target.value)}
+              />
+              <input
+                className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
+                placeholder="Nom"
+                value={newNom}
+                onChange={(e) => setNewNom(e.target.value)}
+              />
+            </div>
+            <div className="mt-1.5 flex justify-end gap-3 text-xs font-semibold">
+              <button type="button" className="text-text-faint" onClick={() => setAdding(false)} disabled={addSubmitting}>
+                Annuler
+              </button>
+              <button type="button" className="text-accent" onClick={saveAdd} disabled={addSubmitting || !online}>
+                Ajouter
+              </button>
+            </div>
+          </li>
+        )}
       </ul>
+
+      {canManage && !adding && (
+        <button
+          type="button"
+          onClick={startAdd}
+          className="mt-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-hairline text-lg font-bold text-text-faint active:scale-90 transition-transform"
+          aria-label="Ajouter une personne au groupe"
+        >
+          +
+        </button>
+      )}
+
       {error && <p className="mt-2 text-xs font-medium text-status-over">{error}</p>}
     </div>
   );
