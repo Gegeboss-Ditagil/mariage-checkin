@@ -248,7 +248,7 @@ function TableDetailInner() {
         )}
 
         {echangeAvecTableId && echangeIdsA && (
-          <p className="mb-4 rounded-xl2 border-2 border-gold-500/40 bg-gold-400/10 p-3 text-sm font-semibold text-gold-700">
+          <p className="mb-4 rounded-xl2 border-2 border-accent/40 bg-accent-tint p-3 text-sm font-semibold text-accent">
             Sélectionnez qui quitte cette table en échange de {echangeIdsA.length} invitation
             {echangeIdsA.length > 1 ? 's' : ''} venant de l'autre table.
           </p>
@@ -258,7 +258,7 @@ function TableDetailInner() {
           <button
             type="button"
             onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
-            className="mb-3 text-sm font-semibold text-gold-700 underline underline-offset-2"
+            className="mb-3 text-sm font-semibold text-accent underline underline-offset-2"
           >
             {selectMode ? 'Annuler la sélection' : 'Sélectionner plusieurs invités'}
           </button>
@@ -266,15 +266,15 @@ function TableDetailInner() {
 
         <div className="card mb-4 grid grid-cols-3 text-center">
           <div>
-            <p className="text-xs uppercase text-black/40">Prévu</p>
+            <p className="text-xs uppercase text-text-faint">Prévu</p>
             <p className="text-2xl font-bold">{prevu}</p>
           </div>
           <div>
-            <p className="text-xs uppercase text-black/40">Arrivés</p>
+            <p className="text-xs uppercase text-text-faint">Arrivés</p>
             <p className="text-2xl font-bold text-status-complete">{arrive}</p>
           </div>
           <div>
-            <p className="text-xs uppercase text-black/40">Restants</p>
+            <p className="text-xs uppercase text-text-faint">Restants</p>
             <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
           </div>
         </div>
@@ -289,7 +289,7 @@ function TableDetailInner() {
           </p>
         )}
 
-        <ul className="divide-y divide-gold-400/10">
+        <ul className="divide-y divide-hairline">
           {invitations.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
             const checked = selectedIds.has(inv.id);
@@ -297,7 +297,7 @@ function TableDetailInner() {
               <>
                 <div className="min-w-0">
                   <p className="truncate font-medium">{inv.nom_affichage}</p>
-                  {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
+                  {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
                 </div>
                 <span className="flex shrink-0 items-center gap-2 text-sm">
                   {inv.nombre_arrive}/{inv.nombre_prevu}
@@ -313,7 +313,7 @@ function TableDetailInner() {
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleSelected(inv.id)}
-                      className="h-5 w-5 shrink-0 rounded border-2 border-gold-400/60 accent-gold-600"
+                      className="h-5 w-5 shrink-0 rounded border-2 border-hairline accent-accent"
                     />
                     <span className="flex min-w-0 flex-1 items-center justify-between gap-3">{body}</span>
                   </label>
@@ -332,7 +332,7 @@ function TableDetailInner() {
                     type="button"
                     aria-label="Déplacer vers une autre table"
                     onClick={() => router.push('/tables/move/' + inv.id)}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-base text-gold-600/80 active:scale-[0.95] transition-transform"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline text-base text-accent/80 active:scale-[0.95] transition-transform"
                   >
                     ⇄
                   </button>
@@ -347,10 +347,10 @@ function TableDetailInner() {
                   onClick={() => router.push('/tables/overflow/' + o.id)}
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-black/70">
+                    <p className="truncate font-medium text-text-muted">
                       {overflowNoms.get(o.invitation_id) || 'Excédent affecté'}
                     </p>
-                    <p className="text-xs text-black/40">Toucher pour retirer ou déplacer</p>
+                    <p className="text-xs text-text-faint">Toucher pour retirer ou déplacer</p>
                   </div>
                   <span className="shrink-0 text-sm font-semibold text-status-over">
                     +{o.nombre_personnes}
@@ -359,7 +359,7 @@ function TableDetailInner() {
               </li>
             ) : (
               <li key={o.id} className="flex items-center justify-between gap-3 py-3">
-                <p className="truncate font-medium text-black/70">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
+                <p className="truncate font-medium text-text-muted">{overflowNoms.get(o.invitation_id) || 'Excédent affecté'}</p>
                 <span className="shrink-0 text-sm font-semibold text-status-over">+{o.nombre_personnes}</span>
               </li>
             ))}
@@ -367,8 +367,8 @@ function TableDetailInner() {
       </div>
 
       {selectMode && selectedIds.size > 0 && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-gold-300/30 bg-white px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
-          <p className="mb-2 text-center text-sm font-semibold text-black/60">
+        <div className="fixed inset-x-0 bottom-0 border-t border-hairline bg-surface px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+          <p className="mb-2 text-center text-sm font-semibold text-text-muted">
             {selectedIds.size} invitation{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
           </p>
           {swapError && <p className="mb-2 text-center text-sm font-medium text-status-over">{swapError}</p>}

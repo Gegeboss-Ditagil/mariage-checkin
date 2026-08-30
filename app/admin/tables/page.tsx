@@ -66,7 +66,7 @@ export default function TablesAdminPage() {
         {tables.length === 0 && (
           <div className="card space-y-3">
             <p className="font-semibold">Générer les tables</p>
-            <p className="text-sm text-black/50">
+            <p className="text-sm text-text-faint">
               Crée les tables normales (1..N) puis les tables de réserve juste après, avec une capacité par défaut
               (modifiable ensuite table par table).
             </p>
@@ -82,7 +82,7 @@ export default function TablesAdminPage() {
           </div>
         )}
 
-        {message && <p className="rounded-xl2 bg-black/5 p-3 text-sm">{message}</p>}
+        {message && <p className="rounded-xl2 bg-surface-2 p-3 text-sm">{message}</p>}
 
         {normales.length > 0 && (
           <TableGroup title={`Tables normales (${normales.length})`} rows={normales} onUpdate={updateTable} onRemove={removeTable} />
@@ -98,11 +98,11 @@ export default function TablesAdminPage() {
 function Field({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-black/50">{label}</span>
+      <span className="mb-1 block text-text-faint">{label}</span>
       <input
         type="number"
         min={0}
-        className="w-full rounded-xl2 border border-black/10 px-3 py-2"
+        className="w-full rounded-xl2 border border-hairline px-3 py-2"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
@@ -124,12 +124,12 @@ function TableGroup({
   return (
     <div>
       <p className="mb-2 font-semibold">{title}</p>
-      <ul className="divide-y divide-black/5">
+      <ul className="divide-y divide-hairline">
         {rows.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-3">
             <span className="w-10 shrink-0 font-mono font-bold">#{t.number}</span>
             <input
-              className="min-w-0 flex-1 rounded-xl2 border border-black/10 px-2 py-1.5 text-sm"
+              className="min-w-0 flex-1 rounded-xl2 border border-hairline px-2 py-1.5 text-sm"
               placeholder="Libellé (optionnel)"
               defaultValue={t.label ?? ''}
               onBlur={(e) => onUpdate(t, { label: e.target.value })}
@@ -137,7 +137,7 @@ function TableGroup({
             <input
               type="number"
               min={0}
-              className="w-16 shrink-0 rounded-xl2 border border-black/10 px-2 py-1.5 text-sm"
+              className="w-16 shrink-0 rounded-xl2 border border-hairline px-2 py-1.5 text-sm"
               defaultValue={t.capacity}
               onBlur={(e) => onUpdate(t, { capacity: Number(e.target.value) })}
             />

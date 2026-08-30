@@ -28,7 +28,7 @@ export default function ErrorPage({ reset }: { error: Error & { digest?: string 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
       <p className="font-display text-2xl font-semibold">Mise à jour de l'application</p>
-      <p className="max-w-sm text-sm text-black/60">
+      <p className="max-w-sm text-sm text-text-muted">
         Une nouvelle version est disponible. Votre session est en cours de réinitialisation pour éviter une erreur d'affichage.
       </p>
       <button
@@ -39,7 +39,7 @@ export default function ErrorPage({ reset }: { error: Error & { digest?: string 
       >
         Se reconnecter
       </button>
-      <button className="text-xs text-black/40 underline" onClick={reset}>
+      <button className="text-xs text-text-faint underline" onClick={reset}>
         Réessayer cette page
       </button>
     </div>

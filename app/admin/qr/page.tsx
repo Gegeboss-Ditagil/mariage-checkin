@@ -65,14 +65,14 @@ export default function QrAdminPage() {
         <form onSubmit={add} className="card space-y-3">
           <p className="font-semibold">Associer un QR à une table</p>
           <input
-            className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
+            className="w-full rounded-xl2 border border-hairline px-3 py-2.5"
             placeholder="Code / identifiant du QR (ex: table-12)"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             required
           />
           <select
-            className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
+            className="w-full rounded-xl2 border border-hairline px-3 py-2.5"
             value={tableId}
             onChange={(e) => setTableId(e.target.value)}
             required
@@ -93,12 +93,12 @@ export default function QrAdminPage() {
 
         <div>
           <p className="mb-2 font-semibold">QR déjà associés ({qrCodes.length})</p>
-          <ul className="divide-y divide-black/5">
+          <ul className="divide-y divide-hairline">
             {qrCodes.map((q) => (
               <li key={q.id} className="flex items-center justify-between py-3">
                 <div>
                   <p className="font-mono text-sm">{q.code}</p>
-                  <p className="text-sm text-black/50">{tableLabel(q.table_id)}</p>
+                  <p className="text-sm text-text-faint">{tableLabel(q.table_id)}</p>
                 </div>
                 <button className="text-sm text-status-over" onClick={() => remove(q.id)}>
                   Retirer

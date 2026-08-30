@@ -547,8 +547,8 @@ export default function CheckinPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
-        <p className="text-sm text-black/50">Le lien utilisé ne correspond à aucune invitation.</p>
+        <p className="text-lg font-semibold text-text-muted">Invitation introuvable</p>
+        <p className="text-sm text-text-faint">Le lien utilisé ne correspond à aucune invitation.</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
           Retour au scan
         </button>
@@ -558,7 +558,7 @@ export default function CheckinPage() {
 
   if (!invitation) {
     return (
-      <div className="flex min-h-dvh items-center justify-center text-black/50">Chargement…</div>
+      <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>
     );
   }
 
@@ -610,7 +610,7 @@ export default function CheckinPage() {
               {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''} supplémentaire
               {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''}
             </p>
-            <p className="mt-1 text-black/60">
+            <p className="mt-1 text-text-muted">
               Prévu : {invitation.nombre_prevu} · Présents : {invitation.nombre_arrive}
             </p>
           </div>
@@ -623,16 +623,16 @@ export default function CheckinPage() {
                   <button
                     key={assignment.id}
                     onClick={() => router.push('/tables/overflow/' + assignment.id)}
-                    className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 text-left "
+                    className="flex w-full items-center justify-between rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-left "
                   >
                     <span className="font-semibold">
                       +{assignment.nombre_personnes} · {table ? 'Table ' + table.number : 'Table inconnue'}
                       {table?.is_reserve ? ' (réserve)' : ''}
                     </span>
-                    <span className="text-xs text-gold-600 underline">Gérer</span>
+                    <span className="text-xs text-accent underline">Gérer</span>
                   </button>
                 ) : (
-                  <div key={assignment.id} className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 ">
+                  <div key={assignment.id} className="flex w-full items-center justify-between rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 ">
                     <span className="font-semibold">+{assignment.nombre_personnes} · {table ? 'Table ' + table.number : 'Table inconnue'}{table?.is_reserve ? ' (réserve)' : ''}</span>
                   </div>
                 ))}
@@ -664,10 +664,10 @@ export default function CheckinPage() {
                       className={
                         'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
                         (selected
-                          ? 'border-gold-500 bg-gold-400/10 '
+                          ? 'border-accent bg-accent-tint '
                           : full
                           ? 'border-status-over/30 bg-status-over/5 '
-                          : 'border-gold-300/30 bg-white ')
+                          : 'border-hairline bg-surface ')
                       }
                     >
                       <span className="font-semibold">
@@ -746,24 +746,24 @@ export default function CheckinPage() {
       <div className="flex-1 px-4 py-6">
         <div className="card mb-4 space-y-1 text-center">
           {invitationTable && (
-            <p className="text-sm font-semibold uppercase tracking-wide text-gold-600">
+            <p className="text-sm font-semibold uppercase tracking-wide text-accent">
               Table {invitationTable.number}
               {invitationTable.label ? ' — ' + invitationTable.label : ''}
               {invitationTable.is_reserve ? ' (réserve)' : ''}
             </p>
           )}
-          <p className="text-sm uppercase tracking-wide text-black/40 dark:text-[#f4f3f1]/45">Personnes prévues</p>
+          <p className="text-sm uppercase tracking-wide text-text-faint">Personnes prévues</p>
           <p className="font-display text-4xl font-bold ">{invitation.nombre_prevu}</p>
-          <p className="text-sm text-black/50 dark:text-[#f4f3f1]/50">Actuellement enregistrées : {invitation.nombre_arrive}</p>
+          <p className="text-sm text-text-faint">Actuellement enregistrées : {invitation.nombre_arrive}</p>
           {invitation.ne_viendra_pas && (
             <p className="text-sm font-semibold text-status-over">Marqué "ne viendra pas"</p>
           )}
         </div>
 
         {canRename && renaming && (
-          <div className="mb-3 space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3 dark:border-white/10 dark:bg-white/[0.06] dark:backdrop-blur-xl">
+          <div className="mb-3 space-y-2 rounded-xl2 border-2 border-hairline bg-surface p-3">
                 <input
-                  className="w-full rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:text-[#f4f3f1] dark:placeholder:text-[#f4f3f1]/30"
+                  className="w-full rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                   placeholder="Nom affiché"
                   value={renameValue}
                   onChange={(e) => setRenameValue(e.target.value)}
@@ -791,28 +791,28 @@ export default function CheckinPage() {
         )}
 
         {(invitation.tags.length > 0 || canManageTags) && (
-          <div className="mb-4 rounded-xl2 border-2 border-gold-300/30 bg-white p-3 dark:border-white/10 dark:bg-white/[0.06] dark:backdrop-blur-xl">
+          <div className="mb-4 rounded-xl2 border-2 border-hairline bg-surface p-3">
             <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
-            {invitation.tags.length === 0 && <p className="mb-2 text-xs text-black/40 dark:text-[#f4f3f1]/40">Aucune étiquette pour l'instant.</p>}
+            {invitation.tags.length === 0 && <p className="mb-2 text-xs text-text-faint">Aucune étiquette pour l'instant.</p>}
             <div className={canManageTags ? 'mb-2 flex flex-wrap gap-2' : 'flex flex-wrap gap-2'}>
               {invitation.tags.map((tag) => canManageTags ? (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700 dark:bg-teal-400/15 dark:text-teal-200"
+                    className="flex items-center gap-1 rounded-full bg-accent-tint px-3 py-1 text-xs font-medium text-accent"
                   >
                     {libelleEtiquette(tag)}
                     <button
                       type="button"
                       aria-label={'Retirer ' + libelleEtiquette(tag)}
                       disabled={tagSubmitting}
-                      className="ml-0.5 text-gold-600 disabled:opacity-40"
+                      className="ml-0.5 text-accent disabled:opacity-40"
                       onClick={() => handleRemoveTag(tag)}
                     >
                       ×
                     </button>
                   </span>
                 ) : (
-                  <span key={tag} className="rounded-full bg-gold-400/10 px-3 py-1 text-xs font-medium text-gold-700 dark:bg-teal-400/15 dark:text-teal-200">{libelleEtiquette(tag)}</span>
+                  <span key={tag} className="rounded-full bg-accent-tint px-3 py-1 text-xs font-medium text-accent">{libelleEtiquette(tag)}</span>
                 ))}
             </div>
             {canManageTags && <>
@@ -822,7 +822,7 @@ export default function CheckinPage() {
                   key={e.value}
                   type="button"
                   disabled={tagSubmitting || !online}
-                  className="rounded-full border border-gold-300/50 px-3 py-1 text-xs font-medium text-black/60 disabled:opacity-40 dark:border-white/15 dark:text-[#f4f3f1]/70"
+                  className="rounded-full border border-hairline px-3 py-1 text-xs font-medium text-text-muted disabled:opacity-40"
                   onClick={() => handleAddTag(e.value)}
                 >
                   + {e.label}
@@ -831,7 +831,7 @@ export default function CheckinPage() {
             </div>
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-3 py-2 text-sm placeholder:text-black/30 focus:border-gold-500 focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:text-[#f4f3f1] dark:placeholder:text-[#f4f3f1]/30"
+                className="flex-1 rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-sm placeholder:text-text-faint focus:border-accent focus:outline-none"
                 placeholder="Autre étiquette"
                 value={customTag}
                 onChange={(e) => setCustomTag(e.target.value)}
@@ -925,7 +925,7 @@ export default function CheckinPage() {
             <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
 
             {delta !== 0 && (
-              <p className="mt-3 text-center text-sm font-medium text-gold-700">
+              <p className="mt-3 text-center text-sm font-medium text-accent">
                 {delta > 0 ? '+' : ''}
                 {delta} par rapport à maintenant
               </p>
@@ -940,7 +940,7 @@ export default function CheckinPage() {
         )}
 
         {syncNotice && (
-          <p className="mt-3 rounded-xl2 border-2 border-gold-400/40 bg-gold-400/10 p-3 text-center text-sm font-medium text-gold-700 dark:border-gold-400/25 dark:bg-white/[0.06] dark:text-gold-200">
+          <p className="mt-3 rounded-xl2 border-2 border-hairline bg-accent-tint p-3 text-center text-sm font-medium text-accent">
             {syncNotice}
           </p>
         )}

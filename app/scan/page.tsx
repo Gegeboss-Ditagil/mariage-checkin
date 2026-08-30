@@ -116,21 +116,21 @@ export default function ScanPage() {
       <div className="px-4 pt-2">
         <p className="eyebrow">Staff</p>
         <h1 className="font-display text-xl">Scanner un QR code</h1>
-        <p className="text-xs text-black/50">Présentez le QR de l'invité devant la caméra</p>
+        <p className="text-xs text-text-faint">Présentez le QR de l'invité devant la caméra</p>
       </div>
 
       <div className="px-4 py-2">
         {roleReady ? (
           <QrScanner onScan={handleScan} />
         ) : (
-          <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-black/5 text-black/40">
+          <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
             Chargement…
           </div>
         )}
       </div>
 
       {status === 'looking' && (
-        <p className="px-4 text-center text-sm text-black/60">Recherche de la table…</p>
+        <p className="px-4 text-center text-sm text-text-muted">Recherche de la table…</p>
       )}
       {status === 'error' && message && (
         <p className="mx-4 rounded-xl2 bg-status-over/10 p-2.5 text-center text-sm font-medium text-status-over">

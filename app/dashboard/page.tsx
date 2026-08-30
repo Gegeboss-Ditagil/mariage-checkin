@@ -120,7 +120,7 @@ export default function DashboardPage() {
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold">Remplissage de la salle</p>
-            <p className="text-xs text-black/40">
+            <p className="text-xs text-text-faint">
               {stats.arrives} / {capaciteOfficielle}
               {capaciteTotale > capaciteOfficielle && ' (+' + (capaciteTotale - capaciteOfficielle) + ' réserve)'}
             </p>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
               className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
             >
               <span className="font-semibold">Staff</span>
-              <span className="text-black/60">
+              <span className="text-text-muted">
                 {staffArrive} / {staffPrevu} arrivés
               </span>
             </button>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
                   className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
                 >
                   <span className="font-semibold">Table {t.number}</span>
-                  <span className={full ? 'font-bold text-status-over' : 'text-black/60'}>
+                  <span className={full ? 'font-bold text-status-over' : 'text-text-muted'}>
                     {full ? 'COMPLET' : used + ' / ' + t.capacity + ' places utilisées'}
                   </span>
                 </button>
@@ -214,7 +214,7 @@ function StatTile({
 }) {
   const content = (
     <>
-      <p className="text-xs uppercase tracking-wide text-black/40">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-text-faint">{label}</p>
       <p className={'mt-1 text-4xl font-bold tabular-nums ' + (accent || '')}>{value}</p>
     </>
   );
@@ -256,14 +256,14 @@ function MiniStat({
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center justify-between rounded-xl2 bg-white p-3 text-left shadow-card active:scale-[0.98] transition-transform"
+        className="flex w-full items-center justify-between rounded-xl2 bg-surface p-3 text-left shadow-card active:scale-[0.98] transition-transform"
       >
         {content}
       </button>
     );
   }
 
-  return <div className="flex items-center justify-between rounded-xl2 bg-white p-3 shadow-card">{content}</div>;
+  return <div className="flex items-center justify-between rounded-xl2 bg-surface p-3 shadow-card">{content}</div>;
 }
 
 

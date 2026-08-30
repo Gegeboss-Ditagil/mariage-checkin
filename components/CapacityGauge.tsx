@@ -32,7 +32,7 @@ export function CapacityGauge({
         <div className="h-full rounded-full transition-[width] duration-500" style={{ width: pct + '%', backgroundColor: color }} />
         {warningAt !== undefined && warningAt > 0 && warningAt < 100 && (
           <div
-            className="absolute inset-y-0 w-0.5 bg-ink/40"
+            className="absolute inset-y-0 w-0.5 bg-accent/40"
             style={{ left: warningAt + '%' }}
             title="Seuil des places officielles"
           />

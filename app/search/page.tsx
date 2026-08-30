@@ -187,22 +187,22 @@ function SearchInner() {
         >
           <div className="min-w-0">
             <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
-            {prenoms && <p className="truncate text-xs font-medium text-gold-600">{prenoms}</p>}
-            <p className="text-sm text-black/50">
+            {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
+            <p className="text-sm text-text-faint">
               {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
               {r.nombre_prevu > 1 ? 's' : ''}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <StatusBadge statut={r.statut} />
-            <span className={'text-lg text-black/30 transition-transform' + (expanded ? ' rotate-180' : '')}>⌄</span>
+            <span className={'text-lg text-text-faint transition-transform' + (expanded ? ' rotate-180' : '')}>⌄</span>
           </div>
         </button>
 
         {expanded && (
-          <div className="mb-4 rounded-xl2 bg-white p-3 text-sm shadow-card">
+          <div className="mb-4 rounded-xl2 bg-surface p-3 text-sm shadow-card">
             {r.cote && (
-              <span className="mb-2 mr-1.5 inline-flex items-center gap-1.5 rounded-full bg-black/5 px-2.5 py-1 text-xs font-semibold">
+              <span className="mb-2 mr-1.5 inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold">
                 <span className={'h-2 w-2 rounded-full ' + COTE_DOT_COLORS[r.cote]} />
                 {COTE_LABELS[r.cote]}
               </span>
@@ -210,23 +210,23 @@ function SearchInner() {
             {(r.tags || []).map((tag) => (
               <span
                 key={tag}
-                className="mb-2 mr-1.5 inline-block rounded-full bg-gold-400/10 px-2.5 py-1 text-xs font-semibold text-gold-700"
+                className="mb-2 mr-1.5 inline-block rounded-full bg-accent-tint px-2.5 py-1 text-xs font-semibold text-accent"
               >
                 {tag}
               </span>
             ))}
             {!r.cote && (!r.tags || r.tags.length === 0) && (
-              <p className="mb-2 text-xs italic text-black/40">Aucun tag enregistré</p>
+              <p className="mb-2 text-xs italic text-text-faint">Aucun tag enregistré</p>
             )}
 
             {membres.length > 0 ? (
               <ul className="mt-1 space-y-1">
                 {membres.map((membre, index) => (
-                  <li key={index} className="text-black/70">{membre}</li>
+                  <li key={index} className="text-text-muted">{membre}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-xs italic text-black/40">
+              <p className="text-xs italic text-text-faint">
                 Détail des personnes non disponible pour ce groupe (seul le nom affiché "{r.nom_affichage}" est connu).
               </p>
             )}
@@ -257,7 +257,7 @@ function SearchInner() {
             onClick={() => setMode('nom')}
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'nom' ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white text-black/60')
+              (mode === 'nom' ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface text-text-muted')
             }
           >
             Nom / table
@@ -268,8 +268,8 @@ function SearchInner() {
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
               (mode === 'telephone'
-                ? 'border-gold-500 bg-gold-400/10 '
-                : 'border-gold-300/30 bg-white text-black/60')
+                ? 'border-accent bg-accent-tint '
+                : 'border-hairline bg-surface text-text-muted')
             }
           >
             Téléphone
@@ -279,7 +279,7 @@ function SearchInner() {
             onClick={() => setMode('email')}
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'email' ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white text-black/60')
+              (mode === 'email' ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface text-text-muted')
             }
           >
             Email
@@ -289,7 +289,7 @@ function SearchInner() {
         {mode === 'nom' && (
           <input
             autoFocus
-            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
             placeholder="Prénom, nom, table, téléphone…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -299,7 +299,7 @@ function SearchInner() {
         {mode === 'telephone' && (
           <div className="space-y-2">
             <select
-              className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  focus:border-gold-500 focus:outline-none"
+              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3  focus:border-accent focus:outline-none"
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
             >
@@ -310,19 +310,19 @@ function SearchInner() {
               ))}
             </select>
             <div className="flex items-center gap-2">
-              <span className="shrink-0 rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-3.5 text-lg text-black/60">
+              <span className="shrink-0 rounded-xl2 border-2 border-hairline bg-surface px-3 py-3.5 text-lg text-text-muted">
                 {country.indicatif}
               </span>
               <input
                 autoFocus
                 inputMode="tel"
-                className="min-w-0 flex-1 rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                className="min-w-0 flex-1 rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
                 placeholder={'ex : ' + country.exemple}
                 value={phoneNational}
                 onChange={(e) => setPhoneNational(e.target.value)}
               />
             </div>
-            <p className="text-xs text-black/40">
+            <p className="text-xs text-text-faint">
               Choisissez le pays puis saisissez le numéro sans le 0 initial — exemple pour {country.nom} :{' '}
               {country.indicatif} {country.exemple}
             </p>
@@ -334,7 +334,7 @@ function SearchInner() {
             autoFocus
             type="email"
             autoCapitalize="none"
-            className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3.5 text-lg  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
             placeholder="prenom.nom@exemple.com"
             value={emailInput}
             onChange={(e) => setEmailInput(e.target.value)}
@@ -342,23 +342,23 @@ function SearchInner() {
         )}
       </div>
 
-      {loading && <p className="p-4 text-center text-black/40">Recherche…</p>}
-      {browsing && loadingAll && <p className="p-4 text-center text-black/40">Chargement…</p>}
+      {loading && <p className="p-4 text-center text-text-faint">Recherche…</p>}
+      {browsing && loadingAll && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
       {!loading && hasQuery && tableResults.length === 0 && results.length === 0 && (
-        <p className="p-6 text-center text-black/50">Aucun résultat pour « {query} »</p>
+        <p className="p-6 text-center text-text-faint">Aucun résultat pour « {query} »</p>
       )}
 
       {tableResults.length > 0 && (
         <div className="px-4 pt-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-black/40">Tables</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint">Tables</p>
           <div className="space-y-2">
             {tableResults.map((t) => {
               const vol = volCode(t.number);
               return (
                 <button
                   key={t.id}
-                  className="flex w-full items-center justify-between rounded-xl2 border-2 border-gold-300/30 bg-white px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-left"
                   onClick={() => router.push('/tables/' + t.id)}
                 >
                   <span>
@@ -366,7 +366,7 @@ function SearchInner() {
                       Table {t.number}
                       {t.label ? ' — ' + t.label : ''}
                     </span>
-                    {vol && <span className="block text-xs text-black/40">{vol}</span>}
+                    {vol && <span className="block text-xs text-text-faint">{vol}</span>}
                   </span>
                   {t.is_reserve && <span className="text-xs text-status-partial">Réserve</span>}
                 </button>
@@ -379,14 +379,14 @@ function SearchInner() {
       {listeAffichee.length > 0 && (
         <div className="mt-2 px-4">
           {tableResults.length > 0 && (
-            <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-black/40">Invités</p>
+            <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-wide text-text-faint">Invités</p>
           )}
           {browsing && (
-            <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-black/40">
+            <p className="mb-2 mt-1 text-xs font-semibold uppercase tracking-wide text-text-faint">
               Toutes les invitations ({listeAffichee.length}) — appuyez pour voir qui est dedans et ses tags
             </p>
           )}
-          <ul className="flex-1 divide-y divide-gold-400/10 pb-6">
+          <ul className="flex-1 divide-y divide-hairline pb-6">
             {listeAffichee.map((r) => <InvitationItem key={r.id} r={r} />)}
           </ul>
         </div>

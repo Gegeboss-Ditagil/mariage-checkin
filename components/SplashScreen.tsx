@@ -22,7 +22,7 @@ export function SplashScreen({ next }: { next: string }) {
     <div
       onClick={() => router.replace(next)}
       className={
-        'fixed inset-0 z-50 flex items-center justify-center bg-[#1a2942] bg-cover bg-center bg-no-repeat transition-opacity duration-300 ' +
+        'fixed inset-0 z-50 flex items-center justify-center bg-bg bg-cover bg-center bg-no-repeat transition-opacity duration-300 ' +
         (fading ? 'opacity-0' : 'opacity-100')
       }
       style={{ backgroundImage: "url('/images/splash-bg.jpg')" }}

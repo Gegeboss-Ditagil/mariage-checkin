@@ -154,12 +154,12 @@ test('les filtres cote/placement vivent dans une rangee dediee, pas dans les tui
   // Retour a une rangee de pastilles dediee (comme l'ancienne "Toutes les
   // places / Confirmée / Provisoire"), etendue a Côté Nelly/Gégé, toujours
   // au meme endroit pres des boutons de tri, avec un etat actif net (fond
-  // plein `border-ink bg-ink text-white`) plutot qu'un simple contour.
+  // plein `border-accent bg-accent text-on-accent`) plutot qu'un simple contour.
   assert.match(pageSource, /setCoteFiltre\(\(c\) => \(c === 'Nelly' \? 'toutes' : 'Nelly'\)\)/);
   assert.match(pageSource, /setCoteFiltre\(\(c\) => \(c === 'Gege' \? 'toutes' : 'Gege'\)\)/);
   assert.match(pageSource, /setFiltre\(\(f\) => \(f === 'confirmee' \? 'toutes' : 'confirmee'\)\)/);
   assert.match(pageSource, /setFiltre\(\(f\) => \(f === 'provisoire' \? 'toutes' : 'provisoire'\)\)/);
-  assert.match(pageSource, /border-ink bg-ink text-white/);
+  assert.match(pageSource, /border-accent bg-accent text-on-accent/);
   // Les tuiles de stats elles-memes ne sont plus des boutons.
   const tuilesBlock = pageSource.slice(pageSource.indexOf('{/* Stats compactes'), pageSource.indexOf('{/* Legende */}'));
   assert.doesNotMatch(tuilesBlock, /<button/);

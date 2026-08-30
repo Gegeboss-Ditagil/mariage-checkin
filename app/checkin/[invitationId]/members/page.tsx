@@ -252,7 +252,7 @@ export default function MembresInvitationPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
+        <p className="text-lg font-semibold text-text-muted">Invitation introuvable</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
           Retour au scan
         </button>
@@ -270,35 +270,35 @@ export default function MembresInvitationPage() {
 
       <div className="flex-1 space-y-4 px-4 py-4">
         <div className="card">
-          <p className="text-sm font-bold uppercase tracking-wide text-gold-600">{invitation.nom_affichage}</p>
-          <p className="mt-1 text-black/60">{invitation.nombre_prevu} personne{invitation.nombre_prevu > 1 ? 's' : ''} prévue{invitation.nombre_prevu > 1 ? 's' : ''}</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-accent">{invitation.nom_affichage}</p>
+          <p className="mt-1 text-text-muted">{invitation.nombre_prevu} personne{invitation.nombre_prevu > 1 ? 's' : ''} prévue{invitation.nombre_prevu > 1 ? 's' : ''}</p>
         </div>
 
         {members.length === 0 ? (
           <div className="space-y-3">
-            <p className="text-sm text-black/50">
+            <p className="text-sm text-text-faint">
               La liste détaillée des membres n'a pas encore été créée pour ce groupe. C'est optionnel — utile
               seulement si vous devez retirer ou nommer une personne précise plus tard.
             </p>
-            <p className="text-sm text-black/50">
+            <p className="text-sm text-text-faint">
               Si vous retirez une ligne ci-dessous avant d'enregistrer, le nombre de personnes prévues sera
               automatiquement réduit. Ajouter une ligne ici ne l'augmente pas; utilisez ensuite « Ajouter une
               personne » pour enregistrer un invité supplémentaire.
             </p>
             {draft.length === 0 && (
-              <p className="text-sm text-black/40">Aucun membre détecté dans les notes importées.</p>
+              <p className="text-sm text-text-faint">Aucun membre détecté dans les notes importées.</p>
             )}
             <div className="space-y-2">
               {draft.map((m) => (
-                <div key={m.key} className="flex items-center gap-2 rounded-xl2 border-2 border-gold-300/30 bg-white p-3">
+                <div key={m.key} className="flex items-center gap-2 rounded-xl2 border-2 border-hairline bg-surface p-3">
                   <input
-                    className="min-w-0 flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-2 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-xl border border-hairline bg-surface-2 px-2 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                     placeholder="Prénom"
                     value={m.prenom}
                     onChange={(e) => updateDraft(m.key, 'prenom', e.target.value)}
                   />
                   <input
-                    className="min-w-0 flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-2 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-xl border border-hairline bg-surface-2 px-2 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                     placeholder="Nom (optionnel)"
                     value={m.nom}
                     onChange={(e) => updateDraft(m.key, 'nom', e.target.value)}
@@ -324,19 +324,19 @@ export default function MembresInvitationPage() {
               const sansNom = !g.prenom && !g.nom;
               const isEditing = editingId === g.id;
               return (
-                <div key={g.id} className="rounded-xl2 border-2 border-gold-300/30 bg-white p-3">
+                <div key={g.id} className="rounded-xl2 border-2 border-hairline bg-surface p-3">
                   {isEditing ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <input
-                          className="min-w-0 flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-2 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                          className="min-w-0 flex-1 rounded-xl border border-hairline bg-surface-2 px-2 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                           placeholder="Prénom"
                           value={editPrenom}
                           onChange={(e) => setEditPrenom(e.target.value)}
                           autoFocus
                         />
                         <input
-                          className="min-w-0 flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-2 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                          className="min-w-0 flex-1 rounded-xl border border-hairline bg-surface-2 px-2 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                           placeholder="Nom (optionnel)"
                           value={editNom}
                           onChange={(e) => setEditNom(e.target.value)}
@@ -362,14 +362,14 @@ export default function MembresInvitationPage() {
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-2">
-                      <span className={sansNom ? 'italic text-black/40' : 'font-semibold '}>
+                      <span className={sansNom ? 'italic text-text-faint' : 'font-semibold '}>
                         {sansNom ? 'Sans nom — appuyer pour nommer' : g.nom_affichage}
                       </span>
                       <div className="flex shrink-0 items-center gap-3">
                         <button
                           type="button"
                           aria-label="Modifier"
-                          className="text-base text-gold-600"
+                          className="text-base text-accent"
                           onClick={() => startEdit(g)}
                         >
                           ✎
@@ -391,17 +391,17 @@ export default function MembresInvitationPage() {
             })}
 
             {addingNew ? (
-              <div className="space-y-2 rounded-xl2 border-2 border-gold-300/50 bg-white p-3">
+              <div className="space-y-2 rounded-xl2 border-2 border-hairline bg-surface p-3">
                 <div className="flex items-center gap-2">
                   <input
-                    className="min-w-0 flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-2 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-xl border border-hairline bg-surface-2 px-2 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                     placeholder="Prénom (optionnel)"
                     value={newPrenom}
                     onChange={(e) => setNewPrenom(e.target.value)}
                     autoFocus
                   />
                   <input
-                    className="min-w-0 flex-1 rounded-xl border border-gold-300/30 bg-black/5 px-2 py-2 text-sm  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-xl border border-hairline bg-surface-2 px-2 py-2 text-sm  placeholder:text-text-faint focus:border-accent focus:outline-none"
                     placeholder="Nom (optionnel)"
                     value={newNom}
                     onChange={(e) => setNewNom(e.target.value)}

@@ -3,6 +3,39 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.22.0] — 2026-08-30
+
+Gersom a fourni un prompt de handoff complet (« thème Atrium / Maison ») demandant de remplacer toute la charte visuelle par un système à deux modes — Atrium (clair, accent indigo) et Maison (sombre, accent champagne) — avec écran de choix à la première connexion et préférence Sombre/Clair/Auto. Confirmé explicitement avec lui avant de commencer : le prompt ciblait une base stale (« 1.19.3 → 1.20.0 »), alors que le thème « Glass Sombre » (charcoal/teal/or, v1.20.0) était déjà en production et en usage réel — décision prise de le remplacer entièrement plutôt que de le fusionner, sur choix explicite de Gersom. Les fichiers de maquette référencés (`Propositions.dc.html`, `Ecrans Atrium Maison.dc.html`) n'étaient pas accessibles depuis cet outil : les détails visuels non spécifiés dans le texte du prompt (icônes de navigation, écran d'onboarding) ont été conçus au mieux, sans reproduction pixel-perfect.
+
+### Ajouté
+- **Système de tokens CSS à deux modes** (`app/globals.css`, `tailwind.config.ts`) : toutes les couleurs passent désormais par des variables (`--bg`, `--surface`, `--text`, `--accent`, `--hairline`, `--elev-1/2`, `--glass`…) redéfinies sous `[data-theme='light']` (Atrium) et `[data-theme='dark']` (Maison), exposées comme couleurs Tailwind (`bg-bg`, `text-text`, `border-hairline`, `bg-accent`…). Remplace entièrement l'ancienne palette codée en dur (`parchment`, `ink`, `gold`, `night`, `cream`, et le `charcoal`/`teal` de Glass Sombre v1.20.0), supprimée de `tailwind.config.ts`.
+- `hooks/useTheme.ts` : préférence à 3 valeurs (`ThemePref = 'light' | 'dark' | 'system'`, avant 2). `'system'` suit `prefers-color-scheme` en direct via `matchMedia().addEventListener('change', …)`, abonnement actif uniquement pour ce mode. Pose `data-theme` **et** met à jour `<meta name="theme-color">` à chaque changement. Clé localStorage `checkin-theme` inchangée — une ancienne valeur `'light'`/`'dark'` reste une préférence valide, aucune migration active nécessaire.
+- **`app/onboarding/theme/page.tsx`** (nouveau) : écran de choix Sombre/Clair/Automatique affiché une seule fois, juste après la toute première connexion réussie (drapeau `checkin-theme-chosen` en localStorage), avant d'atterrir sur `landingPathForRole(role)` — jamais une route en dur. `app/login/page.tsx` y redirige (en conservant `?next=`) uniquement si le drapeau est absent ; `middleware.ts` laisse passer `/onboarding` pour tout rôle authentifié (pure préférence d'affichage, hors de `lib/permissions.ts`, non modifié).
+- `components/AccountMenu.tsx` : le bascule 2 boutons (Clair/Sombre) de v1.20.0 devient un segmented control à 3 positions (Sombre/Clair/Auto, `role="radiogroup"`).
+- `components/BottomNav.tsx` : bouton Scan central surélevé (66px, `bg-accent`) à la place d'un onglet parmi d'autres ; les autres onglets se répartissent 2 à gauche/2 à droite. `visibilite` (pas de capacité `scan`) garde une barre plate à 3 onglets, sans bouton central. Nouvelles icônes `components/icons.tsx` (SVG inline, style trait + remplissage léger) à la place des glyphes texte `▣ ⌕ ▦ ◔`.
+- `components/MessageButton.tsx` : l'action WhatsApp devient une pastille verte officielle (`#25D366`, 44px) avec combiné blanc en SVG, au lieu d'une bulle emoji teintée — seule couleur de marque à ne pas passer par les tokens de thème.
+- `tests/theme-preference.test.ts` (nouveau, 9 tests) : résolution `system`, réaction `matchMedia`, persistance, absence de migration active, onboarding une seule fois, bypass middleware, segmented control.
+
+### Changé
+- **Toutes les pages de l'application** (`app/**`, `components/**`) reskinnées sur les nouveaux tokens — page de connexion incluse : elle suit désormais elle aussi Atrium/Maison (halo champagne + ciel étoilé uniquement en Maison, carte neutre en Atrium), remplaçant le traitement « toujours Verre Doré » fixé en v1.20.0 à la demande explicite de Gersom du 29/08/2026 — changement de direction confirmé avec lui pour ce prompt.
+- `.btn-primary`, `.btn-secondary`, `.card`, `.action-row(-muted)` : mêmes noms de classes qu'avant (pour ne pas toucher tout le JSX), règles réécrites sur les variables. `.card-night` supprimée (plus d'écran « fond nuit » fixe : c'est le thème qui décide) ; ses usages migrés vers `.card`.
+- `public/manifest.json` : `theme_color`/`background_color` alignés sur le token `--bg` d'Atrium (`#f4f4f7`), cohérent avec la valeur par défaut de `viewport.themeColor` dans `app/layout.tsx`.
+- `tests/dashboard-liste-cote-filter.test.ts`, `tests/floor-plan.test.ts` : mis à jour pour la nouvelle classe de l'état actif (`border-accent bg-accent text-on-accent`, avant `border-ink bg-ink text-white`) — même comportement, nouveau nom de token.
+
+### Corrigé au passage
+- La sélection de table de réserve dans le flux d'excédent (`app/checkin/[invitationId]/page.tsx`) avait perdu son indicateur de sélection (bordure colorée) pendant la conversion automatique des tokens — corrigé avant merge (`border-accent`, pas `border-hairline`).
+- Plusieurs badges/bascules teintés (étiquettes, mode de recherche, filtres) avaient été convertis par erreur en remplissage plein (`bg-accent`) au lieu d'un fond teinté (`bg-accent-tint`), ce qui aurait rendu le texte illisible en Maison (texte accent sur fond accent plein) — détecté et corrigé avant merge en comparant chaque cas au diff d'origine.
+- `.eyebrow` (utilisée depuis avant v1.20.0 sur `/login`, `/scan`, `/placement`) n'avait jamais été définie en CSS — classe sans effet. Définie pour de bon.
+- `components/SplashScreen.tsx` : couleur de secours avant chargement de l'image passe de `#1a2942` (ancien token `ink`, supprimé) à `bg-bg`.
+
+### Contraintes respectées
+- Aucune modification de `lib/permissions.ts`, des routes `app/api/**`, des migrations SQL, ni de la logique temps réel (debounce, refetch au focus, pull-to-refresh).
+- Statuts opérationnels (`status-none/partial/complete/over`, couleurs Nelly/Gégé) inchangés dans les deux modes, comme demandé.
+
+### Tests
+- `tests/theme-preference.test.ts` (9, nouveau), `tests/dashboard-liste-cote-filter.test.ts` et `tests/floor-plan.test.ts` mis à jour — 12 suites au total, toutes vertes.
+- `npx tsc --noEmit`, `npm run build` (62 routes, y compris `/onboarding/theme`) — tous exécutés avec succès.
+
 ## [1.21.1] — 2026-08-29
 
 Bug trouvé par Gersom **en production**, quelques minutes après le déploiement de v1.21.0 : sur « Famille Guygson Vemba » (2 prévues), marquer Mona en ✕ (« ne viendra pas ») faisait tomber `nombre_prevu` à 1 comme prévu — mais `GuestArrivalPanel` ET la page de check-in décidaient toutes les deux d'afficher la liste par personne uniquement quand `nombre_prevu > 1`. Résultat : dès que Mona passait en ✕, le panneau entier disparaissait (elle avec), l'écran retombait sur l'ancien compteur +/- (qui ne sait rien des personnes), et il n'y avait plus aucun moyen de la remettre — « on est un peu dans le pétrin ».

@@ -5,7 +5,7 @@ import { TopBar } from '@/components/TopBar';
 import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 
 const inputClass =
-  'w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-2.5  placeholder:text-black/30 focus:border-gold-500 focus:outline-none';
+  'w-full rounded-xl2 border-2 border-hairline bg-surface px-3 py-2.5  placeholder:text-text-faint focus:border-accent focus:outline-none';
 
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -166,17 +166,17 @@ export default function UsersAdminPage() {
           </button>
         </form>
 
-        <ul className="divide-y divide-gold-400/10">
+        <ul className="divide-y divide-hairline">
           {users.map((u) => (
             <li key={u.id} className="py-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium ">{u.nom_affichage}</p>
-                  <p className="text-sm text-black/50">{ROLE_LABELS[u.role] || u.role}</p>
+                  <p className="text-sm text-text-faint">{ROLE_LABELS[u.role] || u.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    className="rounded-full border border-gold-300/40 px-3 py-1 text-xs font-semibold text-gold-600/80"
+                    className="rounded-full border border-hairline px-3 py-1 text-xs font-semibold text-accent/80"
                     onClick={() => (editingId === u.id ? cancelEdit() : startEdit(u))}
                   >
                     {editingId === u.id ? 'Annuler' : 'Modifier'}
@@ -194,7 +194,7 @@ export default function UsersAdminPage() {
               </div>
 
               {editingId === u.id && (
-                <div className="mt-3 space-y-2 rounded-xl2 border border-gold-300/25 bg-black/5 p-3">
+                <div className="mt-3 space-y-2 rounded-xl2 border border-hairline bg-surface-2 p-3">
                   <input
                     className={inputClass}
                     placeholder="Nom affiché"

@@ -36,12 +36,12 @@ export default function HistoryPage() {
     <div className="flex min-h-dvh flex-col">
       <TopBar title="Historique" />
 
-      {loading && <p className="p-4 text-center text-black/40">Chargement…</p>}
+      {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
-      <ul className="flex-1 divide-y divide-black/5 px-4">
+      <ul className="flex-1 divide-y divide-hairline px-4">
         {entries.map((e) => (
           <li key={e.id} className="py-3">
-            <div className="flex items-center justify-between text-sm text-black/40">
+            <div className="flex items-center justify-between text-sm text-text-faint">
               <span>{format(new Date(e.created_at), 'HH:mm:ss', { locale: fr })}</span>
               <span>{e.agent_name || '—'}</span>
             </div>
@@ -60,7 +60,7 @@ export default function HistoryPage() {
                 </span>
               )}
             </p>
-            {e.table_number && <p className="text-xs text-black/40">Table {e.table_number}</p>}
+            {e.table_number && <p className="text-xs text-text-faint">Table {e.table_number}</p>}
           </li>
         ))}
       </ul>

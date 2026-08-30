@@ -15,25 +15,25 @@ export function TopBar({
   onTitleClick?: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-10 bg-night-900/90 backdrop-blur border-b border-dashed border-gold-500/35 dark:bg-white/[0.04] dark:border-white/10 dark:border-solid">
+    <header className="sticky top-0 z-10 bg-glass backdrop-blur border-b border-hairline">
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-1">
         <div className="flex min-w-0 items-center gap-2">
           {backHref && (
             <Link
               href={backHref}
               aria-label="Retour"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold-400/30 bg-night-800/80 text-2xl font-bold leading-none text-gold-200 shadow-card active:scale-[0.95] transition-transform dark:bg-white/[0.06] dark:border-white/10"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hairline bg-surface text-2xl font-bold leading-none text-accent shadow-card active:scale-[0.95] transition-transform"
             >
               ‹
             </Link>
           )}
           {onTitleClick ? (
-            <button type="button" onClick={onTitleClick} aria-label={'Modifier « ' + title + ' »'} className="flex min-w-0 items-center gap-1.5 truncate font-display text-lg font-semibold uppercase tracking-wide text-cream">
+            <button type="button" onClick={onTitleClick} aria-label={'Modifier « ' + title + ' »'} className="flex min-w-0 items-center gap-1.5 truncate font-display text-lg font-semibold text-text">
               <span className="truncate">{title}</span>
-              <span aria-hidden className="shrink-0 text-sm text-gold-300">✎</span>
+              <span aria-hidden className="shrink-0 text-sm text-accent">✎</span>
             </button>
           ) : (
-            <h1 className="truncate font-display text-lg font-semibold uppercase tracking-wide text-cream">{title}</h1>
+            <h1 className="truncate font-display text-lg font-semibold text-text">{title}</h1>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3">

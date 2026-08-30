@@ -42,7 +42,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#0c1912',
+  // Valeur par defaut (Atrium clair) ; le script anti-flash ci-dessous et
+  // hooks/useTheme.ts la mettent a jour cote client des que le theme effectif
+  // (Maison sombre, ou 'Automatique' resolu via prefers-color-scheme) est
+  // connu -- Next ne permet pas de valeur conditionnelle ici cote serveur.
+  themeColor: '#f4f4f7',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -50,15 +54,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={displayFont.variable + ' ' + sansFont.variable}>
       <head>
         {/*
-          Pose data-theme avant le premier rendu pour eviter un flash
-          clair->sombre a l'ouverture (le choix vit en localStorage, voir
-          hooks/useTheme.ts -- meme cle et memes valeurs a garder en phase).
-          Script minimal et synchrone : pas de dependance, pas de hook ici.
+          Pose data-theme avant le premier rendu pour eviter un flash entre
+          les deux modes (le choix vit en localStorage, voir hooks/useTheme.ts
+          -- meme cle et memes valeurs a garder en phase, y compris 'system'
+          qui suit prefers-color-scheme). Script minimal et synchrone : pas de
+          dependance, pas de hook ici.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('checkin-theme');if(t==='dark'){document.documentElement.dataset.theme='dark';}}catch(e){}",
+              "try{var t=localStorage.getItem('checkin-theme');var d=t==='dark'||(t==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.dataset.theme='dark';var m=document.querySelector('meta[name=\"theme-color\"]');if(m)m.setAttribute('content','#14141a');}}catch(e){}",
           }}
         />
       </head>

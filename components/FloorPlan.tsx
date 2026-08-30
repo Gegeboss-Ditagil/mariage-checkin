@@ -100,10 +100,10 @@ export interface TableCoteCounts {
 
 // Egalite stricte, y compris 0/0, ou absence de donnees : gris neutre.
 export function tableCoteClass(counts: TableCoteCounts | undefined): string {
-  if (!counts) return 'fill-black/10 stroke-black/30';
+  if (!counts) return 'fill-surface-2 stroke-hairline';
   if (counts.nelly > counts.gege) return 'fill-nelly/25 stroke-nelly';
   if (counts.gege > counts.nelly) return 'fill-gege/25 stroke-gege';
-  return 'fill-black/10 stroke-black/30';
+  return 'fill-surface-2 stroke-hairline';
 }
 
 interface FloorPlanProps {
@@ -129,7 +129,7 @@ export function FloorPlan({
   return (
     <svg
       viewBox="0 0 1400 1080"
-      className="h-auto w-full select-none rounded-xl2 border-2 border-gold-300/30 bg-cream"
+      className="h-auto w-full select-none rounded-xl2 border-2 border-hairline bg-surface"
       role="img"
       aria-label="Plan interactif de la salle : appuyez sur une table pour la sélectionner, ou sur une zone (Bar, Cuisine, DJ et animation, Prestataires) pour voir le personnel associé"
     >
@@ -163,10 +163,10 @@ export function FloorPlan({
               rx={6}
               className={clsx(
                 selected
-                  ? 'fill-gold-400/20 stroke-gold-600'
+                  ? 'fill-accent-tint stroke-accent'
                   : clickable
-                    ? 'fill-black/[0.04] stroke-gold-400/50'
-                    : 'fill-black/[0.04] stroke-black/15'
+                    ? 'fill-surface-2 stroke-accent/50'
+                    : 'fill-surface-2 stroke-hairline'
               )}
               strokeWidth={selected ? 3 : 1.5}
             />
@@ -182,7 +182,7 @@ export function FloorPlan({
               }
               className={clsx(
                 'text-[13px] font-semibold uppercase tracking-wide',
-                selected ? 'fill-gold-700' : 'fill-black/45'
+                selected ? 'fill-accent' : 'fill-text-faint'
               )}
             >
               {room.label}
@@ -193,7 +193,7 @@ export function FloorPlan({
                 y={room.y + room.h / 2 + 14}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-black/35 text-[10px]"
+                className="fill-text-faint text-[10px]"
               >
                 {room.sub}
               </text>
@@ -243,7 +243,7 @@ export function FloorPlan({
               y={y}
               textAnchor="middle"
               dominantBaseline="middle"
-              className={clsx('text-[15px] font-bold', selected ? 'fill-white' : 'fill-ink')}
+              className={clsx('text-[15px] font-bold', selected ? 'fill-white' : 'fill-text')}
             >
               {number}
             </text>

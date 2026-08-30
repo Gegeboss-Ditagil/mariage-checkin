@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.21.1**
-**Dernière mise à jour : 2026-08-29**
+**Version documentaire : 1.22.0**
+**Dernière mise à jour : 2026-08-30**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -104,6 +104,7 @@ npm run test:searchnames
 npm run test:sortlabel
 npm run test:arrival
 npm run test:listecote
+npm run test:theme
 npx tsc --noEmit
 npm run build
 ```
@@ -118,6 +119,21 @@ npm run build
 - « + Invité supplémentaire (non prévu) » : déclenche le flux d'excédent/débordement existant, inchangé (proposition de table de réserve si besoin).
 - Depuis « Gérer les membres du groupe », supprimer définitivement une personne déjà marquée ✕ ne doit PAS faire baisser `nombre_prevu` une seconde fois ; supprimer une personne marquée ✓ doit aussi faire baisser `nombre_arrive`.
 - Invitation solo (`nombre_prevu <= 1`) : aucun changement, le compteur +/- et « Cet invité ne viendra pas » se comportent exactement comme avant v1.21.0.
+
+## Thème « Atrium » (clair) / « Maison » (sombre) — v1.22.0
+
+Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dessus (Glass Sombre n'existe plus) : le revérifier avec les nouveaux repères ci-dessous plutôt que l'ancien.
+
+- Première connexion sur un compte qui n'a jamais choisi de thème (`localStorage` sans `checkin-theme-chosen`) : après l'écran « Bienvenue, {prénom} ! », atterrit sur l'écran de choix de thème (Sombre/Clair/Automatique), pas directement sur `/scan` ou `/dashboard`. Choisir une option puis « Continuer vers le scan » atterrit bien sur `landingPathForRole(role)` (`/scan` pour agent_checkin/placeur/admin, `/dashboard` pour directeur/visibilite) — jamais une route en dur.
+- Une deuxième connexion (même appareil, drapeau déjà posé) saute directement l'écran de choix.
+- Menu de compte : le segmented control à 3 positions (Sombre/Clair/Auto) change l'apparence immédiatement, sans rechargement ; l'option active est visuellement nette (fond `--accent`).
+- Choisir « Automatique », puis changer le réglage clair/sombre du système (iPhone : Réglages → Luminosité et affichage) sans rouvrir l'app : le thème doit basculer tout seul, en direct.
+- Recharger la page après avoir choisi « Sombre » : pas de flash clair avant le passage au thème sombre (script bloquant de `app/layout.tsx`).
+- Page de connexion (`/login`) : suit maintenant elle aussi Atrium/Maison (avant v1.22.0 elle restait toujours « Verre Doré ») — vérifier le halo discret derrière le sceau et le ciel étoilé uniquement en Maison, la carte neutre en Atrium.
+- Sur `/checkin/[invitationId]` : « Gérer les membres du groupe », « Cet invité ne viendra pas », les boutons ✓/✕ par personne restent de vrais boutons cliquables dans les deux modes (hérité de v1.20.0, à revérifier avec les nouveaux tokens).
+- Barre de navigation basse : bouton Scan central surélevé, pas un onglet comme les autres ; le rôle `visibilite` (pas de capacité scan) garde une barre plate à 3 onglets sans bouton central.
+- Bouton de contact WhatsApp (fiches invités avec téléphone, `/staff`, `/search`) : pastille verte pleine (pas teintée) avec icône blanche, identique dans les deux thèmes.
+- Parcourir au moins `/dashboard`, `/plan-table`, `/search`, `/tables`, `/staff`, `/admin` dans les deux modes : pas de texte illisible (contraste), pas de couleur de l'ancienne charte (or/parchemin/nuit) qui réapparaît.
 
 ## Contrôle de version avant merge
 

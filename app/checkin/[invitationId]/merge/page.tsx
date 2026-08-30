@@ -115,7 +115,7 @@ export default function FusionnerInvitationPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
+        <p className="text-lg font-semibold text-text-muted">Invitation introuvable</p>
         <button className="btn-primary" onClick={() => router.push('/scan')}>
           Retour au scan
         </button>
@@ -124,7 +124,7 @@ export default function FusionnerInvitationPage() {
   }
 
   if (loading || !source) {
-    return <div className="flex min-h-dvh items-center justify-center text-black/50">Chargement…</div>;
+    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
   }
 
   return (
@@ -133,22 +133,22 @@ export default function FusionnerInvitationPage() {
 
       <div className="flex-1 space-y-4 px-4 py-4">
         <div className="card">
-          <p className="text-sm font-bold uppercase tracking-wide text-gold-600">{source.nom_affichage}</p>
-          <p className="mt-1 text-black/60">
+          <p className="text-sm font-bold uppercase tracking-wide text-accent">{source.nom_affichage}</p>
+          <p className="mt-1 text-text-muted">
             {source.nombre_prevu} personne{source.nombre_prevu > 1 ? 's' : ''} prévue{source.nombre_prevu > 1 ? 's' : ''}
             {source.category === 'Staff' && ' · Staff'}
           </p>
         </div>
 
         <input
-          className="w-full rounded-xl2 border-2 border-gold-300/40 bg-white px-4 py-3  placeholder:text-black/30 focus:border-gold-500 focus:outline-none"
+          className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3  placeholder:text-text-faint focus:border-accent focus:outline-none"
           placeholder="Rechercher le groupe de destination par nom…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
 
         <div className="space-y-2">
-          {filtered.length === 0 && <p className="text-sm text-black/40">Aucune invitation trouvée.</p>}
+          {filtered.length === 0 && <p className="text-sm text-text-faint">Aucune invitation trouvée.</p>}
           {filtered.map((c) => {
             const selected = chosen?.id === c.id;
             return (
@@ -157,23 +157,23 @@ export default function FusionnerInvitationPage() {
                 onClick={() => setChosen(c)}
                 className={
                   'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                  (selected ? 'border-gold-500 bg-gold-400/10 ' : 'border-gold-300/30 bg-white ')
+                  (selected ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface ')
                 }
               >
                 <span className="min-w-0">
                   <span className="block font-semibold">
                     {c.nom_affichage}
                     {c.category === 'Staff' && (
-                      <span className="ml-1.5 rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold-700">
+                      <span className="ml-1.5 rounded bg-accent-tint px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                         Staff
                       </span>
                     )}
                   </span>
-                  <span className="block text-xs text-black/40">
+                  <span className="block text-xs text-text-faint">
                     {c.table ? 'Table ' + c.table.number : 'Sans table'}
                   </span>
                 </span>
-                <span className="shrink-0 text-right text-sm text-black/50">
+                <span className="shrink-0 text-right text-sm text-text-faint">
                   {c.nombre_prevu} personne{c.nombre_prevu > 1 ? 's' : ''}
                 </span>
               </button>
@@ -182,7 +182,7 @@ export default function FusionnerInvitationPage() {
         </div>
 
         {chosen && (
-          <div className="card border-2 border-gold-500/40 bg-gold-400/10">
+          <div className="card border-2 border-accent/40 bg-accent-tint">
             <p className="text-sm font-semibold">
               Après fusion : {chosen.nombre_prevu + source.nombre_prevu} personne
               {chosen.nombre_prevu + source.nombre_prevu > 1 ? 's' : ''} prévue

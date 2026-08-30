@@ -115,8 +115,8 @@ export default function DeplacerEnLotPage() {
   if (!selection) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Aucune sélection en cours</p>
-        <p className="text-sm text-black/50">
+        <p className="text-lg font-semibold text-text-muted">Aucune sélection en cours</p>
+        <p className="text-sm text-text-faint">
           Sélectionnez d'abord des invités depuis l'écran d'une table, puis « Transférer » ou « Échanger ».
         </p>
         <button className="btn-primary" onClick={() => router.push('/tables')}>
@@ -127,7 +127,7 @@ export default function DeplacerEnLotPage() {
   }
 
   if (loading) {
-    return <div className="flex min-h-dvh items-center justify-center text-black/50">Chargement…</div>;
+    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
   }
 
   return (
@@ -139,11 +139,11 @@ export default function DeplacerEnLotPage() {
 
       <div className="flex-1 space-y-4 px-4 py-4">
         <div className="card">
-          <p className="text-sm font-bold uppercase tracking-wide text-gold-600">
+          <p className="text-sm font-bold uppercase tracking-wide text-accent">
             {selection.invitationIds.length} invitation{selection.invitationIds.length > 1 ? 's' : ''} sélectionnée
             {selection.invitationIds.length > 1 ? 's' : ''}
           </p>
-          <p className="mt-1 text-black/60">
+          <p className="mt-1 text-text-muted">
             {totalPersonnes} personne{totalPersonnes > 1 ? 's' : ''} :{' '}
             {invitations.map((i) => i.nom_affichage).join(', ') || '…'}
           </p>

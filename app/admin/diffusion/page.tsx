@@ -118,9 +118,9 @@ export default function DiffusionInvitationsPage() {
       <TopBar title="Diffusion des invitations" backHref="/admin" />
 
       <div className="flex-1 space-y-5 px-4 py-4">
-        <div className="card border-2 border-gold-300/30">
+        <div className="card border-2 border-hairline">
           <p className="font-semibold">Traitement local et privé</p>
-          <p className="mt-1 text-sm text-black/50">
+          <p className="mt-1 text-sm text-text-faint">
             Le fichier reste dans ce navigateur : aucune coordonnée n'est envoyée à Supabase. Exportez le suivi avant
             de fermer la page, car l'application ne conserve pas cette liste.
           </p>
@@ -130,18 +130,18 @@ export default function DiffusionInvitationsPage() {
           {fileName || 'Choisir un fichier Excel ou CSV'}
           <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
         </label>
-        {notice && <p className="rounded-xl2 bg-white p-3 text-sm text-black/60 shadow-card">{notice}</p>}
+        {notice && <p className="rounded-xl2 bg-surface p-3 text-sm text-text-muted shadow-card">{notice}</p>}
 
         {headers.length > 0 && (
           <div className="card space-y-3">
             <p className="font-semibold">Associer les colonnes</p>
             {DIFFUSION_FIELDS.map((field) => (
               <label key={field.key} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-black/60">
+                <span className="text-sm text-text-muted">
                   {field.label}{field.required ? ' *' : ''}
                 </span>
                 <select
-                  className="max-w-[55%] rounded-xl2 border-2 border-gold-300/40 bg-white px-3 py-2 text-sm focus:border-gold-500 focus:outline-none"
+                  className="max-w-[55%] rounded-xl2 border-2 border-hairline bg-surface px-3 py-2 text-sm focus:border-accent focus:outline-none"
                   value={mapping[field.key] || ''}
                   onChange={(event) =>
                     setMapping((current) => ({ ...current, [field.key]: event.target.value || undefined }))
@@ -160,22 +160,22 @@ export default function DiffusionInvitationsPage() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <Stat label="Familles" value={contacts.length} />
               <Stat label="Prêtes" value={validCount} accent="text-status-complete" />
-              <Stat label="Envoyées" value={sentCount} accent="text-gold-600" />
+              <Stat label="Envoyées" value={sentCount} accent="text-accent" />
             </div>
 
             <div className="card">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="font-semibold">Modèle du message</p>
-                <button type="button" className="text-xs font-semibold text-gold-700" onClick={() => setTemplate(DEFAULT_INVITATION_MESSAGE)}>
+                <button type="button" className="text-xs font-semibold text-accent" onClick={() => setTemplate(DEFAULT_INVITATION_MESSAGE)}>
                   Réinitialiser
                 </button>
               </div>
               <textarea
-                className="min-h-56 w-full rounded-xl2 border-2 border-gold-300/40 bg-white p-3 text-sm focus:border-gold-500 focus:outline-none"
+                className="min-h-56 w-full rounded-xl2 border-2 border-hairline bg-surface p-3 text-sm focus:border-accent focus:outline-none"
                 value={template}
                 onChange={(event) => setTemplate(event.target.value)}
               />
-              <p className="mt-2 text-xs text-black/40">
+              <p className="mt-2 text-xs text-text-faint">
                 Variables : {'{famille}'}, {'{prenom}'}, {'{code_invitation}'}, {'{lien_invitation}'},{' '}
                 {'{nombre_personnes}'}, {'{langue}'}.
               </p>
@@ -191,7 +191,7 @@ export default function DiffusionInvitationsPage() {
                   type="button"
                   onClick={() => setFilter(key)}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                    filter === key ? 'border-ink bg-ink text-white' : 'border-black/10 bg-white text-black/50'
+                    filter === key ? 'border-accent bg-accent text-on-accent' : 'border-hairline bg-surface text-text-faint'
                   }`}
                 >
                   {label}
@@ -215,7 +215,7 @@ export default function DiffusionInvitationsPage() {
                     <button type="button" className="flex w-full items-start justify-between gap-3 text-left" onClick={() => setExpandedId(expanded ? null : contact.id)}>
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">{contact.famille || contact.id}</span>
-                        <span className="block text-xs text-black/50">
+                        <span className="block text-xs text-text-faint">
                           {contact.codeInvitation || 'Code manquant'} · {contact.nombrePersonnes} personne{contact.nombrePersonnes > 1 ? 's' : ''} · {contact.statut}
                         </span>
                       </span>
@@ -225,13 +225,13 @@ export default function DiffusionInvitationsPage() {
                     </button>
 
                     {expanded && (
-                      <div className="mt-3 space-y-3 border-t border-gold-400/10 pt-3">
+                      <div className="mt-3 space-y-3 border-t border-hairline pt-3">
                         {contact.erreurs.length > 0 && (
                           <ul className="rounded-xl bg-status-over/10 p-3 text-xs text-status-over">
                             {contact.erreurs.map((error) => <li key={error}>• {error}</li>)}
                           </ul>
                         )}
-                        <pre className="whitespace-pre-wrap rounded-xl2 bg-black/5 p-3 text-sm font-sans text-black/70">{message}</pre>
+                        <pre className="whitespace-pre-wrap rounded-xl2 bg-surface-2 p-3 text-sm font-sans text-text-muted">{message}</pre>
                         <div className="grid grid-cols-2 gap-2">
                           <button type="button" className="btn-secondary text-sm" onClick={() => copyMessage(contact)}>
                             Copier
@@ -247,12 +247,12 @@ export default function DiffusionInvitationsPage() {
                           {whatsApp ? (
                             <a href={whatsApp} target="_blank" rel="noreferrer" className="btn-secondary text-center text-sm">WhatsApp</a>
                           ) : (
-                            <span className="rounded-xl2 bg-black/5 px-3 py-3 text-center text-xs text-black/30">WhatsApp indisponible</span>
+                            <span className="rounded-xl2 bg-surface-2 px-3 py-3 text-center text-xs text-text-faint">WhatsApp indisponible</span>
                           )}
                           {email ? (
                             <a href={email} className="btn-secondary text-center text-sm">Email</a>
                           ) : (
-                            <span className="rounded-xl2 bg-black/5 px-3 py-3 text-center text-xs text-black/30">Email indisponible</span>
+                            <span className="rounded-xl2 bg-surface-2 px-3 py-3 text-center text-xs text-text-faint">Email indisponible</span>
                           )}
                         </div>
                       </div>
@@ -260,7 +260,7 @@ export default function DiffusionInvitationsPage() {
                   </div>
                 );
               })}
-              {visibleContacts.length === 0 && <p className="py-6 text-center text-black/40">Aucune ligne dans ce filtre.</p>}
+              {visibleContacts.length === 0 && <p className="py-6 text-center text-text-faint">Aucune ligne dans ce filtre.</p>}
             </div>
 
             <button type="button" className="btn-primary w-full" onClick={exportTracking}>
@@ -277,7 +277,7 @@ function Stat({ label, value, accent = '' }: { label: string; value: number; acc
   return (
     <div className="card py-3">
       <p className={`text-2xl font-bold ${accent}`}>{value}</p>
-      <p className="text-[11px] text-black/50">{label}</p>
+      <p className="text-[11px] text-text-faint">{label}</p>
     </div>
   );
 }

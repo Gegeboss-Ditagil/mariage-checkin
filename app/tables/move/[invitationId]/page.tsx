@@ -151,7 +151,7 @@ export default function DeplacerInvitationPage() {
   if (notFound) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-black/70">Invitation introuvable</p>
+        <p className="text-lg font-semibold text-text-muted">Invitation introuvable</p>
         <button className="btn-primary" onClick={() => router.push('/tables')}>
           Retour aux tables
         </button>
@@ -172,8 +172,8 @@ export default function DeplacerInvitationPage() {
 
       <div className="flex-1 space-y-4 px-4 py-4">
         <div className="card">
-          <p className="text-sm font-bold uppercase tracking-wide text-gold-600">{invitation.nom_affichage}</p>
-          <p className="mt-1 text-black/60">
+          <p className="text-sm font-bold uppercase tracking-wide text-accent">{invitation.nom_affichage}</p>
+          <p className="mt-1 text-text-muted">
             {invitation.nombre_prevu} personne{invitation.nombre_prevu > 1 ? 's' : ''} · actuellement à{' '}
             {currentTable ? 'Table ' + currentTable.number : 'aucune table'}
           </p>

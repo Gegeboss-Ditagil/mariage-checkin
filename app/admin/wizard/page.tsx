@@ -64,7 +64,7 @@ export default function WizardPage() {
     return (
       <div className="flex min-h-dvh flex-col">
         <TopBar title="Assistant de préparation" backHref="/admin" />
-        <p className="px-4 py-6 text-sm text-black/50">Chargement…</p>
+        <p className="px-4 py-6 text-sm text-text-faint">Chargement…</p>
       </div>
     );
   }
@@ -92,10 +92,10 @@ export default function WizardPage() {
 
       <div className="flex-1 space-y-4 px-4 py-4">
         <div className="card">
-          <p className="text-sm font-semibold text-black/50">Avancement</p>
+          <p className="text-sm font-semibold text-text-faint">Avancement</p>
           <p className="mt-1 text-2xl font-bold">{doneCount} / 10 étapes</p>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/10">
-            <div className="h-full rounded-full bg-ink transition-all" style={{ width: `${(doneCount / 10) * 100}%` }} />
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
+            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(doneCount / 10) * 100}%` }} />
           </div>
           {message && <p className="mt-2 text-sm text-status-over">{message}</p>}
         </div>
@@ -103,14 +103,14 @@ export default function WizardPage() {
         <Step n={1} title="Nommer l'événement" done={step1Done}>
           <div className="space-y-2">
             <input
-              className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
+              className="w-full rounded-xl2 border border-hairline px-3 py-2.5"
               placeholder="Nom de l'événement (ex: Mariage Nelly & Gersom)"
               value={nom}
               onChange={(e) => setNom(e.target.value)}
             />
             <input
               type="date"
-              className="w-full rounded-xl2 border border-black/10 px-3 py-2.5"
+              className="w-full rounded-xl2 border border-hairline px-3 py-2.5"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
@@ -140,7 +140,7 @@ export default function WizardPage() {
             <input
               type="number"
               min={1}
-              className="w-24 rounded-xl2 border border-black/10 px-3 py-2.5"
+              className="w-24 rounded-xl2 border border-hairline px-3 py-2.5"
               value={reserveCap}
               onChange={(e) => setReserveCap(Number(e.target.value))}
             />
@@ -260,14 +260,14 @@ function Step({
       <div className="flex items-start gap-3">
         <span
           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-            done ? 'bg-status-complete text-white' : 'bg-black/10 text-black/50'
+            done ? 'bg-status-complete text-white' : 'bg-surface-2 text-text-faint'
           }`}
         >
           {done ? '✓' : n}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold leading-tight">{title}</p>
-          {detail && <p className="mt-0.5 text-sm text-black/50">{detail}</p>}
+          {detail && <p className="mt-0.5 text-sm text-text-faint">{detail}</p>}
         </div>
       </div>
       {children}

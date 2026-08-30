@@ -85,9 +85,9 @@ export default function ExceptionsPage() {
       />
 
       {showForm && (
-        <form onSubmit={submit} className="space-y-3 border-b border-black/5 px-4 py-4">
+        <form onSubmit={submit} className="space-y-3 border-b border-hairline px-4 py-4">
           <select
-            className="w-full rounded-xl2 border border-black/10 px-4 py-3"
+            className="w-full rounded-xl2 border border-hairline px-4 py-3"
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
@@ -98,7 +98,7 @@ export default function ExceptionsPage() {
             ))}
           </select>
           <textarea
-            className="w-full rounded-xl2 border border-black/10 px-4 py-3"
+            className="w-full rounded-xl2 border border-hairline px-4 py-3"
             placeholder="Détails (optionnel)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -110,25 +110,25 @@ export default function ExceptionsPage() {
       )}
 
       <div className="flex-1 px-4 py-4">
-        <p className="mb-2 text-sm font-semibold text-black/50">En attente ({open.length})</p>
+        <p className="mb-2 text-sm font-semibold text-text-faint">En attente ({open.length})</p>
         <ul className="mb-6 space-y-2">
           {open.map((e) => (
             <li key={e.id} className="card flex items-center justify-between">
               <div>
                 <p className="font-semibold">{TYPE_LABELS[e.type] || e.type}</p>
-                {e.description && <p className="text-sm text-black/50">{e.description}</p>}
+                {e.description && <p className="text-sm text-text-faint">{e.description}</p>}
               </div>
               <button className="btn-secondary px-4 py-2 text-sm" onClick={() => resolve(e.id)}>
                 Résoudre
               </button>
             </li>
           ))}
-          {open.length === 0 && <p className="text-black/40">Aucune exception en attente</p>}
+          {open.length === 0 && <p className="text-text-faint">Aucune exception en attente</p>}
         </ul>
 
         {resolved.length > 0 && (
           <>
-            <p className="mb-2 text-sm font-semibold text-black/50">Résolues</p>
+            <p className="mb-2 text-sm font-semibold text-text-faint">Résolues</p>
             <ul className="space-y-2 opacity-50">
               {resolved.map((e) => (
                 <li key={e.id} className="card">

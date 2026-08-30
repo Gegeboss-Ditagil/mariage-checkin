@@ -186,7 +186,7 @@ export function ZoomableFloorPlan({
         <button
           type="button"
           aria-label="Zoomer sur le plan de salle"
-          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-gold-400/40 bg-white text-xl font-bold leading-none text-gold-700 shadow"
+          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-hairline bg-surface text-xl font-bold leading-none text-accent shadow"
           onClick={() => zoomBy(1.4)}
         >
           +
@@ -194,7 +194,7 @@ export function ZoomableFloorPlan({
         <button
           type="button"
           aria-label="Dézoomer sur le plan de salle"
-          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-gold-400/40 bg-white text-xl font-bold leading-none text-gold-700 shadow"
+          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-hairline bg-surface text-xl font-bold leading-none text-accent shadow"
           onClick={() => zoomBy(1 / 1.4)}
         >
           −
@@ -203,7 +203,7 @@ export function ZoomableFloorPlan({
           <button
             type="button"
             aria-label="Réinitialiser le zoom du plan de salle"
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-gold-400/40 bg-white text-sm font-bold leading-none text-gold-700 shadow"
+            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-hairline bg-surface text-sm font-bold leading-none text-accent shadow"
             onClick={resetZoom}
           >
             ↺
