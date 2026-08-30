@@ -11,7 +11,7 @@ Prompt de handoff complet de Gersom : invité surprise avec approbation par SMS 
 - **Invité surprise depuis `/scan`** : bouton « 📷 Invité surprise (non prévu) », réservé à la nouvelle capacité `guestApproval` (admin/directeur/placeur — **jamais** agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement »). Parcours en 3 écrans : photo (`<input type="file" capture="environment">`, une seule prise) → côté (Nelly/Gégé) → nom + nombre d'invités → envoi.
 - **`supabase/migrations/0032_guest_approvals.sql`** (appliquée en production) :
   - `guest_approvers` (cote → nom/téléphone de l'approbateur, config plutôt que variable d'environnement) — pré-rempli avec les deux numéros donnés par Gersom : **« Mon Papa » (Canada, +1 514 815 1586) = Côté Gégé**, **« Papa David » (France, +33 6 43 34 85 60) = Côté Nelly** (confirmé explicitement).
-  - `festin_directors` (nom/téléphone des destinataires du SMS de rapport, Remy/Tuzola) — **laissée vide** : leurs numéros n'ont pas encore été confirmés ; le SMS de rapport est un no-op silencieux tant qu'elle l'est, le reste du parcours fonctionne normalement.
+  - `festin_directors` (nom/téléphone des destinataires du SMS de rapport) — pré-remplie via **`0033_festin_directors_contacts.sql`** (appliquée en production) dès que Gersom a confirmé les numéros : **Rémy Landu (+33 6 51 87 47 79)** et **Tuzola (+33 6 69 01 68 03)**.
   - `guest_approval_requests` (photo, côté, nom, nombre, statut, décision, table assignée…), RLS activée mais **sans aucune policy anon** — contrairement aux tables opérationnelles historiques (0003_rls.sql) : le `token` doit rester confidentiel, une lecture anon même « pour le temps réel » l'exposerait à quiconque possède la clé anon.
   - Bucket Storage privé `guest-approval-photos` (jamais public — toujours résolu en URL signée côté serveur, 1h de validité, `lib/guestApprovalPhotos.ts`).
   - RPC `assign_table_to_guest_approval` : crée l'invitation à la table choisie pour une demande **déjà approuvée**, refuse sinon (409) ; jamais utilisée avant approbation.
@@ -25,16 +25,14 @@ Prompt de handoff complet de Gersom : invité surprise avec approbation par SMS 
 - **`app/approve/[token]/page.tsx`** — page publique (ajoutée à `middleware.ts`), sans connexion, sans navigation : photo, nom, nombre, côté, boutons Approuver/Refuser.
 - **`app/approbations/page.tsx`** (liste des demandes, sondage 5s — pas de websocket temps réel : `guest_approval_requests` n'a pas de policy anon, voir plus haut) et **`app/approbations/[id]/assign/page.tsx`** (assignation de table via `TablePicker`, même sélecteur que `/tables/move/[invitationId]`) — nouveau raccourci « 📷 Approbations » dans le menu du compte (`AccountMenu.tsx`), capacité `guestApproval`.
 
-### Non traité dans ce lot — à confirmer
-Les numéros de téléphone de Remy et Tuzola (directeur de festin) pour le SMS de rapport : `festin_directors` est en place mais vide. Dès que Gersom les confirme, une simple insertion suffit — aucun changement de code nécessaire.
-
 ### Tests
-- `tests/guest-approvals.test.ts` (nouveau, 13 tests) : capacité `guestApproval` correctement bornée, routes publiques sans session, clé de service jamais exposée côté client, décision atomique, aucun MMS tenté, bucket privé, RLS sans policy anon, `assign_table_to_guest_approval` n'utilise pas `addInvitation`, mapping téléphone/côté confirmé.
+- `tests/guest-approvals.test.ts` (14 tests) : capacité `guestApproval` correctement bornée, routes publiques sans session, clé de service jamais exposée côté client, décision atomique, aucun MMS tenté, bucket privé, RLS sans policy anon, `assign_table_to_guest_approval` n'utilise pas `addInvitation`, mapping téléphone/côté des deux approbateurs et des deux destinataires du rapport.
 - `tests/navigation-resilience.test.ts` : `/approbations` ajouté à la liste des écrans utilisant le patron responsive paysage (10e écran).
-- `npx tsc --noEmit`, `npm run build`, 14 suites de tests (`node --test`, 116 tests) — tous exécutés avec succès.
+- `npx tsc --noEmit`, `npm run build`, 14 suites de tests (`node --test`, 117 tests) — tous exécutés avec succès.
 
 ### Migrations
 - `0032_guest_approvals.sql` — appliquée en production (additive : nouvelles tables/bucket/RPC uniquement, aucune donnée existante modifiée). Les deux numéros de `guest_approvers` ont été fournis explicitement par Gersom pour cet usage précis.
+- `0033_festin_directors_contacts.sql` — appliquée en production (additive : deux lignes de configuration, numéros de Rémy Landu et Tuzola fournis explicitement par Gersom pour cet usage précis).
 
 ### ⚠️ Action manuelle requise (Vercel)
 Trois variables d'environnement à ajouter dans Vercel → Settings → Environment Variables pour que l'envoi de SMS fonctionne : `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`. Sans elles, une demande d'invité surprise reste créée normalement (photo + infos conservées), mais l'agent est averti explicitement que le SMS n'est pas parti.

@@ -176,6 +176,7 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Refus → statut « Refusé », aucun bouton « Assigner une table », visible dans `/approbations`.
 - Après approbation, l'approbateur reçoit un second SMS : « il vous reste maintenant N places » en réserve — vérifier que N correspond au calcul déjà utilisé par `/dashboard`/`/plan-table` (places de réserve libres maintenant).
 - « Assigner une table » depuis `/approbations` (demande approuvée) → sélection d'une table (`TablePicker`, capacités en direct) → confirme → nouvelle invitation créée, visible sur sa fiche `/checkin/[invitationId]` (`nombre_arrive = 0`, à confirmer manuellement comme n'importe quel invité) ; un deuxième essai d'assignation sur la même demande → refusé (déjà assignée).
+- Rémy Landu et Tuzola (`festin_directors`) reçoivent tous deux le SMS de rapport après cette assignation — nom de l'approbateur, table, places de réserve restantes.
 - Vérifier qu'aucun MMS n'est tenté (numéro Twilio français) — uniquement un SMS texte avec le lien.
 - Vérifier que `SUPABASE_SERVICE_ROLE_KEY` n'apparaît jamais côté client sur `/approve/[token]` (page publique).
 - Sans les variables d'environnement Twilio configurées sur Vercel : la demande est quand même créée (photo/infos conservées), l'agent voit un message clair indiquant que le SMS n'est pas parti et doit prévenir l'approbateur autrement.

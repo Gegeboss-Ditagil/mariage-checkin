@@ -10,6 +10,10 @@ const migrationSource = readFileSync(
   new URL('../supabase/migrations/0032_guest_approvals.sql', import.meta.url),
   'utf8'
 );
+const directorsMigrationSource = readFileSync(
+  new URL('../supabase/migrations/0033_festin_directors_contacts.sql', import.meta.url),
+  'utf8'
+);
 const twilioSource = readFileSync(new URL('../lib/twilio.ts', import.meta.url), 'utf8');
 const notifySource = readFileSync(new URL('../lib/guestApprovalNotify.ts', import.meta.url), 'utf8');
 const photosSource = readFileSync(new URL('../lib/guestApprovalPhotos.ts', import.meta.url), 'utf8');
@@ -148,4 +152,10 @@ test('le SMS de rapport au directeur de festin est un no-op silencieux tant que 
 test('"Mon Papa" (Canada) = Cote Gege, "Papa David" (France) = Cote Nelly -- confirme par Gersom le 30\/08\/2026', () => {
   assert.match(migrationSource, /\('Gege', 'Mon Papa', '\+15148151586'\)/);
   assert.match(migrationSource, /\('Nelly', 'Papa David', '\+33643348560'\)/);
+});
+
+test('festin_directors contient Remy et Tuzola -- confirme par Gersom le 30/08/2026 (migration 0033)', () => {
+  assert.match(directorsMigrationSource, /\('Rémy Landu', '\+33651874779'\)/);
+  assert.match(directorsMigrationSource, /\('Tuzola', '\+33669016803'\)/);
+  assert.match(directorsMigrationSource, /insert into festin_directors/);
 });
