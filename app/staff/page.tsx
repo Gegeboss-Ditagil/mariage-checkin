@@ -101,133 +101,135 @@ export default function StaffPage() {
   const arrive = activeStaff.reduce((s, i) => s + i.nombre_arrive, 0);
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      <TopBar
-        title="Staff"
-        backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
-      />
+    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar
+          title="Staff"
+          backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
+        />
 
-      {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
+        {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
-      {!loading && (
-        <div className="px-4 pt-3">
-          <div className="card mb-2 grid grid-cols-3 text-center">
-            <div>
-              <p className="text-xs uppercase text-text-faint">Prévu</p>
-              <p className="text-2xl font-bold">{prevu}</p>
+        {!loading && (
+          <div className="px-4 pt-3">
+            <div className="card mb-2 grid grid-cols-3 text-center">
+              <div>
+                <p className="text-xs uppercase text-text-faint">Prévu</p>
+                <p className="text-2xl font-bold">{prevu}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-text-faint">Arrivés</p>
+                <p className="text-2xl font-bold text-status-complete">{arrive}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-text-faint">Restants</p>
+                <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs uppercase text-text-faint">Arrivés</p>
-              <p className="text-2xl font-bold text-status-complete">{arrive}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-text-faint">Restants</p>
-              <p className="text-2xl font-bold text-status-partial">{Math.max(0, prevu - arrive)}</p>
-            </div>
-          </div>
-          <p className="mb-3 text-xs text-text-faint">
-            {tableFilter === 'sans' || !canSeeAllStaff
-              ? 'Personnel et prestataires sans table assignée (photographe, MC, DJ…), accueillis directement via le QR « STAFF » — le reste du staff a une table et se check-in normalement avec son groupe.'
-              : 'Personnel avec une table assignée : se présente et se check-in normalement avec son groupe, comme un invité.'}
-          </p>
-          {canSeeAllStaff && (
-            <div className="mb-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTableFilter('sans')}
-                className={
-                  'flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ' +
-                  (tableFilter === 'sans' ? 'bg-accent text-on-accent' : 'bg-accent-tint text-accent')
-                }
-              >
-                Sans table ({staffSansTable.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTableFilter('avec')}
-                className={
-                  'flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ' +
-                  (tableFilter === 'avec' ? 'bg-accent text-on-accent' : 'bg-accent-tint text-accent')
-                }
-              >
-                Avec table ({staffAvecTable.length})
-              </button>
-            </div>
-          )}
-          <input
-            className="mb-2 w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-base placeholder:text-text-faint focus:border-accent focus:outline-none"
-            placeholder="Rechercher un nom du staff…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto">
-      {!loading && filtered.length === 0 && (
-        <p className="p-6 text-center text-text-faint">
-          {activeStaff.length === 0
-            ? tableFilter === 'sans' || !canSeeAllStaff
-              ? "Aucune personne du staff sans table pour l'instant."
-              : "Aucune personne du staff avec table pour l'instant."
-            : 'Aucun résultat pour cette recherche.'}
-        </p>
-      )}
-
-      <ul className="divide-y divide-hairline px-4">
-        {filtered.map((inv) => {
-          const prenoms = extractPrenoms(inv.notes);
-          const sansTable = isStaffWithoutTable(inv);
-          const body = (
-            <div className="min-w-0">
-              <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
-              {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
-              {!sansTable && (
-                <p className="text-sm text-text-faint">
-                  {inv.table ? 'Table ' + inv.table.number + (inv.table.label ? ' — ' + inv.table.label : '') : 'Sans table'}
-                </p>
-              )}
-              <p className="text-sm text-text-faint">
-                {inv.nombre_arrive}/{inv.nombre_prevu} personnes
-                {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
-              </p>
-              {sansTable && (
-                <span className="mt-1 inline-block rounded-full bg-accent-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
-                  Sans table
-                </span>
-              )}
-            </div>
-          );
-          return (
-            <li key={inv.id} className="flex items-center gap-1 py-4">
-              {canCheckin ? (
+            <p className="mb-3 text-xs text-text-faint">
+              {tableFilter === 'sans' || !canSeeAllStaff
+                ? 'Personnel et prestataires sans table assignée (photographe, MC, DJ…), accueillis directement via le QR « STAFF » — le reste du staff a une table et se check-in normalement avec son groupe.'
+                : 'Personnel avec une table assignée : se présente et se check-in normalement avec son groupe, comme un invité.'}
+            </p>
+            {canSeeAllStaff && (
+              <div className="mb-3 flex gap-2">
                 <button
-                  className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
-                  onClick={() => router.push('/checkin/' + inv.id)}
+                  type="button"
+                  onClick={() => setTableFilter('sans')}
+                  className={
+                    'flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ' +
+                    (tableFilter === 'sans' ? 'bg-accent text-on-accent' : 'bg-accent-tint text-accent')
+                  }
                 >
-                  {body}
-                  <StatusBadge statut={inv.statut} />
+                  Sans table ({staffSansTable.length})
                 </button>
-              ) : (
-                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                  {body}
-                  <StatusBadge statut={inv.statut} />
-                </div>
-              )}
-              {/* Appel direct : tel: ouvre le composeur du telephone sans
-                  passer par le check-in -- utile pour joindre un
-                  photographe/DJ/MC en retard sans devoir d'abord toucher la
-                  ligne. Empeche la propagation pour ne pas declencher le
-                  clic sur toute la ligne (qui ouvrirait le check-in).
-                  Reserve admin/directeur (capacite callStaff). */}
-              {canCall && inv.telephone && <CallButton telephone={inv.telephone} name={inv.nom_affichage} />}
-              {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} />}
-            </li>
-          );
-        })}
-      </ul>
-      </div>
+                <button
+                  type="button"
+                  onClick={() => setTableFilter('avec')}
+                  className={
+                    'flex-1 rounded-full px-3 py-2 text-sm font-semibold transition ' +
+                    (tableFilter === 'avec' ? 'bg-accent text-on-accent' : 'bg-accent-tint text-accent')
+                  }
+                >
+                  Avec table ({staffAvecTable.length})
+                </button>
+              </div>
+            )}
+            <input
+              className="mb-2 w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-base placeholder:text-text-faint focus:border-accent focus:outline-none"
+              placeholder="Rechercher un nom du staff…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+        )}
 
+        <div className="flex-1 overflow-y-auto">
+        {!loading && filtered.length === 0 && (
+          <p className="p-6 text-center text-text-faint">
+            {activeStaff.length === 0
+              ? tableFilter === 'sans' || !canSeeAllStaff
+                ? "Aucune personne du staff sans table pour l'instant."
+                : "Aucune personne du staff avec table pour l'instant."
+              : 'Aucun résultat pour cette recherche.'}
+          </p>
+        )}
+
+        <ul className="divide-y divide-hairline px-4">
+          {filtered.map((inv) => {
+            const prenoms = extractPrenoms(inv.notes);
+            const sansTable = isStaffWithoutTable(inv);
+            const body = (
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold">{inv.nom_affichage}</p>
+                {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
+                {!sansTable && (
+                  <p className="text-sm text-text-faint">
+                    {inv.table ? 'Table ' + inv.table.number + (inv.table.label ? ' — ' + inv.table.label : '') : 'Sans table'}
+                  </p>
+                )}
+                <p className="text-sm text-text-faint">
+                  {inv.nombre_arrive}/{inv.nombre_prevu} personnes
+                  {inv.statut === 'partiel' && ' · ' + restants(inv.nombre_prevu, inv.nombre_arrive) + ' restantes'}
+                </p>
+                {sansTable && (
+                  <span className="mt-1 inline-block rounded-full bg-accent-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                    Sans table
+                  </span>
+                )}
+              </div>
+            );
+            return (
+              <li key={inv.id} className="flex items-center gap-1 py-4">
+                {canCheckin ? (
+                  <button
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                    onClick={() => router.push('/checkin/' + inv.id)}
+                  >
+                    {body}
+                    <StatusBadge statut={inv.statut} />
+                  </button>
+                ) : (
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                    {body}
+                    <StatusBadge statut={inv.statut} />
+                  </div>
+                )}
+                {/* Appel direct : tel: ouvre le composeur du telephone sans
+                    passer par le check-in -- utile pour joindre un
+                    photographe/DJ/MC en retard sans devoir d'abord toucher la
+                    ligne. Empeche la propagation pour ne pas declencher le
+                    clic sur toute la ligne (qui ouvrirait le check-in).
+                    Reserve admin/directeur (capacite callStaff). */}
+                {canCall && inv.telephone && <CallButton telephone={inv.telephone} name={inv.nom_affichage} />}
+                {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} />}
+              </li>
+            );
+          })}
+        </ul>
+        </div>
+
+      </div>
       {role && <BottomNav role={role} />}
     </div>
   );

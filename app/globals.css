@@ -136,6 +136,12 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Barre de navigation en paysage (BottomNav) : pinnee au bord droit, le
+   home-indicator/encoche se retrouve alors sur le cote plutot qu'en bas. */
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

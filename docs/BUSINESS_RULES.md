@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.25.0**
+**Version documentaire : 1.26.0**
 **Dernière mise à jour : 2026-08-30**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -62,9 +62,12 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Envoyer un message WhatsApp/SMS | Oui | Non | Non | Non | Non |
 | Utiliser l'écran Placement | Oui | Oui | Oui | Non | Non |
 | Écran Staff (consultation + check-in) | Oui | Oui | Oui | Oui | Oui (lecture seule) |
-| Historique et exceptions | Oui | Oui | Oui | Oui | Non |
+| Historique (`/history`) | Oui | Non | Non | Non | Non |
+| Exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+
+Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 
 ## Comptes de connexion
 

@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.25.0**
+**Version actuelle : 1.26.0**
 **Dernière mise à jour documentaire : 2026-08-30**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.25.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.26.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,15 +25,18 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.25.0
+## État fonctionnel v1.26.0
 
+- **Barre de navigation « verre liquide »** : pilule flottante en verre dépoli, icônes plus grandes et libellés inactifs mieux contrastés — l'ancienne barre plate était jugée difficile à voir. En orientation paysage (téléphone tourné, ou iPad), elle bascule en bande verticale fixée au bord droit de l'écran ; le contenu de la page défile normalement de haut en bas, indépendamment de la barre.
+- **Bande d'information de base sur `/scan`** : nombre d'invités arrivés/attendus et une jauge compacte du remplissage de la salle, juste au-dessus de la barre de navigation — ouvre le tableau de bord complet au tap.
+- **Historique (`/history`) réservé à l'admin** : les autres rôles (directeur, placeur, agent scan) n'y ont plus accès.
 - **Déplacer une personne seule vers une autre table** : depuis « Qui est arrivé ? », un bouton ⇄ par personne (réservé aux rôles avec la capacité de déplacer) la détache de son groupe et crée une fiche à une seule personne à la table choisie — pour la regrouper avec une invitation déjà présente à cette table, utiliser ensuite « Fusionner avec un autre groupe » depuis la nouvelle fiche.
 - **Bouton central de la barre de navigation adapté au rôle** : Scan pour la plupart des rôles, mais Tableau de bord pour le directeur de festin — son travail commence par surveiller le remplissage, pas par scanner des QR (toujours accessible en onglet latéral).
 - **« + Invité supplémentaire (non prévu) » ajoute maintenant une personne nommée** (visible avec ✓/✕ dans « Qui est arrivé ? »), tout en gardant le déclenchement de l'assignation à une table de réserve en cas de dépassement de capacité — plus un simple compteur anonyme.
 - **Renommer et ajouter directement depuis la fiche** : taper le nom d'une personne dans « Qui est arrivé ? » le modifie sur place (comme le titre de la fiche) ; un bouton « + » ajoute une personne au groupe sans passer par « Gérer les membres du groupe » — réservé aux rôles avec la capacité de gérer les membres.
 - **Thème « Atrium » (clair) / « Maison » (sombre)**, choisi une seule fois à la première connexion puis modifiable à tout moment (menu du compte), avec un mode « Automatique » qui suit le réglage clair/sombre de l'appareil en direct. Toutes les pages en profitent, y compris `/login`.
 - **Arrivée par personne** sur les fiches de groupe : un bouton ✓/✕ par personne nommée (jamais un simple compteur global), toujours réversible, place libérée sans jamais supprimer la personne.
-- **Barre de navigation à 5 icônes** (Recherche, Plan, un bouton central surélevé, Tableau de bord, Staff) sur les écrans principaux — le bouton central est Scan pour la plupart des rôles, Tableau de bord pour le directeur de festin ; toutes les pages avec cette barre tiennent sur un seul écran sans défilement pour l'atteindre, y compris en orientation paysage.
+- **Barre de navigation à 5 icônes** (Recherche, Plan, un bouton central surélevé, Tableau de bord, Staff) sur les écrans principaux — le bouton central est Scan pour la plupart des rôles, Tableau de bord pour le directeur de festin ; en portrait une pilule flottante en bas, en paysage une bande verticale au bord droit (voir ci-dessus).
 - **41 tables au total**.
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
 - **Tables 1 à 40 : normales**.
@@ -137,4 +140,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.25.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.26.0** et l'historique des versions.

@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.25.0**
+**Version documentaire : 1.26.0**
 **Dernière mise à jour : 2026-08-30**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -156,6 +156,16 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Après déplacement, utiliser « Fusionner avec un autre groupe » depuis la nouvelle fiche pour la regrouper avec une invitation déjà présente à la table cible — vérifier que la fusion fonctionne comme avant.
 - Connexion en tant que directeur/placeur (ex. Remy, Tuzola) : le bouton doré central de la barre de navigation ouvre `/dashboard`, pas `/scan` ; Scan reste accessible en onglet latéral.
 - Connexion avec un autre rôle (agent_checkin, visibilité, admin) : le bouton central reste `/scan` (ou comportement inchangé pour visibilité/admin) comme avant.
+
+## Barre de navigation « verre liquide » + paysage + historique admin-only — v1.26.0
+
+- Sur les 9 écrans à barre de navigation (`/dashboard`, `/staff`, `/scan`, `/search`, `/plan-table`, `/exceptions`, `/placement`, `/history`, `/admin`), en orientation portrait : la barre est une pilule flottante arrondie légèrement surélevée du bord bas, icônes bien visibles, libellés inactifs lisibles sur fond sombre.
+- Tourner le téléphone en paysage sur l'un de ces écrans : la barre bascule en bande verticale fixée au bord droit de l'écran (au lieu de rester en bas) ; le contenu de la page reste défilable de haut en bas indépendamment de la barre ; tous les boutons restent cliquables et l'état actif (icône en surbrillance) reste correct.
+- Sur iPad en orientation paysage : même bascule en bande verticale (pas de logique séparée par taille d'écran — uniquement l'orientation).
+- Revenir en portrait : la barre redevient une pilule horizontale en bas, sans état visuel resté « coincé » de la bascule précédente.
+- `/scan` : une bande compacte affiche « X / Y arrivés » et une jauge de remplissage juste au-dessus de la barre de navigation ; taper dessus ouvre `/dashboard`. Les chiffres suivent les arrivées en temps réel (comme `/dashboard`), sans recharger la page.
+- Connexion avec un rôle autre qu'admin (directeur, placeur, agent scan) : `/history` n'apparaît plus dans le menu du compte, et une navigation directe par URL vers `/history` renvoie vers l'écran par défaut du rôle au lieu d'afficher la page.
+- Connexion en tant qu'admin : `/history` reste accessible normalement (menu du compte et URL directe).
 
 ## Contrôle de version avant merge
 

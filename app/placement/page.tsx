@@ -106,60 +106,62 @@ export default function PlacementPage() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      <UserMenu />
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 pt-4">
-          <h1 className="font-display text-2xl ">Placement</h1>
-        </div>
+    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <UserMenu />
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 pt-4">
+            <h1 className="font-display text-2xl ">Placement</h1>
+          </div>
 
-        <div className="mb-4 mt-3 flex gap-2 px-4">
-        <button
-          className={
-            'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
-            (mode === 'scan'
-              ? 'border-accent bg-accent text-on-accent'
-              : 'border-hairline bg-surface text-text-faint')
-          }
-          onClick={() => setMode('scan')}
-        >
-          Scan QR
-        </button>
-        <button
-          className={
-            'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
-            (mode === 'search'
-              ? 'border-accent bg-accent text-on-accent'
-              : 'border-hairline bg-surface text-text-faint')
-          }
-          onClick={() => setMode('search')}
-        >
-          Recherche
-        </button>
-        </div>
-
-        {mode === 'scan' ? (
-        <div className="px-4">
-          <QrScanner onScan={resolveByCode} />
-        </div>
-      ) : (
-        <div className="space-y-3 px-4">
-          <input
-            autoFocus
-            className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
-            placeholder="Nom ou n° de table"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button className="btn-primary w-full" onClick={resolveBySearch}>
-            Rechercher
+          <div className="mb-4 mt-3 flex gap-2 px-4">
+          <button
+            className={
+              'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
+              (mode === 'scan'
+                ? 'border-accent bg-accent text-on-accent'
+                : 'border-hairline bg-surface text-text-faint')
+            }
+            onClick={() => setMode('scan')}
+          >
+            Scan QR
           </button>
+          <button
+            className={
+              'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
+              (mode === 'search'
+                ? 'border-accent bg-accent text-on-accent'
+                : 'border-hairline bg-surface text-text-faint')
+            }
+            onClick={() => setMode('search')}
+          >
+            Recherche
+          </button>
+          </div>
+
+          {mode === 'scan' ? (
+          <div className="px-4">
+            <QrScanner onScan={resolveByCode} />
+          </div>
+        ) : (
+          <div className="space-y-3 px-4">
+            <input
+              autoFocus
+              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3.5 text-lg  placeholder:text-text-faint focus:border-accent focus:outline-none"
+              placeholder="Nom ou n° de table"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button className="btn-primary w-full" onClick={resolveBySearch}>
+              Rechercher
+            </button>
+          </div>
+          )}
+
+          {error && <p className="mt-4 text-center font-medium text-status-over">{error}</p>}
         </div>
-        )}
 
-        {error && <p className="mt-4 text-center font-medium text-status-over">{error}</p>}
       </div>
-
       {role && <BottomNav role={role} />}
     </div>
   );

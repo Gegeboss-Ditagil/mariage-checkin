@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
+import { hasCapability } from '@/lib/permissions';
 
 export async function GET() {
   const user = getSessionUser();
-  if (!user || !['admin', 'directeur', 'placeur', 'agent_checkin'].includes(user.role)) {
+  // Reserve a l'admin depuis le 30/08/2026 (demande de Gersom) -- capacite
+  // centralisee (lib/permissions.ts) plutot que la liste de roles en dur
+  // utilisee jusqu'ici, pour rester la seule source de verite.
+  if (!user || !hasCapability(user.role, 'viewHistory')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

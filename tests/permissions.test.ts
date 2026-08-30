@@ -185,3 +185,19 @@ test("le chemin racine n'autorise pas implicitement toutes les pages", () => {
   assert.equal(canAccessPath('agent_checkin', '/admin'), false);
 });
 
+test("l'historique (/history) est reserve a l'admin", () => {
+  // Demande explicite de Gersom le 30/08/2026 : "ce n'est pas toutes les
+  // roles qui ont acces a l'historique, donne l'acces seulement aux admins".
+  assert.equal(hasCapability('admin', 'viewHistory'), true);
+  for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'viewHistory'), false, role + ' ne doit plus avoir viewHistory');
+    assert.equal(canAccessPath(role, '/history'), false, role + ' ne doit plus atteindre /history');
+  }
+  assert.equal(canAccessPath('admin', '/history'), true);
+
+  const historyRouteSource = readFileSync(new URL('../app/api/history/route.ts', import.meta.url), 'utf8');
+  assert.match(historyRouteSource, /hasCapability\(user\.role, ['"]viewHistory['"]\)/);
+  // Ne doit plus recreer de liste de roles locale (voir CLAUDE.md).
+  assert.doesNotMatch(historyRouteSource, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
+});
+
