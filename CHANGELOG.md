@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.27.1] — 2026-08-30
+
+Complète le déploiement de v1.27.0 : les deux migrations laissées « écrites, testées, en attente d'application » (blocage d'approbation d'outil côté session) ont été appliquées en production par Gersom lui-même via le SQL Editor Supabase.
+
+### Corrigé
+- **Doublons dans `festin_directors`** : le script d'insertion de Rémy Landu et Tuzola (`0033_festin_directors_contacts.sql`) a été relancé plusieurs fois pendant que l'agent tentait de contourner le blocage — sans contrainte d'unicité sur `telephone`, `on conflict do nothing` n'avait aucun arbitre pour se déclencher (`festin_directors.id` est un uuid aléatoire, pas un identifiant naturel), ce qui a créé 3 copies de chaque directeur au lieu d'une. Dédoublonné manuellement (conservé la ligne la plus ancienne par téléphone) dans le même geste que l'application de la migration.
+- **`supabase/migrations/0035_festin_directors_unique_phone.sql`** (nouveau, appliquée en production) : `alter table festin_directors add constraint festin_directors_telephone_key unique (telephone)` — documente dans le dépôt la contrainte appliquée manuellement, pour que le schéma versionné reste la source de vérité (`CLAUDE.md` : « toute modification manuelle de production doit être reflétée dans une migration GitHub ») ; empêche aussi qu'un futur re-jeu accidentel du même insert recrée des doublons.
+
+### Performance
+- Point de vérification demandé par Gersom avant l'événement (« quand 30 personnes se connectent, est-ce que ça reste stable ? ») : revue des abonnements temps réel (11 sur l'appli, tous avec un nettoyage `removeChannel` correctement apparié — aucune fuite), des colonnes sélectionnées (`ScanStatsStrip`, ajouté aujourd'hui sur `/scan` — l'écran que la majorité du staff garde ouvert toute la soirée — ne sélectionne que 2 colonnes étroites, pas `select('*')`) et du volume de données réel (247 invitations, 41 tables — trivial pour Postgres/PostgREST). Conclusion : rien à corriger pour tenir 30 connexions simultanées, les clients navigateur passent par PostgREST (HTTP), pas par des connexions Postgres directes.
+- **`app/approbations/page.tsx`** : intervalle de sondage resserré de 5s à 15s — chaque sondage régénère une URL signée Storage par photo côté serveur (`GET /api/guest-approvals`), inutile de le faire toutes les 5s pour un écran secondaire (pas celui que tout le monde garde ouvert, contrairement à `/scan`).
+
+### Migrations
+- `0033_festin_directors_contacts.sql` — **appliquée en production** (dédoublonnée, voir ci-dessus).
+- `0034_guest_approval_whatsapp.sql` — **appliquée en production**.
+- `0035_festin_directors_unique_phone.sql` — **appliquée en production**.
+
+### Tests
+- `npx tsc --noEmit`, `npm run build`, 14 suites de tests (`node --test`, 125 tests) — tous exécutés avec succès après le resserrement de l'intervalle de sondage.
+
 ## [1.27.0] — 2026-08-30
 
 Prompt de handoff complet de Gersom : invité surprise avec approbation par SMS à distance (Twilio), plus un complément vocal (décompte de places dans le SMS de confirmation, rapport au directeur de festin, confirmation que seuls admin/directeur/placeur y ont accès).

@@ -38,9 +38,13 @@ const STATUS_BADGE: Record<ApprovalListItem['statut'], string> = {
 // Sondage plutôt qu'un abonnement temps réel websocket -- guest_approval_requests
 // n'a volontairement aucune policy RLS anon (le token doit rester
 // confidentiel, voir migration 0032), donc pas de postgres_changes possible
-// directement depuis le client sur cette table. 5s reste largement assez
-// réactif pour un écran de suivi staff.
-const POLL_INTERVAL_MS = 5000;
+// directement depuis le client sur cette table. 15s reste largement assez
+// réactif pour un écran de suivi staff (pas l'écran principal que tout le
+// monde garde ouvert pendant l'événement, contrairement à /scan) -- réglé à
+// 5s à l'origine, resserré le 30/08/2026 après un point performance : chaque
+// sondage régénère une URL signée par photo côté serveur (appel Storage),
+// inutile de le faire toutes les 5s pour un écran secondaire.
+const POLL_INTERVAL_MS = 15000;
 
 export default function ApprobationsPage() {
   const role = useSessionRole();
