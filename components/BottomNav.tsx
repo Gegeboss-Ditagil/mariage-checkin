@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { ComponentType } from 'react';
 import { Role } from '@/lib/types';
-import { GaugeIcon, GridIcon, ScanIcon, SearchIcon } from '@/components/icons';
+import { GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }> };
 
@@ -14,11 +14,14 @@ type NavItem = { href: string; label: string; icon: ComponentType<{ className?: 
 // "Placement" a ete retire (19/08/2026) : cet onglet faisait doublon avec
 // Scan + Recherche (meme camera QR, meme recherche par nom/table), Gersom a
 // demande a le supprimer pour simplifier la barre a 4 boutons.
+// Staff ajoute (30/08/2026, maquette Atrium/Maison) : 5e onglet a droite du
+// bouton Scan central, pour tout role ayant la capacite viewStaff.
 const STAFF_ITEMS: NavItem[] = [
   { href: '/scan', label: 'Scan', icon: ScanIcon },
   { href: '/search', label: 'Recherche', icon: SearchIcon },
   { href: '/plan-table', label: 'Plan', icon: GridIcon },
   { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
+  { href: '/staff', label: 'Staff', icon: StaffIcon },
 ];
 
 // agent_checkin (accueil) : meme barre que le staff complet -- il garde le
@@ -27,10 +30,12 @@ const STAFF_ITEMS: NavItem[] = [
 const SCAN_ONLY_ITEMS = STAFF_ITEMS;
 
 // visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.
+// A quand meme la capacite viewStaff (lib/permissions.ts) : garde l'onglet.
 const READ_ONLY_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
   { href: '/plan-table', label: 'Plan', icon: GridIcon },
   { href: '/search', label: 'Recherche', icon: SearchIcon },
+  { href: '/staff', label: 'Staff', icon: StaffIcon },
 ];
 
 const ITEMS: Record<string, NavItem[]> = {
@@ -43,6 +48,7 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/search', label: 'Recherche', icon: SearchIcon },
+    { href: '/staff', label: 'Staff', icon: StaffIcon },
   ],
 };
 
@@ -70,7 +76,7 @@ export function BottomNav({ role }: { role: Role }) {
   const rest = items.filter((item) => item.href !== '/scan');
 
   // Pas de bouton central quand le role n'a pas Scan (visibilite) : barre
-  // plate a 3 onglets, comme avant.
+  // plate a onglets, comme avant.
   if (!scanItem) {
     return (
       <nav className="sticky bottom-0 z-10 flex border-t border-hairline bg-glass backdrop-blur safe-bottom">
@@ -81,9 +87,15 @@ export function BottomNav({ role }: { role: Role }) {
     );
   }
 
-  const mid = Math.floor(rest.length / 2);
-  const left = rest.slice(0, mid);
-  const right = rest.slice(mid);
+  // Repartition confirmee par la maquette : Recherche/Plan a gauche,
+  // Bord/Staff a droite du bouton Scan central -- pas un simple decoupage
+  // en deux moities de `rest` (l'ordre metier de STAFF_ITEMS ne colle pas
+  // exactement a l'ordre visuel voulu par la maquette).
+  const order = ['/search', '/plan-table', '/dashboard', '/staff'];
+  const sorted = [...rest].sort((a, b) => order.indexOf(a.href) - order.indexOf(b.href));
+  const mid = Math.ceil(sorted.length / 2);
+  const left = sorted.slice(0, mid);
+  const right = sorted.slice(mid);
   const ScanGlyph = scanItem.icon;
   const scanActive = pathname.startsWith(scanItem.href);
 

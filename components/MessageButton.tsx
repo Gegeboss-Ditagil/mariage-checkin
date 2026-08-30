@@ -2,6 +2,27 @@
 
 import { useState } from 'react';
 import clsx from 'clsx';
+import { PhoneIcon } from '@/components/icons';
+
+// Bouton d'appel direct (tel:) : pastille verte pleine (--status-complete,
+// identique dans les deux themes) avec combiné blanc -- maquette de
+// reference (Ecrans Atrium Maison.dc.html, /staff et /plan-table). `compact`
+// pour les lignes plus denses (plan-table) : pastille plus petite.
+export function CallButton({ telephone, name, compact }: { telephone: string; name: string; compact?: boolean }) {
+  return (
+    <a
+      href={'tel:' + telephone}
+      onClick={(e) => e.stopPropagation()}
+      aria-label={'Appeler ' + name}
+      className={clsx(
+        'flex shrink-0 items-center justify-center rounded-full bg-status-complete text-white shadow-card',
+        compact ? 'h-9 w-9' : 'h-11 w-11'
+      )}
+    >
+      <PhoneIcon className={compact ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />
+    </a>
+  );
+}
 
 export function MessageButton({ telephone, name, compact }: { telephone: string; name: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);

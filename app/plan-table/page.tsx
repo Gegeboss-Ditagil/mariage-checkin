@@ -17,7 +17,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { MessageButton } from '@/components/MessageButton';
+import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
@@ -46,7 +46,7 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
   return (
     <div className="relative h-2.5 rounded-full bg-surface-2">
       <div
-        className={clsx('h-full rounded-full transition-[width]', over ? 'bg-status-over' : 'bg-status-complete')}
+        className={clsx('h-full rounded-full transition-[width]', over ? 'bg-status-over' : 'bg-status-complete dark:bg-accent')}
         style={{ width: presentPct + '%' }}
       />
       {prevu > 0 && (
@@ -470,14 +470,7 @@ export default function PlanTablePage() {
                                 row
                               )}
                               {canCall && inv.telephone && (
-                                <a
-                                  href={'tel:' + inv.telephone}
-                                  onClick={(e) => e.stopPropagation()}
-                                  aria-label={'Appeler ' + inv.nom_affichage}
-                                  className="shrink-0 rounded-full bg-accent-tint p-2 text-sm text-accent"
-                                >
-                                  📞
-                                </a>
+                                <CallButton telephone={inv.telephone} name={inv.nom_affichage} compact />
                               )}
                               {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
                             </li>
@@ -647,7 +640,7 @@ export default function PlanTablePage() {
                         <li key={inv.id} className="flex items-center gap-2 py-2">
                           {canCheckin ? <Link href={'/checkin/' + inv.id} className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p><p className="text-xs text-text-faint">{inv.tags.filter((tag) => tag !== 'SERVICES' && tag !== 'notable' && !tag.startsWith('Côté_')).join(' · ')}</p></Link> : <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{inv.nom_affichage}</p></div>}
                           {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
-                          {canCall && inv.telephone && <a href={'tel:' + inv.telephone} aria-label={'Appeler ' + inv.nom_affichage} className="shrink-0 rounded-full bg-accent-tint p-2 text-sm text-accent">📞</a>}
+                          {canCall && inv.telephone && <CallButton telephone={inv.telephone} name={inv.nom_affichage} compact />}
                         </li>
                       ))}
                     </ul>

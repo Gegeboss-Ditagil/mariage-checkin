@@ -257,7 +257,7 @@ function SearchInner() {
             onClick={() => setMode('nom')}
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'nom' ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface text-text-muted')
+              (mode === 'nom' ? 'border-accent bg-accent text-on-accent ' : 'border-hairline bg-surface text-text-muted')
             }
           >
             Nom / table
@@ -268,7 +268,7 @@ function SearchInner() {
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
               (mode === 'telephone'
-                ? 'border-accent bg-accent-tint '
+                ? 'border-accent bg-accent text-on-accent '
                 : 'border-hairline bg-surface text-text-muted')
             }
           >
@@ -279,7 +279,7 @@ function SearchInner() {
             onClick={() => setMode('email')}
             className={
               'flex-1 rounded-xl2 border-2 py-2 text-xs font-semibold uppercase tracking-wide ' +
-              (mode === 'email' ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface text-text-muted')
+              (mode === 'email' ? 'border-accent bg-accent text-on-accent ' : 'border-hairline bg-surface text-text-muted')
             }
           >
             Email

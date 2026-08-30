@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { GoldSeal, FlightPath, StarField } from '@/components/BrandMotif';
+import { GoldSeal } from '@/components/BrandMotif';
 import { landingPathForRole } from '@/lib/permissions';
 import { Role } from '@/lib/types';
 import { useTheme } from '@/hooks/useTheme';
@@ -104,9 +104,6 @@ function LoginForm() {
 
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-bg px-6 py-10">
-      {dark && <StarField />}
-      {dark && <FlightPath className="absolute left-1/2 top-6 h-20 w-56 -translate-x-1/2" />}
-
       <div className="relative flex flex-col items-center text-center">
         {/* Halo champagne discret derriere le sceau en Maison ; carte neutre en Atrium (maquette). */}
         {dark && (

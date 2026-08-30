@@ -118,7 +118,7 @@ export default function PlacementPage() {
           className={
             'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
             (mode === 'scan'
-              ? 'border-accent bg-accent-tint text-accent'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-hairline bg-surface text-text-faint')
           }
           onClick={() => setMode('scan')}
@@ -129,7 +129,7 @@ export default function PlacementPage() {
           className={
             'flex-1 rounded-xl2 border py-2.5 text-sm font-semibold uppercase tracking-wide ' +
             (mode === 'search'
-              ? 'border-accent bg-accent-tint text-accent'
+              ? 'border-accent bg-accent text-on-accent'
               : 'border-hairline bg-surface text-text-faint')
           }
           onClick={() => setMode('search')}

@@ -10,7 +10,7 @@ import { restants } from '@/lib/statusLogic';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { isStaffWithoutTable } from '@/lib/staffVisibility';
-import { MessageButton } from '@/components/MessageButton';
+import { CallButton, MessageButton } from '@/components/MessageButton';
 import { extractPrenoms } from '@/lib/membersNotes';
 
 // Une invitation est "staff" si elle porte la categorie Staff.
@@ -219,16 +219,7 @@ export default function StaffPage() {
                   ligne. Empeche la propagation pour ne pas declencher le
                   clic sur toute la ligne (qui ouvrirait le check-in).
                   Reserve admin/directeur (capacite callStaff). */}
-              {canCall && inv.telephone && (
-                <a
-                  href={'tel:' + inv.telephone}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={'Appeler ' + inv.nom_affichage}
-                  className="shrink-0 rounded-full bg-accent-tint p-2.5 text-accent"
-                >
-                  📞
-                </a>
-              )}
+              {canCall && inv.telephone && <CallButton telephone={inv.telephone} name={inv.nom_affichage} />}
               {canMessage && inv.telephone && <MessageButton telephone={inv.telephone} name={inv.nom_affichage} />}
             </li>
           );

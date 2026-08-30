@@ -5,7 +5,9 @@ Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.
 
 ## [1.22.0] — 2026-08-30
 
-Gersom a fourni un prompt de handoff complet (« thème Atrium / Maison ») demandant de remplacer toute la charte visuelle par un système à deux modes — Atrium (clair, accent indigo) et Maison (sombre, accent champagne) — avec écran de choix à la première connexion et préférence Sombre/Clair/Auto. Confirmé explicitement avec lui avant de commencer : le prompt ciblait une base stale (« 1.19.3 → 1.20.0 »), alors que le thème « Glass Sombre » (charcoal/teal/or, v1.20.0) était déjà en production et en usage réel — décision prise de le remplacer entièrement plutôt que de le fusionner, sur choix explicite de Gersom. Les fichiers de maquette référencés (`Propositions.dc.html`, `Ecrans Atrium Maison.dc.html`) n'étaient pas accessibles depuis cet outil : les détails visuels non spécifiés dans le texte du prompt (icônes de navigation, écran d'onboarding) ont été conçus au mieux, sans reproduction pixel-perfect.
+Gersom a fourni un prompt de handoff complet (« thème Atrium / Maison ») demandant de remplacer toute la charte visuelle par un système à deux modes — Atrium (clair, accent indigo) et Maison (sombre, accent champagne) — avec écran de choix à la première connexion et préférence Sombre/Clair/Auto. Confirmé explicitement avec lui avant de commencer : le prompt ciblait une base stale (« 1.19.3 → 1.20.0 »), alors que le thème « Glass Sombre » (charcoal/teal/or, v1.20.0) était déjà en production et en usage réel — décision prise de le remplacer entièrement plutôt que de le fusionner, sur choix explicite de Gersom.
+
+Première passe faite sans accès à la maquette (`Propositions.dc.html`, `Ecrans Atrium Maison.dc.html` non accessibles depuis l'outil) : détails visuels conçus au mieux. Gersom a ensuite exporté `Ecrans Atrium Maison.dc.html` (maquette Claude Design, tours 3-4 : connexion, recherche, historique, plan de table, tableau de bord, staff) — rendue avec Playwright (le fichier est un bundle auto-porté qui se déballe en JS) pour comparer pixel par pixel et corriger les écarts avant merge. Voir « Corrigé — passage à la maquette Claude Design » ci-dessous.
 
 ### Ajouté
 - **Système de tokens CSS à deux modes** (`app/globals.css`, `tailwind.config.ts`) : toutes les couleurs passent désormais par des variables (`--bg`, `--surface`, `--text`, `--accent`, `--hairline`, `--elev-1/2`, `--glass`…) redéfinies sous `[data-theme='light']` (Atrium) et `[data-theme='dark']` (Maison), exposées comme couleurs Tailwind (`bg-bg`, `text-text`, `border-hairline`, `bg-accent`…). Remplace entièrement l'ancienne palette codée en dur (`parchment`, `ink`, `gold`, `night`, `cream`, et le `charcoal`/`teal` de Glass Sombre v1.20.0), supprimée de `tailwind.config.ts`.
@@ -28,13 +30,22 @@ Gersom a fourni un prompt de handoff complet (« thème Atrium / Maison ») dema
 - `.eyebrow` (utilisée depuis avant v1.20.0 sur `/login`, `/scan`, `/placement`) n'avait jamais été définie en CSS — classe sans effet. Définie pour de bon.
 - `components/SplashScreen.tsx` : couleur de secours avant chargement de l'image passe de `#1a2942` (ancien token `ink`, supprimé) à `bg-bg`.
 
+### Corrigé — passage à la maquette Claude Design
+- `components/BottomNav.tsx` : la maquette montre un **5ᵉ onglet « Staff »** (icône liste) à droite du bouton Scan central, sur les 5 écrans capturés (recherche, historique, plan de table, tableau de bord, staff eux-mêmes) — absent de la première passe (aucun onglet Staff n'existait avant). Ajouté pour tout rôle ayant la capacité `viewStaff`, y compris `visibilite` (barre plate à 4 onglets, toujours sans bouton Scan). Nouvelle icône `StaffIcon`.
+- `app/login/page.tsx` : la maquette ne montre ni ciel étoilé ni trajectoire pointillée en Maison — juste un halo discret derrière le sceau. `StarField`/`FlightPath` retirés (composants conservés dans `components/BrandMotif.tsx`, déjà un motif de fichiers décoratifs non utilisés dans ce projet, ex. `EiffelSilhouette`).
+- Distinction confirmée par la maquette entre deux usages du même token `bg-accent-tint` posé un peu vite lors de la première passe : un **contrôle segmenté « quel mode est actif »** (bascule de recherche par nom/téléphone/email, bascule scan/recherche de `/placement`) doit être en **remplissage plein** (`bg-accent text-on-accent`), pas teinté — corrigé dans `app/search/page.tsx` (3 boutons) et `app/placement/page.tsx` (2 boutons). Les cartes de sélection multi-lignes (fusion de groupe, choix de table de réserve/excédent) restent teintées : aucune preuve visuelle contraire, et texte multi-ligne moins lisible en remplissage plein.
+- `components/CapacityGauge.tsx` et la barre « Placement & présence » de `app/plan-table/page.tsx` (`CapacityBar`) : la jauge « hero » (remplissage de la salle) passe en accent (champagne) plutôt qu'en vert fixe quand elle est en dessous des seuils d'alerte, en Maison uniquement — confirmé sur `/dashboard` et `/plan-table`. Les états d'alerte (ambre ≥75 %, rouge en dépassement) restent des couleurs de sécurité universelles, inchangées dans les deux modes ; toujours vrai pour les vrais badges de statut (`StatusBadge`, jamais accent) et les jauges par table (toujours vert/rouge fixe).
+- `components/MessageButton.tsx` : nouveau `CallButton` exporté — pastille pleine `--status-complete` (verte, universelle) avec combiné blanc en SVG, à la place de l'emoji 📞 sur fond teinté. Utilisé dans `app/staff/page.tsx` et les deux occurrences de `app/plan-table/page.tsx` (taille compacte).
+- `tests/permissions.test.ts` : regex assouplie pour le bouton d'appel du staff (plus de balise multi-ligne obligatoire depuis l'extraction en `CallButton`).
+
 ### Contraintes respectées
 - Aucune modification de `lib/permissions.ts`, des routes `app/api/**`, des migrations SQL, ni de la logique temps réel (debounce, refetch au focus, pull-to-refresh).
-- Statuts opérationnels (`status-none/partial/complete/over`, couleurs Nelly/Gégé) inchangés dans les deux modes, comme demandé.
+- Statuts opérationnels (`status-none/partial/complete/over`, couleurs Nelly/Gégé) inchangés dans les deux modes, comme demandé — la seule exception est la jauge de remplissage de salle elle-même (voir ci-dessus), qui n'est pas un badge de statut mais un élément décoratif de marque.
 
 ### Tests
-- `tests/theme-preference.test.ts` (9, nouveau), `tests/dashboard-liste-cote-filter.test.ts` et `tests/floor-plan.test.ts` mis à jour — 12 suites au total, toutes vertes.
+- `tests/theme-preference.test.ts` (9, nouveau), `tests/dashboard-liste-cote-filter.test.ts`, `tests/floor-plan.test.ts` et `tests/permissions.test.ts` mis à jour — 12 suites au total, toutes vertes après le passage à la maquette Claude Design.
 - `npx tsc --noEmit`, `npm run build` (62 routes, y compris `/onboarding/theme`) — tous exécutés avec succès.
+- `/login` vérifiée visuellement (Playwright, `npm run build && npm run start`) dans les deux modes contre les captures de la maquette.
 
 ## [1.21.1] — 2026-08-29
 
