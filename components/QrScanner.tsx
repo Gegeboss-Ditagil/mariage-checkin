@@ -1,6 +1,10 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+
+export interface QrScannerHandle {
+  captureFrame: () => Promise<File>;
+}
 
 type ScannerErrorKind = 'denied' | 'not_found' | 'in_use' | 'unknown';
 
@@ -38,13 +42,34 @@ const ERROR_MESSAGES: Record<ScannerErrorKind, string> = {
  * souvent une autorisation refusee), un bouton "Reessayer" relance la
  * demande sans avoir a recharger toute la page.
  */
-export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
+export const QrScanner = forwardRef<QrScannerHandle, { onScan: (text: string) => void }>(function QrScanner(
+  { onScan },
+  ref
+) {
   const elementId = 'qr-scanner-' + useId().replace(/:/g, '');
   const containerRef = useRef<HTMLDivElement>(null);
   const scannerRef = useRef<import('html5-qrcode').Html5Qrcode | null>(null);
   const [error, setError] = useState<ScannerErrorKind | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const lastScanRef = useRef<{ text: string; at: number }>({ text: '', at: 0 });
+
+  useImperativeHandle(ref, () => ({
+    async captureFrame() {
+      const video = containerRef.current?.querySelector('video');
+      if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) {
+        throw new Error('camera_not_ready');
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('canvas_unavailable');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+      if (!blob) throw new Error('capture_failed');
+      return new File([blob], `invite-surprise-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    },
+  }), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,4 +157,4 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
       )}
     </div>
   );
-}
+});

@@ -21,7 +21,10 @@ export type Capability =
   | 'addInvitation'
   | 'viewHistory'
   | 'resolveExceptions'
-  | 'guestApproval'
+  | 'viewGuestApprovals'
+  | 'submitGuestApproval'
+  | 'reviewGuestApproval'
+  | 'assignGuestApproval'
   | 'exportData'
   | 'adminPanel';
 
@@ -29,7 +32,8 @@ const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
   'moveGuests', 'mergeInvitations', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
   'messageContacts',
-  'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions', 'guestApproval',
+  'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
+  'viewGuestApprovals', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
   'exportData', 'adminPanel',
 ];
 
@@ -38,16 +42,14 @@ const ALL_CAPABILITIES: Capability[] = [
 // qui ont acces a l'historique, donne l'acces seulement aux admins". Reste
 // disponible pour admin via ALL_CAPABILITIES seulement (ci-dessus), retire
 // de directeur/placeur/agent_checkin qui l'avaient via ce socle commun.
-// guestApproval (invite surprise + approbation SMS a distance, /scan et
-// /approbations) : admin/directeur/placeur -- demande de Gersom le
-// 30/08/2026, confirme "admin + directeur + placeur" plutot que placeur
-// seul (le directeur reste destinataire du SMS de rapport, donc un acteur
-// legitime). JAMAIS agent_checkin ni visibilite : le scanner doit rediriger
-// vers un placeur plutot que gerer lui-meme un invite non prevu.
+// Le flux invite surprise est volontairement separe en quatre capacites :
+// admin/placeur prennent la photo et assignent la table; admin/directeur/
+// visibilite approuvent ou refusent; le placeur conserve la lecture du suivi.
+// agent_checkin ne participe jamais a ce flux et renvoie vers un placeur.
 const OPERATIONAL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
   'moveGuests', 'assignOverflow', 'manageOverflow', 'manageMembers',
-  'markNoShow', 'resolveExceptions', 'guestApproval',
+  'markNoShow', 'resolveExceptions',
 ];
 
 export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
@@ -57,8 +59,8 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // le 23/08/2026 : "c'est au directeur de festin, les autres n'ont pas
   // besoin d'appeler les gens". Retire de OPERATIONAL_CAPABILITIES pour ne
   // pas le donner implicitement a placeur/agent_checkin.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff'],
-  placeur: OPERATIONAL_CAPABILITIES,
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'viewGuestApprovals', 'reviewGuestApproval'],
+  placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
   // Conserve manageMembers (renommer, gerer les membres du groupe) : seule
@@ -70,7 +72,10 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     'assignOverflow', 'manageMembers', 'markNoShow',
     'resolveExceptions',
   ],
-  visibilite: ['search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff'],
+  visibilite: [
+    'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff',
+    'viewGuestApprovals', 'reviewGuestApproval',
+  ],
 };
 
 export function hasCapability(role: Role | null | undefined, capability: Capability): boolean {
@@ -89,9 +94,8 @@ export function landingPathForRole(role: Role): string {
 // return true;`), plus dans le socle operationnel de directeur/placeur/
 // agent_checkin. Un acces direct par URL est donc renvoye vers l'ecran par
 // defaut du role, comme n'importe quel chemin hors matrice.
-// '/approbations' (invite surprise, v1.27.0) n'est QUE dans cette liste --
-// pas SCAN_STAFF_PREFIXES (agent_checkin) ni READ_ONLY_PREFIXES (visibilite)
-// -- coherent avec guestApproval, jamais accordee a ces deux roles.
+// '/approbations' est aussi ouvert a visibilite : ce role peut approuver ou
+// refuser dans l'application, sans recevoir les autres droits operationnels.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
   '/plan-table', '/exceptions', '/placement', '/approbations', '/api',
@@ -102,7 +106,7 @@ const SCAN_STAFF_PREFIXES = [
   '/plan-table', '/exceptions', '/api',
 ];
 
-const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/api'];
+const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/approbations', '/api'];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(prefix + '/');

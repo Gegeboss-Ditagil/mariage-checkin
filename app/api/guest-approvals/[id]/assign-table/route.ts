@@ -15,7 +15,7 @@ import { GuestApprovalRequestRow } from '@/lib/types';
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'guestApproval')) {
+  if (!user || !hasCapability(user.role, 'assignGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

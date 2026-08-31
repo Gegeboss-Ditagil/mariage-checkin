@@ -108,7 +108,7 @@ export default function AssignGuestApprovalTablePage() {
     }
   }
 
-  if (role && !hasCapability(role, 'guestApproval')) {
+  if (role && !hasCapability(role, 'assignGuestApproval')) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 text-center">
         <TopBar title="Assigner une table" backHref="/approbations" />

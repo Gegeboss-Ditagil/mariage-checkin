@@ -56,7 +56,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   if (!name) return null;
   const canHistory = hasCapability(role, 'viewHistory');
   const canAdmin = hasCapability(role, 'adminPanel');
-  const canGuestApproval = hasCapability(role, 'guestApproval');
+  const canGuestApproval = hasCapability(role, 'viewGuestApprovals');
 
   return (
     <div ref={containerRef} className={floating ? 'fixed right-4 top-4 z-30' : 'relative z-30'}>

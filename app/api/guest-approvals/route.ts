@@ -8,6 +8,7 @@ import { notifyApprover } from '@/lib/guestApprovalNotify';
 import { GuestApprovalRequestRow, GuestApproverRow } from '@/lib/types';
 import { TwilioConfigError, TwilioSendError } from '@/lib/twilio';
 import { baseUrl } from '@/lib/requestUrl';
+import { notifyGuestApprovalReviewers } from '@/lib/webPush';
 
 /**
  * Invité surprise avec approbation SMS à distance (v1.27.0) -- demande de
@@ -19,7 +20,7 @@ import { baseUrl } from '@/lib/requestUrl';
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'guestApproval')) {
+  if (!user || !hasCapability(user.role, 'submitGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
@@ -110,6 +111,10 @@ export async function POST(req: NextRequest) {
 
   const signedUrl = await getSignedPhotoUrl(supabase, photoPath);
 
+  // Notification PWA best-effort : la demande existe même si VAPID n'est
+  // pas encore configuré ou si un appareil a retiré son abonnement.
+  await notifyGuestApprovalReviewers(supabase, created);
+
   return NextResponse.json({
     request: { ...created, photo_signed_url: signedUrl },
     approver_nom: approver.nom,
@@ -118,13 +123,21 @@ export async function POST(req: NextRequest) {
   });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'guestApproval')) {
+  if (!user || !hasCapability(user.role, 'viewGuestApprovals')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
   const supabase = createAdminClient();
+  if (req.nextUrl.searchParams.get('count') === 'pending') {
+    const { count, error } = await supabase
+      .from('guest_approval_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('statut', 'en_attente');
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ pending_count: count || 0 });
+  }
   const { data, error } = await supabase
     .from('guest_approval_requests')
     .select(

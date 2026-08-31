@@ -32,6 +32,10 @@ const assignRouteSource = readFileSync(
   new URL('../app/api/guest-approvals/[id]/assign-table/route.ts', import.meta.url),
   'utf8'
 );
+const appDecideSource = readFileSync(new URL('../app/api/guest-approvals/[id]/decide/route.ts', import.meta.url), 'utf8');
+const scannerSource = readFileSync(new URL('../components/QrScanner.tsx', import.meta.url), 'utf8');
+const bottomNavSource = readFileSync(new URL('../components/BottomNav.tsx', import.meta.url), 'utf8');
+const pushMigrationSource = readFileSync(new URL('../supabase/migrations/0037_guest_approval_app_push.sql', import.meta.url), 'utf8');
 const scanPageSource = readFileSync(new URL('../app/scan/page.tsx', import.meta.url), 'utf8');
 const guestApprovalPageSource = readFileSync(new URL('../app/scan/guest-approval/page.tsx', import.meta.url), 'utf8');
 const approbationsPageSource = readFileSync(new URL('../app/approbations/page.tsx', import.meta.url), 'utf8');
@@ -48,41 +52,54 @@ const whatsappMigrationSource = readFileSync(
   'utf8'
 );
 
-test('la capacite guestApproval est reservee a admin/directeur/placeur, jamais agent scan ni visibilite', () => {
-  // Confirme par Gersom : "admin + directeur + placeur" (pas placeur seul --
-  // le directeur reste destinataire du SMS de rapport, donc un acteur
-  // legitime), et jamais agent_checkin : "si le scanner voit des personnes
-  // en plus, il ne fait rien, il va voir le placeur directement".
-  assert.equal(hasCapability('admin', 'guestApproval'), true);
-  assert.equal(hasCapability('directeur', 'guestApproval'), true);
-  assert.equal(hasCapability('placeur', 'guestApproval'), true);
-  assert.equal(hasCapability('agent_checkin', 'guestApproval'), false);
-  assert.equal(hasCapability('visibilite', 'guestApproval'), false);
+test('les droits photo, approbation et assignation sont separes par role', () => {
+  assert.equal(hasCapability('admin', 'submitGuestApproval'), true);
+  assert.equal(hasCapability('placeur', 'submitGuestApproval'), true);
+  assert.equal(hasCapability('directeur', 'submitGuestApproval'), false);
+  assert.equal(hasCapability('visibilite', 'submitGuestApproval'), false);
+  assert.equal(hasCapability('agent_checkin', 'submitGuestApproval'), false);
+  for (const role of ['admin', 'directeur', 'visibilite'] as const) assert.equal(hasCapability(role, 'reviewGuestApproval'), true);
+  assert.equal(hasCapability('placeur', 'reviewGuestApproval'), false);
+  assert.equal(hasCapability('agent_checkin', 'reviewGuestApproval'), false);
+  assert.equal(hasCapability('admin', 'assignGuestApproval'), true);
+  assert.equal(hasCapability('placeur', 'assignGuestApproval'), true);
 
   assert.equal(canAccessPath('directeur', '/approbations'), true);
   assert.equal(canAccessPath('placeur', '/approbations'), true);
   assert.equal(canAccessPath('agent_checkin', '/approbations'), false);
-  assert.equal(canAccessPath('visibilite', '/approbations'), false);
+  assert.equal(canAccessPath('visibilite', '/approbations'), true);
 });
 
-test('le bouton "Invite surprise" sur /scan et le lien "Approbations" du menu sont geres par la capacite guestApproval', () => {
-  assert.match(scanPageSource, /hasCapability\(role, ['"]guestApproval['"]\)/);
-  assert.match(scanPageSource, /href="\/scan\/guest-approval"/);
-  assert.match(accountMenuSource, /hasCapability\(role, ['"]guestApproval['"]\)/);
+test('le bouton central capture le flux video deja ouvert, sans input capture ni app Camera', () => {
+  assert.match(scanPageSource, /scannerRef\.current!\.captureFrame\(\)/);
+  assert.doesNotMatch(scanPageSource, /Invité surprise \(non prévu\)/);
+  assert.match(scannerSource, /context\.drawImage\(video/);
+  assert.match(scannerSource, /canvas\.toBlob/);
+  assert.doesNotMatch(guestApprovalPageSource, /type="file"/);
+  assert.match(bottomNavSource, /Prendre une photo pour approbation/);
+  assert.match(accountMenuSource, /hasCapability\(role, ['"]viewGuestApprovals['"]\)/);
   assert.match(accountMenuSource, /href="\/approbations"/);
-  assert.match(guestApprovalPageSource, /hasCapability\(role, ['"]guestApproval['"]\)/);
-  assert.match(approbationsPageSource, /hasCapability\(role, ['"]guestApproval['"]\)/);
+  assert.match(approbationsPageSource, /hasCapability\(role, ['"]viewGuestApprovals['"]\)/);
 });
 
-test('toutes les routes API proteges (creation, liste, assignation) verifient guestApproval cote serveur', () => {
+test('chaque route API verifie la capacite precise cote serveur', () => {
   // "les validations cote interface ne remplacent jamais les controles cote
   // serveur" (docs/DATA_CHANGE_INSTRUCTIONS.md section 7).
-  assert.match(createRouteSource, /hasCapability\(user\.role, ['"]guestApproval['"]\)/);
-  assert.match(assignRouteSource, /hasCapability\(user\.role, ['"]guestApproval['"]\)/);
+  assert.match(createRouteSource, /hasCapability\(user\.role, ['"]submitGuestApproval['"]\)/);
+  assert.match(createRouteSource, /hasCapability\(user\.role, ['"]viewGuestApprovals['"]\)/);
+  assert.match(assignRouteSource, /hasCapability\(user\.role, ['"]assignGuestApproval['"]\)/);
+  assert.match(appDecideSource, /hasCapability\(user\.role, ['"]reviewGuestApproval['"]\)/);
   // La creation et la liste sont dans le meme fichier (POST + GET) -- verifie
   // les deux exports.
   assert.match(createRouteSource, /export async function POST/);
   assert.match(createRouteSource, /export async function GET/);
+});
+
+test('la decision dans l app et les abonnements push restent proteges et prives', () => {
+  assert.match(appDecideSource, /applyGuestApprovalDecision\(createAdminClient\(\), \{ id: params\.id \}, body\.decision, 'app'\)/);
+  assert.match(pushMigrationSource, /decided_via in \('web', 'whatsapp', 'app'\)/);
+  assert.match(pushMigrationSource, /alter table push_subscriptions enable row level security/);
+  assert.match(pushMigrationSource, /revoke all on table push_subscriptions from anon, authenticated/);
 });
 
 test('les routes publiques (/approve/[token]) ne verifient JAMAIS de session -- le token EST l\'autorisation', () => {

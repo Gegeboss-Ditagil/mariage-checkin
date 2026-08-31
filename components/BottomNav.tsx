@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
-import { ComponentType } from 'react';
+import { ComponentType, useEffect, useState } from 'react';
 import { Role } from '@/lib/types';
-import { GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
+import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
+import { hasCapability } from '@/lib/permissions';
 
-type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }> };
+type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
 
 // directeur et placeur ont exactement le meme acces operationnel (voir
 // middleware.ts) donc la meme barre de navigation.
@@ -39,16 +40,22 @@ const READ_ONLY_ITEMS: NavItem[] = [
 ];
 
 const ITEMS: Record<string, NavItem[]> = {
-  directeur: STAFF_ITEMS,
+  directeur: [
+    { href: '/search', label: 'Recherche', icon: SearchIcon },
+    { href: '/plan-table', label: 'Plan', icon: GridIcon },
+    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
+    { href: '/staff', label: 'Staff', icon: StaffIcon },
+    { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
+  ],
   placeur: STAFF_ITEMS,
   agent_checkin: SCAN_ONLY_ITEMS,
-  visibilite: READ_ONLY_ITEMS,
+  visibilite: [...READ_ONLY_ITEMS, { href: '/approbations', label: 'Approbations', icon: ApprovalIcon }],
   admin: [
     { href: '/scan', label: 'Scan', icon: ScanIcon },
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/search', label: 'Recherche', icon: SearchIcon },
-    { href: '/staff', label: 'Staff', icon: StaffIcon },
+    { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
   ],
 };
 
@@ -65,7 +72,7 @@ const CENTRAL_HREF: Record<string, string> = {
 // Ordre canonique pour repartir les onglets restants 2 a gauche/2 a droite
 // (portrait) ou 2 en haut/2 en bas (paysage) autour du bouton central, quel
 // que soit celui qui a ete choisi comme central pour ce role.
-const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/staff'];
+const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/staff', '/approbations'];
 
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
@@ -77,7 +84,10 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
         active ? 'text-accent' : 'text-text-muted active:text-text'
       )}
     >
-      <Icon className="h-6 w-6" />
+      <span className="relative">
+        <Icon className="h-6 w-6" />
+        {!!item.badge && <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-status-over px-1 text-center text-[10px] leading-5 text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
+      </span>
       {item.label}
     </Link>
   );
@@ -96,9 +106,27 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
 // defilement vertical (voir le patron de page h-dvh + landscape:flex-row
 // applique aux ecrans qui utilisent ce composant). Le bouton central se
 // souleve alors vers la gauche (vers le contenu) plutot que vers le haut.
-export function BottomNav({ role }: { role: Role }) {
+export function BottomNav({ role, onCentralAction }: { role: Role; onCentralAction?: () => void }) {
   const pathname = usePathname();
-  const items = ITEMS[role] ?? ITEMS.agent_checkin;
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!hasCapability(role, 'viewGuestApprovals')) return;
+    let active = true;
+    const load = async () => {
+      const response = await fetch('/api/guest-approvals?count=pending').catch(() => null);
+      if (!response?.ok || !active) return;
+      const data = await response.json();
+      setPendingCount(data.pending_count || 0);
+    };
+    void load();
+    const timer = window.setInterval(load, 15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [role]);
+
+  const items = (ITEMS[role] ?? ITEMS.agent_checkin).map((item) =>
+    item.href === '/approbations' ? { ...item, badge: pendingCount } : item
+  );
 
   const centralHref = CENTRAL_HREF[role] ?? '/scan';
   const centralItem = items.find((item) => item.href === centralHref);
@@ -153,17 +181,32 @@ export function BottomNav({ role }: { role: Role }) {
       ))}
 
       <div className="flex flex-1 justify-center landscape:w-full landscape:flex-none">
-        <Link
-          href={centralItem.href}
-          aria-label={centralItem.label}
+        {onCentralAction && centralItem.href === '/scan' && pathname.startsWith('/scan') ? (
+          <button
+          type="button"
+          onClick={onCentralAction}
+          aria-label="Prendre une photo pour approbation"
           className={clsx(
             '-mt-6 flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
             'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
             centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
           )}
         >
-          <CentralGlyph className="h-8 w-8" />
-        </Link>
+          <CameraIcon className="h-8 w-8" />
+        </button>
+        ) : (
+          <Link
+            href={centralItem.href}
+            aria-label={centralItem.label}
+            className={clsx(
+              '-mt-6 flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
+              'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
+              centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
+            )}
+          >
+            <CentralGlyph className="h-8 w-8" />
+          </Link>
+        )}
       </div>
 
       {right.map((item) => (

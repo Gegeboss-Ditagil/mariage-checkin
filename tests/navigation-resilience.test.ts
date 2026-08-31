@@ -34,7 +34,7 @@ test('la navigation principale ouvre directement le plan de table', () => {
   // arriere du 30/08/2026, maquette Atrium/Maison : barre du bas partagee
   // avec Recherche/Plan/Bord/Staff, comme les autres ecrans) -- verifie
   // qu'il utilise bien le composant partage plutot que des liens en dur.
-  assert.match(scanPage, /<BottomNav role={role} \/>/);
+  assert.match(scanPage, /<BottomNav role={role} onCentralAction=/);
   assert.match(tablesPage, /redirect\(['"]\/plan-table['"]\)/);
 });
 
