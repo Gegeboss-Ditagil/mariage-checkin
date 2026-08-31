@@ -10,13 +10,8 @@ import { hasCapability } from '@/lib/permissions';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
 
-// directeur et placeur ont exactement le meme acces operationnel (voir
-// middleware.ts) donc la meme barre de navigation.
-// "Placement" a ete retire (19/08/2026) : cet onglet faisait doublon avec
-// Scan + Recherche (meme camera QR, meme recherche par nom/table), Gersom a
-// demande a le supprimer pour simplifier la barre a 4 boutons.
-// Staff ajoute (30/08/2026, maquette Atrium/Maison) : 5e onglet a droite du
-// bouton Scan central, pour tout role ayant la capacite viewStaff.
+// Barre operationnelle de base. Les variantes par role plus bas remplacent
+// certains raccourcis sans modifier les autorisations serveur.
 const STAFF_ITEMS: NavItem[] = [
   { href: '/scan', label: 'Scan', icon: ScanIcon },
   { href: '/search', label: 'Recherche', icon: SearchIcon },
@@ -44,7 +39,7 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/search', label: 'Recherche', icon: SearchIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-    { href: '/staff', label: 'Staff', icon: StaffIcon },
+    { href: '/agenda', label: 'Agenda', icon: StaffIcon },
     { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
   ],
   placeur: STAFF_ITEMS,
@@ -52,9 +47,9 @@ const ITEMS: Record<string, NavItem[]> = {
   visibilite: [...READ_ONLY_ITEMS, { href: '/approbations', label: 'Approbations', icon: ApprovalIcon }],
   admin: [
     { href: '/scan', label: 'Scan', icon: ScanIcon },
-    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/search', label: 'Recherche', icon: SearchIcon },
+    { href: '/agenda', label: 'Agenda', icon: StaffIcon },
     { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
   ],
 };
@@ -72,7 +67,7 @@ const CENTRAL_HREF: Record<string, string> = {
 // Ordre canonique pour repartir les onglets restants 2 a gauche/2 a droite
 // (portrait) ou 2 en haut/2 en bas (paysage) autour du bouton central, quel
 // que soit celui qui a ete choisi comme central pour ce role.
-const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/staff', '/approbations'];
+const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/agenda', '/staff', '/approbations'];
 
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
@@ -80,12 +75,12 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       className={clsx(
-        'flex flex-1 flex-col items-center gap-1 rounded-2xl py-2.5 text-[11px] font-semibold transition-colors landscape:py-0',
+        'flex min-h-16 flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-3 text-xs font-semibold transition-colors landscape:min-h-0 landscape:py-0',
         active ? 'text-accent' : 'text-text-muted active:text-text'
       )}
     >
       <span className="relative">
-        <Icon className="h-6 w-6" />
+        <Icon className="h-7 w-7" />
         {!!item.badge && <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-status-over px-1 text-center text-[10px] leading-5 text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
       </span>
       {item.label}
@@ -139,8 +134,8 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     return (
       <nav
         className={clsx(
-          'z-10 mx-auto mb-3 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center justify-between',
-          'rounded-3xl border border-hairline bg-glass px-2 py-1.5 shadow-elev-2 backdrop-blur-2xl safe-bottom',
+          'z-10 mx-auto mb-5 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center justify-between',
+          'min-h-[84px] rounded-3xl border border-hairline bg-glass px-2 py-2 shadow-elev-2 backdrop-blur-2xl safe-bottom',
           'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
           'landscape:justify-center landscape:gap-2 landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0',
           'landscape:border-r-0 landscape:px-1 landscape:py-4 landscape:safe-right'
@@ -165,12 +160,16 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   const right = sorted.slice(mid);
   const CentralGlyph = centralItem.icon;
   const centralActive = pathname.startsWith(centralItem.href);
+  // Sur /scan, l'action photo prend temporairement la place du raccourci
+  // central du role. Le directeur conserve donc Bord comme centre ailleurs,
+  // tout en obtenant le declencheur photo quand la camera est ouverte.
+  const photoActionActive = !!onCentralAction && pathname.startsWith('/scan');
 
   return (
     <nav
       className={clsx(
-        'z-10 mx-auto mb-3 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center',
-        'rounded-3xl border border-hairline bg-glass px-2 py-1.5 shadow-elev-2 backdrop-blur-2xl safe-bottom',
+        'z-10 mx-auto mb-5 flex min-h-[84px] w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center',
+        'rounded-3xl border border-hairline bg-glass px-2 py-2 shadow-elev-2 backdrop-blur-2xl safe-bottom',
         'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
         'landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0 landscape:border-r-0 landscape:px-1',
         'landscape:py-4 landscape:safe-right'
@@ -181,30 +180,30 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
       ))}
 
       <div className="flex flex-1 justify-center landscape:w-full landscape:flex-none">
-        {onCentralAction && centralItem.href === '/scan' && pathname.startsWith('/scan') ? (
+        {photoActionActive ? (
           <button
-          type="button"
-          onClick={onCentralAction}
-          aria-label="Prendre une photo pour approbation"
-          className={clsx(
-            '-mt-6 flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
-            'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
-            centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
-          )}
-        >
-          <CameraIcon className="h-8 w-8" />
-        </button>
+            type="button"
+            onClick={onCentralAction}
+            aria-label="Prendre une photo pour approbation"
+            className={clsx(
+              '-mt-7 flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
+              'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
+              centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
+            )}
+          >
+            <CameraIcon className="h-9 w-9" />
+          </button>
         ) : (
           <Link
             href={centralItem.href}
             aria-label={centralItem.label}
             className={clsx(
-              '-mt-6 flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
+              '-mt-7 flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
               'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
               centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
             )}
           >
-            <CentralGlyph className="h-8 w-8" />
+            <CentralGlyph className="h-9 w-9" />
           </Link>
         )}
       </div>

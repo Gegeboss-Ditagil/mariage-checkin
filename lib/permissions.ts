@@ -22,6 +22,7 @@ export type Capability =
   | 'viewHistory'
   | 'resolveExceptions'
   | 'viewGuestApprovals'
+  | 'viewAgenda'
   | 'submitGuestApproval'
   | 'reviewGuestApproval'
   | 'assignGuestApproval'
@@ -33,7 +34,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'moveGuests', 'mergeInvitations', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
   'messageContacts',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
-  'viewGuestApprovals', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
+  'viewGuestApprovals', 'viewAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
   'exportData', 'adminPanel',
 ];
 
@@ -59,7 +60,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // le 23/08/2026 : "c'est au directeur de festin, les autres n'ont pas
   // besoin d'appeler les gens". Retire de OPERATIONAL_CAPABILITIES pour ne
   // pas le donner implicitement a placeur/agent_checkin.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'viewGuestApprovals', 'reviewGuestApproval'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'viewGuestApprovals', 'viewAgenda', 'submitGuestApproval', 'reviewGuestApproval'],
   placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
@@ -98,7 +99,7 @@ export function landingPathForRole(role: Role): string {
 // refuser dans l'application, sans recevoir les autres droits operationnels.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/placement', '/approbations', '/api',
+  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/api',
 ];
 
 const SCAN_STAFF_PREFIXES = [
@@ -124,6 +125,8 @@ export function canAccessPath(role: Role, pathname: string): boolean {
       : READ_ONLY_PREFIXES;
 
   if (!prefixes.some((prefix) => matchesPrefix(pathname, prefix))) return false;
+
+  if (matchesPrefix(pathname, '/agenda') && !hasCapability(role, 'viewAgenda')) return false;
 
   if (role === 'agent_checkin') {
     // Note : /checkin/[invitationId]/merge n'est PAS dans cette liste --

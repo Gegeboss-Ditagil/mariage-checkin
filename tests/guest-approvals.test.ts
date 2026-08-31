@@ -55,7 +55,7 @@ const whatsappMigrationSource = readFileSync(
 test('les droits photo, approbation et assignation sont separes par role', () => {
   assert.equal(hasCapability('admin', 'submitGuestApproval'), true);
   assert.equal(hasCapability('placeur', 'submitGuestApproval'), true);
-  assert.equal(hasCapability('directeur', 'submitGuestApproval'), false);
+  assert.equal(hasCapability('directeur', 'submitGuestApproval'), true);
   assert.equal(hasCapability('visibilite', 'submitGuestApproval'), false);
   assert.equal(hasCapability('agent_checkin', 'submitGuestApproval'), false);
   for (const role of ['admin', 'directeur', 'visibilite'] as const) assert.equal(hasCapability(role, 'reviewGuestApproval'), true);

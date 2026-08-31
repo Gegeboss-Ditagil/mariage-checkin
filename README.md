@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.28.0**
-**Dernière mise à jour documentaire : 2026-08-30**
+**Version actuelle : 1.29.0**
+**Dernière mise à jour documentaire : 2026-08-31**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.28.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.29.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,9 +25,10 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.28.0
+## État fonctionnel v1.29.0
 
-- Sur `/scan`, `admin` et `placeur` prennent la photo d'un invité surprise directement depuis le flux vidéo déjà ouvert, sans lancer l'app Caméra. Les demandes apparaissent dans `/approbations` avec badge, décision directe dans l'app et notification Push PWA optionnelle ; Twilio SMS/WhatsApp reste disponible en parallèle.
+- Sur `/scan`, `admin`, `placeur` et `directeur` prennent la photo d'un invité surprise directement depuis le flux vidéo déjà ouvert, sans lancer l'app Caméra. Les demandes apparaissent dans `/approbations` avec badge, décision directe dans l'app et notification Push PWA optionnelle ; Twilio SMS/WhatsApp reste disponible en parallèle.
+- `/agenda` donne à l'admin et au directeur un chronogramme mobile du jour J. Les responsables, shifts, départements définitifs et validations « fait » restent volontairement à attribuer jusqu'à réception des informations complètes.
 
 - **RLS activée sur `public.user_credential_backups`** : table exposée (RLS désactivée) signalée par l'advisor de sécurité Supabase, jamais utilisée par cette application — corrigée, même posture que les autres tables sensibles du dépôt (`users`, `audit_logs`, `import_backups` : RLS activée, aucune policy, accès réservé à `service_role`).
 - **Invité surprise avec approbation SMS/WhatsApp à distance** : depuis `/scan`, un placeur/directeur/admin peut photographier un invité non prévu, choisir son côté (Nelly/Gégé) et envoyer une demande d'approbation par SMS **et WhatsApp** au parent concerné (lien vers une page publique avec la photo — jamais de MMS) avant de le laisser entrer. L'approbateur peut cliquer le lien ou répondre directement « Oui »/« Non » au message WhatsApp. Une fois approuvée (`/approbations`), l'assignation de table reste manuelle. Suivi automatique : places de réserve restantes à l'approbateur, rapport complet au directeur de festin.
@@ -40,7 +41,7 @@ Avant toute modification, lire :
 - **Renommer et ajouter directement depuis la fiche** : taper le nom d'une personne dans « Qui est arrivé ? » le modifie sur place (comme le titre de la fiche) ; un bouton « + » ajoute une personne au groupe sans passer par « Gérer les membres du groupe » — réservé aux rôles avec la capacité de gérer les membres.
 - **Thème « Atrium » (clair) / « Maison » (sombre)**, choisi une seule fois à la première connexion puis modifiable à tout moment (menu du compte), avec un mode « Automatique » qui suit le réglage clair/sombre de l'appareil en direct. Toutes les pages en profitent, y compris `/login`.
 - **Arrivée par personne** sur les fiches de groupe : un bouton ✓/✕ par personne nommée (jamais un simple compteur global), toujours réversible, place libérée sans jamais supprimer la personne.
-- **Barre de navigation à 5 icônes** (Recherche, Plan, un bouton central surélevé, Tableau de bord, Staff) sur les écrans principaux — le bouton central est Scan pour la plupart des rôles, Tableau de bord pour le directeur de festin ; en portrait une pilule flottante en bas, en paysage une bande verticale au bord droit (voir ci-dessus).
+- **Barre de navigation à 5 icônes** adaptée au rôle : l'admin garde Scan directement, le directeur remplace Staff par Agenda et conserve Tableau de bord au centre ; sur `/scan`, le grand bouton central devient la prise de photo. En portrait la pilule et ses cibles sont plus hautes ; en paysage elle devient une bande verticale au bord droit.
 - **41 tables au total**.
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
 - **Tables 1 à 40 : normales**.
@@ -144,4 +145,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.28.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.29.0** et l'historique des versions.

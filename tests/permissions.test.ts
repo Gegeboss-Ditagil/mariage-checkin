@@ -29,6 +29,17 @@ test('staff est accessible a tous les roles operationnels, visibilite en lecture
   assert.equal(hasCapability('visibilite', 'checkin'), false);
 });
 
+test("l'agenda du jour J est reserve a admin et directeur", () => {
+  for (const role of ['admin', 'directeur'] as const) {
+    assert.equal(hasCapability(role, 'viewAgenda'), true);
+    assert.equal(canAccessPath(role, '/agenda'), true);
+  }
+  for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'viewAgenda'), false);
+    assert.equal(canAccessPath(role, '/agenda'), false);
+  }
+});
+
 test('la visibilite des lignes staff est restreinte selon le role', () => {
   for (const role of roles) assert.equal(hasCapability(role, 'viewStaff'), true);
   assert.equal(hasCapability('admin', 'viewAllStaff'), true);

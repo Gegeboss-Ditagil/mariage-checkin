@@ -13,7 +13,8 @@ const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 
 // Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
 // meme patron plutot que de le dupliquer/oublier sur l'un d'eux. 10e ecran
-// (/approbations) ajoute le 30/08/2026 avec l'invite surprise (v1.27.0).
+// (/approbations) ajoute le 30/08/2026 avec l'invite surprise (v1.27.0),
+// puis /agenda le 31/08/2026 (v1.29.0).
 const LANDSCAPE_SHELL_PAGES = [
   '../app/dashboard/page.tsx',
   '../app/staff/page.tsx',
@@ -25,6 +26,7 @@ const LANDSCAPE_SHELL_PAGES = [
   '../app/history/page.tsx',
   '../app/admin/page.tsx',
   '../app/approbations/page.tsx',
+  '../app/agenda/page.tsx',
 ];
 
 test('la navigation principale ouvre directement le plan de table', () => {
@@ -62,13 +64,30 @@ test('la barre de navigation "verre liquide" a un contraste et des cibles plus g
   // Demande de Gersom : le bar precedent etait "difficile a voir" -- icones
   // agrandies et libelles inactifs en text-muted (55% d'opacite) plutot que
   // text-faint (42%, trop peu contraste sur fond sombre).
-  assert.match(bottomNav, /h-6 w-6/);
+  assert.match(bottomNav, /h-7 w-7/);
+  assert.match(bottomNav, /min-h-\[84px\]/);
+  assert.match(bottomNav, /h-\[78px\] w-\[78px\]/);
   assert.doesNotMatch(bottomNav, /text-text-faint/);
   assert.match(bottomNav, /text-text-muted/);
   // Pilule flottante (rayon genereux + ombre + flou) plutot que bar plate
   // collee au bord, sur les deux variantes (avec et sans bouton central).
   assert.match(bottomNav, /rounded-3xl/);
   assert.match(bottomNav, /backdrop-blur-2xl/);
+});
+
+test("admin et directeur ont Agenda dans la navigation, et Scan reste accessible a l'admin", () => {
+  assert.match(bottomNav, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
+  assert.match(bottomNav, /admin:[\s\S]*href: ['"]\/scan['"], label: ['"]Scan['"]/);
+  assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\)/);
+});
+
+test("l'agenda affiche le chronogramme sans inventer les affectations futures", () => {
+  const agendaPage = readFileSync(new URL('../app/agenda/page.tsx', import.meta.url), 'utf8');
+  const agendaData = readFileSync(new URL('../lib/eventAgenda.ts', import.meta.url), 'utf8');
+  assert.match(agendaPage, /hasCapability\(role, ['"]viewAgenda['"]\)/);
+  assert.match(agendaPage, /Responsable à attribuer/);
+  assert.match(agendaData, /08:00/);
+  assert.match(agendaData, /05:00/);
 });
 
 test('la barre de navigation devient une bande verticale au bord droit en paysage (telephone tourne / iPad)', () => {
@@ -104,4 +123,5 @@ test('/scan affiche une bande d\'information de base (arrivees/remplissage) just
   assert.match(scanStatsStrip, /nombre_arrive/);
   assert.match(scanStatsStrip, /CapacityGauge/);
   assert.match(scanStatsStrip, /href="\/dashboard"/);
+  assert.match(scanStatsStrip, /min-h-\[72px\]/);
 });

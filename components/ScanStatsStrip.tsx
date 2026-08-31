@@ -59,17 +59,17 @@ export function ScanStatsStrip() {
     <Link
       href="/dashboard"
       aria-label={'Voir le tableau de bord complet — ' + arrives + ' arrivés sur ' + attendus + ' attendus'}
-      className="mx-auto mb-2 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center gap-3 rounded-2xl border border-hairline bg-glass px-4 py-2.5 shadow-card backdrop-blur-xl active:scale-[0.98] transition-transform landscape:mx-2 landscape:mb-3 landscape:w-auto landscape:max-w-none"
+      className="mx-auto mb-3 flex min-h-[72px] w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center gap-4 rounded-2xl border border-hairline bg-glass px-5 py-3.5 shadow-card backdrop-blur-xl active:scale-[0.98] transition-transform landscape:mx-2 landscape:mb-3 landscape:w-auto landscape:max-w-none"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-text-muted">
-          <span className="text-sm font-bold text-text">{arrives}</span> / {attendus} arrivés
+        <p className="text-sm font-semibold text-text-muted">
+          <span className="text-base font-bold text-text">{arrives}</span> / {attendus} arrivés
         </p>
         <div className="mt-1">
-          <CapacityGauge percent={remplissage} size="sm" showLabel={false} />
+          <CapacityGauge percent={remplissage} size="md" showLabel={false} />
         </div>
       </div>
-      <p className="shrink-0 text-sm font-bold tabular-nums text-accent">{Math.round(remplissage)}%</p>
+      <p className="shrink-0 text-base font-bold tabular-nums text-accent">{Math.round(remplissage)}%</p>
     </Link>
   );
 }

@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.29.0] — 2026-08-31
+
+### Ajouté
+- `/agenda` : premier chronogramme mobile du jour J, accessible uniquement à `admin` et `directeur`. Il reprend les grandes étapes du document Canva fourni et affiche explicitement « Responsable à attribuer » tant que les agents, départements et shifts définitifs n'ont pas été transmis. Aucun état « fait » ni affectation n'est inventé ou écrit en base dans cette première phase.
+- Navigation : pour le directeur, le raccourci `Staff` du bas devient `Agenda` (la fiche Staff reste accessible depuis le tableau de bord et depuis l'Agenda). Pour l'admin, `Scan` redevient un raccourci permanent de la barre du bas ; le tableau de bord reste accessible en touchant la jauge d'arrivées sur `/scan`.
+
+### Modifié
+- `/scan` : le bouton central déclenche maintenant la capture live pour `admin`, `placeur` et `directeur`, même si le raccourci central habituel du directeur est `Bord`. `agent_checkin` reste exclu conformément à la règle de sécurité des invités surprise.
+- La jauge d'arrivées et la navigation basse sont plus hautes, avec des icônes et cibles tactiles agrandies pour iPhone, Android, iPad et appareils dont le bas de l'écran est difficile à utiliser.
+
+### Tests
+- Matrice de rôles `/agenda`, navigation admin/directeur, capture contextuelle sur `/scan`, chronogramme sans affectations inventées, hauteurs tactiles et responsive paysage ajoutés aux suites existantes.
+
 ## [1.28.0] — 2026-08-31
 
 ### Ajouté

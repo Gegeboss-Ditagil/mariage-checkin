@@ -1,7 +1,7 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.28.0**
-**Dernière mise à jour : 2026-08-30**
+**Version documentaire : 1.29.0**
+**Dernière mise à jour : 2026-08-31**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
@@ -34,7 +34,7 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Ajouter/retirer une étiquette | invitations, audit | Admin uniquement |
 | Import/administration | tables, invitations, users, événement | Admin uniquement |
 | Diffusion des invitations | Excel/CSV local en mémoire, aucune écriture serveur | Admin uniquement |
-| Invité surprise (capture live + demande d'approbation) | guest_approval_requests, Storage (bucket privé), audit | Admin, placeur |
+| Invité surprise (capture live + demande d'approbation) | guest_approval_requests, Storage (bucket privé), audit | Admin, directeur, placeur |
 | Voir les demandes d'approbation | guest_approval_requests | Admin, directeur, placeur, visibilité |
 | Décider dans l'application | guest_approval_requests, audit | Admin, directeur, visibilité |
 | Décider (approuver/refuser) un invité surprise — lien web | guest_approval_requests, audit | Public (token secret, sans connexion) |
@@ -55,7 +55,7 @@ Fusionner deux invitations (`/checkin/[invitationId]/merge`) : champs `source_in
 
 Ajouter/retirer une étiquette (`/checkin/[invitationId]`, section « 🏷️ Étiquettes ») : champ `tag` (raccourcis proposés : `Côté_Gege`, `Côté_Nelly`, `SERVICES`, `Photographe`, `Prestataire`, `DJ_Animation`, `notable`, ou saisie libre) ; validation serveur dans `/api/invitations/tags/add` et `/api/invitations/tags/remove` (capacité dédiée `manageTags` — rôle admin/directeur/placeur ; agent scan ne l'a plus depuis le 23/08/2026, à la différence du renommage qui reste sur `manageMembers`) ; fonctions SQL `add_invitation_tag`/`remove_invitation_tag` (`0022_manage_invitation_tags.sql`, synchronisées pour `Needs_Table_*` par `0023_sync_needs_table_tag_rules.sql`), idempotentes (ajouter un tag déjà présent ou retirer un tag absent ne fait rien et ne journalise pas) ; effets secondaires : `tags` (ajout/retrait), synchronisation de `cote` pour `Côté_Gege`/`Côté_Nelly` (mutuellement exclusifs), passage automatique de `category` à `'Staff'` à l'ajout d'un tag de rôle et retour à `null` au retrait du dernier tag de rôle restant (même heuristique que `scripts/build_plan_from_csv.py`, à garder synchronisée) ; une ligne `audit_logs` (`action = 'invitation_tag_add'`/`'invitation_tag_remove'`) par changement.
 
-Invité surprise avec approbation (`/scan`, v1.28.0) : `admin`/`placeur` appuient sur le bouton photo central ; `QrScanner.captureFrame()` copie une frame du `<video>` déjà ouvert vers un canvas puis produit un JPEG — aucun sélecteur de fichier et aucune ouverture de l'app Caméra. Après choix du côté Nelly/Gégé, nom et nombre, `POST /api/guest-approvals` (capacité `submitGuestApproval`) dépose l'image dans le bucket **privé** `guest-approval-photos`. La demande est visible dans `/approbations` (`viewGuestApprovals`) ; `admin`/`directeur`/`visibilite` décident directement (`reviewGuestApproval`) et `admin`/`placeur` assignent la table (`assignGuestApproval`). Twilio SMS/WhatsApp reste envoyé en parallèle, best-effort, avec lien public secret `/approve/[token]` ; une panne Twilio n'annule jamais la demande enregistrée.
+Invité surprise avec approbation (`/scan`, v1.29.0) : `admin`/`directeur`/`placeur` appuient sur le bouton photo central ; `QrScanner.captureFrame()` copie une frame du `<video>` déjà ouvert vers un canvas puis produit un JPEG — aucun sélecteur de fichier et aucune ouverture de l'app Caméra. Après choix du côté Nelly/Gégé, nom et nombre, `POST /api/guest-approvals` (capacité `submitGuestApproval`) dépose l'image dans le bucket **privé** `guest-approval-photos`. La demande est visible dans `/approbations` (`viewGuestApprovals`) ; `admin`/`directeur`/`visibilite` décident directement (`reviewGuestApproval`) et `admin`/`placeur` assignent la table (`assignGuestApproval`). Twilio SMS/WhatsApp reste envoyé en parallèle, best-effort, avec lien public secret `/approve/[token]` ; une panne Twilio n'annule jamais la demande enregistrée.
 
 Push PWA (`0037_guest_approval_app_push.sql`) : l'approbateur active volontairement les notifications depuis `/approbations`. L'abonnement est écrit par `POST /api/push/subscribe` dans `push_subscriptions`, table RLS sans policy et sans grant anon/authenticated. Variables Vercel requises : `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. Sans elles, l'interface l'indique et continue avec le badge dans l'app et Twilio.
 
