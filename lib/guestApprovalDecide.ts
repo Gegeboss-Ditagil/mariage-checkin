@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { GuestApprovalRequestRow, GuestApprovalStatut } from '@/lib/types';
 import { getReserveRemaining, notifyApproverDecision } from '@/lib/guestApprovalNotify';
 
-export type DecideLookup = { token: string } | { phoneMostRecentPending: string };
+export type DecideLookup = { token: string } | { phoneMostRecentPending: string } | { id: string };
 export type DecideResult =
   | { ok: true; request: GuestApprovalRequestRow }
   | { ok: false; reason: 'not_found' }
@@ -24,15 +24,17 @@ export async function applyGuestApprovalDecision(
   supabase: SupabaseClient,
   lookup: DecideLookup,
   decision: 'approuve' | 'refuse',
-  decidedVia: 'web' | 'whatsapp'
+  decidedVia: 'web' | 'whatsapp' | 'app'
 ): Promise<DecideResult> {
   let requestId: string | null = null;
 
-  if ('token' in lookup) {
+  if ('token' in lookup || 'id' in lookup) {
+    const column = 'token' in lookup ? 'token' : 'id';
+    const value = 'token' in lookup ? lookup.token : lookup.id;
     const { data: updated } = await supabase
       .from('guest_approval_requests')
       .update({ statut: decision, decided_at: new Date().toISOString(), decided_via: decidedVia })
-      .eq('token', lookup.token)
+      .eq(column, value)
       .eq('statut', 'en_attente')
       .select('*')
       .maybeSingle<GuestApprovalRequestRow>();
@@ -42,7 +44,7 @@ export async function applyGuestApprovalDecision(
     const { data: existing } = await supabase
       .from('guest_approval_requests')
       .select('statut')
-      .eq('token', lookup.token)
+      .eq(column, value)
       .maybeSingle();
     if (existing) return { ok: false, reason: 'already_decided', statut: existing.statut };
     return { ok: false, reason: 'not_found' };

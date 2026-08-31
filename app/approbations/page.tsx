@@ -6,6 +6,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { PushNotificationButton } from '@/components/PushNotificationButton';
 
 interface ApprovalListItem {
   id: string;
@@ -14,7 +15,7 @@ interface ApprovalListItem {
   nombre_invites: number;
   statut: 'en_attente' | 'approuve' | 'refuse';
   decided_at: string | null;
-  decided_via: 'web' | 'whatsapp' | null;
+  decided_via: 'web' | 'whatsapp' | 'app' | null;
   table_id: string | null;
   table_number: number | null;
   assigned_at: string | null;
@@ -50,10 +51,31 @@ export default function ApprobationsPage() {
   const role = useSessionRole();
   const [requests, setRequests] = useState<ApprovalListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+
+  async function load() {
+    const res = await fetch('/api/guest-approvals');
+    if (res.ok) {
+      const data = await res.json();
+      setRequests(data.requests || []);
+    }
+    setLoading(false);
+  }
+
+  async function decide(id: string, decision: 'approuve' | 'refuse') {
+    setDecidingId(id);
+    const response = await fetch(`/api/guest-approvals/${id}/decide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision }),
+    });
+    if (response.ok) await load();
+    setDecidingId(null);
+  }
 
   useEffect(() => {
     let active = true;
-    async function load() {
+    async function loadCurrent() {
       const res = await fetch('/api/guest-approvals');
       if (!active) return;
       if (res.ok) {
@@ -62,21 +84,21 @@ export default function ApprobationsPage() {
       }
       setLoading(false);
     }
-    load();
-    const interval = setInterval(load, POLL_INTERVAL_MS);
+    loadCurrent();
+    const interval = setInterval(loadCurrent, POLL_INTERVAL_MS);
     return () => {
       active = false;
       clearInterval(interval);
     };
   }, []);
 
-  if (role && !hasCapability(role, 'guestApproval')) {
+  if (role && !hasCapability(role, 'viewGuestApprovals')) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 text-center">
         <TopBar title="Approbations" backHref="/scan" />
         <p className="mt-8 text-lg font-semibold">Accès réservé</p>
         <p className="text-sm text-text-faint">
-          Seuls l'admin, les directeurs de festin et les agents placeurs peuvent voir les demandes d'invités surprise.
+          Ce rôle ne peut pas voir les demandes d'approbation.
         </p>
       </div>
     );
@@ -88,6 +110,7 @@ export default function ApprobationsPage() {
         <TopBar title="Approbations" backHref="/scan" />
 
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          {role && hasCapability(role, 'reviewGuestApproval') && <PushNotificationButton />}
           {loading && <p className="text-center text-text-faint">Chargement…</p>}
           {!loading && requests.length === 0 && (
             <p className="text-center text-text-faint">Aucune demande d'invité surprise pour l'instant.</p>
@@ -112,11 +135,17 @@ export default function ApprobationsPage() {
                 <p className="text-xs text-text-faint">
                   {r.nombre_invites} invité{r.nombre_invites > 1 ? 's' : ''} · Côté {r.cote === 'Gege' ? 'Gégé' : 'Nelly'}
                   {r.requested_by_nom ? ' · demandé par ' + r.requested_by_nom : ''}
-                  {r.decided_via ? ' · via ' + (r.decided_via === 'whatsapp' ? 'WhatsApp' : 'lien web') : ''}
+                  {r.decided_via ? ' · via ' + (r.decided_via === 'whatsapp' ? 'WhatsApp' : r.decided_via === 'app' ? "l'application" : 'lien web') : ''}
                 </p>
+                {r.statut === 'en_attente' && role && hasCapability(role, 'reviewGuestApproval') && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button type="button" disabled={decidingId === r.id} onClick={() => decide(r.id, 'approuve')} className="rounded-xl bg-status-complete px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Approuver</button>
+                    <button type="button" disabled={decidingId === r.id} onClick={() => decide(r.id, 'refuse')} className="rounded-xl bg-status-over px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Refuser</button>
+                  </div>
+                )}
                 {r.table_number ? (
                   <p className="mt-1 text-xs font-semibold text-status-complete">Table {r.table_number} assignée</p>
-                ) : r.statut === 'approuve' ? (
+                ) : r.statut === 'approuve' && role && hasCapability(role, 'assignGuestApproval') ? (
                   <Link href={'/approbations/' + r.id + '/assign'} className="action-row mt-2 py-2 text-xs">
                     Assigner une table
                   </Link>

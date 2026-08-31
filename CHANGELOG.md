@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.28.0] — 2026-08-31
+
+### Ajouté
+- `/scan` : pour `admin` et `placeur`, le bouton central devient un déclencheur photo. Il capture directement une frame JPEG du flux vidéo déjà ouvert par le scanner QR (`video` → `canvas`), sans lancer l'application Caméra d'iOS/Android. L'ancien bouton « Invité surprise (non prévu) » est supprimé ; après la photo, le placeur choisit Côté Nelly/Gégé, saisit le nom et le nombre, puis envoie la demande.
+- `/approbations` : les demandes en attente peuvent être approuvées ou refusées directement dans l'application par `admin`, `directeur` et `visibilite`. Un badge numérique apparaît dans la navigation des rôles approbateurs. `admin` et `placeur` gardent seuls l'assignation finale de table.
+- Notifications Web Push PWA : activation volontaire depuis `/approbations`, notification d'une nouvelle demande et ouverture directe de la liste au toucher. Twilio SMS/WhatsApp reste un canal externe best-effort et la demande reste toujours visible dans l'application même si Twilio ou Push n'est pas configuré.
+- Migration `0037_guest_approval_app_push.sql` : canal de décision `app` et table privée `push_subscriptions` (RLS activée, aucun accès anon/authenticated).
+
+### Sécurité et rôles
+- Capacités séparées : `submitGuestApproval` (`admin`, `placeur`), `reviewGuestApproval` (`admin`, `directeur`, `visibilite`), `assignGuestApproval` (`admin`, `placeur`) et `viewGuestApprovals` (tous ces rôles). `agent_checkin` n'a aucune de ces capacités.
+- Toutes les routes de création, lecture, décision, assignation et abonnement Push vérifient la capacité précise côté serveur ; les clés VAPID privées et les abonnements ne quittent jamais le serveur.
+
+### Tests
+- `tests/guest-approvals.test.ts` couvre la matrice de rôles, la capture live sans `input capture`, la décision dans l'app, le badge et la confidentialité RLS des abonnements Push.
+- `npx tsc --noEmit`, `npm run test:guestapprovals`, `npm run test:roles`, `npm run test:navigation` et `npm run build` vérifiés avant livraison.
+
 ## [1.27.2] — 2026-08-30
 
 Advisory de sécurité Supabase signalé en tout début de ce chantier (avant même l'invité surprise), resté sans décision jusqu'à ce que Gersom explore le tableau de bord de sécurité aujourd'hui.

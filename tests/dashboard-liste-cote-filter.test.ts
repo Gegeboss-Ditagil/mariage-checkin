@@ -32,7 +32,7 @@ test('changer de liste (type) reinitialise le filtre actif', () => {
   // Un filtre laisse actif d'une liste a l'autre (ex. en passant de
   // "Invités restants" a "Invités arrivés") serait une source de confusion
   // silencieuse -- la liste semblerait incomplete sans raison visible.
-  assert.match(source, /useEffect\(\(\) => \{\n\s*setListeFiltre\('toutes'\);\n\s*\}, \[type\]\);/);
+  assert.match(source, /useEffect\(\(\) => \{\r?\n\s*setListeFiltre\('toutes'\);\r?\n\s*\}, \[type\]\);/);
 });
 
 test('les tuiles de stats refletent le filtre actif, et la rangee de filtre reste visible meme sans resultat pour permettre de revenir a Toutes', () => {

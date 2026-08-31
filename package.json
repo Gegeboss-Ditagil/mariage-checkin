@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.27.2",
+  "version": "1.28.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -35,7 +35,8 @@
     "zod": "^3.23.8",
     "date-fns": "^3.6.0",
     "clsx": "^2.1.1",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "typescript": "^5.5.4",
@@ -44,6 +45,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/papaparse": "^5.3.14",
     "@types/uuid": "^9.0.8",
+    "@types/web-push": "^3.6.4",
     "tailwindcss": "^3.4.9",
     "postcss": "^8.4.41",
     "autoprefixer": "^10.4.20",

@@ -1,15 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import { QrScanner } from '@/components/QrScanner';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { QrScanner, type QrScannerHandle } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';
 import { BottomNav } from '@/components/BottomNav';
 import { ScanStatsStrip } from '@/components/ScanStatsStrip';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -24,12 +24,24 @@ function normalize(s: string): string {
 export default function ScanPage() {
   const router = useRouter();
   const role = useSessionRole();
+  const scannerRef = useRef<QrScannerHandle>(null);
+  const [approvalPhoto, setApprovalPhoto] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'looking' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
   // useSessionRole lit le cookie après le premier rendu. Tant que `role`
   // vaut null, aucune caméra n'est montée : un badge déjà présenté ne peut
   // donc pas être traité comme un refus avant le chargement de la session.
   const roleReady = role !== null;
+
+  const captureGuestPhoto = useCallback(async () => {
+    setMessage(null);
+    try {
+      setApprovalPhoto(await scannerRef.current!.captureFrame());
+    } catch {
+      setStatus('error');
+      setMessage("La caméra n'est pas encore prête. Attendez que l'image apparaisse, puis réessayez.");
+    }
+  }, []);
 
   // Filet de securite cote client : le role "visibilite" ne doit jamais
   // pouvoir scanner. Le middleware bloque deja /scan pour ce role, mais un
@@ -129,7 +141,7 @@ export default function ScanPage() {
 
           <div className="py-2">
             {roleReady ? (
-              <QrScanner onScan={handleScan} />
+              <QrScanner ref={scannerRef} onScan={handleScan} />
             ) : (
               <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
                 Chargement…
@@ -146,20 +158,12 @@ export default function ScanPage() {
             </p>
           )}
 
-          {/* Invité surprise avec approbation SMS a distance (v1.27.0) --
-              reserve a la capacite guestApproval (admin/directeur/placeur),
-              JAMAIS agent scan : "si le scanner voit des personnes en plus,
-              il ne fait rien, il va voir le placeur directement". */}
-          {role && hasCapability(role, 'guestApproval') && (
-            <Link href="/scan/guest-approval" className="action-row mt-3">
-              📷 Invité surprise (non prévu)
-            </Link>
-          )}
         </div>
 
         {role && <ScanStatsStrip />}
       </div>
-      {role && <BottomNav role={role} />}
+      {role && <BottomNav role={role} onCentralAction={hasCapability(role, 'submitGuestApproval') ? captureGuestPhoto : undefined} />}
+      {approvalPhoto && <GuestApprovalCaptureFlow photo={approvalPhoto} onClose={() => setApprovalPhoto(null)} />}
     </div>
   );
 }
