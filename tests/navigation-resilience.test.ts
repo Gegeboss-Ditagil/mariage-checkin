@@ -9,6 +9,7 @@ const scanPage = readFileSync(new URL('../app/scan/page.tsx', import.meta.url), 
 const scanStatsStrip = readFileSync(new URL('../components/ScanStatsStrip.tsx', import.meta.url), 'utf8');
 const scanner = readFileSync(new URL('../components/QrScanner.tsx', import.meta.url), 'utf8');
 const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+const topBar = readFileSync(new URL('../components/TopBar.tsx', import.meta.url), 'utf8');
 
 // Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
@@ -73,6 +74,11 @@ test('la barre de navigation "verre liquide" a un contraste et des cibles plus g
   // collee au bord, sur les deux variantes (avec et sans bouton central).
   assert.match(bottomNav, /rounded-3xl/);
   assert.match(bottomNav, /backdrop-blur-2xl/);
+});
+
+test("le retour admin remplace /scan par /dashboard sans modifier les autres roles", () => {
+  assert.match(topBar, /role === 'admin' && backHref === '\/scan' \? '\/dashboard' : backHref/);
+  assert.match(topBar, /href=\{effectiveBackHref\}/);
 });
 
 test("admin et directeur ont Agenda dans la navigation, et Scan reste accessible a l'admin", () => {

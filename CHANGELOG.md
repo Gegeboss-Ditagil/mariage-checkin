@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.29.1] — 2026-08-31
+
+### Corrigé
+- `/approbations` : toute la carte d'une demande est maintenant ouvrable au toucher ou au clavier. La vue détaillée affiche la photo en grand, le côté Nelly/Gégé, le statut, le nombre de personnes, le demandeur et les actions Approuver/Refuser.
+- Après approbation dans l'application, les approbateurs authentifiés (`admin`, `directeur`, `visibilite`) peuvent choisir la table depuis cette vue. Le `placeur` conserve son droit d'assignation opérationnelle.
+- La vue propose explicitement « Choisir la table moi-même » ou « Laisser le placeur l'assigner ». Dans ce second cas, la demande reste approuvée et sans table dans la liste, sans écriture supplémentaire ni assignation automatique.
+- Une réponse SMS/WhatsApp reste strictement limitée à Oui/Non : aucun message entrant ni lien public ne peut choisir une table. L'assignation demeure une route séparée, authentifiée et protégée par `assignGuestApproval`.
+- Pour un admin, tous les boutons Retour historiquement dirigés vers `/scan` reviennent désormais au `/dashboard`.
+- Après une approbation, tous les placeurs abonnés reçoivent une notification opérationnelle. Sans table, elle ouvre directement le parcours d'assignation; après placement, une seconde notification confirme la table.
+- Migration `0038_strict_guest_approval_assignment.sql` : l'assignation et les déplacements nécessaires sont une seule transaction. La base refuse une table ou destination surchargée, un doublon de déplacement et tout déplacement d'une invitation déjà arrivée. L'écran affiche Confirmée/Provisoire et Arrivée/Non arrivée, exige de libérer autant de places que nécessaire et bloque la confirmation tant que la destination n'a pas assez de capacité.
+
+### Tests
+- Garde-fous ajoutés pour la vue détaillée, la photo agrandie, les actions, la matrice d'assignation, l'absence totale de choix de table dans les canaux texto/WhatsApp, les notifications placeurs, le retour admin et les contrôles atomiques de capacité.
+
 ## [1.29.0] — 2026-08-31
 
 ### Ajouté

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { GuestApprovalRequestRow, GuestApprovalStatut } from '@/lib/types';
 import { getReserveRemaining, notifyApproverDecision } from '@/lib/guestApprovalNotify';
+import { notifyGuestApprovalPlaceurs } from '@/lib/webPush';
 
 export type DecideLookup = { token: string } | { phoneMostRecentPending: string } | { id: string };
 export type DecideResult =
@@ -103,6 +104,13 @@ async function finalizeDecision(
   } catch {
     // Le SMS/WhatsApp de confirmation est un bonus, pas une condition de
     // succès de la décision elle-même -- déjà actée en base au-dessus.
+  }
+  if (decision === 'approuve') {
+    try {
+      await notifyGuestApprovalPlaceurs(supabase, updated, null);
+    } catch {
+      // La notification push est best-effort; la décision reste valide.
+    }
   }
 
   return { ok: true, request: updated };

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
+import { InvitationRow, OverflowAssignmentRow, TableRow, PLACEMENT_LABELS, STATUS_LABELS } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { TablePicker } from '@/components/TablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
@@ -39,6 +39,9 @@ export default function AssignGuestApprovalTablePage() {
   const [notFound, setNotFound] = useState(false);
   const [usages, setUsages] = useState<TableCapacity[]>([]);
   const [chosenTableId, setChosenTableId] = useState<string | null>(null);
+  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
+  const [relocationIds, setRelocationIds] = useState<string[]>([]);
+  const [relocationTableId, setRelocationTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +76,7 @@ export default function AssignGuestApprovalTablePage() {
           (assignments as OverflowAssignmentRow[]) || []
         )
       );
+      setInvitations((invs as InvitationRow[]) || []);
       setLoading(false);
     }
     load();
@@ -89,14 +93,21 @@ export default function AssignGuestApprovalTablePage() {
       const res = await fetch('/api/guest-approvals/' + id + '/assign-table', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table_id: chosenTableId }),
+        body: JSON.stringify({
+          table_id: chosenTableId,
+          relocations: relocationIds.map((invitation_id) => ({ invitation_id, destination_table_id: relocationTableId })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(
           data.error === 'request_already_assigned'
             ? 'Déjà assignée entre-temps'
-            : data.error || 'Échec de l\'assignation'
+            : data.error?.includes('arrived_guest_cannot_move')
+              ? 'Une personne sélectionnée est déjà arrivée et ne peut plus être déplacée.'
+              : data.error?.includes('capacity_exceeded')
+                ? 'La capacité a changé entre-temps. Actualisez les tables et recommencez.'
+                : data.error || 'Échec de l\'assignation'
         );
         setSubmitting(false);
         return;
@@ -132,6 +143,13 @@ export default function AssignGuestApprovalTablePage() {
     return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
   }
 
+  const targetUsage = usages.find((u) => u.table.id === chosenTableId) || null;
+  const shortage = targetUsage ? Math.max(0, request.nombre_invites - targetUsage.libresEstimees) : 0;
+  const targetOccupants = invitations.filter((inv) => inv.table_id === chosenTableId && !inv.ne_viendra_pas);
+  const selectedRelocations = targetOccupants.filter((inv) => relocationIds.includes(inv.id));
+  const seatsFreed = selectedRelocations.reduce((sum, inv) => sum + Math.max(inv.nombre_prevu, inv.nombre_arrive), 0);
+  const relocationReady = shortage === 0 || (!!relocationTableId && seatsFreed >= shortage);
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar title="Assigner une table" backHref="/approbations" />
@@ -154,7 +172,65 @@ export default function AssignGuestApprovalTablePage() {
           </div>
         </div>
 
-        <TablePicker usages={usages} selectedTableId={chosenTableId} onSelect={setChosenTableId} />
+        <TablePicker
+          usages={usages}
+          selectedTableId={chosenTableId}
+          onSelect={(tableId) => {
+            setChosenTableId(tableId);
+            setRelocationIds([]);
+            setRelocationTableId(null);
+          }}
+        />
+
+        {chosenTableId && shortage > 0 && (
+          <section className="card space-y-3">
+            <div>
+              <h2 className="font-display text-lg font-semibold">Libérer {shortage} place{shortage > 1 ? 's' : ''}</h2>
+              <p className="text-sm text-text-muted">
+                Cette table serait trop pleine. Choisissez au moins {shortage} place{shortage > 1 ? 's' : ''} parmi les invités non arrivés, puis leur nouvelle table.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {targetOccupants.map((inv) => {
+                const arrived = inv.nombre_arrive > 0;
+                const checked = relocationIds.includes(inv.id);
+                return (
+                  <label key={inv.id} className={'flex items-start gap-3 rounded-xl2 border p-3 ' + (arrived ? 'border-hairline opacity-55' : 'border-hairline bg-surface')}>
+                    <input
+                      type="checkbox"
+                      disabled={arrived}
+                      checked={checked}
+                      onChange={() => setRelocationIds((ids) => checked ? ids.filter((value) => value !== inv.id) : [...ids, inv.id])}
+                      className="mt-1 h-5 w-5"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{inv.nom_affichage} · {inv.nombre_prevu} place{inv.nombre_prevu > 1 ? 's' : ''}</span>
+                      <span className="block text-xs text-text-muted">
+                        {STATUS_LABELS[inv.statut]} · {PLACEMENT_LABELS[inv.placement_status]}
+                        {arrived ? ' · Déjà arrivé/assis — déplacement interdit' : ' · Peut être déplacé'}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className={seatsFreed >= shortage ? 'text-sm font-semibold text-status-complete' : 'text-sm font-semibold text-status-over'}>
+              {seatsFreed} place{seatsFreed > 1 ? 's' : ''} libérée{seatsFreed > 1 ? 's' : ''} sur {shortage} requise{shortage > 1 ? 's' : ''}
+            </p>
+            {seatsFreed >= shortage && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Nouvelle table des personnes déplacées</h3>
+                <TablePicker
+                  usages={usages}
+                  excludeTableId={chosenTableId}
+                  selectedTableId={relocationTableId}
+                  minimumEstimatedFree={seatsFreed}
+                  onSelect={setRelocationTableId}
+                />
+              </div>
+            )}
+          </section>
+        )}
 
         {error && <p className="text-sm font-medium text-status-over">{error}</p>}
       </div>
@@ -162,7 +238,7 @@ export default function AssignGuestApprovalTablePage() {
       <div className="px-4 pb-6">
         <button
           className="btn-primary w-full"
-          disabled={!chosenTableId || submitting || !online}
+          disabled={!chosenTableId || !relocationReady || submitting || !online}
           onClick={handleAssign}
         >
           {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER CETTE TABLE'}

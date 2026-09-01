@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { AccountMenu } from '@/components/AccountMenu';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 export function TopBar({
   title,
@@ -14,13 +15,15 @@ export function TopBar({
   right?: React.ReactNode;
   onTitleClick?: () => void;
 }) {
+  const role = useSessionRole();
+  const effectiveBackHref = role === 'admin' && backHref === '/scan' ? '/dashboard' : backHref;
   return (
     <header className="sticky top-0 z-10 bg-glass backdrop-blur border-b border-hairline">
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-1">
         <div className="flex min-w-0 items-center gap-2">
-          {backHref && (
+          {effectiveBackHref && (
             <Link
-              href={backHref}
+              href={effectiveBackHref}
               aria-label="Retour"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hairline bg-surface text-2xl font-bold leading-none text-accent shadow-card active:scale-[0.95] transition-transform"
             >

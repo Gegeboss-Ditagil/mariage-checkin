@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 import { getReserveRemaining, notifyFestinDirectors } from '@/lib/guestApprovalNotify';
 import { GuestApprovalRequestRow } from '@/lib/types';
+import { notifyGuestApprovalPlaceurs } from '@/lib/webPush';
 
 /**
  * Finalise une demande d'invité surprise déjà APPROUVÉE : crée l'invitation
@@ -21,17 +22,31 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const body = await req.json().catch(() => ({}));
   const tableId = typeof body.table_id === 'string' ? body.table_id : null;
+  const relocations = Array.isArray(body.relocations) ? body.relocations : [];
   if (!tableId) {
     return NextResponse.json({ error: 'table_id_required' }, { status: 400 });
+  }
+  if (
+    relocations.length > 40 ||
+    !relocations.every(
+      (item: unknown) =>
+        !!item &&
+        typeof item === 'object' &&
+        typeof (item as { invitation_id?: unknown }).invitation_id === 'string' &&
+        typeof (item as { destination_table_id?: unknown }).destination_table_id === 'string'
+    )
+  ) {
+    return NextResponse.json({ error: 'relocations_invalid' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
 
   const { data: invitation, error } = await supabase
-    .rpc('assign_table_to_guest_approval', {
+    .rpc('assign_table_to_guest_approval_strict', {
       p_request_id: params.id,
       p_table_id: tableId,
       p_agent_id: user.id,
+      p_relocations: relocations,
     })
     .single();
 
@@ -59,6 +74,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       directorReport = await notifyFestinDirectors(supabase, request, table.number, reserveRemaining);
     } catch {
       directorReport = { sent: 0, failed: 0 };
+    }
+    try {
+      await notifyGuestApprovalPlaceurs(supabase, request, table.number);
+    } catch {
+      // Best-effort : l'assignation atomique est déjà terminée.
     }
   }
 

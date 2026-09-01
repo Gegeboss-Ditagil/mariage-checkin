@@ -21,11 +21,13 @@ export function TablePicker({
   excludeTableId,
   selectedTableId,
   onSelect,
+  minimumEstimatedFree = 0,
 }: {
   usages: TableCapacity[];
   excludeTableId?: string | null;
   selectedTableId: string | null;
   onSelect: (tableId: string) => void;
+  minimumEstimatedFree?: number;
 }) {
   const [query, setQuery] = useState('');
 
@@ -58,14 +60,18 @@ export function TablePicker({
         {filtered.map((u) => {
           const selected = selectedTableId === u.table.id;
           const proche = u.occupationEstimee >= u.table.capacity;
+          const insufficient = u.libresEstimees < minimumEstimatedFree;
           const vol = volCode(u.table.number);
           return (
             <button
               key={u.table.id}
+              type="button"
+              disabled={insufficient}
               onClick={() => onSelect(u.table.id)}
               className={
                 'flex w-full items-center justify-between rounded-xl2 border-2 px-4 py-3 text-left ' +
-                (selected ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface ')
+                (selected ? 'border-accent bg-accent-tint ' : 'border-hairline bg-surface ') +
+                (insufficient ? ' cursor-not-allowed opacity-45' : '')
               }
             >
               <span className="min-w-0">
@@ -79,6 +85,7 @@ export function TablePicker({
               <span className={'shrink-0 text-right text-sm ' + (proche ? 'text-status-over' : 'text-text-faint')}>
                 <span className="block">{u.occupationEstimee} / {u.table.capacity} places prévues</span>
                 <span className="block text-xs">{u.libresMaintenant} libre{u.libresMaintenant > 1 ? 's' : ''} maintenant</span>
+                {insufficient && <span className="block text-xs font-semibold">Capacité insuffisante</span>}
               </span>
             </button>
           );

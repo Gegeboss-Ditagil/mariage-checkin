@@ -44,3 +44,35 @@ export async function notifyGuestApprovalReviewers(
     }
   }));
 }
+
+export async function notifyGuestApprovalPlaceurs(
+  supabase: SupabaseClient,
+  request: { id: string; event_id: string; nom_invite: string; nombre_invites: number },
+  tableNumber: number | null
+): Promise<void> {
+  if (!configure()) return;
+  const { data: subscriptions } = await supabase
+    .from('push_subscriptions')
+    .select('id, user_id, endpoint, p256dh, auth')
+    .eq('event_id', request.event_id);
+  if (!subscriptions?.length) return;
+  const userIds = Array.from(new Set(subscriptions.map((item) => item.user_id)));
+  const { data: users } = await supabase.from('users').select('id, role, active').in('id', userIds).eq('active', true);
+  const placeurs = new Set((users || []).filter((user) => user.role === 'placeur').map((user) => user.id));
+  const payload = JSON.stringify({
+    title: tableNumber ? 'Invité approuvé et placé' : 'Invité approuvé — table requise',
+    body: tableNumber
+      ? `${request.nom_invite} (${request.nombre_invites}) · Table ${tableNumber}`
+      : `${request.nom_invite} (${request.nombre_invites}) attend à la porte · assignez une table`,
+    url: tableNumber ? '/approbations' : `/approbations/${request.id}/assign`,
+    tag: `guest-approval-placeur-${request.id}`,
+  });
+  await Promise.allSettled(subscriptions.filter((item) => placeurs.has(item.user_id)).map(async (item) => {
+    try {
+      await webpush.sendNotification({ endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } }, payload);
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number }).statusCode;
+      if (statusCode === 404 || statusCode === 410) await supabase.from('push_subscriptions').delete().eq('id', item.id);
+    }
+  }));
+}

@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.29.0**
+**Version actuelle : 1.29.1**
 **Dernière mise à jour documentaire : 2026-08-31**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.29.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.29.1-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,10 +25,11 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.29.0
+## État fonctionnel v1.29.1
 
 - Sur `/scan`, `admin`, `placeur` et `directeur` prennent la photo d'un invité surprise directement depuis le flux vidéo déjà ouvert, sans lancer l'app Caméra. Les demandes apparaissent dans `/approbations` avec badge, décision directe dans l'app et notification Push PWA optionnelle ; Twilio SMS/WhatsApp reste disponible en parallèle.
 - `/agenda` donne à l'admin et au directeur un chronogramme mobile du jour J. Les responsables, shifts, départements définitifs et validations « fait » restent volontairement à attribuer jusqu'à réception des informations complètes.
+- Dans `/approbations`, toucher une demande ouvre sa photo en grand avec le côté et les boutons Approuver/Refuser. Dans l'application, l'approbateur choisit ensuite entre attribuer lui-même la table ou laisser le placeur le faire ; par SMS/WhatsApp, la réponse reste limitée à Oui/Non. Si la table est pleine, le placement impose d'abord de déplacer des groupes non arrivés vers une destination ayant assez de capacité, dans la même transaction ; tous les placeurs abonnés reçoivent le résultat.
 
 - **RLS activée sur `public.user_credential_backups`** : table exposée (RLS désactivée) signalée par l'advisor de sécurité Supabase, jamais utilisée par cette application — corrigée, même posture que les autres tables sensibles du dépôt (`users`, `audit_logs`, `import_backups` : RLS activée, aucune policy, accès réservé à `service_role`).
 - **Invité surprise avec approbation SMS/WhatsApp à distance** : depuis `/scan`, un placeur/directeur/admin peut photographier un invité non prévu, choisir son côté (Nelly/Gégé) et envoyer une demande d'approbation par SMS **et WhatsApp** au parent concerné (lien vers une page publique avec la photo — jamais de MMS) avant de le laisser entrer. L'approbateur peut cliquer le lien ou répondre directement « Oui »/« Non » au message WhatsApp. Une fois approuvée (`/approbations`), l'assignation de table reste manuelle. Suivi automatique : places de réserve restantes à l'approbateur, rapport complet au directeur de festin.
@@ -145,4 +146,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.29.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.29.1** et l'historique des versions.

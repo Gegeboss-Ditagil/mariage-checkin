@@ -1,11 +1,11 @@
-# Design QA — v1.29.0
+# Design QA — v1.29.1
 
 - Source visual truth: `Photo 1.jpg` (dashboard/navigation mobile) and `Photo 2.jpg` (Canva chronogram), supplied in the conversation.
 - Implementation screenshot: unavailable; the protected local routes redirect to login without a test session, and `/scan` additionally requires a real camera permission/device stream.
 - Viewports requested: iPhone portrait, Android portrait, iPad/landscape, desktop.
 - Source dimensions: Photo 1 = 556 × 1280 px; Photo 2 = 590 × 1280 px.
 - CSS viewport/density normalization: not available because an authenticated rendered capture could not be obtained.
-- State: admin/directeur authenticated dashboard, agenda and scan/photo states.
+- State: admin/directeur authenticated dashboard, agenda, scan/photo, approval modal and capacity-reorganization states.
 
 ## Full-view comparison evidence
 
@@ -17,7 +17,7 @@ Not performed for the same blocker. The intended focused regions were the five-b
 
 ## Findings
 
-- No code-level P0/P1 issue found. TypeScript, all 129 automated tests, responsive shell assertions and the production build pass.
+- No code-level P0/P1 issue found. TypeScript, all 135 automated tests, responsive shell assertions and the production build pass.
 - Visual fidelity remains unverified on a real authenticated iPhone/iPad/browser session. This is a verification gap, not a known visual defect.
 
 ## Comparison history
@@ -30,5 +30,7 @@ Not performed for the same blocker. The intended focused regions were the five-b
 - Verify directeur navigation exposes Agenda and keeps Bord central outside `/scan`.
 - Verify the central control on `/scan` captures a live frame for admin/directeur/placeur.
 - Verify 84 px navigation height and 72 px stats strip on iPhone, Android, iPad landscape and desktop.
+- Verify an approval card opens a large contained photo and remains operable by touch, keyboard and Escape.
+- Verify a full target table clearly disables arrived occupants, shows confirmation/arrival state and prevents assignment until enough movable places and a capable destination are selected.
 
 final result: blocked

@@ -44,8 +44,10 @@ const ALL_CAPABILITIES: Capability[] = [
 // disponible pour admin via ALL_CAPABILITIES seulement (ci-dessus), retire
 // de directeur/placeur/agent_checkin qui l'avaient via ce socle commun.
 // Le flux invite surprise est volontairement separe en quatre capacites :
-// admin/placeur prennent la photo et assignent la table; admin/directeur/
-// visibilite approuvent ou refusent; le placeur conserve la lecture du suivi.
+// admin/placeur/directeur prennent la photo; dans l'application, admin,
+// directeur et visibilite approuvent/refusent puis peuvent choisir la table.
+// Le placeur conserve la lecture, la soumission et l'assignation. Par texto
+// ou WhatsApp, l'approbateur ne fait que Oui/Non : jamais de choix de table.
 // agent_checkin ne participe jamais a ce flux et renvoie vers un placeur.
 const OPERATIONAL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin', 'placement',
@@ -60,7 +62,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // le 23/08/2026 : "c'est au directeur de festin, les autres n'ont pas
   // besoin d'appeler les gens". Retire de OPERATIONAL_CAPABILITIES pour ne
   // pas le donner implicitement a placeur/agent_checkin.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'viewGuestApprovals', 'viewAgenda', 'submitGuestApproval', 'reviewGuestApproval'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'viewGuestApprovals', 'viewAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval'],
   placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
@@ -75,7 +77,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   ],
   visibilite: [
     'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff',
-    'viewGuestApprovals', 'reviewGuestApproval',
+    'viewGuestApprovals', 'reviewGuestApproval', 'assignGuestApproval',
   ],
 };
 

@@ -51,6 +51,12 @@ const whatsappMigrationSource = readFileSync(
   new URL('../supabase/migrations/0034_guest_approval_whatsapp.sql', import.meta.url),
   'utf8'
 );
+const strictAssignmentSource = readFileSync(
+  new URL('../supabase/migrations/0038_strict_guest_approval_assignment.sql', import.meta.url),
+  'utf8'
+);
+const assignPageSource = readFileSync(new URL('../app/approbations/[id]/assign/page.tsx', import.meta.url), 'utf8');
+const webPushSource = readFileSync(new URL('../lib/webPush.ts', import.meta.url), 'utf8');
 
 test('les droits photo, approbation et assignation sont separes par role', () => {
   assert.equal(hasCapability('admin', 'submitGuestApproval'), true);
@@ -63,11 +69,58 @@ test('les droits photo, approbation et assignation sont separes par role', () =>
   assert.equal(hasCapability('agent_checkin', 'reviewGuestApproval'), false);
   assert.equal(hasCapability('admin', 'assignGuestApproval'), true);
   assert.equal(hasCapability('placeur', 'assignGuestApproval'), true);
+  assert.equal(hasCapability('directeur', 'assignGuestApproval'), true);
+  assert.equal(hasCapability('visibilite', 'assignGuestApproval'), true);
+  assert.equal(hasCapability('agent_checkin', 'assignGuestApproval'), false);
 
   assert.equal(canAccessPath('directeur', '/approbations'), true);
   assert.equal(canAccessPath('placeur', '/approbations'), true);
   assert.equal(canAccessPath('agent_checkin', '/approbations'), false);
   assert.equal(canAccessPath('visibilite', '/approbations'), true);
+});
+
+test('une demande est ouvrable et montre photo, cote, decision et choix de table dans l application', () => {
+  assert.match(approbationsPageSource, /setSelectedId\(r\.id\)/);
+  assert.match(approbationsPageSource, /role="dialog"/);
+  assert.match(approbationsPageSource, /max-h-\[48dvh\]/);
+  assert.match(approbationsPageSource, /Côté \{selectedRequest\.cote/);
+  assert.match(approbationsPageSource, />Approuver<\/button>/);
+  assert.match(approbationsPageSource, />Refuser<\/button>/);
+  assert.match(approbationsPageSource, /Choisir la table moi-même/);
+  assert.match(approbationsPageSource, /Laisser le placeur l'assigner/);
+  assert.match(approbationsPageSource, /demande reste approuvée et sans table/);
+});
+
+test('texto et WhatsApp ne choisissent jamais la table; l assignation reste une action authentifiee separee', () => {
+  assert.doesNotMatch(whatsappInboundSource, /table_id|assign_table_to_guest_approval/);
+  assert.doesNotMatch(publicDecideSource, /table_id|assign_table_to_guest_approval/);
+  assert.match(assignRouteSource, /hasCapability\(user\.role, ['"]assignGuestApproval['"]\)/);
+});
+
+test('l assignation stricte libere les places atomiquement et interdit de deplacer une personne arrivee', () => {
+  assert.match(assignRouteSource, /assign_table_to_guest_approval_strict/);
+  assert.match(assignRouteSource, /p_relocations: relocations/);
+  assert.match(strictAssignmentSource, /for update/);
+  assert.match(strictAssignmentSource, /arrived_guest_cannot_move/);
+  assert.match(strictAssignmentSource, /target_capacity_exceeded/);
+  assert.match(strictAssignmentSource, /destination_capacity_exceeded/);
+  assert.match(strictAssignmentSource, /guest_approval_capacity_relocation/);
+});
+
+test('la page montre les statuts et exige une destination suffisante avant de confirmer', () => {
+  assert.match(assignPageSource, /STATUS_LABELS\[inv\.statut\]/);
+  assert.match(assignPageSource, /PLACEMENT_LABELS\[inv\.placement_status\]/);
+  assert.match(assignPageSource, /Déjà arrivé\/assis — déplacement interdit/);
+  assert.match(assignPageSource, /minimumEstimatedFree=\{seatsFreed\}/);
+  assert.match(assignPageSource, /!relocationReady/);
+});
+
+test('tous les placeurs abonnes recoivent le resultat et le lien d assignation', () => {
+  assert.match(webPushSource, /user\.role === 'placeur'/);
+  assert.match(webPushSource, /attend à la porte · assignez une table/);
+  assert.match(webPushSource, /approbations\/\$\{request\.id\}\/assign/);
+  assert.match(decideLibSource, /notifyGuestApprovalPlaceurs\(supabase, updated, null\)/);
+  assert.match(assignRouteSource, /notifyGuestApprovalPlaceurs\(supabase, request, table\.number\)/);
 });
 
 test('le bouton central capture le flux video deja ouvert, sans input capture ni app Camera', () => {

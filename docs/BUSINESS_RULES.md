@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.29.0**
+**Version documentaire : 1.29.1**
 **Dernière mise à jour : 2026-08-31**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -81,6 +81,10 @@ Depuis le 30/08/2026, un placeur, un directeur de festin ou l'admin peut gérer 
 - Ni le SMS ni le WhatsApp ne contiennent **jamais la photo elle-même** (un numéro Twilio français ne supporte pas les MMS ; un message WhatsApp initié par l'app doit rester dans son Content Template pré-approuvé, pas de média possible) — uniquement un lien vers `/approve/[token]`, une page **publique** (sans connexion) qui l'affiche à l'ouverture.
 - **Deux façons de décider**, une seule logique atomique derrière : cliquer Approuver/Refuser sur `/approve/[token]`, **ou répondre directement « Oui »/« O »/« Y » ou « Non »/« N » au message WhatsApp** (pas besoin de cliquer le lien pour décider, seulement pour voir la photo). Un seul clic/une seule réponse possible : la demande est invalidée pour tout usage futur dès la première décision (une seconde tentative affiche « déjà traité », jamais une erreur technique) — le canal utilisé est conservé (`decided_via`).
 - Une fois **approuvée**, la demande apparaît dans `/approbations` (écran dédié, même capacité `guestApproval`) avec un bouton « Assigner une table » — l'ajout réel à la liste des invités et l'assignation de table restent **manuels**, jamais automatiques (demande explicite de Gersom). Cette étape crée l'invitation correspondante, mais ne la marque **pas** arrivée : le check-in se fait ensuite normalement depuis sa fiche, comme pour n'importe quel invité.
+- Dans l'application, `admin`, `directeur` et `visibilite` peuvent approuver/refuser puis choisir la table ; le `placeur` conserve aussi l'assignation. Par SMS/WhatsApp ou lien public, la décision reste strictement Oui/Non : aucune table ne peut être transmise par ces canaux.
+- Toute assignation respecte strictement la capacité de la table. Si elle est insuffisante, l'approbateur doit choisir des invitations non arrivées à déplacer et une destination capable de les recevoir. Une invitation dont `nombre_arrive > 0` est considérée déjà arrivée/assise et ne peut jamais être déplacée. Assignation et réorganisation réussissent ou échouent ensemble dans une transaction atomique.
+- Une approbation déclenche un Push best-effort à tous les `placeur` abonnés : lien d'assignation si aucune table n'est encore choisie, puis confirmation de la table après placement.
+- Après une approbation dans l'application, l'approbateur choisit explicitement « Choisir la table moi-même » ou « Laisser le placeur l'assigner ». Le second choix ne crée pas un nouvel état : la demande reste `approuve` avec `table_id = null`, donc visible et assignable par le placeur.
 - Après approbation, l'approbateur reçoit une confirmation indiquant combien de places de réserve il reste. Après assignation de table, un SMS de rapport part vers le directeur de festin (table `festin_directors` : nom de l'approbateur qui a validé, nombre de places, table assignée, places de réserve restantes) — pré-remplie avec Rémy Landu et Tuzola (`0033_festin_directors_contacts.sql`) ; reste un no-op silencieux (aucune erreur ni blocage) si cette table venait à être vidée.
 
 ## Comptes de connexion
