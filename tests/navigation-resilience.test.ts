@@ -13,6 +13,7 @@ const topBar = readFileSync(new URL('../components/TopBar.tsx', import.meta.url)
 const approvalShortcut = readFileSync(new URL('../components/GuestApprovalsShortcut.tsx', import.meta.url), 'utf8');
 const rootLayout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
 const dashboardPage = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');
+const globalStyles = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
 
 // Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
@@ -68,15 +69,17 @@ test('la barre de navigation "verre liquide" a un contraste et des cibles plus g
   // Demande de Gersom : le bar precedent etait "difficile a voir" -- icones
   // agrandies et libelles inactifs en text-muted (55% d'opacite) plutot que
   // text-faint (42%, trop peu contraste sur fond sombre).
-  assert.match(bottomNav, /h-7 w-7/);
-  assert.match(bottomNav, /min-h-\[84px\]/);
-  assert.match(bottomNav, /h-\[78px\] w-\[78px\]/);
+  assert.match(bottomNav, /h-\[30px\] w-\[30px\]/);
+  assert.match(bottomNav, /min-h-\[96px\]/);
+  assert.match(bottomNav, /h-\[84px\] w-\[84px\]/);
+  assert.match(bottomNav, /bottom-nav-icon-tile/);
+  assert.match(bottomNav, /bottom-nav-central/);
   assert.doesNotMatch(bottomNav, /text-text-faint/);
   assert.match(bottomNav, /text-text-muted/);
   // Pilule flottante (rayon genereux + ombre + flou) plutot que bar plate
   // collee au bord, sur les deux variantes (avec et sans bouton central).
-  assert.match(bottomNav, /rounded-3xl/);
-  assert.match(bottomNav, /backdrop-blur-2xl/);
+  assert.match(globalStyles, /\.bottom-nav-glass[\s\S]*border-radius: 2\.25rem/);
+  assert.match(globalStyles, /backdrop-filter: blur\(30px\) saturate\(175%\)/);
 });
 
 test('la camera du scanner utilise la hauteur du viewport au lieu du petit ratio horizontal 3/2', () => {

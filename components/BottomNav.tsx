@@ -79,12 +79,12 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.href}
       className={clsx(
-        'flex min-h-16 flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-3 text-xs font-semibold transition-colors landscape:min-h-0 landscape:py-0',
+        'flex min-h-[76px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold transition-colors landscape:min-h-0 landscape:py-0',
         active ? 'text-accent' : 'text-text-muted active:text-text'
       )}
     >
-      <span className="relative">
-        <Icon className="h-7 w-7" />
+      <span className={clsx('bottom-nav-icon-tile relative', active && 'bottom-nav-icon-tile-active')}>
+        <Icon className="h-[30px] w-[30px]" />
         {!!item.badge && <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-status-over px-1 text-center text-[10px] leading-5 text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
       </span>
       {item.label}
@@ -139,8 +139,8 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     return (
       <nav
         className={clsx(
-          'bottom-nav-glass z-10 mx-auto flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center justify-between',
-          'min-h-[84px] rounded-3xl border border-hairline bg-glass px-2 py-2 shadow-elev-2 backdrop-blur-2xl safe-bottom',
+          'bottom-nav-glass z-10 mx-auto flex w-[calc(100%-2rem)] max-w-md shrink-0 items-center justify-between',
+          'min-h-[96px] border border-hairline px-2.5 py-2 shadow-elev-2 safe-bottom',
           'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
           'landscape:justify-center landscape:gap-2 landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0',
           'landscape:border-r-0 landscape:px-1 landscape:py-4 landscape:safe-right'
@@ -173,8 +173,8 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   return (
     <nav
       className={clsx(
-        'bottom-nav-glass z-10 mx-auto flex min-h-[84px] w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center',
-        'rounded-3xl border border-hairline bg-glass px-2 py-2 shadow-elev-2 backdrop-blur-2xl safe-bottom',
+        'bottom-nav-glass z-10 mx-auto flex min-h-[96px] w-[calc(100%-2rem)] max-w-md shrink-0 items-center',
+        'border border-hairline px-2.5 py-2 shadow-elev-2 safe-bottom',
         'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
         'landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0 landscape:border-r-0 landscape:px-1',
         'landscape:py-4 landscape:safe-right'
@@ -191,24 +191,24 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
             onClick={onCentralAction}
             aria-label="Prendre une photo pour approbation"
             className={clsx(
-              '-mt-7 flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
+              'bottom-nav-central -mt-8 flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full border-2 border-white/30 bg-accent text-on-accent',
               'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
               centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
             )}
           >
-            <CameraIcon className="h-9 w-9" />
+            <CameraIcon className="h-10 w-10" />
           </button>
         ) : (
           <Link
             href={centralItem.href}
             aria-label={centralItem.label}
             className={clsx(
-              '-mt-7 flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-full bg-accent text-on-accent',
+              'bottom-nav-central -mt-8 flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full border-2 border-white/30 bg-accent text-on-accent',
               'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
               centralActive && 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
             )}
           >
-            <CentralGlyph className="h-9 w-9" />
+            <CentralGlyph className="h-10 w-10" />
           </Link>
         )}
       </div>
