@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.29.4] — 2026-09-01
+
+### Modifié
+- `/scan` affiche maintenant un grand bouton Approbations juste au-dessus de la jauge d'arrivées, avec le nombre de demandes en attente. Approbations reste également dans le menu du compte en haut à droite, mais disparaît de toutes les barres de navigation basses afin de conserver Scan et Tableau de bord accessibles.
+- Les comptes `admin` et `visibilite` reviennent au tableau de bord avec la flèche Retour des pages opérationnelles.
+- `/approbations` ouvre directement la demande ciblée par une notification, affiche un résultat clair après Approuver/Refuser et permet de parcourir toutes les demandes avec les flèches précédente/suivante sans fermer la fenêtre.
+- Après approbation, l'utilisateur choisit de voir les recommandations de tables ou de laisser le placeur assigner. Les recommandations priorisent les places réellement disponibles, montrent les places provisoires non arrivées et incluent la table de réserve. La fonction SQL stricte v1.29.1 reste l'autorité finale pour interdire tout dépassement ou déplacement d'une personne arrivée.
+- Sans clés VAPID, une nouvelle demande déclenche désormais une alerte visible et un badge actualisé toutes les 5 secondes dans l'application. Le véritable Push iPhone hors application reste disponible dès que les trois variables VAPID sont configurées dans Vercel. Les placeurs peuvent maintenant s'abonner au Push avec leur droit de lecture des demandes, sans recevoir pour autant le droit Approuver/Refuser.
+
+### Base de données
+- Aucune nouvelle migration. Les migrations `0037_guest_approval_app_push.sql` et `0038_strict_guest_approval_assignment.sql` restent suffisantes.
+
+### Tests
+- Régressions navigation/approbations complétées pour le raccourci scanner, l'absence d'Approbations dans la barre basse, le retour Dashboard, la navigation entre demandes, les messages de succès, les recommandations et le fallback d'alertes dans l'application.
+
 ## [1.29.3] — 2026-09-01
 
 ### Corrigé

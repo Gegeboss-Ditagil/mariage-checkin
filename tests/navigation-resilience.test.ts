@@ -10,6 +10,7 @@ const scanStatsStrip = readFileSync(new URL('../components/ScanStatsStrip.tsx', 
 const scanner = readFileSync(new URL('../components/QrScanner.tsx', import.meta.url), 'utf8');
 const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
 const topBar = readFileSync(new URL('../components/TopBar.tsx', import.meta.url), 'utf8');
+const approvalShortcut = readFileSync(new URL('../components/GuestApprovalsShortcut.tsx', import.meta.url), 'utf8');
 
 // Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
@@ -83,8 +84,9 @@ test('la camera du scanner utilise la hauteur du viewport au lieu du petit ratio
   assert.doesNotMatch(scanner, /aspect-\[3\/2\]/);
 });
 
-test("le retour admin remplace /scan par /dashboard sans modifier les autres roles", () => {
-  assert.match(topBar, /role === 'admin' && backHref === '\/scan' \? '\/dashboard' : backHref/);
+test("le retour des comptes admin et visibilite revient toujours au dashboard", () => {
+  assert.match(topBar, /role === 'admin' \|\| role === 'visibilite'/);
+  assert.match(topBar, /\? '\/dashboard' : backHref/);
   assert.match(topBar, /href=\{effectiveBackHref\}/);
 });
 
@@ -94,13 +96,19 @@ test("admin et directeur ont Agenda dans la navigation, et Scan reste accessible
   assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\)/);
 });
 
-test("sur le dashboard admin seulement, Scan est central et Approbations descend dans la barre", () => {
-  assert.match(bottomNav, /const ADMIN_DASHBOARD_ITEMS/);
-  assert.match(bottomNav, /role === 'admin' && pathname === '\/dashboard' \? ADMIN_DASHBOARD_ITEMS/);
-  assert.match(bottomNav, /ADMIN_DASHBOARD_ITEMS[\s\S]*href: '\/scan'[\s\S]*href: '\/approbations'/);
-  assert.doesNotMatch(bottomNav, /admin: \[[\s\S]*href: '\/approbations'[\s\S]*\],\n\};/);
+test("Approbations reste dans le menu du compte et Scan/Bord restent dans la barre admin", () => {
+  assert.doesNotMatch(bottomNav, /href: ['"]\/approbations['"]/);
+  assert.doesNotMatch(bottomNav, /ADMIN_DASHBOARD_ITEMS/);
+  assert.match(bottomNav, /admin: \[[\s\S]*href: '\/scan'[\s\S]*href: '\/dashboard'/);
   assert.match(accountMenu, /href="\/approbations"/);
   assert.match(accountMenu, /pendingApprovals/);
+});
+
+test("le scanner affiche un grand raccourci Approbations juste au-dessus de la progression", () => {
+  assert.match(scanPage, /<GuestApprovalsShortcut role=\{role\} \/>[\s\S]*<ScanStatsStrip \/>/);
+  assert.match(approvalShortcut, /min-h-14/);
+  assert.match(approvalShortcut, /pendingCount/);
+  assert.match(approvalShortcut, /href="\/approbations"/);
 });
 
 test("l'agenda affiche le chronogramme sans inventer les affectations futures", () => {

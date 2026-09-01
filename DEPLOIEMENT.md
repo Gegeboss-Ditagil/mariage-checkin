@@ -1,7 +1,7 @@
 # Guide de déploiement
 
-**Version documentaire : 1.29.3**
-**Dernière mise à jour : 2026-08-30**
+**Version documentaire : 1.29.4**
+**Dernière mise à jour : 2026-09-01**
 
 L'application est un projet Next.js déployé sur Vercel avec Supabase en backend.
 
@@ -26,6 +26,11 @@ Variables nécessaires :
 | `SUPABASE_SERVICE_ROLE_KEY` | clé serveur secrète, jamais exposée au navigateur |
 | `SESSION_SECRET` | secret de signature des sessions |
 | `NEXT_PUBLIC_EVENT_NAME` | nom de l'événement |
+| `VAPID_PUBLIC_KEY` | clé publique Web Push, renvoyée aux appareils autorisés |
+| `VAPID_PRIVATE_KEY` | clé privée Web Push, serveur uniquement |
+| `VAPID_SUBJECT` | contact du propriétaire Push, ex. `mailto:adresse@example.com` |
+
+Pour générer une paire VAPID une seule fois : `npx web-push generate-vapid-keys`. Copier les deux valeurs dans Vercel (Production), ajouter `VAPID_SUBJECT`, puis redéployer. Ne jamais committer la clé privée. Sans ces variables, les badges et alertes à l'intérieur de l'application continuent de fonctionner, mais iOS ne peut pas réveiller une PWA fermée. Cette configuration Vercel ne nécessite aucun SQL supplémentaire si la migration `0037_guest_approval_app_push.sql` est déjà appliquée.
 
 Vercel fournit également des identifiants de déploiement/commit. La v1.1.0 les utilise pour distinguer une session créée sur une ancienne version d'une session créée sur le déploiement courant.
 

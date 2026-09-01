@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { ComponentType, useEffect, useState } from 'react';
 import { Role } from '@/lib/types';
-import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
+import { CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
@@ -40,11 +40,11 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
     { href: '/agenda', label: 'Agenda', icon: StaffIcon },
-    { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
+    { href: '/staff', label: 'Staff', icon: StaffIcon },
   ],
   placeur: STAFF_ITEMS,
   agent_checkin: SCAN_ONLY_ITEMS,
-  visibilite: [...READ_ONLY_ITEMS, { href: '/approbations', label: 'Approbations', icon: ApprovalIcon }],
+  visibilite: READ_ONLY_ITEMS,
   admin: [
     { href: '/search', label: 'Recherche', icon: SearchIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
@@ -54,17 +54,9 @@ const ITEMS: Record<string, NavItem[]> = {
   ],
 };
 
-// Sur le tableau de bord admin seulement, Approbations descend dans la barre
-// du bas à la place de Bord (la page courante), avec Scan au centre. Partout
-// ailleurs, Approbations reste dans AccountMenu en haut à droite et Bord
-// redevient le raccourci latéral.
-const ADMIN_DASHBOARD_ITEMS: NavItem[] = [
-  { href: '/search', label: 'Recherche', icon: SearchIcon },
-  { href: '/plan-table', label: 'Plan', icon: GridIcon },
-  { href: '/scan', label: 'Scan', icon: ScanIcon },
-  { href: '/agenda', label: 'Agenda', icon: StaffIcon },
-  { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
-];
+// Approbations vit dans AccountMenu pour tous les approbateurs. Cela garde
+// Scan disponible dans la barre admin et remet Bord dans la navigation du
+// scanner, sans changer les autorisations serveur.
 
 // Bouton central surelevé : Scan pour la plupart des roles (leur action la
 // plus frequente), mais Tableau de bord pour le directeur de festin --
@@ -131,7 +123,7 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     return () => { active = false; window.clearInterval(timer); };
   }, [role]);
 
-  const roleItems = role === 'admin' && pathname === '/dashboard' ? ADMIN_DASHBOARD_ITEMS : (ITEMS[role] ?? ITEMS.agent_checkin);
+  const roleItems = ITEMS[role] ?? ITEMS.agent_checkin;
   const items = roleItems.map((item) =>
     item.href === '/approbations' ? { ...item, badge: pendingCount } : item
   );

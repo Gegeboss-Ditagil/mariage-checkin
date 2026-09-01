@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.29.3**
-**Dernière mise à jour documentaire : 2026-08-31**
+**Version actuelle : 1.29.4**
+**Dernière mise à jour documentaire : 2026-09-01**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.29.3-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.29.4-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -25,13 +25,14 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
-## État fonctionnel v1.29.3
+## État fonctionnel v1.29.4
 
-- Sur `/scan`, `admin`, `placeur` et `directeur` prennent la photo d'un invité surprise directement depuis le flux vidéo déjà ouvert, sans lancer l'app Caméra. Les demandes apparaissent dans `/approbations` avec badge, décision directe dans l'app et notification Push PWA optionnelle ; Twilio SMS/WhatsApp reste disponible en parallèle.
+- Sur `/scan`, `admin`, `placeur` et `directeur` prennent la photo d'un invité surprise directement depuis le flux vidéo déjà ouvert, sans lancer l'app Caméra. Un grand bouton Approbations placé au-dessus de la jauge d'arrivées affiche le nombre de demandes en attente ; Approbations reste aussi dans le menu du compte, jamais dans la barre basse.
 - La caméra de `/scan` occupe maintenant une hauteur proportionnelle à l'écran, bornée de 340 à 680 px, au lieu du petit ratio horizontal 3/2 qui l'écrasait sur les grands iPhone. La vidéo remplit la zone sans déformation et le cadre QR s'adapte à la surface réellement disponible.
 - `/agenda` donne à l'admin et au directeur un chronogramme mobile du jour J. Les responsables, shifts, départements définitifs et validations « fait » restent volontairement à attribuer jusqu'à réception des informations complètes.
-- Dans `/approbations`, toucher une demande ouvre sa photo en grand avec le côté et les boutons Approuver/Refuser. Dans l'application, l'approbateur choisit ensuite entre attribuer lui-même la table ou laisser le placeur le faire ; par SMS/WhatsApp, la réponse reste limitée à Oui/Non. Si la table est pleine, le placement impose d'abord de déplacer des groupes non arrivés vers une destination ayant assez de capacité, dans la même transaction ; tous les placeurs abonnés reçoivent le résultat.
-- Pour l'admin, Approbations reste dans le menu du compte en haut à droite sur toutes les pages. Sur le tableau de bord uniquement, il descend aussi dans la barre du bas : Recherche, Plan, Scan central, Agenda, Approbations.
+- Dans `/approbations`, toucher une demande ouvre sa photo en grand avec le côté et les boutons Approuver/Refuser. Deux flèches permettent de traiter la demande précédente/suivante sans fermer la fenêtre. Après approbation, l'approbateur peut voir les tables recommandées (places réellement libres, places provisoires non arrivées, réserve) ou laisser le placeur décider ; par SMS/WhatsApp, la réponse reste limitée à Oui/Non. Si la table est pleine, le placement impose d'abord de déplacer des groupes non arrivés vers une destination ayant assez de capacité, dans la même transaction.
+- Les alertes d'approbation fonctionnent immédiatement dans l'application avec un badge et une bannière actualisés toutes les 5 secondes. Les placeurs peuvent s'abonner aux notifications sans obtenir le droit d'approuver. Pour recevoir un véritable Push iPhone quand l'application est fermée, configurer `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et `VAPID_SUBJECT` dans Vercel ; cela ne nécessite aucune nouvelle migration SQL après `0037`/`0038`.
+- Pour les comptes `admin` et `visibilite`, la flèche Retour des écrans opérationnels ramène toujours au tableau de bord.
 
 - **RLS activée sur `public.user_credential_backups`** : table exposée (RLS désactivée) signalée par l'advisor de sécurité Supabase, jamais utilisée par cette application — corrigée, même posture que les autres tables sensibles du dépôt (`users`, `audit_logs`, `import_backups` : RLS activée, aucune policy, accès réservé à `service_role`).
 - **Invité surprise avec approbation SMS/WhatsApp à distance** : depuis `/scan`, un placeur/directeur/admin peut photographier un invité non prévu, choisir son côté (Nelly/Gégé) et envoyer une demande d'approbation par SMS **et WhatsApp** au parent concerné (lien vers une page publique avec la photo — jamais de MMS) avant de le laisser entrer. L'approbateur peut cliquer le lien ou répondre directement « Oui »/« Non » au message WhatsApp. Une fois approuvée (`/approbations`), l'assignation de table reste manuelle. Suivi automatique : places de réserve restantes à l'approbateur, rapport complet au directeur de festin.
@@ -148,4 +149,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.29.3** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.29.4** et l'historique des versions.

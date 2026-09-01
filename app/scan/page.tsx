@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
+import { GuestApprovalsShortcut } from '@/components/GuestApprovalsShortcut';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -160,6 +161,7 @@ export default function ScanPage() {
 
         </div>
 
+        {role && <GuestApprovalsShortcut role={role} />}
         {role && <ScanStatsStrip />}
       </div>
       {role && <BottomNav role={role} onCentralAction={hasCapability(role, 'submitGuestApproval') ? captureGuestPhoto : undefined} />}

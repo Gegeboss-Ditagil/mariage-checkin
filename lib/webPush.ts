@@ -32,7 +32,7 @@ export async function notifyGuestApprovalReviewers(
   const payload = JSON.stringify({
     title: 'Approbation en attente',
     body: `${request.nom_invite} · ${request.nombre_invites} · Côté ${request.cote === 'Gege' ? 'Gégé' : 'Nelly'}`,
-    url: '/approbations',
+    url: `/approbations?request=${request.id}`,
     tag: `guest-approval-${request.id}`,
   });
   await Promise.allSettled(subscriptions.filter((item) => allowed.has(item.user_id)).map(async (item) => {

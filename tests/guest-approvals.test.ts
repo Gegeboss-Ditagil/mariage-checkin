@@ -57,6 +57,9 @@ const strictAssignmentSource = readFileSync(
 );
 const assignPageSource = readFileSync(new URL('../app/approbations/[id]/assign/page.tsx', import.meta.url), 'utf8');
 const webPushSource = readFileSync(new URL('../lib/webPush.ts', import.meta.url), 'utf8');
+const pushButtonSource = readFileSync(new URL('../components/PushNotificationButton.tsx', import.meta.url), 'utf8');
+const pushKeyRouteSource = readFileSync(new URL('../app/api/push/vapid-public-key/route.ts', import.meta.url), 'utf8');
+const pushSubscribeRouteSource = readFileSync(new URL('../app/api/push/subscribe/route.ts', import.meta.url), 'utf8');
 
 test('les droits photo, approbation et assignation sont separes par role', () => {
   assert.equal(hasCapability('admin', 'submitGuestApproval'), true);
@@ -86,9 +89,18 @@ test('une demande est ouvrable et montre photo, cote, decision et choix de table
   assert.match(approbationsPageSource, /Côté \{selectedRequest\.cote/);
   assert.match(approbationsPageSource, />Approuver<\/button>/);
   assert.match(approbationsPageSource, />Refuser<\/button>/);
-  assert.match(approbationsPageSource, /Choisir la table moi-même/);
-  assert.match(approbationsPageSource, /Laisser le placeur l'assigner/);
+  assert.match(approbationsPageSource, /Oui — voir les recommandations/);
+  assert.match(approbationsPageSource, /Non — laisser le placeur l'assigner/);
   assert.match(approbationsPageSource, /demande reste approuvée et sans table/);
+});
+
+test('la fenetre detaillee navigue entre les demandes et confirme clairement chaque decision', () => {
+  assert.match(approbationsPageSource, /Demande précédente/);
+  assert.match(approbationsPageSource, /Demande suivante/);
+  assert.match(approbationsPageSource, /moveSelection\(-1\)/);
+  assert.match(approbationsPageSource, /moveSelection\(1\)/);
+  assert.match(approbationsPageSource, /Parfait — demande approuvée/);
+  assert.match(approbationsPageSource, /Parfait — demande refusée/);
 });
 
 test('texto et WhatsApp ne choisissent jamais la table; l assignation reste une action authentifiee separee', () => {
@@ -113,6 +125,30 @@ test('la page montre les statuts et exige une destination suffisante avant de co
   assert.match(assignPageSource, /Déjà arrivé\/assis — déplacement interdit/);
   assert.match(assignPageSource, /minimumEstimatedFree=\{seatsFreed\}/);
   assert.match(assignPageSource, /!relocationReady/);
+});
+
+test('les recommandations priorisent les places disponibles, les provisoires non arrives et la reserve', () => {
+  assert.match(assignPageSource, /Tables recommandées/);
+  assert.match(assignPageSource, /libresEstimees >= needed/);
+  assert.match(assignPageSource, /placement_status !== 'confirmee'/);
+  assert.match(assignPageSource, /invitation\.nombre_arrive === 0/);
+  assert.match(assignPageSource, /usage\.table\.is_reserve/);
+});
+
+test('les alertes dans l application restent actives meme sans cles VAPID', () => {
+  assert.match(accountMenuSource, /setInterval\(load, 5000\)/);
+  assert.match(accountMenuSource, /Nouvelle approbation/);
+  assert.match(pushButtonSource, /Alertes dans l.application actives/);
+  assert.match(webPushSource, /approbations\?request=\$\{request\.id\}/);
+});
+
+test('les placeurs peuvent s abonner au push sans recevoir le droit d approuver', () => {
+  assert.match(pushKeyRouteSource, /hasCapability\(user\.role, 'viewGuestApprovals'\)/);
+  assert.match(pushSubscribeRouteSource, /hasCapability\(user\.role, 'viewGuestApprovals'\)/);
+  assert.doesNotMatch(pushKeyRouteSource, /hasCapability\(user\.role, 'reviewGuestApproval'\)/);
+  assert.doesNotMatch(pushSubscribeRouteSource, /hasCapability\(user\.role, 'reviewGuestApproval'\)/);
+  assert.equal(hasCapability('placeur', 'viewGuestApprovals'), true);
+  assert.equal(hasCapability('placeur', 'reviewGuestApproval'), false);
 });
 
 test('tous les placeurs abonnes recoivent le resultat et le lien d assignation', () => {

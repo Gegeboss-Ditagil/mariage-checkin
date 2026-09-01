@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, OverflowAssignmentRow, TableRow, PLACEMENT_LABELS, STATUS_LABELS } from '@/lib/types';
@@ -45,6 +45,41 @@ export default function AssignGuestApprovalTablePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const provisionalSeatsByTable = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const invitation of invitations) {
+      if (
+        invitation.table_id &&
+        invitation.nombre_arrive === 0 &&
+        !invitation.ne_viendra_pas &&
+        invitation.placement_status !== 'confirmee'
+      ) {
+        totals.set(invitation.table_id, (totals.get(invitation.table_id) || 0) + invitation.nombre_prevu);
+      }
+    }
+    return totals;
+  }, [invitations]);
+
+  const recommendations = useMemo(() => {
+    const needed = request?.nombre_invites || 1;
+    const candidates = usages
+      .filter((usage) =>
+        usage.libresEstimees >= needed ||
+        (usage.libresMaintenant >= needed && (usage.table.is_reserve || (provisionalSeatsByTable.get(usage.table.id) || 0) > 0))
+      )
+      .sort((a, b) => {
+        const score = (usage: TableCapacity) => {
+          if (!usage.table.is_reserve && usage.libresEstimees >= needed) return 0;
+          if (usage.table.is_reserve && usage.libresMaintenant >= needed) return 1;
+          return 2;
+        };
+        return score(a) - score(b) || b.libresEstimees - a.libresEstimees || a.table.number - b.table.number;
+      });
+    const first = candidates.slice(0, 4);
+    const reserve = candidates.find((usage) => usage.table.is_reserve);
+    return reserve && !first.some((usage) => usage.table.id === reserve.table.id) ? [...first.slice(0, 3), reserve] : first;
+  }, [provisionalSeatsByTable, request?.nombre_invites, usages]);
 
   useEffect(() => {
     let active = true;
@@ -171,6 +206,46 @@ export default function AssignGuestApprovalTablePage() {
             </p>
           </div>
         </div>
+
+        <section className="card space-y-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold">Tables recommandées</h2>
+            <p className="text-sm text-text-muted">
+              Priorité aux vraies places disponibles, puis à la réserve. Une table avec des places provisoires peut demander une réorganisation avant validation.
+            </p>
+          </div>
+          {recommendations.length === 0 ? (
+            <p className="text-sm font-semibold text-status-partial">Aucune table ne peut accueillir directement ce groupe. Choisissez une table ci-dessous pour préparer une réorganisation.</p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {recommendations.map((usage) => {
+                const provisional = provisionalSeatsByTable.get(usage.table.id) || 0;
+                const direct = usage.libresEstimees >= request.nombre_invites;
+                return (
+                  <button
+                    key={usage.table.id}
+                    type="button"
+                    onClick={() => {
+                      setChosenTableId(usage.table.id);
+                      setRelocationIds([]);
+                      setRelocationTableId(null);
+                    }}
+                    className={'rounded-xl2 border-2 px-4 py-3 text-left ' + (chosenTableId === usage.table.id ? 'border-accent bg-accent-tint' : 'border-hairline bg-surface')}
+                  >
+                    <span className="block font-semibold">Table {usage.table.number}{usage.table.label ? ` — ${usage.table.label}` : ''}</span>
+                    <span className="block text-xs text-text-muted">
+                      {direct
+                        ? `${usage.libresEstimees} place${usage.libresEstimees > 1 ? 's' : ''} réellement disponible${usage.libresEstimees > 1 ? 's' : ''}`
+                        : usage.table.is_reserve
+                          ? `${usage.libresMaintenant} place${usage.libresMaintenant > 1 ? 's' : ''} libre${usage.libresMaintenant > 1 ? 's' : ''} en réserve`
+                          : `${provisional} place${provisional > 1 ? 's' : ''} provisoire${provisional > 1 ? 's' : ''}, invités non arrivés`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         <TablePicker
           usages={usages}

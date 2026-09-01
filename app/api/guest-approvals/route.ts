@@ -131,12 +131,21 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
   if (req.nextUrl.searchParams.get('count') === 'pending') {
-    const { count, error } = await supabase
+    const [{ count, error }, { data: latest }] = await Promise.all([
+      supabase
       .from('guest_approval_requests')
       .select('id', { count: 'exact', head: true })
-      .eq('statut', 'en_attente');
+      .eq('statut', 'en_attente'),
+      supabase
+        .from('guest_approval_requests')
+        .select('id, nom_invite, nombre_invites, cote, created_at')
+        .eq('statut', 'en_attente')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ pending_count: count || 0 });
+    return NextResponse.json({ pending_count: count || 0, latest: latest || null });
   }
   const { data, error } = await supabase
     .from('guest_approval_requests')
