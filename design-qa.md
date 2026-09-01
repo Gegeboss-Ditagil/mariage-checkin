@@ -24,7 +24,8 @@ Non réalisable sans capture paysage authentifiée. Les zones à contrôler sur 
 - [Corrigé au niveau source] La fenêtre Approbation utilise désormais un centrage vertical réel (`items-center`) et une hauteur maximale laissant une marge uniforme autour du popup.
 - [Corrigé au niveau source] Le splash précharge les six premières photos, la signature Storage est groupée et les nouvelles images sont réduites avant l'envoi; les cadres vides observés pendant plusieurs secondes ne devraient plus se reproduire pour les nouvelles demandes sur une connexion normale.
 - [Corrigé au niveau source] La barre du directeur remplace Staff par Scan, conserve Bord au centre et renforce son effet flottant dans les deux thèmes.
-- [Corrigé au niveau source] La barre basse reprend les proportions perceptuelles du Dock de référence : capsule 96 px/rayon 36 px, tuiles 44 px, icônes 30 px, centre 84 px, flou 30 px et saturation 175 %. Les couleurs Apple ne sont volontairement pas copiées afin de conserver les thèmes Atrium/Maison.
+- [Corrigé au niveau source] La barre basse reprend les proportions perceptuelles du Dock de référence : capsule 96 px/rayon 36 px, tuiles 44 px, icônes 30 px, centre 84 px, flou 34 px et saturation 185 %. Les couleurs Apple ne sont volontairement pas copiées afin de conserver les thèmes Atrium/Maison.
+- [Corrigé au niveau source] Après validation de la forme, la matière devient plus proche d'une plaque Liquid Glass : fond 58 %/56 %, flou 34 px, saturation 185 %, bord lumineux et tuiles internes translucides plutôt qu'opaques.
 - [Bloqué visuellement] Typographie, rythme d'espacement, couleurs, qualité d'image et contenu ne changent pas dans ce lot, mais leur rendu paysage final doit être contrôlé sur iPhone/iPad authentifié.
 
 ## Comparison history

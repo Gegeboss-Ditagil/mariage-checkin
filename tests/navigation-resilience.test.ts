@@ -79,7 +79,10 @@ test('la barre de navigation "verre liquide" a un contraste et des cibles plus g
   // Pilule flottante (rayon genereux + ombre + flou) plutot que bar plate
   // collee au bord, sur les deux variantes (avec et sans bouton central).
   assert.match(globalStyles, /\.bottom-nav-glass[\s\S]*border-radius: 2\.25rem/);
-  assert.match(globalStyles, /backdrop-filter: blur\(30px\) saturate\(175%\)/);
+  assert.match(globalStyles, /--nav-glass: rgba\(238, 242, 250, 0\.58\)/);
+  assert.match(globalStyles, /--nav-glass: rgba\(35, 35, 44, 0\.56\)/);
+  assert.match(globalStyles, /backdrop-filter: blur\(34px\) saturate\(185%\)/);
+  assert.match(globalStyles, /border-color: var\(--nav-glass-border\)/);
 });
 
 test('la camera du scanner utilise la hauteur du viewport au lieu du petit ratio horizontal 3/2', () => {
