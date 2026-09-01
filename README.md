@@ -25,6 +25,16 @@ Avant toute modification, lire :
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
 
+## Transmission rapide à Claude AI
+
+- Branche de production : `main`; version proposée par cette PR : **1.29.4**.
+- Socle actuellement en production : `e37eb7b` (approbations détaillées, placement strict, notifications placeurs), `006ce76` (navigation admin contextuelle) et `6d0616b` (transmission Claude). Cette PR ajoute le scanner agrandi et le parcours d'approbation v1.29.4.
+- Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
+- Ne jamais appliquer un ancien diff aveuglément : récupérer `origin/main`, comparer les fichiers réels et conserver tout changement plus récent.
+- Les permissions sont centralisées dans `lib/permissions.ts`; les capacités doivent être vérifiées à la fois dans l'interface et dans chaque route API.
+- Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
+- Instructions détaillées de reprise : `CLAUDE.md`.
+
 ## État fonctionnel v1.29.4
 
 - Sur `/scan`, `admin`, `placeur` et `directeur` prennent la photo d'un invité surprise directement depuis le flux vidéo déjà ouvert, sans lancer l'app Caméra. Un grand bouton Approbations placé au-dessus de la jauge d'arrivées affiche le nombre de demandes en attente ; Approbations reste aussi dans le menu du compte, jamais dans la barre basse.

@@ -1,7 +1,7 @@
 # Instructions Claude Code et autres agents IA
 
 **Version documentaire : 1.29.4**
-**Dernière mise à jour : 2026-08-30**
+**Dernière mise à jour : 2026-09-01**
 
 Avant toute modification, lire dans cet ordre :
 
@@ -26,10 +26,26 @@ Les permissions sont centralisées dans `lib/permissions.ts`. Ne recréez pas de
 
 Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation explicite, aperçu des impacts, sauvegarde et procédure de retour arrière. Toute modification manuelle de production doit être reflétée dans une migration GitHub et dans le changelog de la version correspondante.
 
-## État de référence v1.15.3
+## État de référence v1.29.2
 
 - 41 tables : 40 normales (1-40) + une réserve (41).
 - Capacité officielle : 400 places; capacité absolue : 410.
 - Session maximale : 12 h.
 - Une nouvelle version déployée invalide les sessions issues d'un ancien déploiement à la prochaine requête protégée.
 - Le service worker ne doit pas servir d'anciens assets Next.js `/_next/*` depuis le cache.
+- `main` contient les commits `e37eb7b` (v1.29.1) et `006ce76` (v1.29.2).
+- La migration `0038_strict_guest_approval_assignment.sql` a déjà été exécutée et vérifiée en production Supabase le 31/08/2026 : la fonction `assign_table_to_guest_approval_strict` existe avec `security_type = INVOKER`. Ne pas la réexécuter manuellement sans raison; conserver le fichier dans Git comme historique reproductible.
+- `/approbations` ouvre la photo en grand et permet Approuver/Refuser. Dans l'application, `admin`, `directeur` et `visibilite` peuvent ensuite choisir la table ou laisser l'assignation au `placeur`; SMS/WhatsApp reste limité à Oui/Non.
+- Une table pleine impose une réorganisation atomique : seuls les groupes avec `nombre_arrive = 0` peuvent être déplacés, et la fonction SQL refuse toute capacité cible ou destination dépassée.
+- Les placeurs abonnés reçoivent un Push après approbation puis après assignation de la table. Ces notifications sont best-effort et ne conditionnent jamais la décision ou la transaction SQL.
+- Navigation admin v1.29.2 : Approbations reste dans le menu du compte sur toutes les pages. Sur `/dashboard` seulement, la barre du bas est Recherche, Plan, Scan central, Agenda, Approbations. Hors dashboard, Approbations quitte la barre et Bord reprend le raccourci.
+
+## Reprise rapide pour Claude AI
+
+1. Commencer par `git fetch origin main` et comparer `HEAD` à `origin/main`; ne jamais supposer qu'un diff transmis est encore manquant.
+2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.29.2`.
+3. Pour les approbations, lire ensemble `app/approbations/page.tsx`, `app/approbations/[id]/assign/page.tsx`, `lib/guestApprovalDecide.ts`, `lib/webPush.ts` et la migration `0038`.
+4. Pour la navigation, modifier la source centralisée `components/BottomNav.tsx`; ne pas recopier des menus dans les pages.
+5. Ne pas modifier la règle des rôles sans mettre à jour `lib/permissions.ts`, les routes API, `tests/permissions.test.ts`, `tests/guest-approvals.test.ts` et `docs/BUSINESS_RULES.md` dans le même lot.
+6. Avant livraison : `npx tsc --noEmit`, toutes les suites `node --test tests/*.test.ts`, `npm run build`, puis `git diff --check`.
+7. Les prochains changements doivent passer par une branche et une PR pour permettre la révision avant fusion; ne pousser directement sur `main` que si Gersom le demande explicitement.
