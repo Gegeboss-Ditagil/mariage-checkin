@@ -39,8 +39,8 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/search', label: 'Recherche', icon: SearchIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
+    { href: '/scan', label: 'Scan', icon: ScanIcon },
     { href: '/agenda', label: 'Agenda', icon: StaffIcon },
-    { href: '/staff', label: 'Staff', icon: StaffIcon },
   ],
   placeur: STAFF_ITEMS,
   agent_checkin: SCAN_ONLY_ITEMS,
@@ -139,7 +139,7 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     return (
       <nav
         className={clsx(
-          'z-10 mx-auto mb-5 flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center justify-between',
+          'bottom-nav-glass z-10 mx-auto flex w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center justify-between',
           'min-h-[84px] rounded-3xl border border-hairline bg-glass px-2 py-2 shadow-elev-2 backdrop-blur-2xl safe-bottom',
           'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
           'landscape:justify-center landscape:gap-2 landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0',
@@ -173,7 +173,7 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   return (
     <nav
       className={clsx(
-        'z-10 mx-auto mb-5 flex min-h-[84px] w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center',
+        'bottom-nav-glass z-10 mx-auto flex min-h-[84px] w-[calc(100%-1.5rem)] max-w-md shrink-0 items-center',
         'rounded-3xl border border-hairline bg-glass px-2 py-2 shadow-elev-2 backdrop-blur-2xl safe-bottom',
         'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
         'landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0 landscape:border-r-0 landscape:px-1',

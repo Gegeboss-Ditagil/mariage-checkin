@@ -1,6 +1,6 @@
 # Design QA — v1.29.5
 
-- Source visual truth: demande de Gersom du 1er septembre 2026 décrivant l'iPhone/iPad en paysage, la capture de sélection multiple sur Table 8, et la capture iPhone sombre de la fiche Approbation montrant la fenêtre trop basse, le bloc d'informations confus et les flèches peu visibles.
+- Source visual truth: demandes et captures de Gersom du 1er septembre 2026 : iPhone/iPad paysage, sélection multiple sur Table 8, fiche Approbation trop basse, liste dont les photos restent vides pendant le chargement, et navigation directeur affichant Staff sans accès Scan.
 - Implementation screenshot: indisponible pour l'état authentifié paysage.
 - Target viewports: iPhone portrait, iPhone paysage et iPad paysage.
 - State: écrans opérationnels authentifiés utilisant `BottomNav`, dont la fiche modale d'une demande Approbation.
@@ -21,6 +21,9 @@ Non réalisable sans capture paysage authentifiée. Les zones à contrôler sur 
 - [Corrigé au niveau source] La fiche Approbation est alignée en haut avec prise en compte de la safe area, conserve une hauteur défilable, et utilise une surface translucide bordée adaptée aux thèmes clair et sombre.
 - [Corrigé au niveau source] Les chevrons texte ont été remplacés par les icônes directionnelles du système de composants, dans deux cibles tactiles 56 × 56 px flottantes, translucides et ombrées.
 - [Corrigé au niveau source] Le bloc d'informations est découpé en cinq surfaces distinctes et les états approuvés indiquent sans ambiguïté si une table est attribuée.
+- [Corrigé au niveau source] La fenêtre Approbation utilise désormais un centrage vertical réel (`items-center`) et une hauteur maximale laissant une marge uniforme autour du popup.
+- [Corrigé au niveau source] Le splash précharge les six premières photos, la signature Storage est groupée et les nouvelles images sont réduites avant l'envoi; les cadres vides observés pendant plusieurs secondes ne devraient plus se reproduire pour les nouvelles demandes sur une connexion normale.
+- [Corrigé au niveau source] La barre du directeur remplace Staff par Scan, conserve Bord au centre et renforce son effet flottant dans les deux thèmes.
 - [Bloqué visuellement] Typographie, rythme d'espacement, couleurs, qualité d'image et contenu ne changent pas dans ce lot, mais leur rendu paysage final doit être contrôlé sur iPhone/iPad authentifié.
 
 ## Comparison history

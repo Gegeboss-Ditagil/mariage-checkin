@@ -8,6 +8,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { useTheme, ThemePref } from '@/hooks/useTheme';
 import { hasCapability } from '@/lib/permissions';
 import { ROLE_LABELS } from '@/lib/types';
+import { clearGuestApprovalsCache } from '@/lib/guestApprovalClientCache';
 
 const THEME_CHOICES: { pref: ThemePref; label: string }[] = [
   { pref: 'dark', label: 'Sombre' },
@@ -73,7 +74,11 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
     setLoggingOut(true);
     try { await fetch('/api/auth/logout', { method: 'POST' }); }
     catch { /* La redirection reste possible même si le réseau vient de tomber. */ }
-    finally { router.replace('/login'); router.refresh(); }
+    finally {
+      clearGuestApprovalsCache();
+      router.replace('/login');
+      router.refresh();
+    }
   }
 
   if (!name) return null;

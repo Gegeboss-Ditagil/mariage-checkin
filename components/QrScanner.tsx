@@ -60,12 +60,18 @@ export const QrScanner = forwardRef<QrScannerHandle, { onScan: (text: string) =>
         throw new Error('camera_not_ready');
       }
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Une frame 4K d'iPhone est inutile pour reconnaitre une personne dans
+      // la fiche d'approbation et prend plusieurs secondes a envoyer/charger.
+      // 1280 px sur le plus grand cote garde une photo nette sur telephone et
+      // iPad tout en divisant fortement son poids.
+      const maxDimension = 1280;
+      const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
       const context = canvas.getContext('2d');
       if (!context) throw new Error('canvas_unavailable');
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.8));
       if (!blob) throw new Error('capture_failed');
       return new File([blob], `invite-surprise-${Date.now()}.jpg`, { type: 'image/jpeg' });
     },

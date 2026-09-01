@@ -1,6 +1,6 @@
 import { getSessionUser } from '@/lib/session';
 import { SplashScreen } from '@/components/SplashScreen';
-import { landingPathForRole } from '@/lib/permissions';
+import { hasCapability, landingPathForRole } from '@/lib/permissions';
 
 export default function Home() {
   const user = getSessionUser();
@@ -10,5 +10,5 @@ export default function Home() {
     next = landingPathForRole(user.role);
   }
 
-  return <SplashScreen next={next} />;
+  return <SplashScreen next={next} warmApprovals={!!user && hasCapability(user.role, 'viewGuestApprovals')} />;
 }

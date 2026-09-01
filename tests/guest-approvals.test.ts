@@ -19,6 +19,8 @@ const directorsMigrationSource = readFileSync(
 const twilioSource = readFileSync(new URL('../lib/twilio.ts', import.meta.url), 'utf8');
 const notifySource = readFileSync(new URL('../lib/guestApprovalNotify.ts', import.meta.url), 'utf8');
 const photosSource = readFileSync(new URL('../lib/guestApprovalPhotos.ts', import.meta.url), 'utf8');
+const clientCacheSource = readFileSync(new URL('../lib/guestApprovalClientCache.ts', import.meta.url), 'utf8');
+const splashSource = readFileSync(new URL('../components/SplashScreen.tsx', import.meta.url), 'utf8');
 const createRouteSource = readFileSync(new URL('../app/api/guest-approvals/route.ts', import.meta.url), 'utf8');
 const publicGetSource = readFileSync(
   new URL('../app/api/public/guest-approvals/[token]/route.ts', import.meta.url),
@@ -85,7 +87,7 @@ test('les droits photo, approbation et assignation sont separes par role', () =>
 test('une demande est ouvrable et montre photo, cote, decision et choix de table dans l application', () => {
   assert.match(approbationsPageSource, /setSelectedId\(r\.id\)/);
   assert.match(approbationsPageSource, /role="dialog"/);
-  assert.match(approbationsPageSource, /max-h-\[48dvh\]/);
+  assert.match(approbationsPageSource, /max-h-\[42dvh\]/);
   assert.match(approbationsPageSource, /Côté \{selectedRequest\.cote/);
   assert.match(approbationsPageSource, />Approuver<\/button>/);
   assert.match(approbationsPageSource, />Refuser<\/button>/);
@@ -106,8 +108,8 @@ test('la fenetre detaillee navigue entre les demandes et confirme clairement cha
 });
 
 test('la fiche approbation est remontee, structure ses informations et utilise des fleches iOS en verre', () => {
-  assert.match(approbationsPageSource, /items-start justify-center overflow-y-auto/);
-  assert.match(approbationsPageSource, /pt-\[max\(5\.5rem,env\(safe-area-inset-top\)\)\]/);
+  assert.match(approbationsPageSource, /items-center justify-center overflow-y-auto/);
+  assert.match(approbationsPageSource, /max-h-\[calc\(100dvh-2rem\)\]/);
   assert.match(approbationsPageSource, /ChevronLeftIcon/);
   assert.match(approbationsPageSource, /ChevronRightIcon/);
   assert.match(approbationsPageSource, /h-14 w-14/);
@@ -116,6 +118,26 @@ test('la fiche approbation est remontee, structure ses informations et utilise d
   assert.match(approbationsPageSource, />Invités<\/p>/);
   assert.match(approbationsPageSource, />Demandé par<\/p>/);
   assert.match(approbationsPageSource, />Placement<\/p>/);
+});
+
+test('les photos d approbation sont signees en lot, mises en cache et prechargees pendant le splash', () => {
+  assert.match(photosSource, /createSignedUrls\(missing, SIGNED_URL_TTL_SECONDS\)/);
+  assert.match(photosSource, /signedUrlCache/);
+  assert.match(createRouteSource, /getSignedPhotoUrls/);
+  assert.doesNotMatch(createRouteSource, /map\(async \(row: any\)/);
+  assert.match(clientCacheSource, /slice\(0, 6\)/);
+  assert.match(clientCacheSource, /image\.src = request\.photo_signed_url/);
+  assert.match(splashSource, /if \(warmApprovals\) void warmGuestApprovals\(\)/);
+  assert.match(splashSource, /router\.prefetch\(next\)/);
+  assert.match(clientCacheSource, /clearGuestApprovalsCache/);
+  assert.match(accountMenuSource, /clearGuestApprovalsCache\(\)/);
+  assert.match(createRouteSource, /Cache-Control': 'private, no-store'/);
+});
+
+test('la photo prise depuis le scanner est redimensionnee avant upload', () => {
+  assert.match(scannerSource, /const maxDimension = 1280/);
+  assert.match(scannerSource, /Math\.min\(1, maxDimension \/ Math\.max\(video\.videoWidth, video\.videoHeight\)\)/);
+  assert.match(scannerSource, /canvas\.toBlob\(resolve, 'image\/jpeg', 0\.8\)/);
 });
 
 test('texto et WhatsApp ne choisissent jamais la table; l assignation reste une action authentifiee separee', () => {

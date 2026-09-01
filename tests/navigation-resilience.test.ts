@@ -98,9 +98,14 @@ test("sur le tableau de bord, Retour ouvre l accueil pour admin et directeur san
   assert.match(topBar, /backHref !== '\/'/);
 });
 
-test("admin et directeur ont Agenda dans la navigation, et Scan reste accessible a l'admin", () => {
+test("admin et directeur ont Agenda et Scan dans la navigation; le directeur garde Bord au centre sans onglet Staff", () => {
   assert.match(bottomNav, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
   assert.match(bottomNav, /admin:[\s\S]*href: ['"]\/scan['"], label: ['"]Scan['"]/);
+  const directeurBlock = bottomNav.slice(bottomNav.indexOf('directeur: ['), bottomNav.indexOf('placeur:'));
+  assert.match(directeurBlock, /href: ['"]\/scan['"], label: ['"]Scan['"]/);
+  assert.doesNotMatch(directeurBlock, /href: ['"]\/staff['"]/);
+  assert.match(bottomNav, /directeur: ['"]\/dashboard['"]/);
+  assert.match(bottomNav, /bottom-nav-glass/);
   assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\)/);
 });
 

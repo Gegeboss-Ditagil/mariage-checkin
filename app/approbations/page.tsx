@@ -8,6 +8,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { PushNotificationButton } from '@/components/PushNotificationButton';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
+import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
 interface ApprovalListItem {
   id: string;
@@ -56,8 +57,9 @@ const POLL_INTERVAL_MS = 15000;
 
 export default function ApprobationsPage() {
   const role = useSessionRole();
-  const [requests, setRequests] = useState<ApprovalListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialCache = readGuestApprovalsCache();
+  const [requests, setRequests] = useState<ApprovalListItem[]>((initialCache?.requests || []) as ApprovalListItem[]);
+  const [loading, setLoading] = useState(!initialCache);
   const [decidingId, setDecidingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -72,12 +74,9 @@ export default function ApprobationsPage() {
     setSelectedId(requests[nextIndex].id);
   }
 
-  async function load() {
-    const res = await fetch('/api/guest-approvals');
-    if (res.ok) {
-      const data = await res.json();
-      setRequests(data.requests || []);
-    }
+  async function load(refresh = true) {
+    const data = await (refresh ? refreshGuestApprovals() : warmGuestApprovals());
+    if (data) setRequests((data.requests || []) as ApprovalListItem[]);
     setLoading(false);
   }
 
@@ -95,7 +94,7 @@ export default function ApprobationsPage() {
           ? 'Fait — approuvé sans table. La demande est maintenant visible par les placeurs.'
           : 'Parfait — demande refusée. La décision a bien été enregistrée.'
       );
-      await load();
+      await load(true);
     } else {
       setActionFeedback('La demande a déjà été traitée ou une erreur réseau est survenue.');
     }
@@ -105,11 +104,10 @@ export default function ApprobationsPage() {
   useEffect(() => {
     let active = true;
     async function loadCurrent() {
-      const res = await fetch('/api/guest-approvals');
+      const data = await warmGuestApprovals();
       if (!active) return;
-      if (res.ok) {
-        const data = await res.json();
-        const loadedRequests = data.requests || [];
+      if (data) {
+        const loadedRequests = (data.requests || []) as ApprovalListItem[];
         setRequests(loadedRequests);
         const requestedId = new URLSearchParams(window.location.search).get('request');
         if (requestedId && loadedRequests.some((request: ApprovalListItem) => request.id === requestedId)) {
@@ -119,7 +117,7 @@ export default function ApprobationsPage() {
       setLoading(false);
     }
     loadCurrent();
-    const interval = setInterval(loadCurrent, POLL_INTERVAL_MS);
+    const interval = setInterval(() => { void load(true); }, POLL_INTERVAL_MS);
     return () => {
       active = false;
       clearInterval(interval);
@@ -212,7 +210,7 @@ export default function ApprobationsPage() {
 
       {selectedRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-3 pb-6 pt-[max(5.5rem,env(safe-area-inset-top))] backdrop-blur-sm sm:pt-[max(3rem,env(safe-area-inset-top))]"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm"
           role="presentation"
           onClick={() => setSelectedId(null)}
         >
@@ -221,7 +219,7 @@ export default function ApprobationsPage() {
             aria-modal="true"
             aria-labelledby="approval-detail-title"
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[calc(100dvh-6.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-surface/95 p-4 shadow-elev-2 backdrop-blur-2xl sm:max-h-[calc(100dvh-6rem)]"
+            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-surface/95 p-4 shadow-elev-2 backdrop-blur-2xl"
           >
             {requests.length > 1 && (
               <>
@@ -257,7 +255,7 @@ export default function ApprobationsPage() {
               <img
                 src={selectedRequest.photo_signed_url}
                 alt={'Photo de la demande pour ' + selectedRequest.nom_invite}
-                className="max-h-[48dvh] w-full rounded-2xl bg-black object-contain"
+                className="max-h-[42dvh] w-full rounded-2xl bg-black object-contain"
               />
             ) : (
               <div className="flex min-h-48 items-center justify-center rounded-2xl bg-surface-2 text-sm text-text-faint">Photo indisponible</div>

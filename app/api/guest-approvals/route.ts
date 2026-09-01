@@ -3,7 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
-import { uploadGuestApprovalPhoto, getSignedPhotoUrl } from '@/lib/guestApprovalPhotos';
+import { uploadGuestApprovalPhoto, getSignedPhotoUrl, getSignedPhotoUrls } from '@/lib/guestApprovalPhotos';
 import { notifyApprover } from '@/lib/guestApprovalNotify';
 import { GuestApprovalRequestRow, GuestApproverRow } from '@/lib/types';
 import { TwilioConfigError, TwilioSendError } from '@/lib/twilio';
@@ -160,8 +160,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const requests = await Promise.all(
-    (data || []).map(async (row: any) => ({
+  // Une seule requete Storage pour tout le lot, au lieu d'une requete par
+  // photo. Les URL restent privees et expirent toujours apres une heure.
+  const signedUrls = await getSignedPhotoUrls(supabase, (data || []).map((row: any) => row.photo_url));
+  const requests = (data || []).map((row: any) => ({
       id: row.id,
       cote: row.cote,
       nom_invite: row.nom_invite,
@@ -174,9 +176,14 @@ export async function GET(req: NextRequest) {
       assigned_at: row.assigned_at,
       created_at: row.created_at,
       requested_by_nom: row.requested_by?.nom_affichage ?? null,
-      photo_signed_url: await getSignedPhotoUrl(supabase, row.photo_url),
-    }))
-  );
+      photo_signed_url: signedUrls.get(row.photo_url) ?? null,
+    }));
 
-  return NextResponse.json({ requests });
+  return NextResponse.json(
+    { requests },
+    // La reutilisation rapide vit dans le cache memoire explicitement vide a
+    // la deconnexion. Ne jamais laisser le cache HTTP restituer la liste
+    // privee a un autre compte utilisant ensuite le meme appareil.
+    { headers: { 'Cache-Control': 'private, no-store' } }
+  );
 }
