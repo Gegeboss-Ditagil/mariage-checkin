@@ -87,6 +87,15 @@ test("admin et directeur ont Agenda dans la navigation, et Scan reste accessible
   assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\)/);
 });
 
+test("sur le dashboard admin seulement, Scan est central et Approbations descend dans la barre", () => {
+  assert.match(bottomNav, /const ADMIN_DASHBOARD_ITEMS/);
+  assert.match(bottomNav, /role === 'admin' && pathname === '\/dashboard' \? ADMIN_DASHBOARD_ITEMS/);
+  assert.match(bottomNav, /ADMIN_DASHBOARD_ITEMS[\s\S]*href: '\/scan'[\s\S]*href: '\/approbations'/);
+  assert.doesNotMatch(bottomNav, /admin: \[[\s\S]*href: '\/approbations'[\s\S]*\],\n\};/);
+  assert.match(accountMenu, /href="\/approbations"/);
+  assert.match(accountMenu, /pendingApprovals/);
+});
+
 test("l'agenda affiche le chronogramme sans inventer les affectations futures", () => {
   const agendaPage = readFileSync(new URL('../app/agenda/page.tsx', import.meta.url), 'utf8');
   const agendaData = readFileSync(new URL('../lib/eventAgenda.ts', import.meta.url), 'utf8');

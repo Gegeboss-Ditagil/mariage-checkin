@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.29.2] — 2026-08-31
+
+### Modifié
+- Navigation admin : hors `/dashboard`, Approbations quitte la barre du bas et reste dans le menu du compte en haut à droite, avec le badge des demandes en attente. La place libérée conserve un accès direct à Scan.
+- Sur `/dashboard` uniquement, la barre suit l'ordre demandé : Recherche, Plan, Scan au centre, Agenda, Approbations. Le badge reste visible à la fois sur cette pastille et dans le menu du compte.
+
+### Tests
+- Régression ajoutée pour la variante contextuelle du tableau de bord, le Scan central, l'absence d'Approbations dans la barre admin générale et le badge du menu du compte.
+
 ## [1.29.1] — 2026-08-31
 
 ### Corrigé

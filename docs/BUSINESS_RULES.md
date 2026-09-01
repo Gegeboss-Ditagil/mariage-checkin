@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.29.1**
+**Version documentaire : 1.29.2**
 **Dernière mise à jour : 2026-08-31**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -74,6 +74,8 @@ Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory
 Depuis le 31/08/2026 (v1.29.0), `/agenda` (capacité `viewAgenda`) est réservé à `admin` et `directeur`. La première phase est une lecture du chronogramme : les affectations nominatives, shifts et validations persistantes seront ajoutés seulement après réception des données opérationnelles complètes.
 
 ## Invité surprise avec approbation SMS/WhatsApp à distance (v1.27.0)
+
+- Navigation admin : Approbations est toujours dans le menu du compte. Elle apparaît aussi dans la barre du bas uniquement sur `/dashboard`, où Scan occupe le bouton central entre Recherche/Plan et Agenda/Approbations.
 
 Depuis le 30/08/2026, un placeur, un directeur de festin ou l'admin peut gérer un invité non prévu directement depuis `/scan`, avec une approbation à distance **avant** de le laisser entrer — capacité dédiée `guestApproval` (jamais agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement », demande explicite de Gersom).
 

@@ -1,4 +1,4 @@
-# Design QA — v1.29.1
+# Design QA — v1.29.2
 
 - Source visual truth: `Photo 1.jpg` (dashboard/navigation mobile) and `Photo 2.jpg` (Canva chronogram), supplied in the conversation.
 - Implementation screenshot: unavailable; the protected local routes redirect to login without a test session, and `/scan` additionally requires a real camera permission/device stream.
@@ -32,5 +32,6 @@ Not performed for the same blocker. The intended focused regions were the five-b
 - Verify 84 px navigation height and 72 px stats strip on iPhone, Android, iPad landscape and desktop.
 - Verify an approval card opens a large contained photo and remains operable by touch, keyboard and Escape.
 - Verify a full target table clearly disables arrived occupants, shows confirmation/arrival state and prevents assignment until enough movable places and a capable destination are selected.
+- Verify the admin dashboard bottom bar reads Recherche, Plan, central Scan, Agenda, Approbations; on every other admin page, Approbations is absent from the bottom bar and remains visible with its badge in the account menu.
 
 final result: blocked

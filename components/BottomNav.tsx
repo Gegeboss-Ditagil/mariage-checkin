@@ -46,13 +46,25 @@ const ITEMS: Record<string, NavItem[]> = {
   agent_checkin: SCAN_ONLY_ITEMS,
   visibilite: [...READ_ONLY_ITEMS, { href: '/approbations', label: 'Approbations', icon: ApprovalIcon }],
   admin: [
-    { href: '/scan', label: 'Scan', icon: ScanIcon },
-    { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/search', label: 'Recherche', icon: SearchIcon },
+    { href: '/plan-table', label: 'Plan', icon: GridIcon },
+    { href: '/scan', label: 'Scan', icon: ScanIcon },
+    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
     { href: '/agenda', label: 'Agenda', icon: StaffIcon },
-    { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
   ],
 };
+
+// Sur le tableau de bord admin seulement, Approbations descend dans la barre
+// du bas à la place de Bord (la page courante), avec Scan au centre. Partout
+// ailleurs, Approbations reste dans AccountMenu en haut à droite et Bord
+// redevient le raccourci latéral.
+const ADMIN_DASHBOARD_ITEMS: NavItem[] = [
+  { href: '/search', label: 'Recherche', icon: SearchIcon },
+  { href: '/plan-table', label: 'Plan', icon: GridIcon },
+  { href: '/scan', label: 'Scan', icon: ScanIcon },
+  { href: '/agenda', label: 'Agenda', icon: StaffIcon },
+  { href: '/approbations', label: 'Approbations', icon: ApprovalIcon },
+];
 
 // Bouton central surelevé : Scan pour la plupart des roles (leur action la
 // plus frequente), mais Tableau de bord pour le directeur de festin --
@@ -119,7 +131,8 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     return () => { active = false; window.clearInterval(timer); };
   }, [role]);
 
-  const items = (ITEMS[role] ?? ITEMS.agent_checkin).map((item) =>
+  const roleItems = role === 'admin' && pathname === '/dashboard' ? ADMIN_DASHBOARD_ITEMS : (ITEMS[role] ?? ITEMS.agent_checkin);
+  const items = roleItems.map((item) =>
     item.href === '/approbations' ? { ...item, badge: pendingCount } : item
   );
 

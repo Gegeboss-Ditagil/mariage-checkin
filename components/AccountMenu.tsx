@@ -29,6 +29,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   const { pref, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +45,20 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
       document.removeEventListener('pointerdown', closeOutside);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!hasCapability(role, 'viewGuestApprovals')) return;
+    let active = true;
+    const load = async () => {
+      const response = await fetch('/api/guest-approvals?count=pending').catch(() => null);
+      if (!response?.ok || !active) return;
+      const data = await response.json();
+      setPendingApprovals(data.pending_count || 0);
+    };
+    void load();
+    const timer = window.setInterval(load, 15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [role]);
 
   async function handleLogout() {
     if (typeof window !== 'undefined' && !window.confirm('Se déconnecter ?')) return;
@@ -93,7 +108,16 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
           </div>
 
           <div className="space-y-1 border-y border-hairline py-2">
-            {canGuestApproval && <Link role="menuitem" href="/approbations" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">📷 Approbations</Link>}
+            {canGuestApproval && (
+              <Link role="menuitem" href="/approbations" onClick={() => setOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">
+                <span>📷 Approbations</span>
+                {pendingApprovals > 0 && (
+                  <span className="min-w-5 rounded-full bg-status-over px-1.5 text-center text-[10px] font-bold leading-5 text-white">
+                    {pendingApprovals > 99 ? '99+' : pendingApprovals}
+                  </span>
+                )}
+              </Link>
+            )}
             {canHistory && <Link role="menuitem" href="/history" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">≡ Historique</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Administration</Link>}
             {!canGuestApproval && !canHistory && !canAdmin && <p className="px-3 py-2 text-xs text-text-faint">Aucun raccourci supplémentaire</p>}
