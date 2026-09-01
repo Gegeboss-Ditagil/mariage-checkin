@@ -99,8 +99,23 @@ test('la fenetre detaillee navigue entre les demandes et confirme clairement cha
   assert.match(approbationsPageSource, /Demande suivante/);
   assert.match(approbationsPageSource, /moveSelection\(-1\)/);
   assert.match(approbationsPageSource, /moveSelection\(1\)/);
-  assert.match(approbationsPageSource, /Parfait — demande approuvée/);
+  assert.match(approbationsPageSource, /Fait — approuvé sans table/);
   assert.match(approbationsPageSource, /Parfait — demande refusée/);
+  assert.match(approbationsPageSource, /Approuvé — Table/);
+  assert.match(approbationsPageSource, /Approuvé — sans table/);
+});
+
+test('la fiche approbation est remontee, structure ses informations et utilise des fleches iOS en verre', () => {
+  assert.match(approbationsPageSource, /items-start justify-center overflow-y-auto/);
+  assert.match(approbationsPageSource, /pt-\[max\(5\.5rem,env\(safe-area-inset-top\)\)\]/);
+  assert.match(approbationsPageSource, /ChevronLeftIcon/);
+  assert.match(approbationsPageSource, /ChevronRightIcon/);
+  assert.match(approbationsPageSource, /h-14 w-14/);
+  assert.match(approbationsPageSource, /backdrop-blur-2xl/);
+  assert.match(approbationsPageSource, />Nom<\/p>/);
+  assert.match(approbationsPageSource, />Invités<\/p>/);
+  assert.match(approbationsPageSource, />Demandé par<\/p>/);
+  assert.match(approbationsPageSource, />Placement<\/p>/);
 });
 
 test('texto et WhatsApp ne choisissent jamais la table; l assignation reste une action authentifiee separee', () => {

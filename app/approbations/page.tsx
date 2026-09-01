@@ -7,6 +7,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { PushNotificationButton } from '@/components/PushNotificationButton';
+import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
 
 interface ApprovalListItem {
   id: string;
@@ -35,6 +36,12 @@ const STATUS_BADGE: Record<ApprovalListItem['statut'], string> = {
   approuve: 'bg-status-complete text-white',
   refuse: 'bg-status-over text-white',
 };
+
+function placementLabel(request: ApprovalListItem) {
+  if (request.statut === 'refuse') return 'Refusé';
+  if (request.statut === 'en_attente') return 'En attente de décision';
+  return request.table_number ? `Approuvé — Table ${request.table_number}` : 'Approuvé — sans table';
+}
 
 // Sondage plutôt qu'un abonnement temps réel websocket -- guest_approval_requests
 // n'a volontairement aucune policy RLS anon (le token doit rester
@@ -85,7 +92,7 @@ export default function ApprobationsPage() {
     if (response.ok) {
       setActionFeedback(
         decision === 'approuve'
-          ? 'Parfait — demande approuvée. Elle est maintenant visible par les placeurs.'
+          ? 'Fait — approuvé sans table. La demande est maintenant visible par les placeurs.'
           : 'Parfait — demande refusée. La décision a bien été enregistrée.'
       );
       await load();
@@ -205,7 +212,7 @@ export default function ApprobationsPage() {
 
       {selectedRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:justify-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-3 pb-6 pt-[max(5.5rem,env(safe-area-inset-top))] backdrop-blur-sm sm:pt-[max(3rem,env(safe-area-inset-top))]"
           role="presentation"
           onClick={() => setSelectedId(null)}
         >
@@ -214,7 +221,7 @@ export default function ApprobationsPage() {
             aria-modal="true"
             aria-labelledby="approval-detail-title"
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface p-4 shadow-elev-2"
+            className="relative max-h-[calc(100dvh-6.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-surface/95 p-4 shadow-elev-2 backdrop-blur-2xl sm:max-h-[calc(100dvh-6rem)]"
           >
             {requests.length > 1 && (
               <>
@@ -222,17 +229,17 @@ export default function ApprobationsPage() {
                   type="button"
                   aria-label="Demande précédente"
                   onClick={() => moveSelection(-1)}
-                  className="fixed left-2 top-1/2 z-[60] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-surface text-4xl leading-none text-accent shadow-elev-2 sm:absolute sm:-left-16"
+                  className="fixed left-3 top-[46%] z-[60] flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-surface/80 text-accent shadow-elev-2 backdrop-blur-2xl transition-transform active:scale-90 sm:absolute sm:-left-16 sm:top-1/2"
                 >
-                  ‹
+                  <ChevronLeftIcon className="h-8 w-8" />
                 </button>
                 <button
                   type="button"
                   aria-label="Demande suivante"
                   onClick={() => moveSelection(1)}
-                  className="fixed right-2 top-1/2 z-[60] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-surface text-4xl leading-none text-accent shadow-elev-2 sm:absolute sm:-right-16"
+                  className="fixed right-3 top-[46%] z-[60] flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-surface/80 text-accent shadow-elev-2 backdrop-blur-2xl transition-transform active:scale-90 sm:absolute sm:-right-16 sm:top-1/2"
                 >
-                  ›
+                  <ChevronRightIcon className="h-8 w-8" />
                 </button>
               </>
             )}
@@ -261,14 +268,33 @@ export default function ApprobationsPage() {
                 Côté {selectedRequest.cote === 'Gege' ? 'Gégé' : 'Nelly'}
               </span>
               <span className={'rounded-full px-3 py-1 text-sm font-bold ' + STATUS_BADGE[selectedRequest.statut]}>
-                {STATUS_LABEL[selectedRequest.statut]}
+                {placementLabel(selectedRequest)}
               </span>
             </div>
 
-            <div className="mt-3 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-text-muted">
-              <p>{selectedRequest.nombre_invites} invité{selectedRequest.nombre_invites > 1 ? 's' : ''}</p>
-              {selectedRequest.requested_by_nom && <p>Demandé par {selectedRequest.requested_by_nom}</p>}
-              {selectedRequest.table_number && <p className="font-semibold text-status-complete">Table {selectedRequest.table_number} assignée</p>}
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-hairline bg-surface-2/70 p-2">
+              <div className="col-span-2 rounded-xl bg-surface px-3 py-2 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Nom</p>
+                <p className="mt-0.5 font-semibold text-text">{selectedRequest.nom_invite}</p>
+              </div>
+              <div className="rounded-xl bg-surface px-3 py-2 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Invités</p>
+                <p className="mt-0.5 font-semibold text-text">{selectedRequest.nombre_invites}</p>
+              </div>
+              <div className="rounded-xl bg-surface px-3 py-2 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Côté</p>
+                <p className="mt-0.5 font-semibold text-text">{selectedRequest.cote === 'Gege' ? 'Gégé' : 'Nelly'}</p>
+              </div>
+              <div className="rounded-xl bg-surface px-3 py-2 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Demandé par</p>
+                <p className="mt-0.5 truncate font-semibold text-text">{selectedRequest.requested_by_nom || 'Non indiqué'}</p>
+              </div>
+              <div className="rounded-xl bg-surface px-3 py-2 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Placement</p>
+                <p className={'mt-0.5 font-semibold ' + (selectedRequest.statut === 'approuve' ? 'text-status-complete' : 'text-text')}>
+                  {selectedRequest.table_number ? `Table ${selectedRequest.table_number}` : selectedRequest.statut === 'approuve' ? 'Sans table' : 'À déterminer'}
+                </p>
+              </div>
             </div>
 
             {actionFeedback && (

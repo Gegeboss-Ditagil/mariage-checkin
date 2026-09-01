@@ -9,9 +9,10 @@ Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.
 - En orientation paysage sur iPhone et iPad, le conteneur racine restait limité à `max-w-md` (environ 448 px). La navigation passait bien en bande verticale à droite, mais au bord de cette colonne étroite, laissant de larges bandes latérales inutilisées. Le shell occupe désormais toute la largeur en paysage tout en conservant la colonne mobile centrée en portrait ; la navigation reste fixée à droite avec ses grandes cibles tactiles.
 - Sur `/dashboard`, la flèche Retour des comptes `admin` et `directeur` ouvre désormais explicitement l'accueil `/`. L'exception évite que la règle générale « admin retourne au dashboard » ne transforme ce bouton en boucle vers la page déjà affichée.
 - Lors d'une sélection multiple sur une table, le dock « Transférer / Échanger » remonte au-dessus du bord inférieur et adopte un verre translucide inspiré d'iOS (flou, reflet intérieur, coins généreux), avec deux boutons mieux détachés dans les thèmes clair et sombre.
+- La fiche détaillée d'une approbation remonte maintenant près du haut de l'écran. Ses flèches précédente/suivante deviennent de grandes commandes flottantes en verre iOS avec de vraies icônes, et son ancien bloc de texte est remplacé par des champs lisibles « Nom / Invités / Côté / Demandé par / Placement ». Après décision, le statut distingue explicitement « Approuvé — sans table » et « Approuvé — Table X ».
 
 ### Tests
-- `tests/navigation-resilience.test.ts` vérifie maintenant conjointement la navigation verticale à droite et la suppression explicite de la largeur maximale du shell en paysage.
+- `tests/navigation-resilience.test.ts` vérifie maintenant conjointement la navigation verticale à droite et la suppression explicite de la largeur maximale du shell en paysage. `tests/guest-approvals.test.ts` couvre la position remontée, les champs structurés, les flèches en verre et les deux libellés d'approbation avec/sans table.
 
 ## [1.29.4] — 2026-09-01
 
