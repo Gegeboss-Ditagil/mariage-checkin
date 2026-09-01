@@ -1,7 +1,7 @@
 # Check-in Mariage Nelly & Gersom
 
 **Version actuelle : 1.29.2**
-**Dernière mise à jour documentaire : 2026-08-31**
+**Dernière mise à jour documentaire : 2026-09-01**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
@@ -24,6 +24,16 @@ Avant toute modification, lire :
 8. `docs/QA_SCENARIOS.md` — contrôles avant merge.
 9. `DEPLOIEMENT.md` — déploiement et récupération après mise à jour.
 10. `ASSIGNATION_TABLES.md` — logique et état du plan de table.
+
+## Transmission rapide à Claude AI
+
+- Branche de production : `main`; version courante documentée : **1.29.2**.
+- Derniers lots fonctionnels : `e37eb7b` (approbations détaillées, placement strict, notifications placeurs) puis `006ce76` (navigation admin contextuelle).
+- Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
+- Ne jamais appliquer un ancien diff aveuglément : récupérer `origin/main`, comparer les fichiers réels et conserver tout changement plus récent.
+- Les permissions sont centralisées dans `lib/permissions.ts`; les capacités doivent être vérifiées à la fois dans l'interface et dans chaque route API.
+- Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
+- Instructions détaillées de reprise : `CLAUDE.md`.
 
 ## État fonctionnel v1.29.2
 
