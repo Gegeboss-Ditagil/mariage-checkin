@@ -5,7 +5,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'reviewGuestApproval')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  // Les placeurs doivent pouvoir s'abonner pour recevoir l'assignation apres
+  // la décision, même s'ils n'ont pas le droit d'approuver/refuser.
+  if (!user || !hasCapability(user.role, 'viewGuestApprovals')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const subscription = await req.json().catch(() => null);
   const endpoint = subscription?.endpoint;
   const p256dh = subscription?.keys?.p256dh;

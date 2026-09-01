@@ -53,8 +53,17 @@ export default function ApprobationsPage() {
   const [loading, setLoading] = useState(true);
   const [decidingId, setDecidingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   const selectedRequest = requests.find((request) => request.id === selectedId) || null;
+  const selectedIndex = selectedRequest ? requests.findIndex((request) => request.id === selectedRequest.id) : -1;
+
+  function moveSelection(delta: number) {
+    if (requests.length < 2 || selectedIndex < 0) return;
+    const nextIndex = (selectedIndex + delta + requests.length) % requests.length;
+    setActionFeedback(null);
+    setSelectedId(requests[nextIndex].id);
+  }
 
   async function load() {
     const res = await fetch('/api/guest-approvals');
@@ -67,12 +76,22 @@ export default function ApprobationsPage() {
 
   async function decide(id: string, decision: 'approuve' | 'refuse') {
     setDecidingId(id);
+    setActionFeedback(null);
     const response = await fetch(`/api/guest-approvals/${id}/decide`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ decision }),
     });
-    if (response.ok) await load();
+    if (response.ok) {
+      setActionFeedback(
+        decision === 'approuve'
+          ? 'Parfait — demande approuvée. Elle est maintenant visible par les placeurs.'
+          : 'Parfait — demande refusée. La décision a bien été enregistrée.'
+      );
+      await load();
+    } else {
+      setActionFeedback('La demande a déjà été traitée ou une erreur réseau est survenue.');
+    }
     setDecidingId(null);
   }
 
@@ -83,7 +102,12 @@ export default function ApprobationsPage() {
       if (!active) return;
       if (res.ok) {
         const data = await res.json();
-        setRequests(data.requests || []);
+        const loadedRequests = data.requests || [];
+        setRequests(loadedRequests);
+        const requestedId = new URLSearchParams(window.location.search).get('request');
+        if (requestedId && loadedRequests.some((request: ApprovalListItem) => request.id === requestedId)) {
+          setSelectedId(requestedId);
+        }
       }
       setLoading(false);
     }
@@ -99,10 +123,12 @@ export default function ApprobationsPage() {
     if (!selectedId) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSelectedId(null);
+      if (event.key === 'ArrowLeft') moveSelection(-1);
+      if (event.key === 'ArrowRight') moveSelection(1);
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [selectedId]);
+  }, [selectedId, selectedIndex, requests.length]);
 
   if (role && !hasCapability(role, 'viewGuestApprovals')) {
     return (
@@ -122,7 +148,7 @@ export default function ApprobationsPage() {
         <TopBar title="Approbations" backHref="/scan" />
 
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-          {role && hasCapability(role, 'reviewGuestApproval') && <PushNotificationButton />}
+          {role && hasCapability(role, 'viewGuestApprovals') && <PushNotificationButton />}
           {loading && <p className="text-center text-text-faint">Chargement…</p>}
           {!loading && requests.length === 0 && (
             <p className="text-center text-text-faint">Aucune demande d'invité surprise pour l'instant.</p>
@@ -134,10 +160,11 @@ export default function ApprobationsPage() {
               role="button"
               tabIndex={0}
               aria-label={'Ouvrir la demande de ' + r.nom_invite}
-              onClick={() => setSelectedId(r.id)}
+              onClick={() => { setActionFeedback(null); setSelectedId(r.id); }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
+                  setActionFeedback(null);
                   setSelectedId(r.id);
                 }
               }}
@@ -162,12 +189,6 @@ export default function ApprobationsPage() {
                   {r.requested_by_nom ? ' · demandé par ' + r.requested_by_nom : ''}
                   {r.decided_via ? ' · via ' + (r.decided_via === 'whatsapp' ? 'WhatsApp' : r.decided_via === 'app' ? "l'application" : 'lien web') : ''}
                 </p>
-                {r.statut === 'en_attente' && role && hasCapability(role, 'reviewGuestApproval') && (
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <button type="button" disabled={decidingId === r.id} onClick={(event) => { event.stopPropagation(); void decide(r.id, 'approuve'); }} className="rounded-xl bg-status-complete px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Approuver</button>
-                    <button type="button" disabled={decidingId === r.id} onClick={(event) => { event.stopPropagation(); void decide(r.id, 'refuse'); }} className="rounded-xl bg-status-over px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Refuser</button>
-                  </div>
-                )}
                 {r.table_number ? (
                   <p className="mt-1 text-xs font-semibold text-status-complete">Table {r.table_number} assignée</p>
                 ) : r.statut === 'approuve' && role && hasCapability(role, 'assignGuestApproval') ? (
@@ -193,8 +214,28 @@ export default function ApprobationsPage() {
             aria-modal="true"
             aria-labelledby="approval-detail-title"
             onClick={(event) => event.stopPropagation()}
-            className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface p-4 shadow-elev-2"
+            className="relative max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface p-4 shadow-elev-2"
           >
+            {requests.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Demande précédente"
+                  onClick={() => moveSelection(-1)}
+                  className="fixed left-2 top-1/2 z-[60] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-surface text-4xl leading-none text-accent shadow-elev-2 sm:absolute sm:-left-16"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  aria-label="Demande suivante"
+                  onClick={() => moveSelection(1)}
+                  className="fixed right-2 top-1/2 z-[60] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-hairline bg-surface text-4xl leading-none text-accent shadow-elev-2 sm:absolute sm:-right-16"
+                >
+                  ›
+                </button>
+              </>
+            )}
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">Demande d'approbation</p>
@@ -230,6 +271,12 @@ export default function ApprobationsPage() {
               {selectedRequest.table_number && <p className="font-semibold text-status-complete">Table {selectedRequest.table_number} assignée</p>}
             </div>
 
+            {actionFeedback && (
+              <p className="mt-4 rounded-2xl bg-accent-tint px-4 py-3 text-sm font-semibold text-accent" role="status">
+                {actionFeedback}
+              </p>
+            )}
+
             {selectedRequest.statut === 'en_attente' && role && hasCapability(role, 'reviewGuestApproval') && (
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="min-h-12 rounded-xl bg-status-complete px-4 py-3 font-bold text-white disabled:opacity-50">Approuver</button>
@@ -239,13 +286,13 @@ export default function ApprobationsPage() {
 
             {selectedRequest.statut === 'approuve' && !selectedRequest.table_id && role && hasCapability(role, 'assignGuestApproval') && (
               <div className="mt-4 space-y-2">
-                <p className="text-sm font-semibold">Qui doit attribuer la table ?</p>
+                <p className="text-sm font-semibold">Souhaitez-vous aussi assigner une table ?</p>
                 <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="btn-primary block w-full text-center">
-                  Choisir la table moi-même
+                  Oui — voir les recommandations
                 </Link>
                 {role !== 'placeur' && (
                   <button type="button" onClick={() => setSelectedId(null)} className="btn-secondary w-full">
-                    Laisser le placeur l'assigner
+                    Non — laisser le placeur l'assigner
                   </button>
                 )}
                 <p className="text-xs text-text-faint">

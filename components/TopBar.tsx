@@ -16,7 +16,9 @@ export function TopBar({
   onTitleClick?: () => void;
 }) {
   const role = useSessionRole();
-  const effectiveBackHref = role === 'admin' && backHref === '/scan' ? '/dashboard' : backHref;
+  // Pour les comptes de supervision (admin et visibilite), Retour ramene
+  // toujours au tableau de bord, quel que soit l'ecran operationnel ouvert.
+  const effectiveBackHref = backHref && (role === 'admin' || role === 'visibilite') ? '/dashboard' : backHref;
   return (
     <header className="sticky top-0 z-10 bg-glass backdrop-blur border-b border-hairline">
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-1">

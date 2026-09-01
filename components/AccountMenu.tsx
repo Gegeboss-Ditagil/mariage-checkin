@@ -30,6 +30,8 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [pendingApprovals, setPendingApprovals] = useState(0);
+  const [approvalAlert, setApprovalAlert] = useState<{ id: string; name: string } | null>(null);
+  const previousPendingRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,10 +55,16 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
       const response = await fetch('/api/guest-approvals?count=pending').catch(() => null);
       if (!response?.ok || !active) return;
       const data = await response.json();
-      setPendingApprovals(data.pending_count || 0);
+      const nextCount = data.pending_count || 0;
+      if (previousPendingRef.current !== null && nextCount > previousPendingRef.current && data.latest?.id) {
+        setApprovalAlert({ id: data.latest.id, name: data.latest.nom_invite || 'Nouvel invité' });
+        window.setTimeout(() => setApprovalAlert(null), 8000);
+      }
+      previousPendingRef.current = nextCount;
+      setPendingApprovals(nextCount);
     };
     void load();
-    const timer = window.setInterval(load, 15000);
+    const timer = window.setInterval(load, 5000);
     return () => { active = false; window.clearInterval(timer); };
   }, [role]);
 
@@ -75,6 +83,16 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
 
   return (
     <div ref={containerRef} className={floating ? 'fixed right-4 top-4 z-30' : 'relative z-30'}>
+      {approvalAlert && (
+        <Link
+          href={'/approbations?request=' + approvalAlert.id}
+          onClick={() => setApprovalAlert(null)}
+          className="fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-surface px-4 py-3 text-sm shadow-elev-2"
+        >
+          <span><strong>Nouvelle approbation</strong><span className="block truncate text-text-muted">{approvalAlert.name}</span></span>
+          <span className="font-semibold text-accent">Ouvrir</span>
+        </Link>
+      )}
       <button type="button" onClick={() => setOpen((value) => !value)} aria-haspopup="menu" aria-expanded={open} aria-label="Ouvrir le menu du compte" className="flex h-11 w-11 items-center justify-center rounded-full border border-hairline bg-glass text-xs font-bold text-accent shadow-card backdrop-blur active:scale-[0.95] transition-transform">
         {initials(name)}
       </button>
