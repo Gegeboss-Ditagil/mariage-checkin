@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs';
 // que les autres tests de ce dossier (voir floor-plan.test.ts) --
 // inspection du code source plutot qu'import direct dans node:test.
 const panelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
+const ensureRouteSource = readFileSync(new URL('../app/api/members/ensure/route.ts', import.meta.url), 'utf8');
+const ensureMigrationSource = readFileSync(new URL('../supabase/migrations/0040_repair_missing_invitation_members.sql', import.meta.url), 'utf8');
 const checkinSource = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
 const migrationSource = readFileSync(
   new URL('../supabase/migrations/0029_guest_arrival_status.sql', import.meta.url),
@@ -106,7 +108,24 @@ test('"+ Invité supplémentaire" est un ajout NOMME (add-unplanned), pas un +1 
 
 test('GuestArrivalPanel se base sur members.length (pas nombre_prevu) pour decider s\'il affiche la liste', () => {
   assert.match(panelSource, /const visible = members\.length > 0;/);
-  assert.doesNotMatch(panelSource, /invitation\.nombre_prevu/);
+  assert.doesNotMatch(panelSource, /const visible = invitation\.nombre_prevu/);
+});
+
+test('une ancienne invitation avec compteur agrege retrouve automatiquement ses lignes nominatives et les boutons individuels', () => {
+  assert.match(panelSource, /Math\.max\(invitation\.nombre_prevu, invitation\.nombre_arrive, 1\)/);
+  assert.match(panelSource, /fetch\('\/api\/members\/ensure'/);
+  assert.match(ensureRouteSource, /hasCapability\(user\.role, 'manageMembers'\)/);
+  assert.match(ensureMigrationSource, /create or replace function ensure_invitation_member_rows/);
+  assert.match(ensureMigrationSource, /greatest\(v_inv\.nombre_prevu, v_inv\.nombre_arrive, 1\)/);
+  assert.match(ensureMigrationSource, /Accompagnant à nommer/);
+  assert.match(ensureMigrationSource, /returns invitations/);
+});
+
+test('un accompagnant non prevu doit avoir un nom avant le placement direct', () => {
+  const route = readFileSync(new URL('../app/api/members/add-unplanned/route.ts', import.meta.url), 'utf8');
+  assert.match(route, /Le nom de l’invité est requis/);
+  assert.match(checkinSource, /placeholder="Prénom"/);
+  assert.match(checkinSource, /openOverflowFlow\(exc\)/);
 });
 
 test('le parent n\'est prevenu de la visibilite qu\'une fois chargement ET materialisation stabilises (pas de flash "ancien compteur")', () => {

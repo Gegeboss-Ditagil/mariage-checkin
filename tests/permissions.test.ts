@@ -94,17 +94,20 @@ test('agent scan ne peut pas fusionner deux invitations (mais peut renommer)', (
   assert.equal(canAccessPath('agent_checkin', '/api/invitations/rename'), true);
 });
 
-test('les operations sensibles sont reservees a admin sans bloquer les deplacements de table', () => {
+test('les operations sensibles restent centralisees; le directeur peut gerer les etiquettes', () => {
   // Retire le 23/08/2026 sur demande explicite de Gersom : ce role est la
   // pour scanner/checker, pas pour reclassifier les invites (cote, roles
   // staff, notable...). manageMembers (renommer, gerer les membres du
   // groupe) reste inchange pour ce role.
-  for (const capability of ['manageTags', 'mergeInvitations', 'addInvitation'] as const) {
+  for (const capability of ['mergeInvitations', 'addInvitation'] as const) {
     assert.equal(hasCapability('admin', capability), true);
     for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
       assert.equal(hasCapability(role, capability), false, role + ' ne doit pas avoir ' + capability);
     }
   }
+  assert.equal(hasCapability('admin', 'manageTags'), true);
+  assert.equal(hasCapability('directeur', 'manageTags'), true);
+  for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) assert.equal(hasCapability(role, 'manageTags'), false);
   assert.equal(hasCapability('agent_checkin', 'manageMembers'), true);
   assert.equal(hasCapability('directeur', 'moveGuests'), true);
   assert.equal(hasCapability('placeur', 'moveGuests'), true);

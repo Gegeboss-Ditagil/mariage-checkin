@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
+import { InvitationRow, TableRow, OverflowAssignmentRow, PLACEMENT_LABELS } from '@/lib/types';
 import { CounterStepper } from '@/components/CounterStepper';
 import { TopBar } from '@/components/TopBar';
 import { proposeReserveTable } from '@/lib/overflow';
@@ -816,6 +816,18 @@ export default function CheckinPage() {
           {invitation.ne_viendra_pas && (
             <p className="text-sm font-semibold text-status-over">Marqué "ne viendra pas"</p>
           )}
+        </div>
+
+        <div className="card mb-4 flex flex-wrap items-center justify-center gap-2 py-3">
+          {invitation.notes?.toLowerCase().includes('approuvé') && (
+            <span className="rounded-full bg-status-complete/15 px-3 py-1 text-xs font-bold text-status-complete">✓ Invitation approuvée</span>
+          )}
+          <span className="rounded-full bg-accent-tint px-3 py-1 text-xs font-bold text-accent">
+            Placement {PLACEMENT_LABELS[invitation.placement_status].toLowerCase()}
+          </span>
+          <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-text-muted">
+            {invitation.nombre_arrive > 0 ? `${invitation.nombre_arrive} arrivé${invitation.nombre_arrive > 1 ? 's' : ''}` : 'Non arrivé'}
+          </span>
         </div>
 
         {canRename && renaming && (

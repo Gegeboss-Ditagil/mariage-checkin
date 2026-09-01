@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.30.1] — 2026-09-01
+
+### Corrigé
+- `/checkin/[invitationId]` répare automatiquement les anciennes invitations dont `nombre_prevu`/`nombre_arrive` existe sans liste nominative complète. Les lignes manquantes réapparaissent sans changer les totaux, avec le nom principal puis « Accompagnant à nommer », et les boutons individuels ✓/X remplacent de nouveau l’ancien compteur agrégé.
+- La fiche rappelle désormais visiblement « Invitation approuvée », le statut de placement Confirmée/Provisoire et le nombre arrivé.
+- L’ajout d’un accompagnant non prévu exige désormais son nom, hérite de l’invitation et passe directement au placement de l’excédent (priorité réserve/table 41), sans nouvelle demande d’approbation.
+- La gestion des étiquettes est ouverte au `directeur` en plus de l’admin. Placeurs et agents scan voient les étiquettes mais ne peuvent ni en ajouter ni en retirer.
+
+### Base de données
+- Migration `0040_repair_missing_invitation_members.sql` : fonction idempotente `ensure_invitation_member_rows`, sans modification des compteurs agrégés.
+
+### Tests
+- Régressions ajoutées pour la réparation nominative, l’exigence du nom et la nouvelle matrice `manageTags`.
+
 ## [1.30.0] — 2026-09-01
 
 ### Ajouté

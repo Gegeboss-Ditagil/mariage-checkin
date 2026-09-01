@@ -63,7 +63,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // le 23/08/2026 : "c'est au directeur de festin, les autres n'ont pas
   // besoin d'appeler les gens". Retire de OPERATIONAL_CAPABILITIES pour ne
   // pas le donner implicitement a placeur/agent_checkin.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval'],
   placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.

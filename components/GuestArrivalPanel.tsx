@@ -85,27 +85,32 @@ export function GuestArrivalPanel({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const list = await load();
-      if (cancelled || list.length > 0) return;
+      let list = await load();
+      if (cancelled) return;
       const draft = parseMembersFromNotes(invitation.notes);
-      if (draft.length === 0) return;
-      setInitializing(true);
-      try {
+      // Préserve en priorité les vrais noms importés dans "Membres: ...".
+      // La réparation générique ci-dessous ne sert qu'aux lignes encore
+      // manquantes après cette matérialisation.
+      if (list.length === 0 && draft.length > 0 && canManage) {
+        setInitializing(true);
         await fetch('/api/members/initialize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            invitation_id: invitation.id,
-            members: draft.map((m) => ({ prenom: m.prenom.trim() || null, nom: m.nom.trim() || null })),
-          }),
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invitation_id: invitation.id, members: draft.map((m) => ({ prenom: m.prenom.trim() || null, nom: m.nom.trim() || null })) }),
         });
-        // already_initialized (409) possible si un autre agent vient de le
-        // faire en meme temps -- pas une erreur, load() ci-dessous recupere
-        // de toute facon la liste reelle dans les deux cas.
-        if (!cancelled) await load();
-      } finally {
-        if (!cancelled) setInitializing(false);
+        if (!cancelled) list = await load();
       }
+      const expectedRows = Math.max(invitation.nombre_prevu, invitation.nombre_arrive, 1);
+      // Régression v1.30.1 : certains anciens groupes ont un compteur agrégé
+      // mais aucune (ou trop peu de) lignes nominatives. Complète les lignes
+      // manquantes sans modifier les totaux, puis affiche immédiatement ✓/X.
+      if (list.length < expectedRows && canManage) {
+        await fetch('/api/members/ensure', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invitation_id: invitation.id }),
+        });
+        if (!cancelled) list = await load();
+      }
+      if (!cancelled) setInitializing(false);
     })();
     const supabase = createClient();
     const channel = supabase

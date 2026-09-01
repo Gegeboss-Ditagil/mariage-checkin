@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { invitation_id, prenom, nom } = await req.json().catch(() => ({}));
-  if (!invitation_id) {
-    return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 });
+  if (!invitation_id || (!String(prenom || '').trim() && !String(nom || '').trim())) {
+    return NextResponse.json({ error: "Le nom de l’invité est requis" }, { status: 400 });
   }
 
   const supabase = createAdminClient();
