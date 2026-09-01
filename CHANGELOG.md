@@ -8,6 +8,7 @@ Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.
 ### Corrigé
 - En orientation paysage sur iPhone et iPad, le conteneur racine restait limité à `max-w-md` (environ 448 px). La navigation passait bien en bande verticale à droite, mais au bord de cette colonne étroite, laissant de larges bandes latérales inutilisées. Le shell occupe désormais toute la largeur en paysage tout en conservant la colonne mobile centrée en portrait ; la navigation reste fixée à droite avec ses grandes cibles tactiles.
 - Sur `/dashboard`, la flèche Retour des comptes `admin` et `directeur` ouvre désormais explicitement l'accueil `/`. L'exception évite que la règle générale « admin retourne au dashboard » ne transforme ce bouton en boucle vers la page déjà affichée.
+- Lors d'une sélection multiple sur une table, le dock « Transférer / Échanger » remonte au-dessus du bord inférieur et adopte un verre translucide inspiré d'iOS (flou, reflet intérieur, coins généreux), avec deux boutons mieux détachés dans les thèmes clair et sombre.
 
 ### Tests
 - `tests/navigation-resilience.test.ts` vérifie maintenant conjointement la navigation verticale à droite et la suppression explicite de la largeur maximale du shell en paysage.

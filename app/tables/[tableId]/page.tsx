@@ -367,7 +367,7 @@ function TableDetailInner() {
       </div>
 
       {selectMode && selectedIds.size > 0 && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-hairline bg-surface px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+        <div className="selection-action-dock">
           <p className="mb-2 text-center text-sm font-semibold text-text-muted">
             {selectedIds.size} invitation{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
           </p>
@@ -385,10 +385,10 @@ function TableDetailInner() {
             </button>
           ) : (
             <div className="flex gap-2">
-              <button type="button" className="btn-secondary flex-1" onClick={lancerTransfert}>
+              <button type="button" className="selection-action-button" onClick={lancerTransfert}>
                 ⇄ Transférer
               </button>
-              <button type="button" className="btn-secondary flex-1" onClick={lancerEchange}>
+              <button type="button" className="selection-action-button" onClick={lancerEchange}>
                 ⇋ Échanger
               </button>
             </div>

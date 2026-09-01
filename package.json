@@ -20,6 +20,7 @@
     "test:theme": "node --test tests/theme-preference.test.ts",
     "test:listecote": "node --test tests/dashboard-liste-cote-filter.test.ts",
     "test:guestapprovals": "node --test tests/guest-approvals.test.ts",
+    "test:tableactions": "node --test tests/table-selection-actions.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"
   },
