@@ -125,9 +125,9 @@ export default function ScanPage() {
     <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
       <div className="flex flex-1 flex-col overflow-hidden">
         <UserMenu />
-        {/* Bloc compacte (moins de marge, camera moins haute) pour que tout
-            tienne sur un seul ecran sans defiler, y compris sur un iPhone SE
-            -- demande explicite de Gersom le 23/08/2026. Boutons de
+        {/* La caméra utilise désormais la hauteur disponible du viewport au
+            lieu d'un ratio horizontal trop petit. Le conteneur reste
+            défilable sur les téléphones très courts. Boutons de
             navigation dupliques (Rechercher/Plan/Bord/Staff) retires le
             30/08/2026 au profit de la barre du bas partagee (BottomNav,
             maquette Atrium/Maison) : en plus d'etre coherent avec le reste de
@@ -143,7 +143,7 @@ export default function ScanPage() {
             {roleReady ? (
               <QrScanner ref={scannerRef} onScan={handleScan} />
             ) : (
-              <div className="flex aspect-[3/2] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
+              <div className="flex h-[clamp(340px,55dvh,680px)] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
                 Chargement…
               </div>
             )}

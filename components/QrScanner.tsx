@@ -85,7 +85,13 @@ export const QrScanner = forwardRef<QrScannerHandle, { onScan: (text: string) =>
       try {
         await scanner.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 260, height: 260 } },
+          {
+            fps: 10,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const size = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.72);
+              return { width: size, height: size };
+            },
+          },
           (decodedText) => {
             const now = Date.now();
             // Anti-doublon : ignore le meme code scanne deux fois en < 2s
@@ -142,11 +148,16 @@ export const QrScanner = forwardRef<QrScannerHandle, { onScan: (text: string) =>
 
   return (
     <div className="overflow-hidden rounded-xl2 bg-black">
-      {/* Ratio 3/2 (plutot que carre) : demande de Gersom le 23/08/2026,
-          pour que /scan tienne entierement sur un ecran sans defiler --
-          html5-qrcode dimensionne la video sur ce conteneur, quel que soit
-          son ratio, le scan reste fonctionnel. */}
-      <div id={elementId} ref={containerRef} className="aspect-[3/2] w-full" />
+      {/* Hauteur pilotée par le viewport plutôt que par la largeur : le ratio
+          3/2 historique écrasait la caméra à environ 360 px sur un grand
+          iPhone et laissait la moitié de l'écran vide. clamp garde une zone
+          utile sur iPhone SE, remplit les grands iPhone/Android/iPad sans
+          devenir démesurée, et le parent peut toujours défiler au besoin. */}
+      <div
+        id={elementId}
+        ref={containerRef}
+        className="h-[clamp(340px,55dvh,680px)] w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+      />
       {error && (
         <div className="space-y-3 p-4 text-center">
           <p className="text-sm text-white">{ERROR_MESSAGES[error]}</p>

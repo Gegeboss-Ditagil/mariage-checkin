@@ -1,11 +1,11 @@
-# Design QA — v1.29.2
+# Design QA — v1.29.3
 
-- Source visual truth: `Photo 1.jpg` (dashboard/navigation mobile) and `Photo 2.jpg` (Canva chronogram), supplied in the conversation.
+- Source visual truth: the supplied iPhone `/scan` screenshot showing the camera compressed to roughly 360 px high with a large empty region below.
 - Implementation screenshot: unavailable; the protected local routes redirect to login without a test session, and `/scan` additionally requires a real camera permission/device stream.
 - Viewports requested: iPhone portrait, Android portrait, iPad/landscape, desktop.
 - Source dimensions: Photo 1 = 556 × 1280 px; Photo 2 = 590 × 1280 px.
 - CSS viewport/density normalization: not available because an authenticated rendered capture could not be obtained.
-- State: admin/directeur authenticated dashboard, agenda, scan/photo, approval modal and capacity-reorganization states.
+- State: authenticated admin `/scan`, camera authorized, portrait iPhone.
 
 ## Full-view comparison evidence
 
@@ -33,5 +33,6 @@ Not performed for the same blocker. The intended focused regions were the five-b
 - Verify an approval card opens a large contained photo and remains operable by touch, keyboard and Escape.
 - Verify a full target table clearly disables arrived occupants, shows confirmation/arrival state and prevents assignment until enough movable places and a capable destination are selected.
 - Verify the admin dashboard bottom bar reads Recherche, Plan, central Scan, Agenda, Approbations; on every other admin page, Approbations is absent from the bottom bar and remains visible with its badge in the account menu.
+- Verify the camera grows to approximately 55% of the viewport on a modern iPhone, remains usable on iPhone SE and never exceeds 680 px on iPad/desktop.
 
 final result: blocked

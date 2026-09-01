@@ -76,6 +76,13 @@ test('la barre de navigation "verre liquide" a un contraste et des cibles plus g
   assert.match(bottomNav, /backdrop-blur-2xl/);
 });
 
+test('la camera du scanner utilise la hauteur du viewport au lieu du petit ratio horizontal 3/2', () => {
+  assert.match(scanner, /h-\[clamp\(340px,55dvh,680px\)\]/);
+  assert.match(scanner, /\[&_video\]:object-cover/);
+  assert.match(scanner, /qrbox: \(viewfinderWidth, viewfinderHeight\)/);
+  assert.doesNotMatch(scanner, /aspect-\[3\/2\]/);
+});
+
 test("le retour admin remplace /scan par /dashboard sans modifier les autres roles", () => {
   assert.match(topBar, /role === 'admin' && backHref === '\/scan' \? '\/dashboard' : backHref/);
   assert.match(topBar, /href=\{effectiveBackHref\}/);

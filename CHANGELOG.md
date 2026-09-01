@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.29.3] — 2026-09-01
+
+### Corrigé
+- `/scan` : la caméra était encore forcée au ratio horizontal `3/2`, soit environ 360 px de haut sur la capture d'un grand iPhone, avec une large moitié d'écran vide. Sa hauteur suit désormais le viewport avec `clamp(340px, 55dvh, 680px)` : compacte sur iPhone SE, nettement plus grande sur iPhone/Android modernes et plafonnée sur iPad/ordinateur.
+- Le `<video>` remplit ce conteneur avec `object-cover` et le cadre QR est calculé proportionnellement à la largeur/hauteur réellement disponibles au lieu d'être figé à 260 px.
+
+### Tests
+- Régression ajoutée contre le retour du ratio `aspect-[3/2]`, avec garde-fous sur la hauteur responsive, le recadrage vidéo et le cadre QR dynamique.
+
 ## [1.29.2] — 2026-08-31
 
 ### Modifié
