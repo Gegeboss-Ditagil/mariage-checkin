@@ -79,7 +79,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           composant n'existe et etre perdu definitivement pour cette visite.
         */}
         <InstallAppButton />
-        <div className="mx-auto min-h-dvh max-w-md safe-top safe-bottom">{children}</div>
+        {/*
+          Portrait : conserve la colonne mobile centree historique.
+          Paysage (iPhone tourne/iPad) : retire max-w-md pour que l'ecran
+          applicatif occupe toute la largeur disponible. Sans cette bascule,
+          BottomNav devenait bien vertical a droite... mais au bord d'une
+          colonne de 448 px, laissant deux grandes bandes laterales sur iPad.
+        */}
+        <div className="mx-auto min-h-dvh w-full max-w-md safe-top safe-bottom landscape:max-w-none">{children}</div>
       </body>
     </html>
   );

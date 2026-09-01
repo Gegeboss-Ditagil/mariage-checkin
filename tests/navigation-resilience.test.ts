@@ -11,6 +11,7 @@ const scanner = readFileSync(new URL('../components/QrScanner.tsx', import.meta.
 const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
 const topBar = readFileSync(new URL('../components/TopBar.tsx', import.meta.url), 'utf8');
 const approvalShortcut = readFileSync(new URL('../components/GuestApprovalsShortcut.tsx', import.meta.url), 'utf8');
+const rootLayout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
 
 // Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
@@ -133,6 +134,11 @@ test('la barre de navigation devient une bande verticale au bord droit en paysag
   // Le bouton central se souleve vers le contenu (gauche) plutot que vers le
   // haut quand la barre devient verticale.
   assert.match(bottomNav, /landscape:-ml-6/);
+  // Le shell racine etait encore bloque a max-w-md : sur iPad, la barre
+  // verticale se placait a droite d'une colonne etroite et laissait de
+  // larges bandes noires sur les cotes. Le portrait reste borne, mais le
+  // paysage doit explicitement lever cette largeur maximale.
+  assert.match(rootLayout, /w-full max-w-md[^"]*landscape:max-w-none/);
 
   for (const relPath of LANDSCAPE_SHELL_PAGES) {
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');

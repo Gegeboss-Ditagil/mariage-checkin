@@ -3,6 +3,14 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.29.5] — 2026-09-01
+
+### Corrigé
+- En orientation paysage sur iPhone et iPad, le conteneur racine restait limité à `max-w-md` (environ 448 px). La navigation passait bien en bande verticale à droite, mais au bord de cette colonne étroite, laissant de larges bandes latérales inutilisées. Le shell occupe désormais toute la largeur en paysage tout en conservant la colonne mobile centrée en portrait ; la navigation reste fixée à droite avec ses grandes cibles tactiles.
+
+### Tests
+- `tests/navigation-resilience.test.ts` vérifie maintenant conjointement la navigation verticale à droite et la suppression explicite de la largeur maximale du shell en paysage.
+
 ## [1.29.4] — 2026-09-01
 
 ### Modifié
