@@ -1,22 +1,65 @@
 'use client';
 
-import Link from 'next/link';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { BottomNav } from '@/components/BottomNav';
 import { TopBar } from '@/components/TopBar';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { EVENT_AGENDA } from '@/lib/eventAgenda';
+
+type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
+type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; completed: boolean };
 
 export default function AgendaPage() {
   const role = useSessionRole();
+  const [items, setItems] = useState<AgendaItem[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AgendaItem | null>(null);
+  const [insertAt, setInsertAt] = useState<number | null>(null);
+  const canManage = hasCapability(role, 'manageAgenda');
 
-  if (role && !hasCapability(role, 'viewAgenda')) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-6 text-center">
-        <p className="text-sm text-text-muted">Agenda réservé aux administrateurs et directeurs de festin.</p>
-      </div>
-    );
+  const load = useCallback(async () => {
+    const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
+    if (!response?.ok) {
+      setError("L’agenda partagé n’est pas encore installé en base. Appliquez la migration 0039.");
+      setLoading(false);
+      return;
+    }
+    const data = await response.json();
+    setItems(data.items || []);
+    setPeople(data.people || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(load, 10000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
+
+  async function patchItem(id: string, updates: Record<string, unknown>) {
+    const response = await fetch('/api/agenda', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) });
+    const data = await response.json();
+    if (!response.ok) return setError(data.error || 'Modification impossible');
+    setItems((current) => current.map((item) => item.id === id ? data.item : item).sort((a, b) => a.sort_order - b.sort_order));
   }
+
+  async function addItem(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const response = await fetch('/api/agenda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      time_label: form.get('time_label'), title: form.get('title'), department: form.get('department'), details: form.get('details'), sort_order: insertAt,
+    }) });
+    const data = await response.json();
+    if (!response.ok) return setError(data.error || 'Ajout impossible');
+    setItems((current) => [...current, data.item].sort((a, b) => a.sort_order - b.sort_order));
+    setInsertAt(null);
+  }
+
+  if (role && !hasCapability(role, 'viewAgenda')) return <div className="flex min-h-dvh items-center justify-center px-6 text-center"><p className="text-sm text-text-muted">Agenda réservé aux administrateurs et directeurs de festin.</p></div>;
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
@@ -25,33 +68,55 @@ export default function AgendaPage() {
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="card mb-4 space-y-2">
             <p className="eyebrow">Samedi 24 octobre 2026</p>
-            <h1 className="font-display text-xl">Chronogramme de la cérémonie</h1>
-            <p className="text-sm text-text-muted">
-              Première transcription du document Canva. Les responsables, shifts et validations « fait » seront ajoutés dès réception de la liste complète des agents.
-            </p>
-            <Link href="/staff" className="action-row mt-3">Voir les personnes du staff</Link>
+            <h1 className="font-display text-xl">Chronogramme partagé</h1>
+            <p className="text-sm text-text-muted">Les changements et affectations apparaissent pour toute l’équipe. Seuls les administrateurs et directeurs de festin peuvent les modifier.</p>
           </div>
-
-          <ol className="space-y-2" aria-label="Chronogramme du mariage">
-            {EVENT_AGENDA.map((item) => (
-              <li key={item.time + item.title} className="card flex gap-3 py-3">
-                <time className="w-20 shrink-0 pt-0.5 text-sm font-bold tabular-nums text-accent">{item.time}</time>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="font-semibold">{item.title}</p>
-                    <span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
-                      {item.department}
-                    </span>
-                  </div>
-                  {item.details && <p className="mt-1 text-xs leading-relaxed text-text-faint">{item.details}</p>}
-                  <p className="mt-2 text-xs font-medium text-status-partial">Responsable à attribuer</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          {error && <p className="mb-3 rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">{error}</p>}
+          {loading ? <p className="py-10 text-center text-text-muted">Chargement de l’agenda…</p> : (
+            <ol className="space-y-2" aria-label="Chronogramme du mariage">
+              {items.map((item, index) => {
+                const assignees = item.assignee_ids.map((id) => peopleById.get(id)).filter(Boolean) as Person[];
+                return <li key={item.id}>
+                  {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
+                  <article className="card flex gap-3 py-3">
+                    {canManage && <button type="button" aria-label={item.completed ? 'Marquer à faire' : 'Marquer terminé'} onClick={() => void patchItem(item.id, { completed: !item.completed })} className="mt-0.5 h-7 w-7 shrink-0 rounded-full border-2 border-accent text-sm font-bold text-accent">{item.completed ? '✓' : ''}</button>}
+                    <time className="w-16 shrink-0 pt-1 text-sm font-bold tabular-nums text-accent">{item.time_label}</time>
+                    <button type="button" onClick={() => canManage && setEditing(item)} className="min-w-0 flex-1 text-left">
+                      <div className="flex flex-wrap items-start justify-between gap-2"><p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p><span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span></div>
+                      {item.details && <p className="mt-1 text-xs leading-relaxed text-text-muted">{item.details}</p>}
+                      <p className="mt-2 text-xs font-semibold text-status-partial">{assignees.length ? assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ') : 'Responsable à attribuer'}</p>
+                    </button>
+                  </article>
+                </li>;
+              })}
+              {canManage && <li><button type="button" className="mx-auto block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt((items.at(-1)?.sort_order || 0) + 10)}>+ Ajouter une activité à la fin</button></li>}
+            </ol>
+          )}
         </div>
       </div>
       {role && <BottomNav role={role} />}
+
+      {insertAt !== null && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"><form onSubmit={addItem} className="card w-full max-w-md space-y-3">
+        <div className="flex items-center justify-between"><h2 className="font-display text-lg">Nouvelle activité</h2><button type="button" onClick={() => setInsertAt(null)} className="text-text-muted">Fermer</button></div>
+        <input name="time_label" required placeholder="Heure (ex. 00:05)" className="input" />
+        <input name="title" required placeholder="Activité" className="input" />
+        <input name="department" placeholder="Département" className="input" />
+        <textarea name="details" placeholder="Consignes" className="input min-h-24" />
+        <button className="btn-primary w-full">Ajouter et partager</button>
+      </form></div>}
+
+      {editing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"><div className="card max-h-[82dvh] w-full max-w-md space-y-3 overflow-y-auto">
+        <div className="flex items-center justify-between"><h2 className="font-display text-lg">Attribuer l’activité</h2><button type="button" onClick={() => setEditing(null)} className="text-text-muted">Fermer</button></div>
+        <p className="font-semibold">{editing.time_label} · {editing.title}</p>
+        <div className="space-y-2">{people.map((person) => {
+          const checked = editing.assignee_ids.includes(person.id);
+          return <label key={person.id} className="action-row flex cursor-pointer items-center gap-3"><input type="checkbox" checked={checked} onChange={() => {
+            const ids = checked ? editing.assignee_ids.filter((id) => id !== person.id) : [...editing.assignee_ids, person.id];
+            setEditing({ ...editing, assignee_ids: ids });
+          }} /><span><strong>{person.nom_complet || person.nom_affichage}</strong><small className="block text-text-muted">{person.role}{person.email ? ` · ${person.email}` : ''}</small></span></label>;
+        })}</div>
+        <button type="button" className="btn-primary w-full" onClick={async () => { await patchItem(editing.id, { assignee_ids: editing.assignee_ids }); setEditing(null); }}>Enregistrer les responsables</button>
+      </div></div>}
     </div>
   );
 }

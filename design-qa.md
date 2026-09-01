@@ -1,4 +1,15 @@
-# Design QA — v1.29.5
+# Design QA — v1.30.0
+
+## Vérification du lot v1.30.0
+
+- Sources visuelles : les deux captures iPhone du 1er septembre 2026 (Dashboard et Scan).
+- Cible Dashboard : Recherche / Plan / Scan central / Agenda / Approbations.
+- Cible Scan : Recherche / Plan / Bord central / Agenda / Approbations, avec une commande photo distincte sous le flux caméra.
+- Résultat source : les deux variantes sont produites par `BottomNav` selon le chemin courant, sans doublon Scan/Bord. L’agenda conserve le langage visuel existant et ajoute des commandes d’insertion/affectation/validation.
+- Vérification automatisée : 147 tests, TypeScript et build réussis.
+- Capture authentifiée : bloquée. Le navigateur local est correctement redirigé vers `/login`; aucun identifiant de test ne peut être inventé ou utilisé pour franchir cette barrière.
+
+Les contrôles visuels finaux à faire sur appareil connecté sont : absence de doublon dans chaque barre, ordre exact des cinq commandes, visibilité de la commande photo, ouverture des deux fenêtres Agenda et contraste clair/sombre.
 
 - Source visual truth: demandes et captures de Gersom du 1er septembre 2026 : iPhone/iPad paysage, sélection multiple sur Table 8, fiche Approbation trop basse, liste dont les photos restent vides pendant le chargement, navigation directeur affichant Staff sans accès Scan, et Dock iOS bleu fourni comme référence précise de volume/verre/arrondi.
 - Implementation screenshot: indisponible pour l'état authentifié paysage.

@@ -11,6 +11,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
 import { GuestApprovalsShortcut } from '@/components/GuestApprovalsShortcut';
+import { CameraIcon } from '@/components/icons';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -147,6 +148,12 @@ export default function ScanPage() {
               <div className="flex h-[clamp(340px,55dvh,680px)] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
                 Chargement…
               </div>
+            )}
+            {role && hasCapability(role, 'submitGuestApproval') && (
+              <button type="button" onClick={captureGuestPhoto} className="btn-secondary mt-2 flex min-h-12 w-full items-center justify-center gap-2" aria-label="Prendre une photo pour une demande d’approbation">
+                <CameraIcon className="h-6 w-6" />
+                Prendre une photo
+              </button>
             )}
           </div>
 

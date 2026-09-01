@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.29.5**
+**Version documentaire : 1.30.0**
 **Dernière mise à jour : 2026-08-31**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -71,7 +71,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 
-Depuis le 31/08/2026 (v1.29.0), `/agenda` (capacité `viewAgenda`) est réservé à `admin` et `directeur`. La première phase est une lecture du chronogramme : les affectations nominatives, shifts et validations persistantes seront ajoutés seulement après réception des données opérationnelles complètes.
+Depuis v1.30.0, `/agenda` reste visible uniquement avec `viewAgenda` et modifiable uniquement avec `manageAgenda` (`admin` et `directeur`). Les activités, leur ordre, leurs responsables et leur état terminé sont persistés dans `agenda_items`; les routes API revérifient la capacité d’écriture côté serveur.
 
 ## Invité surprise avec approbation SMS/WhatsApp à distance (v1.27.0)
 

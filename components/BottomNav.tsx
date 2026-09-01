@@ -5,10 +5,17 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { ComponentType, useEffect, useState } from 'react';
 import { Role } from '@/lib/types';
-import { CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
+import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
+
+const SEARCH_ITEM: NavItem = { href: '/search', label: 'Recherche', icon: SearchIcon };
+const PLAN_ITEM: NavItem = { href: '/plan-table', label: 'Plan', icon: GridIcon };
+const SCAN_ITEM: NavItem = { href: '/scan', label: 'Scan', icon: ScanIcon };
+const DASHBOARD_ITEM: NavItem = { href: '/dashboard', label: 'Bord', icon: GaugeIcon };
+const AGENDA_ITEM: NavItem = { href: '/agenda', label: 'Agenda', icon: StaffIcon };
+const APPROVALS_ITEM: NavItem = { href: '/approbations', label: 'Approbations', icon: ApprovalIcon };
 
 // Barre operationnelle de base. Les variantes par role plus bas remplacent
 // certains raccourcis sans modifier les autorisations serveur.
@@ -75,20 +82,19 @@ const SIDE_ORDER = ['/scan', '/search', '/plan-table', '/dashboard', '/agenda', 
 
 function SideLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
+  const content = <>
+    <span className={clsx('bottom-nav-icon-tile relative', active && 'bottom-nav-icon-tile-active')}>
+      <Icon className="h-[30px] w-[30px]" />
+      {!!item.badge && <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-status-over px-1 text-center text-[10px] leading-5 text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
+    </span>
+    {item.label}
+  </>;
+  const className = clsx(
+    'flex min-h-[76px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold transition-colors landscape:min-h-0 landscape:py-0',
+    active ? 'text-accent' : 'text-text-muted active:text-text'
+  );
   return (
-    <Link
-      href={item.href}
-      className={clsx(
-        'flex min-h-[76px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold transition-colors landscape:min-h-0 landscape:py-0',
-        active ? 'text-accent' : 'text-text-muted active:text-text'
-      )}
-    >
-      <span className={clsx('bottom-nav-icon-tile relative', active && 'bottom-nav-icon-tile-active')}>
-        <Icon className="h-[30px] w-[30px]" />
-        {!!item.badge && <span className="absolute -right-3 -top-2 min-w-5 rounded-full bg-status-over px-1 text-center text-[10px] leading-5 text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
-      </span>
-      {item.label}
-    </Link>
+    <Link href={item.href} className={className}>{content}</Link>
   );
 }
 
@@ -123,12 +129,26 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     return () => { active = false; window.clearInterval(timer); };
   }, [role]);
 
-  const roleItems = ITEMS[role] ?? ITEMS.agent_checkin;
+  const isAdminDirector = role === 'admin' || role === 'directeur';
+  // Navigation contextuelle demandee le 01/09/2026 : Dashboard et Scan ne
+  // doivent jamais apparaitre deux fois. Depuis le dashboard, Scan est le
+  // gros bouton central. Depuis le scanner, Bord prend le centre et la
+  // photo live garde sa propre commande sous la camera.
+  const contextualItems = pathname.startsWith('/dashboard')
+    ? [SEARCH_ITEM, PLAN_ITEM, SCAN_ITEM, AGENDA_ITEM, APPROVALS_ITEM]
+    : pathname.startsWith('/scan')
+      ? [SEARCH_ITEM, PLAN_ITEM, DASHBOARD_ITEM, AGENDA_ITEM, APPROVALS_ITEM]
+      : null;
+  const roleItems = isAdminDirector && contextualItems ? contextualItems : (ITEMS[role] ?? ITEMS.agent_checkin);
   const items = roleItems.map((item) =>
     item.href === '/approbations' ? { ...item, badge: pendingCount } : item
   );
 
-  const centralHref = CENTRAL_HREF[role] ?? '/scan';
+  const centralHref = isAdminDirector && pathname.startsWith('/dashboard')
+    ? '/scan'
+    : isAdminDirector && pathname.startsWith('/scan')
+      ? '/dashboard'
+      : (CENTRAL_HREF[role] ?? '/scan');
   const centralItem = items.find((item) => item.href === centralHref);
   const rest = items.filter((item) => item.href !== centralHref);
 
@@ -168,7 +188,7 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   // Sur /scan, l'action photo prend temporairement la place du raccourci
   // central du role. Le directeur conserve donc Bord comme centre ailleurs,
   // tout en obtenant le declencheur photo quand la camera est ouverte.
-  const photoActionActive = !!onCentralAction && pathname.startsWith('/scan');
+  const photoActionActive = !!onCentralAction && pathname.startsWith('/scan') && centralHref === '/scan';
 
   return (
     <nav

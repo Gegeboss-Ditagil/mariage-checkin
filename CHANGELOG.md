@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.30.0] — 2026-09-01
+
+### Ajouté
+- `/agenda` devient un chronogramme partagé : les administrateurs et directeurs de festin peuvent ajouter une activité exactement entre deux étapes, affecter plusieurs comptes actifs, marquer une tâche terminée et voir les changements propagés aux autres appareils.
+- Migration `0039_shared_agenda.sql` : table privée `agenda_items`, chronogramme initial, responsables, ordre, état terminé et traçabilité. RLS activée sans policy client; toutes les lectures/écritures passent par `/api/agenda` et la session signée.
+
+### Corrigé
+- Navigation admin/directeur contextuelle : sur `/dashboard`, Scan est l’unique gros bouton central et l’ordre est Recherche / Plan / Scan / Agenda / Approbations. Sur `/scan`, Tableau de bord devient l’unique gros bouton central et l’ordre est Recherche / Plan / Bord / Agenda / Approbations. La prise de photo reste disponible directement sous la caméra, sans second raccourci Scan dans la barre.
+
+### Tests
+- Régressions navigation, permissions `manageAgenda`, API protégée et migration RLS ajoutées. TypeScript, suites Node et build vérifiés.
+
 ## [1.29.5] — 2026-09-01
 
 ### Corrigé

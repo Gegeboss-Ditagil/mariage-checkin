@@ -50,7 +50,7 @@ test('historique et administration sont dans le menu du compte selon les capacit
   assert.match(accountMenu, /hasCapability\(role, ['"]adminPanel['"]\)/);
   assert.match(accountMenu, /href="\/history"/);
   assert.match(accountMenu, /href="\/admin"/);
-  assert.doesNotMatch(bottomNav, /Historique|Admin/);
+  assert.doesNotMatch(bottomNav, /label: ['"](?:Historique|Admin)['"]/);
 });
 
 test('le scanner supporte un demontage rapide sans exception non geree', () => {
@@ -104,19 +104,22 @@ test("sur le tableau de bord, Retour ouvre l accueil pour admin et directeur san
   assert.match(topBar, /backHref !== '\/'/);
 });
 
-test("admin et directeur ont Agenda et Scan dans la navigation; le directeur garde Bord au centre sans onglet Staff", () => {
+test("admin et directeur ont une navigation Dashboard/Scan contextuelle sans raccourci duplique", () => {
   assert.match(bottomNav, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
   assert.match(bottomNav, /admin:[\s\S]*href: ['"]\/scan['"], label: ['"]Scan['"]/);
   const directeurBlock = bottomNav.slice(bottomNav.indexOf('directeur: ['), bottomNav.indexOf('placeur:'));
   assert.match(directeurBlock, /href: ['"]\/scan['"], label: ['"]Scan['"]/);
   assert.doesNotMatch(directeurBlock, /href: ['"]\/staff['"]/);
-  assert.match(bottomNav, /directeur: ['"]\/dashboard['"]/);
+  assert.match(bottomNav, /pathname\.startsWith\(['"]\/dashboard['"]\)[\s\S]*SCAN_ITEM/);
+  assert.match(bottomNav, /pathname\.startsWith\(['"]\/scan['"]\)[\s\S]*DASHBOARD_ITEM/);
+  assert.match(bottomNav, /\[SEARCH_ITEM, PLAN_ITEM, SCAN_ITEM, AGENDA_ITEM, APPROVALS_ITEM\]/);
+  assert.match(bottomNav, /\[SEARCH_ITEM, PLAN_ITEM, DASHBOARD_ITEM, AGENDA_ITEM, APPROVALS_ITEM\]/);
   assert.match(bottomNav, /bottom-nav-glass/);
   assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\)/);
 });
 
-test("Approbations reste dans le menu du compte et Scan/Bord restent dans la barre admin", () => {
-  assert.doesNotMatch(bottomNav, /href: ['"]\/approbations['"]/);
+test("Approbations reste dans le menu du compte et revient dans les barres Dashboard/Scan", () => {
+  assert.match(bottomNav, /APPROVALS_ITEM/);
   assert.doesNotMatch(bottomNav, /ADMIN_DASHBOARD_ITEMS/);
   assert.match(bottomNav, /admin: \[[\s\S]*href: '\/scan'[\s\S]*href: '\/dashboard'/);
   assert.match(accountMenu, /href="\/approbations"/);
@@ -130,13 +133,18 @@ test("le scanner affiche un grand raccourci Approbations juste au-dessus de la p
   assert.match(approvalShortcut, /href="\/approbations"/);
 });
 
-test("l'agenda affiche le chronogramme sans inventer les affectations futures", () => {
+test("l'agenda partage permet ajout, affectation et validation aux responsables autorises", () => {
   const agendaPage = readFileSync(new URL('../app/agenda/page.tsx', import.meta.url), 'utf8');
-  const agendaData = readFileSync(new URL('../lib/eventAgenda.ts', import.meta.url), 'utf8');
+  const agendaApi = readFileSync(new URL('../app/api/agenda/route.ts', import.meta.url), 'utf8');
+  const agendaMigration = readFileSync(new URL('../supabase/migrations/0039_shared_agenda.sql', import.meta.url), 'utf8');
   assert.match(agendaPage, /hasCapability\(role, ['"]viewAgenda['"]\)/);
   assert.match(agendaPage, /Responsable à attribuer/);
-  assert.match(agendaData, /08:00/);
-  assert.match(agendaData, /05:00/);
+  assert.match(agendaPage, /Ajouter une activité ici/);
+  assert.match(agendaPage, /assignee_ids/);
+  assert.match(agendaPage, /completed/);
+  assert.match(agendaApi, /hasCapability\(user\.role, 'manageAgenda'\)/);
+  assert.match(agendaMigration, /create table if not exists agenda_items/);
+  assert.match(agendaMigration, /alter table agenda_items enable row level security/);
 });
 
 test('la barre de navigation devient une bande verticale au bord droit en paysage (telephone tourne / iPad)', () => {
