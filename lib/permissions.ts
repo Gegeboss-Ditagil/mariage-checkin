@@ -129,9 +129,7 @@ export function canAccessPath(role: Role, pathname: string): boolean {
 
   if (!prefixes.some((prefix) => matchesPrefix(pathname, prefix))) return false;
 
-  // L'API /agenda gere aussi l'exception nominative `users.agenda_manager`
-  // (Nelly conserve son role placeur). Elle reste l'autorite de lecture et
-  // d'ecriture pour tous les comptes sans capacite de role.
+  if (matchesPrefix(pathname, '/agenda') && !hasCapability(role, 'viewAgenda')) return false;
 
   if (role === 'agent_checkin') {
     // Note : /checkin/[invitationId]/merge n'est PAS dans cette liste --

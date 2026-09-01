@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.31.0**
+**Version documentaire : 1.31.1**
 **Dernière mise à jour : 2026-08-31**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -71,7 +71,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 
-Depuis v1.31.0, `/agenda` est visible et modifiable avec `viewAgenda`/`manageAgenda` (`admin` et `directeur`) ou avec l'exception nominative privée `users.agenda_manager` (Nelly, qui conserve son rôle `placeur`). Cette exception ne donne aucun droit aux autres placeurs. Heure, titre, département, détails, ordre, responsables et état terminé sont persistés dans `agenda_items`; les routes API revérifient chaque lecture et écriture côté serveur.
+Depuis v1.31.1, `/agenda` est visible et modifiable avec `viewAgenda`/`manageAgenda` (`admin` et `directeur`). Nelly porte maintenant le rôle complet `directeur`, identique à Rémy, plutôt qu'une exception limitée à l'agenda. Heure, titre, département, détails, ordre, responsables et état terminé sont persistés dans `agenda_items`; les routes API revérifient chaque lecture et écriture côté serveur.
 
 Depuis v1.30.1, `manageTags` est limité à `admin` et `directeur`; placeur et agent scan consultent seulement les étiquettes. Une liste nominative incomplète est réparée jusqu’à `max(nombre_prevu, nombre_arrive, 1)` sans changer ces compteurs. Un accompagnant ajouté à une invitation existante doit être nommé, hérite du côté du groupe et passe directement au placement de l’excédent.
 

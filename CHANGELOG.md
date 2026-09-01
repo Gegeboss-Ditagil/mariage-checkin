@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.31.1] — 2026-09-01
+
+### Modifié
+- Nelly reçoit désormais le rôle complet `directeur`, exactement comme Rémy : même tableau de bord, agenda, scan, approbations, gestion opérationnelle, appels du staff et permissions associées.
+- Migration `0042_promote_nelly_directeur.sql` : promotion idempotente du compte Nelly par ses deux noms connus. L'ancienne exception `agenda_manager` n'est plus utilisée par l'application; toutes ses autorisations repassent par la matrice centrale du rôle `directeur`.
+
+### Tests
+- Les contrôles de navigation et d'agenda revérifient les capacités standard `viewAgenda`/`manageAgenda`, sans exception nominative dans le code applicatif.
+
 ## [1.31.0] — 2026-09-01
 
 ### Ajouté

@@ -138,6 +138,7 @@ test("l'agenda partage permet ajout, affectation et validation aux responsables 
   const agendaApi = readFileSync(new URL('../app/api/agenda/route.ts', import.meta.url), 'utf8');
   const agendaMigration = readFileSync(new URL('../supabase/migrations/0039_shared_agenda.sql', import.meta.url), 'utf8');
   const agendaManagerMigration = readFileSync(new URL('../supabase/migrations/0041_agenda_manager_access.sql', import.meta.url), 'utf8');
+  const nellyDirectorMigration = readFileSync(new URL('../supabase/migrations/0042_promote_nelly_directeur.sql', import.meta.url), 'utf8');
   assert.match(agendaPage, /setCanManage\(data\.canManage === true\)/);
   assert.match(agendaPage, /Responsable à attribuer/);
   assert.match(agendaPage, /Ajouter une activité ici/);
@@ -146,12 +147,14 @@ test("l'agenda partage permet ajout, affectation et validation aux responsables 
   assert.match(agendaPage, /Modifier l’activité/);
   assert.match(agendaPage, /name="time_label"/);
   assert.match(agendaPage, /name="details"/);
-  assert.match(agendaApi, /hasCapability\(user\.role, capability\)/);
-  assert.match(agendaApi, /agenda_manager/);
+  assert.match(agendaApi, /hasCapability\(user\.role, 'manageAgenda'\)/);
+  assert.doesNotMatch(agendaApi, /agenda_manager/);
   assert.match(agendaMigration, /create table if not exists agenda_items/);
   assert.match(agendaMigration, /alter table agenda_items enable row level security/);
   assert.match(agendaManagerMigration, /add column if not exists agenda_manager boolean/);
   assert.match(agendaManagerMigration, /Nelly Dos Goncalves/);
+  assert.match(nellyDirectorMigration, /set role = 'directeur'/);
+  assert.match(nellyDirectorMigration, /Nelly Dos Goncalves/);
 });
 
 test('la barre de navigation devient une bande verticale au bord droit en paysage (telephone tourne / iPad)', () => {
