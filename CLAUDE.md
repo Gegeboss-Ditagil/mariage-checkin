@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.30.1**
+**Version documentaire : 1.30.2**
 **Dernière mise à jour : 2026-09-01**
 
 Avant toute modification, lire dans cet ordre :
@@ -26,7 +26,7 @@ Les permissions sont centralisées dans `lib/permissions.ts`. Ne recréez pas de
 
 Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation explicite, aperçu des impacts, sauvegarde et procédure de retour arrière. Toute modification manuelle de production doit être reflétée dans une migration GitHub et dans le changelog de la version correspondante.
 
-## État de référence v1.30.1
+## État de référence v1.30.2
 
 - 41 tables : 40 normales (1-40) + une réserve (41).
 - Capacité officielle : 400 places; capacité absolue : 410.
@@ -41,6 +41,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - Navigation admin v1.29.2 : Approbations reste dans le menu du compte sur toutes les pages. Sur `/dashboard` seulement, la barre du bas est Recherche, Plan, Scan central, Agenda, Approbations. Hors dashboard, Approbations quitte la barre et Bord reprend le raccourci.
 - Navigation v1.30.0 : pour admin/directeur, `/dashboard` utilise Scan au centre; `/scan` utilise Bord au centre. L’agenda partagé est stocké dans `agenda_items` et modifiable uniquement via la capacité `manageAgenda`.
 - v1.30.1 : `ensure_invitation_member_rows` restaure les lignes nominatives manquantes sans modifier `nombre_prevu`/`nombre_arrive`. `manageTags` appartient à admin et directeur uniquement.
+- v1.30.2 : la fiche d'approbation se ferme par un X; après approbation, Placement ouvre uniquement les tables ayant assez de places libres, avec priorité à la table 41.
 
 ## Reprise rapide pour Claude AI
 

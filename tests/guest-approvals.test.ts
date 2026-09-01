@@ -164,12 +164,18 @@ test('la page montre les statuts et exige une destination suffisante avant de co
   assert.match(assignPageSource, /!relocationReady/);
 });
 
-test('les recommandations priorisent les places disponibles, les provisoires non arrives et la reserve', () => {
-  assert.match(assignPageSource, /Tables recommandées/);
+test('le choix rapide ne montre que les tables réellement libres et priorise la table 41', () => {
+  assert.match(assignPageSource, /Tables disponibles/);
   assert.match(assignPageSource, /libresEstimees >= needed/);
-  assert.match(assignPageSource, /placement_status !== 'confirmee'/);
-  assert.match(assignPageSource, /invitation\.nombre_arrive === 0/);
-  assert.match(assignPageSource, /usage\.table\.is_reserve/);
+  assert.match(assignPageSource, /usage\.table\.number === 41 \? 0/);
+  assert.match(assignPageSource, /Seules les tables qui peuvent accueillir tout le groupe sont proposées/);
+});
+
+test('la fiche a un vrai bouton fermer et rend le placement actionnable après approbation', () => {
+  assert.match(approbationsPageSource, /aria-label="Fermer la demande"/);
+  assert.match(approbationsPageSource, /<CloseIcon/);
+  assert.match(approbationsPageSource, /Choisir une table/);
+  assert.match(approbationsPageSource, /Approuvez d’abord la demande/);
 });
 
 test('les alertes dans l application restent actives meme sans cles VAPID', () => {

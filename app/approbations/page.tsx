@@ -7,7 +7,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { PushNotificationButton } from '@/components/PushNotificationButton';
-import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
 interface ApprovalListItem {
@@ -96,7 +96,13 @@ export default function ApprobationsPage() {
       );
       await load(true);
     } else {
-      setActionFeedback('La demande a déjà été traitée ou une erreur réseau est survenue.');
+      const data = await response.json().catch(() => null);
+      await load(true);
+      setActionFeedback(
+        response.status === 409
+          ? 'Cette demande avait déjà été traitée. Son état vient d’être actualisé.'
+          : data?.error || 'La décision n’a pas pu être enregistrée. Vérifiez le réseau et réessayez.'
+      );
     }
     setDecidingId(null);
   }
@@ -246,8 +252,13 @@ export default function ApprobationsPage() {
                 <p className="eyebrow">Demande d'approbation</p>
                 <h2 id="approval-detail-title" className="font-display text-2xl">{selectedRequest.nom_invite}</h2>
               </div>
-              <button type="button" onClick={() => setSelectedId(null)} className="rounded-full border border-hairline px-4 py-2 text-sm font-semibold text-text-muted">
-                Fermer
+              <button
+                type="button"
+                aria-label="Fermer la demande"
+                onClick={() => setSelectedId(null)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/30 bg-surface/75 text-text shadow-sm backdrop-blur-xl transition-transform active:scale-90"
+              >
+                <CloseIcon className="h-6 w-6" />
               </button>
             </div>
 
@@ -289,9 +300,24 @@ export default function ApprobationsPage() {
               </div>
               <div className="rounded-xl bg-surface px-3 py-2 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Placement</p>
-                <p className={'mt-0.5 font-semibold ' + (selectedRequest.statut === 'approuve' ? 'text-status-complete' : 'text-text')}>
-                  {selectedRequest.table_number ? `Table ${selectedRequest.table_number}` : selectedRequest.statut === 'approuve' ? 'Sans table' : 'À déterminer'}
-                </p>
+                {selectedRequest.table_number ? (
+                  <p className="mt-0.5 font-semibold text-status-complete">Table {selectedRequest.table_number}</p>
+                ) : selectedRequest.statut === 'approuve' && role && hasCapability(role, 'assignGuestApproval') ? (
+                  <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="mt-0.5 flex min-h-9 items-center justify-between gap-2 font-semibold text-accent underline decoration-accent/35 underline-offset-4">
+                    Choisir une table
+                    <ChevronRightIcon className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!role || !hasCapability(role, 'reviewGuestApproval') || !hasCapability(role, 'assignGuestApproval')}
+                    onClick={() => setActionFeedback('Approuvez d’abord la demande; le choix de table s’ouvrira immédiatement ensuite.')}
+                    className="mt-0.5 flex min-h-9 w-full items-center justify-between gap-2 text-left font-semibold text-text disabled:cursor-default"
+                  >
+                    À déterminer
+                    {role && hasCapability(role, 'reviewGuestApproval') && hasCapability(role, 'assignGuestApproval') && <ChevronRightIcon className="h-5 w-5 text-accent" />}
+                  </button>
+                )}
               </div>
             </div>
 

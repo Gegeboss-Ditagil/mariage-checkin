@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.30.2] — 2026-09-01
+
+### Corrigé
+- La fiche détaillée d'une approbation possède maintenant un bouton X rond et explicite pour fermer le pop-up.
+- Après approbation, le champ « Placement » devient directement cliquable pour les rôles autorisés à assigner une table. Avant la décision, il explique qu'il faut d'abord approuver au lieu d'aboutir à une erreur ambiguë.
+- Le sélecteur rapide n'affiche que les tables pouvant accueillir tout le groupe avec de vraies places libres, indique le nombre disponible et place la table 41 en tête lorsqu'elle convient. Le statut et les notifications existantes continuent d'indiquer si la demande a été approuvée avec ou sans table.
+- Une décision déjà traitée (concurrence entre deux approbateurs) actualise maintenant la fiche et affiche un message précis au lieu de mélanger ce cas avec une erreur réseau.
+
+### Tests
+- Régressions ajoutées pour le bouton X, le placement actionnable, le filtrage par capacité réelle et la priorité de la table 41.
+
 ## [1.30.1] — 2026-09-01
 
 ### Corrigé
