@@ -107,7 +107,13 @@ export default function DashboardPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Tableau de bord"
-          backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
+          backHref={
+            role === 'admin' || role === 'directeur'
+              ? '/'
+              : role && hasCapability(role, 'scan')
+                ? '/scan'
+                : undefined
+          }
         />
 
         <PullToRefreshIndicator

@@ -12,6 +12,7 @@ const serviceWorker = readFileSync(new URL('../public/sw.js', import.meta.url), 
 const topBar = readFileSync(new URL('../components/TopBar.tsx', import.meta.url), 'utf8');
 const approvalShortcut = readFileSync(new URL('../components/GuestApprovalsShortcut.tsx', import.meta.url), 'utf8');
 const rootLayout = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
+const dashboardPage = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');
 
 // Les ecrans a barre de navigation basse (patron h-dvh + landscape:flex-row,
 // voir la note dans BottomNav.tsx) -- verifie que chacun applique bien le
@@ -89,6 +90,12 @@ test("le retour des comptes admin et visibilite revient toujours au dashboard", 
   assert.match(topBar, /role === 'admin' \|\| role === 'visibilite'/);
   assert.match(topBar, /\? '\/dashboard' : backHref/);
   assert.match(topBar, /href=\{effectiveBackHref\}/);
+});
+
+test("sur le tableau de bord, Retour ouvre l accueil pour admin et directeur sans boucle dashboard", () => {
+  assert.match(dashboardPage, /role === 'admin' \|\| role === 'directeur'/);
+  assert.match(dashboardPage, /\? '\/'/);
+  assert.match(topBar, /backHref !== '\/'/);
 });
 
 test("admin et directeur ont Agenda dans la navigation, et Scan reste accessible a l'admin", () => {

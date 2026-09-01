@@ -17,8 +17,10 @@ export function TopBar({
 }) {
   const role = useSessionRole();
   // Pour les comptes de supervision (admin et visibilite), Retour ramene
-  // toujours au tableau de bord, quel que soit l'ecran operationnel ouvert.
-  const effectiveBackHref = backHref && (role === 'admin' || role === 'visibilite') ? '/dashboard' : backHref;
+  // normalement au tableau de bord. Une destination racine explicite reste
+  // toutefois prioritaire : sur /dashboard, Gersom (admin) doit pouvoir
+  // revenir a l'accueil au lieu de boucler sur le tableau de bord.
+  const effectiveBackHref = backHref && backHref !== '/' && (role === 'admin' || role === 'visibilite') ? '/dashboard' : backHref;
   return (
     <header className="sticky top-0 z-10 bg-glass backdrop-blur border-b border-hairline">
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-1">
