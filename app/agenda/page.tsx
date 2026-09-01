@@ -4,7 +4,6 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { BottomNav } from '@/components/BottomNav';
 import { TopBar } from '@/components/TopBar';
 import { useSessionRole } from '@/hooks/useSessionRole';
-import { hasCapability } from '@/lib/permissions';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
 type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; completed: boolean };
@@ -17,7 +16,7 @@ export default function AgendaPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<AgendaItem | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);
-  const canManage = hasCapability(role, 'manageAgenda');
+  const [canManage, setCanManage] = useState(false);
 
   const load = useCallback(async () => {
     const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
@@ -29,6 +28,7 @@ export default function AgendaPage() {
     const data = await response.json();
     setItems(data.items || []);
     setPeople(data.people || []);
+    setCanManage(data.canManage === true);
     setLoading(false);
   }, []);
 
@@ -43,8 +43,13 @@ export default function AgendaPage() {
   async function patchItem(id: string, updates: Record<string, unknown>) {
     const response = await fetch('/api/agenda', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) });
     const data = await response.json();
-    if (!response.ok) return setError(data.error || 'Modification impossible');
+    if (!response.ok) {
+      setError(data.error || 'Modification impossible');
+      return false;
+    }
     setItems((current) => current.map((item) => item.id === id ? data.item : item).sort((a, b) => a.sort_order - b.sort_order));
+    setError(null);
+    return true;
   }
 
   async function addItem(event: FormEvent<HTMLFormElement>) {
@@ -59,8 +64,6 @@ export default function AgendaPage() {
     setInsertAt(null);
   }
 
-  if (role && !hasCapability(role, 'viewAgenda')) return <div className="flex min-h-dvh items-center justify-center px-6 text-center"><p className="text-sm text-text-muted">Agenda réservé aux administrateurs et directeurs de festin.</p></div>;
-
   return (
     <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -69,7 +72,7 @@ export default function AgendaPage() {
           <div className="card mb-4 space-y-2">
             <p className="eyebrow">Samedi 24 octobre 2026</p>
             <h1 className="font-display text-xl">Chronogramme partagé</h1>
-            <p className="text-sm text-text-muted">Les changements et affectations apparaissent pour toute l’équipe. Seuls les administrateurs et directeurs de festin peuvent les modifier.</p>
+            <p className="text-sm text-text-muted">Les changements et affectations apparaissent pour toute l’équipe. Gersom, Nelly, les administrateurs et directeurs de festin peuvent les modifier.</p>
           </div>
           {error && <p className="mb-3 rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">{error}</p>}
           {loading ? <p className="py-10 text-center text-text-muted">Chargement de l’agenda…</p> : (
@@ -85,6 +88,7 @@ export default function AgendaPage() {
                       <div className="flex flex-wrap items-start justify-between gap-2"><p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p><span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span></div>
                       {item.details && <p className="mt-1 text-xs leading-relaxed text-text-muted">{item.details}</p>}
                       <p className="mt-2 text-xs font-semibold text-status-partial">{assignees.length ? assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ') : 'Responsable à attribuer'}</p>
+                      {canManage && <p className="mt-2 text-xs font-semibold text-accent underline underline-offset-4">Modifier l’heure, les détails ou les responsables</p>}
                     </button>
                   </article>
                 </li>;
@@ -105,9 +109,24 @@ export default function AgendaPage() {
         <button className="btn-primary w-full">Ajouter et partager</button>
       </form></div>}
 
-      {editing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"><div className="card max-h-[82dvh] w-full max-w-md space-y-3 overflow-y-auto">
-        <div className="flex items-center justify-between"><h2 className="font-display text-lg">Attribuer l’activité</h2><button type="button" onClick={() => setEditing(null)} className="text-text-muted">Fermer</button></div>
-        <p className="font-semibold">{editing.time_label} · {editing.title}</p>
+      {editing && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"><form className="card max-h-[88dvh] w-full max-w-md space-y-3 overflow-y-auto" onSubmit={async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const saved = await patchItem(editing.id, {
+          time_label: form.get('time_label'),
+          title: form.get('title'),
+          department: form.get('department'),
+          details: form.get('details'),
+          assignee_ids: editing.assignee_ids,
+        });
+        if (saved) setEditing(null);
+      }}>
+        <div className="flex items-center justify-between"><h2 className="font-display text-lg">Modifier l’activité</h2><button type="button" onClick={() => setEditing(null)} className="text-text-muted">Fermer</button></div>
+        <label className="block text-sm font-semibold">Heure<input name="time_label" required defaultValue={editing.time_label} className="input mt-1" placeholder="Ex. 18:30–19:00" /></label>
+        <label className="block text-sm font-semibold">Activité<input name="title" required defaultValue={editing.title} className="input mt-1" /></label>
+        <label className="block text-sm font-semibold">Département<input name="department" defaultValue={editing.department} className="input mt-1" /></label>
+        <label className="block text-sm font-semibold">Détails et consignes<textarea name="details" defaultValue={editing.details || ''} className="input mt-1 min-h-24" placeholder="Déroulement, matériel et consignes…" /></label>
+        <p className="pt-1 text-sm font-semibold">Responsables</p>
         <div className="space-y-2">{people.map((person) => {
           const checked = editing.assignee_ids.includes(person.id);
           return <label key={person.id} className="action-row flex cursor-pointer items-center gap-3"><input type="checkbox" checked={checked} onChange={() => {
@@ -115,8 +134,8 @@ export default function AgendaPage() {
             setEditing({ ...editing, assignee_ids: ids });
           }} /><span><strong>{person.nom_complet || person.nom_affichage}</strong><small className="block text-text-muted">{person.role}{person.email ? ` · ${person.email}` : ''}</small></span></label>;
         })}</div>
-        <button type="button" className="btn-primary w-full" onClick={async () => { await patchItem(editing.id, { assignee_ids: editing.assignee_ids }); setEditing(null); }}>Enregistrer les responsables</button>
-      </div></div>}
+        <button type="submit" className="btn-primary w-full">Enregistrer et partager</button>
+      </form></div>}
     </div>
   );
 }

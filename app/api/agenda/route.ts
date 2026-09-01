@@ -3,21 +3,33 @@ import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+async function agendaAccess(user: NonNullable<ReturnType<typeof getSessionUser>>, manage: boolean) {
+  const capability = manage ? 'manageAgenda' : 'viewAgenda';
+  if (hasCapability(user.role, capability)) return true;
+  const { data } = await createAdminClient()
+    .from('users')
+    .select('agenda_manager')
+    .eq('id', user.id)
+    .eq('event_id', user.event_id)
+    .maybeSingle();
+  return data?.agenda_manager === true;
+}
+
 export async function GET() {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'viewAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !(await agendaAccess(user, false))) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const supabase = createAdminClient();
   const [{ data: items, error }, { data: users }] = await Promise.all([
     supabase.from('agenda_items').select('*').eq('event_id', user.event_id).order('sort_order'),
     supabase.from('users').select('id, nom_affichage, nom_complet, role, email').eq('event_id', user.event_id).eq('active', true).order('nom_affichage'),
   ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ items: items || [], people: users || [], canManage: hasCapability(user.role, 'manageAgenda') }, { headers: { 'Cache-Control': 'private, no-store' } });
+  return NextResponse.json({ items: items || [], people: users || [], canManage: await agendaAccess(user, true) }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'manageAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !(await agendaAccess(user, true))) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || '').trim();
   const timeLabel = String(body.time_label || '').trim();
@@ -39,7 +51,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'manageAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !(await agendaAccess(user, true))) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || '');
   if (!id) return NextResponse.json({ error: 'Activité requise' }, { status: 400 });
@@ -47,6 +59,11 @@ export async function PATCH(req: NextRequest) {
   for (const key of ['time_label', 'title', 'department', 'details', 'sort_order', 'assignee_ids', 'completed']) {
     if (key in body) updates[key] = body[key];
   }
+  if ('time_label' in updates) updates.time_label = String(updates.time_label || '').trim();
+  if ('title' in updates) updates.title = String(updates.title || '').trim();
+  if ('department' in updates) updates.department = String(updates.department || 'Coordination').trim();
+  if ('details' in updates) updates.details = String(updates.details || '').trim() || null;
+  if (updates.time_label === '' || updates.title === '') return NextResponse.json({ error: 'Heure et activité requises' }, { status: 400 });
   if ('completed' in body) {
     updates.completed_at = body.completed ? new Date().toISOString() : null;
     updates.completed_by = body.completed ? user.id : null;

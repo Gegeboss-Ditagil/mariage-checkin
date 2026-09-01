@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.31.0] — 2026-09-01
+
+### Ajouté
+- Chaque activité de `/agenda` ouvre maintenant un formulaire complet permettant de modifier facilement l'heure, le titre, le département, les détails/consignes et les responsables. Les changements sont enregistrés dans l'agenda partagé et apparaissent sur les autres appareils.
+- Nelly conserve son rôle opérationnel `placeur`, mais reçoit une autorisation nominative `agenda_manager` afin de gérer l'agenda avec Gersom, les administrateurs et les directeurs de festin sans ouvrir ce droit à tous les placeurs.
+- Migration `0041_agenda_manager_access.sql` : colonne privée `users.agenda_manager` et activation idempotente pour le compte de Nelly.
+
+### Sécurité et tests
+- Les routes GET/POST/PATCH de l'agenda vérifient côté serveur soit la capacité de rôle `viewAgenda`/`manageAgenda`, soit l'exception nominative en base. L'interface utilise la décision renvoyée par l'API, jamais le rôle seul.
+- Régressions ajoutées pour les champs modifiables et l'autorisation nominative.
+
 ## [1.30.2] — 2026-09-01
 
 ### Corrigé

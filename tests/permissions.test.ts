@@ -29,7 +29,7 @@ test('staff est accessible a tous les roles operationnels, visibilite en lecture
   assert.equal(hasCapability('visibilite', 'checkin'), false);
 });
 
-test("l'agenda du jour J est reserve a admin et directeur", () => {
+test("l'agenda est gere par admin/directeur et l'exception nominative reste verifiee par l'API", () => {
   for (const role of ['admin', 'directeur'] as const) {
     assert.equal(hasCapability(role, 'viewAgenda'), true);
     assert.equal(hasCapability(role, 'manageAgenda'), true);
@@ -38,8 +38,13 @@ test("l'agenda du jour J est reserve a admin et directeur", () => {
   for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) {
     assert.equal(hasCapability(role, 'viewAgenda'), false);
     assert.equal(hasCapability(role, 'manageAgenda'), false);
-    assert.equal(canAccessPath(role, '/agenda'), false);
   }
+  // Le middleware laisse le compte placeur de Nelly atteindre la page;
+  // l'API exige ensuite users.agenda_manager. Les autres profils restent
+  // exclus par leur matrice de navigation.
+  assert.equal(canAccessPath('placeur', '/agenda'), true);
+  assert.equal(canAccessPath('agent_checkin', '/agenda'), false);
+  assert.equal(canAccessPath('visibilite', '/agenda'), false);
 });
 
 test('la visibilite des lignes staff est restreinte selon le role', () => {
