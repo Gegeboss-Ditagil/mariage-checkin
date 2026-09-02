@@ -7,6 +7,17 @@ import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 const inputClass =
   'w-full rounded-xl2 border-2 border-hairline bg-surface px-3 py-2.5  placeholder:text-text-faint focus:border-accent focus:outline-none';
 
+// Liste partagée entre le formulaire de création et l'édition (changer de
+// rôle/accès, demande de Gersom le 02/09/2026) -- une seule source pour ne
+// pas laisser les deux listes diverger.
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: 'agent_checkin', label: 'Agent accueil (scan, recherche et check-in)' },
+  { value: 'placeur', label: 'Agent placeur (scan + modification tables)' },
+  { value: 'directeur', label: 'Directeur de festin (accès complet, hors admin)' },
+  { value: 'visibilite', label: 'Visibilité (lecture seule)' },
+  { value: 'admin', label: 'Admin' },
+];
+
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [nomAffichage, setNomAffichage] = useState('');
@@ -18,6 +29,7 @@ export default function UsersAdminPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNom, setEditNom] = useState('');
+  const [editRole, setEditRole] = useState<Role>('agent_checkin');
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
   const [editPin, setEditPin] = useState('');
@@ -67,6 +79,7 @@ export default function UsersAdminPage() {
   function startEdit(u: UserRow) {
     setEditingId(u.id);
     setEditNom(u.nom_affichage);
+    setEditRole(u.role);
     setEditEmail(u.email || '');
     setEditPassword('');
     setEditPin('');
@@ -82,7 +95,14 @@ export default function UsersAdminPage() {
     setSaving(true);
     setEditError(null);
     const body: Record<string, unknown> = { id: u.id, nom_affichage: editNom };
-    if (u.role === 'admin') {
+    // Changer de rôle exige les nouveaux identifiants dans la même requête
+    // (voir app/api/admin/users/route.ts) -- seulement inclus si le rôle a
+    // réellement changé, pour ne jamais redemander un mot de passe/PIN à
+    // chaque édition banale (nom seul, par ex.).
+    const roleChanged = editRole !== u.role;
+    if (roleChanged) body.role = editRole;
+    const effectiveRole = roleChanged ? editRole : u.role;
+    if (effectiveRole === 'admin') {
       body.email = editEmail;
       if (editPassword.trim()) body.password = editPassword;
     } else if (editPin.trim()) {
@@ -121,13 +141,11 @@ export default function UsersAdminPage() {
           <select
             className={inputClass}
             value={role}
-            onChange={(e) => setRole(e.target.value as any)}
+            onChange={(e) => setRole(e.target.value as Role)}
           >
-            <option value="agent_checkin">Agent accueil (scan, recherche et check-in)</option>
-            <option value="placeur">Agent placeur (scan + modification tables)</option>
-            <option value="directeur">Directeur de festin (accès complet, hors admin)</option>
-            <option value="visibilite">Visibilité (lecture seule)</option>
-            <option value="admin">Admin</option>
+            {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
 
           {role === 'admin' ? (
@@ -181,64 +199,105 @@ export default function UsersAdminPage() {
                   >
                     {editingId === u.id ? 'Annuler' : 'Modifier'}
                   </button>
+                  {/* Bascule verre liquide (theme iOS) au lieu de l'ancien
+                      badge texte cliquable -- demande de Gersom le
+                      02/09/2026. */}
                   <button
-                    className={
-                      'rounded-full px-3 py-1 text-xs font-semibold ' +
-                      (u.active ? 'bg-status-complete/10 text-status-complete' : 'bg-status-over/10 text-status-over')
-                    }
+                    type="button"
+                    role="switch"
+                    aria-checked={u.active}
+                    aria-label={(u.active ? 'Désactiver ' : 'Activer ') + u.nom_affichage}
+                    className={'glass-toggle' + (u.active ? ' glass-toggle-on' : '')}
                     onClick={() => toggleActive(u)}
                   >
-                    {u.active ? 'Actif' : 'Desactive'}
+                    <span aria-hidden className={'glass-toggle-thumb' + (u.active ? ' glass-toggle-thumb-on' : '')} />
                   </button>
                 </div>
               </div>
 
               {editingId === u.id && (
-                <div className="mt-3 space-y-2 rounded-xl2 border border-hairline bg-surface-2 p-3">
-                  <input
-                    className={inputClass}
-                    placeholder="Nom affiché"
-                    value={editNom}
-                    onChange={(e) => setEditNom(e.target.value)}
-                  />
-
-                  {u.role === 'admin' ? (
-                    <>
+                (() => {
+                  const roleChanged = editRole !== u.role;
+                  // Rôle changé : le mode de connexion en dépend (email +
+                  // mot de passe pour admin, nom + PIN sinon), donc le
+                  // nouvel identifiant devient obligatoire au lieu de
+                  // facultatif -- voir app/api/admin/users/route.ts.
+                  const missingCredential = roleChanged
+                    ? editRole === 'admin'
+                      ? !editEmail.trim() || !editPassword.trim()
+                      : !editPin.trim()
+                    : false;
+                  return (
+                    <div className="mt-3 space-y-2 rounded-xl2 border border-hairline bg-surface-2 p-3">
                       <input
                         className={inputClass}
-                        placeholder="Email de connexion"
-                        type="email"
-                        value={editEmail}
-                        onChange={(e) => setEditEmail(e.target.value)}
+                        placeholder="Nom affiché"
+                        value={editNom}
+                        onChange={(e) => setEditNom(e.target.value)}
                       />
-                      <input
-                        className={inputClass}
-                        placeholder="Nouveau mot de passe (laisser vide pour ne pas changer)"
-                        type="password"
-                        value={editPassword}
-                        onChange={(e) => setEditPassword(e.target.value)}
-                      />
-                    </>
-                  ) : (
-                    <input
-                      className={inputClass}
-                      placeholder="Nouveau PIN (laisser vide pour ne pas changer)"
-                      inputMode="numeric"
-                      value={editPin}
-                      onChange={(e) => setEditPin(e.target.value)}
-                    />
-                  )}
 
-                  {editError && <p className="text-sm text-status-over">{editError}</p>}
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">
+                          Rôle / accès
+                        </label>
+                        <select
+                          className={inputClass}
+                          value={editRole}
+                          onChange={(e) => setEditRole(e.target.value as Role)}
+                        >
+                          {ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <button
-                    className="btn-primary w-full"
-                    disabled={saving || !editNom.trim()}
-                    onClick={() => saveEdit(u)}
-                  >
-                    {saving ? '…' : 'Enregistrer'}
-                  </button>
-                </div>
+                      {roleChanged && (
+                        <p className="text-xs font-medium text-status-partial">
+                          Changement de rôle : {editRole === 'admin' || u.role === 'admin'
+                            ? 'le mode de connexion change, un nouvel identifiant est requis ci-dessous.'
+                            : 'le PIN doit être ressaisi ci-dessous.'}
+                        </p>
+                      )}
+
+                      {editRole === 'admin' ? (
+                        <>
+                          <input
+                            className={inputClass}
+                            placeholder="Email de connexion"
+                            type="email"
+                            value={editEmail}
+                            onChange={(e) => setEditEmail(e.target.value)}
+                          />
+                          <input
+                            className={inputClass}
+                            placeholder={roleChanged ? 'Mot de passe' : 'Nouveau mot de passe (laisser vide pour ne pas changer)'}
+                            type="password"
+                            value={editPassword}
+                            onChange={(e) => setEditPassword(e.target.value)}
+                          />
+                        </>
+                      ) : (
+                        <input
+                          className={inputClass}
+                          placeholder={roleChanged ? 'PIN (4 chiffres)' : 'Nouveau PIN (laisser vide pour ne pas changer)'}
+                          inputMode="numeric"
+                          value={editPin}
+                          onChange={(e) => setEditPin(e.target.value)}
+                        />
+                      )}
+
+                      {editError && <p className="text-sm text-status-over">{editError}</p>}
+
+                      <button
+                        className="btn-primary w-full"
+                        disabled={saving || !editNom.trim() || missingCredential}
+                        onClick={() => saveEdit(u)}
+                      >
+                        {saving ? '…' : 'Enregistrer'}
+                      </button>
+                    </div>
+                  );
+                })()
               )}
             </li>
           ))}

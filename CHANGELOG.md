@@ -3,6 +3,45 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.37.0] — 2026-09-02
+
+Retour de Gersom sur `/agenda` (capture d'écran de la fiche de modification à l'appui) : « au lieu d'avoir toute la liste des responsables à défiler... un champ... quand je clique dessus ça me demande de choisir la personne ».
+
+### Ajouté
+- **Sélecteur de responsables en recherche plein écran** (`components/ResponsablePicker.tsx`), à la place de la longue liste de cases à cocher toujours dépliée dans la fiche de modification d'une activité. Le champ Responsables devient un simple bouton résumant la sélection (« Choisir les responsables » si vide) ; le toucher ouvre une fiche avec un champ de recherche.
+  - **Équipe** (comptes de l'application) affichée par défaut, filtrée en tapant.
+  - **Invités** : « au cas où on assigne un invité lambda dernière minute pour aider » — à partir de 2 caractères, recherche aussi parmi les invitations (`ilike` sur `nom_affichage`, 20 résultats max) pour retrouver quelqu'un du cortège aidant ponctuellement, sans avoir à charger toute la liste des ~400 invités d'un coup. Sélectionner un invité l'ajoute comme nom libre (`custom_assignees`), exactement comme le mécanisme déjà existant pour un prestataire externe.
+  - Le champ « nom personnalisé » (pour quelqu'un d'entièrement absent des deux listes) reste disponible en bas de la fiche.
+  - Mêmes deux champs qu'avant (`assignee_ids`, `custom_assignees`) — seule la manière de les remplir change, aucune migration nécessaire.
+
+### Tests
+- `tests/agenda-form.test.ts` : assertions déplacées vers `components/ResponsablePicker.tsx` (coche personnalisée, nom libre) ; nouveau test pour la recherche parmi les invités.
+- `npx tsc --noEmit`, `npm run build`, 195 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+## [1.36.0] — 2026-09-02
+
+Retour de Gersom sur le design de « + Invité » (capture d'écran de `/plan-table`) et sur `/admin/users` (capture d'écran de « Comptes de l'équipe »).
+
+### Ajouté
+- **`+ Invité` en bouton rond en verre**, à la place de l'ancien simple lien texte — « plus un bouton que juste du texte ». Extrait dans un composant partagé (`AddInvitationButton`, réutilise `.glass-icon-button`, même recette que la flèche Retour de `TopBar`) réservé à `addInvitation` (admin/directeur uniquement, jamais placeur/agent_checkin/visibilite — confirmé : « assure que cette fonction est active seulement... pour directeur de festin et admin afin qu'il puisse vraiment ajouter quelqu'un très rapidement... sans passer par le système d'approbation »).
+- **Le même bouton apparaît désormais aussi sur `/dashboard`**, au même endroit (coin supérieur droit, à côté du menu du compte).
+- **`/admin/users` : bascule Actif/Désactivé en verre liquide** (`.glass-toggle`, thème iOS) à la place de l'ancien badge texte cliquable.
+- **`/admin/users` : possibilité de changer le rôle/accès d'un compte** directement depuis la fiche d'édition (même liste que la création). Comme le mode de connexion dépend du rôle (email + mot de passe pour admin, nom + PIN sinon), un changement de rôle exige le nouvel identifiant dans la même requête et efface le mode devenu obsolète — jamais un compte basculé sans moyen de se reconnecter.
+
+### Modifié
+- La flèche Retour de `TopBar` (présente sur presque tous les écrans) reprend elle aussi le thème « verre liquide » (`.glass-icon-button` : flou + saturation + reflet + `var(--elev-2)`), au lieu de `shadow-card` (`var(--elev-1)`, `none` en Maison) — cohérent avec le reste de la campagne verre liquide (v1.34.0).
+
+### Tests
+- `tests/add-invitation.test.ts` : assertions mises à jour pour le composant partagé `AddInvitationButton` (au lieu d'un lien texte dupliqué par page), présence sur `/dashboard`.
+- `tests/admin-users.test.ts` (nouveau) : bascule `glass-toggle`, sélecteur de rôle dans la fiche d'édition, `role` envoyé seulement s'il a changé, validation stricte côté API (`/api/admin/users` PATCH) des identifiants requis lors d'un changement de rôle.
+- `npx tsc --noEmit`, `npm run build`, 194 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune. `users.role` accepte déjà les cinq rôles (`0015_roles_v2.sql`), aucun changement de schéma nécessaire.
+
 ## [1.35.0] — 2026-09-02
 
 Discussion avec Gersom sur l'idée d'un invité surprise "sous-invité" arrivant avec un groupe déjà invité, en continuité directe de la limite signalée en v1.34.0 (« l'app ne capture aucun lien entre une demande et une invitation existante »). Confirmé : parcours rapide et parcours photo coexistent (Option 2), tous deux réservés aux mêmes rôles que `/scan`.

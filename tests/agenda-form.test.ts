@@ -9,6 +9,7 @@ const agendaCustomAssigneesMigration = readFileSync(
   new URL('../supabase/migrations/0043_agenda_custom_assignees.sql', import.meta.url),
   'utf8'
 );
+const responsablePickerSource = readFileSync(new URL('../components/ResponsablePicker.tsx', import.meta.url), 'utf8');
 
 // Corrige le 02/09/2026 (retour de Gersom sur le design du formulaire) :
 // `className="input"` etait utilise sur /agenda depuis la creation du
@@ -59,9 +60,13 @@ test('les deux formulaires (nouvelle activite, modifier) ont un bouton de fermet
   assert.match(agendaPage, /<ModalHeader title="Modifier l’activité" onClose=\{\(\) => openEditing\(null\)\} \/>/);
 });
 
-test('la liste des responsables utilise une coche personnalisee (rond accent) au lieu de la case a cocher par defaut du navigateur', () => {
-  assert.match(agendaPage, /className="sr-only"/);
-  assert.match(agendaPage, /rounded-full border-2 border-accent/);
+test('le selecteur de responsables utilise une coche personnalisee (rond accent) au lieu de la case a cocher par defaut du navigateur', () => {
+  // Deplace le 02/09/2026 dans components/ResponsablePicker.tsx (retour de
+  // Gersom : "au lieu d'avoir toute la liste des responsables a defiler...
+  // un champ") -- chaque ligne est desormais un <button> entier (coche
+  // visuelle + nom), plus une case a cocher HTML cachee derriere un <label>.
+  assert.match(responsablePickerSource, /rounded-full border-2 border-accent/);
+  assert.doesNotMatch(responsablePickerSource, /type="checkbox"/);
 });
 
 // Corrige le 02/09/2026 (retour de Gersom sur la capture de la liste) :
@@ -111,9 +116,23 @@ test('la fiche de modification permet d\'ajouter un responsable au nom libre, sa
   assert.match(agendaApiSource, /function sanitizeCustomAssignees/);
   assert.match(agendaApiSource, /custom_assignees: sanitizeCustomAssignees\(body\.custom_assignees\)/);
   assert.match(agendaApiSource, /if \('custom_assignees' in updates\) updates\.custom_assignees = sanitizeCustomAssignees/);
-  assert.match(agendaPage, /customNameDraft/);
-  assert.match(agendaPage, /placeholder="Nom personnalisé \(ex\. Nourdine, électricien\)"/);
-  assert.match(agendaPage, /custom_assignees: editing\.custom_assignees \|\| \[\]/);
+  // Deplace le 02/09/2026 dans components/ResponsablePicker.tsx (voir le
+  // test dedie plus bas) ; la page elle-meme ne fait plus que transmettre
+  // custom_assignees au picker et le reflete dans le resume du champ.
+  assert.match(agendaPage, /selectedCustomNames=\{editing\.custom_assignees \|\| \[\]\}/);
+  assert.match(responsablePickerSource, /placeholder="Ex\. Nourdine, électricien"/);
+});
+
+test("le picker de responsables recherche aussi parmi les invites (aide de derniere minute), en plus de l'equipe et du nom libre", () => {
+  // Demande de Gersom le 02/09/2026 : "ça va me montrer toutes les
+  // personnes qui ont l'étiquette staff... mais aussi l'option de
+  // recherche au cas où on assigne un invité lambda dernière minute pour
+  // aider". L'equipe (people) est affichee par defaut ; les invites ne se
+  // chargent qu'a partir de 2 caracteres, jamais toute la liste d'un coup.
+  assert.match(responsablePickerSource, /from\('invitations'\)/);
+  assert.match(responsablePickerSource, /\.ilike\('nom_affichage', '%' \+ q \+ '%'\)/);
+  assert.match(responsablePickerSource, /if \(q\.length < 2\) \{/);
+  assert.match(responsablePickerSource, /toggleCustomName\(guest\.nom_affichage\)/);
 });
 
 test("l'API /api/agenda normalise custom_assignees en tableau meme si la migration 0043 n'est pas encore appliquee (select('*') omet silencieusement une colonne manquante)", () => {

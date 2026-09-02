@@ -15,6 +15,7 @@ import {
 } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
+import { AddInvitationButton } from '@/components/AddInvitationButton';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
@@ -356,13 +357,7 @@ export default function PlanTablePage() {
         <TopBar
           title="Plan de table"
           backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
-          right={
-            hasCapability(role, 'addInvitation') ? (
-              <Link href="/tables/add" className="text-sm font-semibold text-accent">
-                + Invité
-              </Link>
-            ) : undefined
-          }
+          right={<AddInvitationButton role={role} />}
         />
 
         {/* Indicateur de tire-pour-rafraichir */}

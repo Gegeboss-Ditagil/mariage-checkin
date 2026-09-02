@@ -36,7 +36,7 @@ export function TopBar({
             <Link
               href={effectiveBackHref}
               aria-label="Retour"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hairline bg-surface text-2xl font-bold leading-none text-accent shadow-card active:scale-[0.95] transition-transform"
+              className="glass-icon-button text-2xl font-bold leading-none"
             >
               ‹
             </Link>

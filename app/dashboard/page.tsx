@@ -7,6 +7,7 @@ import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { CapacityGauge } from '@/components/CapacityGauge';
+import { AddInvitationButton } from '@/components/AddInvitationButton';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -116,6 +117,11 @@ export default function DashboardPage() {
           // toujours pas de fleche retour ici : le tableau de bord est deja
           // son ecran d'accueil.
           backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
+          // "+ Invité" ajouté ici aussi le 02/09/2026 (demande de Gersom) --
+          // même bouton, même emplacement (coin supérieur droit, à côté du
+          // menu du compte) que sur /plan-table, réservé à addInvitation
+          // (admin/directeur uniquement).
+          right={<AddInvitationButton role={role} />}
         />
 
         <PullToRefreshIndicator
