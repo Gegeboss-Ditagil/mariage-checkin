@@ -13,6 +13,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { ETIQUETTES_RAPIDES, libelleEtiquette } from '@/lib/tags';
 import { GuestArrivalPanel } from '@/components/GuestArrivalPanel';
+import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
@@ -27,6 +28,12 @@ export default function CheckinPage() {
   const canMoveGuest = hasCapability(role, 'moveGuests');
   const canManageTags = hasCapability(role, 'manageTags');
   const canMerge = hasCapability(role, 'mergeInvitations');
+  // Invite surprise lie a ce groupe -- reserve a submitGuestApproval, jamais
+  // agent_checkin, meme regle que /scan et que "Invite supplementaire (non
+  // prevu)" (resserre le 02/09/2026, voir app/api/members/add-unplanned) :
+  // "les scanners ne vont même pas traiter votre demande... les placeurs
+  // vont gérer le reste, car ils auront les bons accès".
+  const canSubmitGuestApproval = hasCapability(role, 'submitGuestApproval');
   const [invitation, setInvitation] = useState<InvitationRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   // Valeur affichee par le compteur +/- : represente directement le nombre
@@ -87,6 +94,14 @@ export default function CheckinPage() {
   const [addingUnplanned, setAddingUnplanned] = useState(false);
   const [unplannedPrenom, setUnplannedPrenom] = useState('');
   const [unplannedNom, setUnplannedNom] = useState('');
+
+  // -- Invite surprise lie a ce groupe (photo + approbation) -- demande de
+  // Gersom le 02/09/2026, voir 0046_guest_approval_linked_invitation.sql.
+  // Pas de flux camera live ici (contrairement a /scan) : un simple input
+  // fichier avec capture="environment" ouvre directement l'appareil photo
+  // du telephone sur iOS/Android.
+  const [surprisePhoto, setSurprisePhoto] = useState<File | null>(null);
+  const surprisePhotoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -974,7 +989,14 @@ export default function CheckinPage() {
           // depuis v1.23.0 (add_unplanned_arrival, migration 0030) : ne
           // touche jamais nombre_prevu, pour continuer a declencher
           // l'assignation de table de reserve en cas de depassement.
-          addingUnplanned ? (
+          !canSubmitGuestApproval ? (
+            // Ni l'ajout instantané ni le parcours photo ne sont accessibles
+            // à ce rôle (agent_checkin, visibilite) -- un excédent de
+            // personnes remonte toujours à un placeur/directeur/admin.
+            <p className="action-row-muted mb-3 cursor-default text-text-muted">
+              Une personne en plus ? Un placeur ou directeur peut l’ajouter.
+            </p>
+          ) : addingUnplanned ? (
             <div className="card mb-3">
               <p className="mb-2 text-sm font-semibold">Invité supplémentaire (non prévu)</p>
               <div className="flex gap-1.5">
@@ -1002,14 +1024,41 @@ export default function CheckinPage() {
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              className="action-row mb-3"
-              disabled={submitting || !online}
-              onClick={() => setAddingUnplanned(true)}
-            >
-              {!online ? 'HORS LIGNE' : '+ Invité supplémentaire (non prévu)'}
-            </button>
+            <div className="mb-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className="action-row py-2 text-xs"
+                disabled={submitting || !online}
+                onClick={() => setAddingUnplanned(true)}
+              >
+                {!online ? 'HORS LIGNE' : '+ Non prévu'}
+              </button>
+              {/* Invite surprise lie a ce groupe : nom + photo + approbation,
+                  avec cote/groupe deja preremplis (voir
+                  GuestApprovalCaptureFlow). input file avec
+                  capture="environment" ouvre l'appareil photo natif,
+                  identique en usage a la capture live de /scan. */}
+              <input
+                ref={surprisePhotoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) setSurprisePhoto(file);
+                  event.target.value = '';
+                }}
+              />
+              <button
+                type="button"
+                className="action-row py-2 text-xs"
+                disabled={submitting || !online}
+                onClick={() => surprisePhotoInputRef.current?.click()}
+              >
+                {!online ? 'HORS LIGNE' : '📷 Invité surprise'}
+              </button>
+            </div>
           )
         ) : (
           <>
@@ -1050,6 +1099,16 @@ export default function CheckinPage() {
             {boutonLabel}
           </button>
         </div>
+      )}
+
+      {surprisePhoto && (
+        <GuestApprovalCaptureFlow
+          photo={surprisePhoto}
+          initialCote={invitation.cote === 'Gege' || invitation.cote === 'Nelly' ? invitation.cote : undefined}
+          linkedInvitationId={invitation.id}
+          linkedLabel={invitation.nom_affichage + (invitationTable ? ' — Table ' + invitationTable.number : '')}
+          onClose={() => setSurprisePhoto(null)}
+        />
       )}
     </div>
   );

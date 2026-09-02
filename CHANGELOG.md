@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.35.0] — 2026-09-02
+
+Discussion avec Gersom sur l'idée d'un invité surprise "sous-invité" arrivant avec un groupe déjà invité, en continuité directe de la limite signalée en v1.34.0 (« l'app ne capture aucun lien entre une demande et une invitation existante »). Confirmé : parcours rapide et parcours photo coexistent (Option 2), tous deux réservés aux mêmes rôles que `/scan`.
+
+### Ajouté
+- **Invité surprise lié à un groupe déjà invité** (`0046_guest_approval_linked_invitation.sql`, colonne `linked_invitation_id`) : depuis `/checkin/[invitationId]`, un placeur/directeur/admin peut démarrer une demande d'approbation pour une personne arrivée avec le groupe affiché sur la fiche courante — côté préempli automatiquement (déjà connu, celui de l'invitation), photo prise avec l'appareil natif (`<input type="file" capture="environment">`, pas de flux caméra live nécessaire sur cette page), nom saisi, puis le même circuit d'approbation que depuis `/scan`. `auto_assign_table_for_guest_approval` (v1.34.0) gagne une **priorité 0** : si la demande est liée et que la table du groupe a de la place, la personne y est placée en premier — avant même la table excédentaire.
+- Le nouveau bouton « 📷 Invité surprise » cohabite avec le bouton rapide existant « + Non prévu » (ex-« + Invité supplémentaire (non prévu) », libellé raccourci pour partager la ligne) sur `/checkin/[invitationId]`, tous deux réservés à `submitGuestApproval`.
+
+### Modifié
+- **`+ Non prévu` (ajout instantané d'un invité non prévu) exige désormais `submitGuestApproval` au lieu de `checkin`** : « si les scanners scannent, vous dites vous êtes quatre mais dans l'invitation il y a deux, ils ne vont même pas traiter votre demande... c'est les placeurs qui vont gérer le reste, car ils auront les bons accès » (demande explicite de Gersom). `agent_checkin`/`visibilite` voient désormais un message (« Une personne en plus ? Un placeur ou directeur peut l'ajouter. ») au lieu du bouton — le check-in normal des invités déjà prévus (`set-arrival-status`) n'est pas affecté, reste sur `checkin` pour tous.
+
+### Tests
+- `tests/guest-approval-linked-invitation.test.ts` (nouveau) : capacité resserrée sur `add-unplanned`, `set-arrival-status` inchangée, priorité 0 (groupe lié) avant priorité 1 (réserve) dans `auto_assign_table_for_guest_approval`, validation `invitation_id`/même événement côté API, `GuestApprovalCaptureFlow` sautant l'étape côté quand préempli, gating des deux boutons sur `/checkin/[invitationId]`.
+- `tests/guest-arrival-panel.test.ts` : assertion mise à jour pour le libellé raccourci « + Non prévu ».
+- `npx tsc --noEmit`, `npm run build`, 190 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- `0046_guest_approval_linked_invitation.sql` — écrite, testée, **appliquée en production le 02/09/2026** (vérifiée : `linked_invitation_id` existe, `auto_assign_table_for_guest_approval` toujours `SECURITY INVOKER`).
+
 ## [1.34.0] — 2026-09-02
 
 Retour de Gersom sur le fonctionnement d'`/approbations` en test réel (capture d'écran à l'appui d'une décision qui a échoué) et sur le design de l'application (« je veux que tout soit vraiment bien flottant... que ça l'air d'une application faite par Apple », en référence explicite au thème « Liquid Glass », avec captures d'écran d'Apple Musique et de l'Horloge en modèles).

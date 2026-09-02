@@ -6,10 +6,27 @@ import type { Cote } from '@/lib/types';
 
 type Step = 'cote' | 'form' | 'submitting' | 'done';
 
-export function GuestApprovalCaptureFlow({ photo, onClose }: { photo: File; onClose: () => void }) {
+export function GuestApprovalCaptureFlow({
+  photo,
+  onClose,
+  initialCote,
+  linkedInvitationId,
+  linkedLabel,
+}: {
+  photo: File;
+  onClose: () => void;
+  // Cote deja connue et lien vers l'invitation du groupe avec qui la
+  // personne est arrivee -- demande de Gersom le 02/09/2026 (voir
+  // 0046_guest_approval_linked_invitation.sql) : depuis
+  // /checkin/[invitationId], le cote est deja celui du groupe courant, pas
+  // besoin de le redemander. Absent depuis /scan (aucune invitation connue).
+  initialCote?: Exclude<Cote, 'Neutre'>;
+  linkedInvitationId?: string;
+  linkedLabel?: string;
+}) {
   const online = useOnline();
-  const [step, setStep] = useState<Step>('cote');
-  const [cote, setCote] = useState<Cote | null>(null);
+  const [step, setStep] = useState<Step>(initialCote ? 'form' : 'cote');
+  const [cote, setCote] = useState<Cote | null>(initialCote ?? null);
   const [nomInvite, setNomInvite] = useState('');
   const [nombreInvites, setNombreInvites] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +49,7 @@ export function GuestApprovalCaptureFlow({ photo, onClose }: { photo: File; onCl
       form.append('cote', cote);
       form.append('nom_invite', nomInvite.trim());
       form.append('nombre_invites', String(nombreInvites));
+      if (linkedInvitationId) form.append('invitation_id', linkedInvitationId);
       const response = await fetch('/api/guest-approvals', { method: 'POST', body: form });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Échec de la demande');
@@ -70,6 +88,9 @@ export function GuestApprovalCaptureFlow({ photo, onClose }: { photo: File; onCl
 
         {(step === 'form' || step === 'submitting') && cote && (
           <div className="card space-y-4">
+            {linkedLabel && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-faint">Arrivé(e) avec {linkedLabel}</p>
+            )}
             <p className="font-semibold text-accent">Côté {cote === 'Gege' ? 'Gégé' : 'Nelly'}</p>
             <label className="block text-xs font-semibold uppercase tracking-wide text-text-faint">Nom</label>
             <input autoFocus value={nomInvite} onChange={(event) => setNomInvite(event.target.value)} placeholder="Prénom Nom" className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none" />
