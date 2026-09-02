@@ -164,15 +164,31 @@ export default function AgendaPage() {
                 const assignees = item.assignee_ids.map((id) => peopleById.get(id)).filter(Boolean) as Person[];
                 return <li key={item.id}>
                   {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
-                  <article className="card flex gap-3 py-3">
-                    {canManage && <button type="button" aria-label={item.completed ? 'Marquer à faire' : 'Marquer terminé'} onClick={() => void patchItem(item.id, { completed: !item.completed })} className="mt-0.5 h-7 w-7 shrink-0 rounded-full border-2 border-accent text-sm font-bold text-accent">{item.completed ? '✓' : ''}</button>}
+                  <article
+                    className={clsx('card flex gap-3 py-3', canManage && 'cursor-pointer transition-transform active:scale-[0.99]')}
+                    onClick={() => canManage && setEditing(item)}
+                    role={canManage ? 'button' : undefined}
+                    tabIndex={canManage ? 0 : undefined}
+                    aria-label={canManage ? 'Modifier ' + item.title : undefined}
+                    onKeyDown={canManage ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(item); } } : undefined}
+                  >
+                    {/* Case a part (pas dans la zone cliquable de la carte) : appuyer dessus coche/decoche sans ouvrir la modification. */}
+                    {canManage && (
+                      <button
+                        type="button"
+                        aria-label={item.completed ? 'Marquer à faire' : 'Marquer terminé'}
+                        onClick={(e) => { e.stopPropagation(); void patchItem(item.id, { completed: !item.completed }); }}
+                        className="mt-0.5 h-7 w-7 shrink-0 rounded-full border-2 border-accent text-sm font-bold text-accent"
+                      >
+                        {item.completed ? '✓' : ''}
+                      </button>
+                    )}
                     <time className="w-16 shrink-0 pt-1 text-sm font-bold tabular-nums text-accent">{item.time_label}</time>
-                    <button type="button" onClick={() => canManage && setEditing(item)} className="min-w-0 flex-1 text-left">
+                    <div className="min-w-0 flex-1 text-left">
                       <div className="flex flex-wrap items-start justify-between gap-2"><p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p><span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span></div>
                       {item.details && <p className="mt-1 text-xs leading-relaxed text-text-muted">{item.details}</p>}
-                      <p className="mt-2 text-xs font-semibold text-status-partial">{assignees.length ? assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ') : 'Responsable à attribuer'}</p>
-                      {canManage && <p className="mt-2 text-xs font-semibold text-accent underline underline-offset-4">Modifier l’heure, les détails ou les responsables</p>}
-                    </button>
+                      <p className="mt-2 text-xs font-semibold text-text-muted">{assignees.length ? assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ') : 'Responsable à attribuer'}</p>
+                    </div>
                   </article>
                 </li>;
               })}

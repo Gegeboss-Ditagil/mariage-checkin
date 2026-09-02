@@ -58,3 +58,23 @@ test('la liste des responsables utilise une coche personnalisee (rond accent) au
   assert.match(agendaPage, /className="sr-only"/);
   assert.match(agendaPage, /rounded-full border-2 border-accent/);
 });
+
+// Corrige le 02/09/2026 (retour de Gersom sur la capture de la liste) :
+// seul le bloc de texte (titre/departement/details/responsables) ouvrait la
+// modification -- taper l'heure ou l'espace vide de la carte ne faisait
+// rien. La case a cocher "termine" (qui doit continuer a fonctionner sans
+// ouvrir la modification) etait le seul autre element interactif.
+test('toute la carte d\'une activite ouvre la modification (pas seulement le bloc de texte), la case terminee reste independante, et le lien jaune redondant a disparu', () => {
+  assert.match(agendaPage, /role=\{canManage \? 'button' : undefined\}/);
+  assert.match(agendaPage, /onClick=\{\(\) => canManage && setEditing\(item\)\}/);
+  // La carte entiere porte le onClick -- l'ancien <button> qui n'enveloppait
+  // que le texte est redevenu un simple <div>.
+  assert.doesNotMatch(agendaPage, /<button type="button" onClick=\{\(\) => canManage && setEditing\(item\)\}/);
+  // La case cochee stoppe la propagation pour ne pas aussi ouvrir la carte.
+  assert.match(agendaPage, /onClick=\{\(e\) => \{ e\.stopPropagation\(\); void patchItem\(item\.id, \{ completed: !item\.completed \}\); \}\}/);
+  // Le lien texte en accent devenu redondant (la carte entiere s'ouvre déjà)
+  // a disparu ; la couleur d'alerte du champ "Responsable a attribuer" est
+  // neutralisee, plus besoin de la mettre en jaune.
+  assert.doesNotMatch(agendaPage, /Modifier l.heure, les détails ou les responsables/);
+  assert.doesNotMatch(agendaPage, /text-status-partial/);
+});
