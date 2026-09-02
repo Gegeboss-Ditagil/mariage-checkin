@@ -86,8 +86,12 @@ test('la visibilite du panneau/compteur repose sur hasMemberList (etat reel), ja
   assert.doesNotMatch(checkinSource, /\{invitation\.nombre_prevu <= 1 && \(/);
 });
 
-test('un groupe propose "+ Invité supplémentaire" au lieu du compteur/bouton "Confirmer"', () => {
-  assert.match(checkinSource, /\+ Invité supplémentaire \(non prévu\)/);
+test('un groupe propose "+ Non prévu" au lieu du compteur/bouton "Confirmer"', () => {
+  // Libellé raccourci le 02/09/2026 (voir 0046_guest_approval_linked_invitation)
+  // pour partager la ligne avec le nouveau bouton "Invité surprise" -- le
+  // libellé complet reste affiché dans l'en-tête du mini-formulaire.
+  assert.match(checkinSource, /\+ Non prévu/);
+  assert.match(checkinSource, /Invité supplémentaire \(non prévu\)/);
 });
 
 test('"+ Invité supplémentaire" est un ajout NOMME (add-unplanned), pas un +1 anonyme, pour garder le declenchement de la table de reserve', () => {

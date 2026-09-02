@@ -34,6 +34,13 @@ export async function POST(req: NextRequest) {
   const nomInvite = typeof form.get('nom_invite') === 'string' ? String(form.get('nom_invite')).trim() : '';
   const nombreInvitesRaw = Number(form.get('nombre_invites'));
   const nombreInvites = Number.isFinite(nombreInvitesRaw) && nombreInvitesRaw > 0 ? Math.floor(nombreInvitesRaw) : 1;
+  // Lien optionnel vers l'invitation du groupe avec qui la personne est
+  // arrivée -- demande de Gersom le 02/09/2026, voir 0046 : permet au
+  // placement automatique (0045) de prioriser la table de ce groupe plutôt
+  // que la réserve. Envoyé uniquement depuis /checkin/[invitationId] ; /scan
+  // ne connaît aucune invitation à ce stade et n'envoie jamais ce champ.
+  const invitationIdRaw = form.get('invitation_id');
+  const linkedInvitationId = typeof invitationIdRaw === 'string' && invitationIdRaw.trim() ? invitationIdRaw.trim() : null;
 
   if (!(photo instanceof File) || photo.size === 0) {
     return NextResponse.json({ error: 'photo_required' }, { status: 400 });
@@ -61,6 +68,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'event_not_found' }, { status: 400 });
   }
 
+  // L'invitation liée doit exister et appartenir au même événement -- sinon
+  // le lien est simplement ignoré (jamais bloquant : la demande reste valide
+  // sans lien, comme avant cette fonctionnalité).
+  let verifiedLinkedInvitationId: string | null = null;
+  if (linkedInvitationId) {
+    const { data: linkedInvitation } = await supabase
+      .from('invitations')
+      .select('id')
+      .eq('id', linkedInvitationId)
+      .eq('event_id', event.id)
+      .maybeSingle();
+    if (linkedInvitation) verifiedLinkedInvitationId = linkedInvitation.id;
+  }
+
   const requestId = randomUUID();
   let photoPath: string;
   try {
@@ -83,6 +104,7 @@ export async function POST(req: NextRequest) {
       nombre_invites: nombreInvites,
       photo_url: photoPath,
       approver_phone: approver.telephone,
+      linked_invitation_id: verifiedLinkedInvitationId,
     })
     .select('*')
     .single<GuestApprovalRequestRow>();

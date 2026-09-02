@@ -187,6 +187,11 @@ export interface GuestApprovalRequestRow {
   // invitation, juste une intention comptee dans le calcul de capacite tant
   // que la demande reste en attente. Finalisee en table_id des l'approbation.
   reserved_table_id: string | null;
+  // Invitation du groupe avec qui la personne est arrivee, quand connue --
+  // voir 0046_guest_approval_linked_invitation.sql. Permet au placement
+  // automatique (0045) de prioriser la table de ce groupe. NULL pour les
+  // demandes soumises depuis /scan (aucune invitation connue a ce stade).
+  linked_invitation_id: string | null;
   assigned_by: string | null;
   assigned_at: string | null;
   created_at: string;
