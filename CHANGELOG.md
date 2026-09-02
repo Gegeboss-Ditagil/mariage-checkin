@@ -19,7 +19,7 @@ Retour de Gersom en test réel sur le compte de Rémy (directeur, 3 captures d'�
 - `npx tsc --noEmit`, `npm run build`, 18 suites de tests (`node --test tests/*.test.ts`, 180 tests) — tous exécutés avec succès.
 
 ### Migrations
-- Aucune nouvelle migration. Rappel : `0043_agenda_custom_assignees.sql` et `0044_guest_approval_pre_approval_reservation.sql` (v1.33.0) restent en attente d'application en production — voir les instructions SQL déjà transmises à Gersom. Le correctif `/agenda` de cette version rend l'application tolérante à cette migration manquante, mais ne remplace pas son application (le nom personnalisé ne peut pas être enregistré tant qu'elle n'a pas tourné).
+- Aucune nouvelle migration écrite dans cette version. `0043_agenda_custom_assignees.sql` et `0044_guest_approval_pre_approval_reservation.sql` (écrites en v1.33.0) ont été **appliquées en production le 02/09/2026** (colonnes `custom_assignees`/`reserved_table_id` et fonctions `reserve_table_for_guest_approval`/`release_guest_approval_reservation` vérifiées présentes après coup). Le correctif `/agenda` de cette version reste utile indépendamment : il rend l'application tolérante à une colonne manquante si une future migration additive tardait à être appliquée.
 
 ## [1.33.0] — 2026-09-02
 
@@ -48,8 +48,8 @@ Retour détaillé de Gersom en test réel (captures d'écran de `/dashboard`, `/
 - `npx tsc --noEmit`, `npm run build`, 17 suites de tests (`node --test`) — tous exécutés avec succès.
 
 ### Migrations
-- `0043_agenda_custom_assignees.sql` — écrite, testée ; en attente d'application en production (SQL Editor Supabase, voir instructions transmises à Gersom).
-- `0044_guest_approval_pre_approval_reservation.sql` — écrite, testée ; en attente d'application en production (idem).
+- `0043_agenda_custom_assignees.sql` — écrite, testée ; appliquée en production le 02/09/2026 (v1.33.1).
+- `0044_guest_approval_pre_approval_reservation.sql` — écrite, testée ; appliquée en production le 02/09/2026 (v1.33.1).
 
 ## [1.32.1] — 2026-09-02
 
