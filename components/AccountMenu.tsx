@@ -98,8 +98,17 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
           <span className="font-semibold text-accent">Ouvrir</span>
         </Link>
       )}
-      <button type="button" onClick={() => setOpen((value) => !value)} aria-haspopup="menu" aria-expanded={open} aria-label="Ouvrir le menu du compte" className="flex h-11 w-11 items-center justify-center rounded-full border border-hairline bg-glass text-xs font-bold text-accent shadow-card backdrop-blur active:scale-[0.95] transition-transform">
+      <button type="button" onClick={() => setOpen((value) => !value)} aria-haspopup="menu" aria-expanded={open} aria-label="Ouvrir le menu du compte" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-hairline bg-glass text-xs font-bold text-accent shadow-card backdrop-blur active:scale-[0.95] transition-transform">
         {initials(name)}
+        {/* Badge persistant (pas seulement dans le menu deroulant) -- demande
+            de Gersom le 02/09/2026 : "un petit numero ou une petite cloche
+            en haut" pour voir d'un coup d'oeil qu'il y a des approbations en
+            attente, sans avoir a ouvrir le menu. */}
+        {canGuestApproval && pendingApprovals > 0 && (
+          <span className="absolute -right-1 -top-1 min-w-5 rounded-full border-2 border-bg bg-status-over px-1 text-center text-[10px] font-bold leading-4 text-white">
+            {pendingApprovals > 99 ? '99+' : pendingApprovals}
+          </span>
+        )}
       </button>
       {open && (
         <div role="menu" className="absolute right-0 top-12 w-64 overflow-hidden rounded-xl2 border border-hairline bg-glass p-3 text-left shadow-elev-2 backdrop-blur">

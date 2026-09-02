@@ -125,7 +125,12 @@ export default function DashboardPage() {
           pullThreshold={pullThreshold}
         />
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
+        {/* pb-10 (au lieu de py-4 symetrique) : la derniere carte (Table 41)
+            restait juste sous le bord visible sur iPhone, "coupee un peu" --
+            retour de Remy le 02/09/2026 -- il fallait toujours scroller un
+            tout petit peu pour la voir entierement malgre BottomNav deja en
+            flux normal (pas en position fixed) sous ce conteneur. */}
+        <div className="flex-1 space-y-6 overflow-y-auto px-4 pt-4 pb-10">
           <div className="card">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-semibold">Remplissage de la salle</p>

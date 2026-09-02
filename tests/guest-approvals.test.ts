@@ -171,11 +171,17 @@ test('le choix rapide ne montre que les tables réellement libres et priorise la
   assert.match(assignPageSource, /Seules les tables qui peuvent accueillir tout le groupe sont proposées/);
 });
 
-test('la fiche a un vrai bouton fermer et rend le placement actionnable après approbation', () => {
+test('la fiche a un vrai bouton fermer et rend le placement actionnable après approbation ou réservable avant', () => {
   assert.match(approbationsPageSource, /aria-label="Fermer la demande"/);
   assert.match(approbationsPageSource, /<CloseIcon/);
   assert.match(approbationsPageSource, /Choisir une table/);
-  assert.match(approbationsPageSource, /Approuvez d’abord la demande/);
+  // Le bouton desactive "Approuvez d'abord la demande..." est remplace le
+  // 02/09/2026 par un vrai lien de reservation pendant l'attente (voir
+  // 0044_guest_approval_pre_approval_reservation.sql) -- plus besoin
+  // d'attendre l'approbation pour choisir une table.
+  assert.doesNotMatch(approbationsPageSource, /Approuvez d’abord la demande/);
+  assert.match(approbationsPageSource, /Réserver une table/);
+  assert.match(approbationsPageSource, /réservée — modifier/);
 });
 
 test('les alertes dans l application restent actives meme sans cles VAPID', () => {
@@ -198,7 +204,11 @@ test('tous les placeurs abonnes recoivent le resultat et le lien d assignation',
   assert.match(webPushSource, /user\.role === 'placeur'/);
   assert.match(webPushSource, /attend à la porte · assignez une table/);
   assert.match(webPushSource, /approbations\/\$\{request\.id\}\/assign/);
-  assert.match(decideLibSource, /notifyGuestApprovalPlaceurs\(supabase, updated, null\)/);
+  // Depuis le 02/09/2026, tableNumber n'est plus toujours null a la
+  // decision : une reservation posee avant l'approbation (0044) est
+  // finalisee dans la meme fonction, donc le vrai numero de table est
+  // passe des qu'il existe (voir lib/guestApprovalDecide.ts).
+  assert.match(decideLibSource, /notifyGuestApprovalPlaceurs\(supabase, updated, tableNumber\)/);
   assert.match(assignRouteSource, /notifyGuestApprovalPlaceurs\(supabase, request, table\.number\)/);
 });
 
@@ -228,7 +238,10 @@ test('chaque route API verifie la capacite precise cote serveur', () => {
 });
 
 test('la decision dans l app et les abonnements push restent proteges et prives', () => {
-  assert.match(appDecideSource, /applyGuestApprovalDecision\(createAdminClient\(\), \{ id: params\.id \}, body\.decision, 'app'\)/);
+  // 'app' + l'id de l'agent connecte -- ajoute le 02/09/2026 pour finaliser
+  // une reservation posee avant l'approbation (voir 0044) avec le bon
+  // p_agent_id sur assign_table_to_guest_approval_strict.
+  assert.match(appDecideSource, /applyGuestApprovalDecision\(createAdminClient\(\), \{ id: params\.id \}, body\.decision, 'app', user\.id\)/);
   assert.match(pushMigrationSource, /decided_via in \('web', 'whatsapp', 'app'\)/);
   assert.match(pushMigrationSource, /alter table push_subscriptions enable row level security/);
   assert.match(pushMigrationSource, /revoke all on table push_subscriptions from anon, authenticated/);
