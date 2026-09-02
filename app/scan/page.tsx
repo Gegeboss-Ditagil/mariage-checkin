@@ -11,6 +11,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
 import { GuestApprovalsShortcut } from '@/components/GuestApprovalsShortcut';
+import { NextAgendaActivity } from '@/components/NextAgendaActivity';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -148,7 +149,7 @@ export default function ScanPage() {
             {roleReady ? (
               <QrScanner ref={scannerRef} onScan={handleScan} />
             ) : (
-              <div className="flex h-[clamp(340px,55dvh,680px)] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
+              <div className="flex h-[clamp(320px,46dvh,620px)] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
                 Chargement…
               </div>
             )}
@@ -165,6 +166,11 @@ export default function ScanPage() {
 
         </div>
 
+        {/* Ordre de bas en haut demande par Gersom le 02/09/2026 : Bord
+            (ScanStatsStrip), Approbations, puis juste au-dessus, la
+            prochaine activite du chronogramme -- la camera garde le haut de
+            la page. */}
+        {role && <NextAgendaActivity role={role} />}
         {role && <GuestApprovalsShortcut role={role} />}
         {role && <ScanStatsStrip />}
       </div>

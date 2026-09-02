@@ -38,6 +38,7 @@ Avant toute modification, lire :
 
 ## État fonctionnel v1.33.0
 
+- **`/scan` affiche la prochaine activité du chronogramme** juste au-dessus du raccourci Approbations — s'appuie sur la case « terminé » de chaque activité (pas sur l'heure de l'appareil), réservé à admin/directeur, un tap ouvre l'agenda complet.
 - **Réservation de table avant approbation** : depuis la fiche d'une demande encore en attente, un placeur/directeur/admin/visibilite peut désormais voir les tables disponibles et en réserver une tout de suite, sans attendre la décision — la place est comptée aussitôt (aucune autre demande en attente ne peut la prendre) mais aucune invitation n'est créée. Dès que la demande est approuvée, la réservation est automatiquement transformée en vraie assignation ; si elle est refusée, elle est simplement libérée. Corrige le double booking possible auparavant entre l'approbation et l'assignation manuelle.
 - **Fiabilité des décisions Approuver/Refuser** : un double-appui rapide pouvait déclencher deux requêtes avant que le bouton ne se désactive, la seconde recevant à tort « déjà traitée » — verrouillage synchrone ajouté. Le message reflète désormais le statut réel renvoyé par le serveur (Approuvée/Refusée) plutôt qu'un texte générique.
 - **Petit badge persistant sur l'avatar du compte** (pas seulement dans le menu déroulant) dès qu'une approbation est en attente, visible sur tous les écrans sans avoir à ouvrir le menu.

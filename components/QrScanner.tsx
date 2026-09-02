@@ -158,11 +158,13 @@ export const QrScanner = forwardRef<QrScannerHandle, { onScan: (text: string) =>
           3/2 historique écrasait la caméra à environ 360 px sur un grand
           iPhone et laissait la moitié de l'écran vide. clamp garde une zone
           utile sur iPhone SE, remplit les grands iPhone/Android/iPad sans
-          devenir démesurée, et le parent peut toujours défiler au besoin. */}
+          devenir démesurée, et le parent peut toujours défiler au besoin.
+          Pourcentage resserré le 02/09/2026 (55dvh -> 46dvh) pour laisser la
+          place à NextAgendaActivity sur /scan sans avoir à scroller. */}
       <div
         id={elementId}
         ref={containerRef}
-        className="h-[clamp(340px,55dvh,680px)] w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+        className="h-[clamp(320px,46dvh,620px)] w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
       />
       {error && (
         <div className="space-y-3 p-4 text-center">
