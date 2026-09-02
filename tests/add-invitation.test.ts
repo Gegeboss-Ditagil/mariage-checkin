@@ -6,6 +6,8 @@ import { hasCapability } from '../lib/permissions.ts';
 const addPage = readFileSync(new URL('../app/tables/add/page.tsx', import.meta.url), 'utf8');
 const addRoute = readFileSync(new URL('../app/api/invitations/add/route.ts', import.meta.url), 'utf8');
 const planTablePage = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+const dashboardPage = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');
+const addInvitationButtonSource = readFileSync(new URL('../components/AddInvitationButton.tsx', import.meta.url), 'utf8');
 const checkinPage = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
 const tagsLib = readFileSync(new URL('../lib/tags.ts', import.meta.url), 'utf8');
 
@@ -46,9 +48,18 @@ test("le formulaire capture le telephone (avec indicatif) et propose les etiquet
   assert.match(addRoute, /table_id/);
 });
 
-test("le plan de table propose un raccourci + Invité reserve a addInvitation, et le formulaire choisit la table via TablePicker", () => {
-  assert.match(planTablePage, /hasCapability\(role, ['"]addInvitation['"]\)/);
-  assert.match(planTablePage, /href="\/tables\/add"/);
+test("le plan de table et le tableau de bord proposent un bouton rond + Invité reserve a addInvitation (composant partage, pas de lien texte), et le formulaire choisit la table via TablePicker", () => {
+  // Corrige/enrichi le 02/09/2026 (retour de Gersom : "plus un bouton que
+  // juste du texte") -- extrait dans un composant partage (glass-icon-button,
+  // meme recette que la fleche Retour de TopBar) au lieu d'un lien texte
+  // duplique par page, ajoute aussi sur /dashboard au meme endroit.
+  assert.match(addInvitationButtonSource, /hasCapability\(role, ['"]addInvitation['"]\)/);
+  assert.match(addInvitationButtonSource, /href="\/tables\/add"/);
+  assert.match(addInvitationButtonSource, /glass-icon-button/);
+  assert.match(planTablePage, /import \{ AddInvitationButton \} from ['"]@\/components\/AddInvitationButton['"]/);
+  assert.match(planTablePage, /right=\{<AddInvitationButton role=\{role\} \/>\}/);
+  assert.match(dashboardPage, /import \{ AddInvitationButton \} from ['"]@\/components\/AddInvitationButton['"]/);
+  assert.match(dashboardPage, /right=\{<AddInvitationButton role=\{role\} \/>\}/);
   assert.match(addPage, /<TablePicker/);
   assert.match(addPage, /computeTableCapacities/);
 });

@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.35.0**
+**Version actuelle : 1.36.0**
 **Dernière mise à jour documentaire : 2026-09-02**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.35.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.36.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.35.0**.
+- Branche de production : `main`; version proposée : **1.36.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
@@ -36,8 +36,10 @@ Avant toute modification, lire :
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.35.0
+## État fonctionnel v1.36.0
 
+- **`+ Invité` en bouton rond en verre** (au lieu d'un simple lien texte), désormais présent aussi sur `/dashboard` au même endroit qu'`/plan-table` (coin supérieur droit, à côté du menu du compte) — réservé à `addInvitation` (admin/directeur uniquement).
+- **`/admin/users` : bascule Actif/Désactivé en verre liquide** (thème iOS) et **possibilité de changer le rôle/accès d'un compte** directement depuis sa fiche d'édition — le nouvel identifiant (email+mot de passe ou PIN) est requis quand le rôle change, puisque le mode de connexion en dépend.
 - **Invité surprise lié à un groupe déjà invité** : depuis `/checkin/[invitationId]`, un placeur/directeur/admin peut démarrer une demande d'approbation pour une personne arrivée avec le groupe affiché sur la fiche — côté préempli automatiquement, photo prise avec l'appareil natif, nom saisi, puis même circuit d'approbation que `/scan`. Le placement automatique priorise désormais la table de ce groupe avant même la table excédentaire. Coexiste avec le bouton rapide « + Non prévu » (ex-« + Invité supplémentaire (non prévu) »), tous deux réservés au même rôle — jamais `agent_checkin` : « si les scanners scannent, vous dites vous êtes quatre mais dans l'invitation il y a deux, ils ne vont même pas traiter votre demande... c'est les placeurs qui vont gérer le reste ».
 - **Placement automatique à l'approbation** : approuver une demande n'exige plus de choisir une table au préalable — la personne est placée automatiquement (table excédentaire en priorité, sinon la table la plus libre du même côté, sinon de l'autre côté, sinon approuvée sans table si tout est plein). Le directeur de festin reste libre de la déplacer ensuite.
 - **Approuver/Refuser directement sur la carte de la liste** `/approbations`, sans ouvrir la fiche détaillée.
@@ -181,4 +183,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.35.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.36.0** et l'historique des versions.
