@@ -153,18 +153,22 @@ export const QrScanner = forwardRef<QrScannerHandle, { onScan: (text: string) =>
   }, [elementId, retryKey]);
 
   return (
-    <div className="overflow-hidden rounded-xl2 bg-black">
+    <div className="overflow-hidden rounded-xl2 bg-black landscape:flex landscape:h-full">
       {/* Hauteur pilotée par le viewport plutôt que par la largeur : le ratio
           3/2 historique écrasait la caméra à environ 360 px sur un grand
           iPhone et laissait la moitié de l'écran vide. clamp garde une zone
           utile sur iPhone SE, remplit les grands iPhone/Android/iPad sans
           devenir démesurée, et le parent peut toujours défiler au besoin.
           Pourcentage resserré le 02/09/2026 (55dvh -> 46dvh) pour laisser la
-          place à NextAgendaActivity sur /scan sans avoir à scroller. */}
+          place à NextAgendaActivity sur /scan sans avoir à scroller.
+          En paysage (meme date, retour de Gersom : "la portion camera est
+          plus petite ... ca va mal"), la camera devient carree (aspect-square,
+          hauteur pleine) a gauche des trois cartes plutot que pleine largeur
+          ecrasee par la faible hauteur disponible. */}
       <div
         id={elementId}
         ref={containerRef}
-        className="h-[clamp(320px,46dvh,620px)] w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+        className="h-[clamp(320px,46dvh,620px)] w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover landscape:aspect-square landscape:h-full landscape:w-auto"
       />
       {error && (
         <div className="space-y-3 p-4 text-center">
