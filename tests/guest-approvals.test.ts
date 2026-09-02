@@ -439,3 +439,16 @@ test('le compte d\'approbations en attente est explicitement exclu du cache HTTP
     assert.match(source, /fetch\('\/api\/guest-approvals\?count=pending', \{ cache: 'no-store' \}\)/);
   }
 });
+
+test('les approbations et abonnements push utilisent evenement de la session, jamais le premier evenement', () => {
+  assert.match(createRouteSource, /\.eq\('id', user\.event_id\)\.maybeSingle\(\)/);
+  assert.match(pushSubscribeRouteSource, /\.eq\('id', user\.event_id\)\.maybeSingle\(\)/);
+  assert.match(clientCacheSource, /cache: 'no-store'/);
+});
+
+test('les notifications push sont activables sur Android et iOS installe, avec erreurs visibles', () => {
+  assert.match(pushButtonSource, /display-mode: standalone/);
+  assert.match(pushButtonSource, /navigator\.serviceWorker\.ready/);
+  assert.match(pushButtonSource, /Echec activation notifications push/);
+  assert.match(pushButtonSource, /Notifications activées/);
+});

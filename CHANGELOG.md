@@ -3,6 +3,31 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.39.1] — 2026-09-02
+
+### Corrigé
+- Les approbations et abonnements push sont maintenant rattachés à l'événement de la session, même lorsque plusieurs événements existent.
+- Les lectures client des approbations demandent explicitement des données temps réel sans cache.
+- L'activation des notifications gère Android et iOS installé (PWA), avec retour d'erreur visible.
+
+### Tests
+- `tests/guest-approvals.test.ts` : non-régression du rattachement événementiel, du cache et de l'activation push.
+
+Version: 1.39.0 → 1.39.1
+
+## [1.39.0] — 2026-09-02
+
+### Ajouté
+- La création d'une activité dans `/agenda` reprend le formulaire visuel de la maquette et permet de choisir immédiatement les responsables de l'équipe, un invité recherché ou un nom libre avant « Ajouter et partager ».
+
+### Tests
+- `tests/agenda-form.test.ts` : non-régression de la sélection des responsables dès la création.
+
+### Migrations
+- Aucune.
+
+Version: 1.38.1 → 1.39.0
+
 ## [1.38.1] — 2026-09-02
 
 ### Corrigé

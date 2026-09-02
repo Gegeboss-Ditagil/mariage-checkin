@@ -16,7 +16,11 @@ function preloadPhotos(payload: ApprovalPayload | null) {
 }
 
 async function requestApprovals(): Promise<ApprovalPayload | null> {
-  const response = await fetch('/api/guest-approvals', { credentials: 'same-origin' }).catch(() => null);
+  const response = await fetch('/api/guest-approvals', {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' },
+  }).catch(() => null);
   if (!response?.ok) return null;
   const payload = (await response.json()) as ApprovalPayload;
   cachedPayload = payload;

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'approver_not_configured' }, { status: 400 });
   }
 
-  const { data: event } = await supabase.from('events').select('id').limit(1).maybeSingle();
+  const { data: event } = await supabase.from('events').select('id').eq('id', user.event_id).maybeSingle();
   if (!event) {
     return NextResponse.json({ error: 'event_not_found' }, { status: 400 });
   }
