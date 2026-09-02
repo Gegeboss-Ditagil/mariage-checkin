@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.37.0] — 2026-09-02
+
+Retour de Gersom sur `/agenda` (capture d'écran de la fiche de modification à l'appui) : « au lieu d'avoir toute la liste des responsables à défiler... un champ... quand je clique dessus ça me demande de choisir la personne ».
+
+### Ajouté
+- **Sélecteur de responsables en recherche plein écran** (`components/ResponsablePicker.tsx`), à la place de la longue liste de cases à cocher toujours dépliée dans la fiche de modification d'une activité. Le champ Responsables devient un simple bouton résumant la sélection (« Choisir les responsables » si vide) ; le toucher ouvre une fiche avec un champ de recherche.
+  - **Équipe** (comptes de l'application) affichée par défaut, filtrée en tapant.
+  - **Invités** : « au cas où on assigne un invité lambda dernière minute pour aider » — à partir de 2 caractères, recherche aussi parmi les invitations (`ilike` sur `nom_affichage`, 20 résultats max) pour retrouver quelqu'un du cortège aidant ponctuellement, sans avoir à charger toute la liste des ~400 invités d'un coup. Sélectionner un invité l'ajoute comme nom libre (`custom_assignees`), exactement comme le mécanisme déjà existant pour un prestataire externe.
+  - Le champ « nom personnalisé » (pour quelqu'un d'entièrement absent des deux listes) reste disponible en bas de la fiche.
+  - Mêmes deux champs qu'avant (`assignee_ids`, `custom_assignees`) — seule la manière de les remplir change, aucune migration nécessaire.
+
+### Tests
+- `tests/agenda-form.test.ts` : assertions déplacées vers `components/ResponsablePicker.tsx` (coche personnalisée, nom libre) ; nouveau test pour la recherche parmi les invités.
+- `npx tsc --noEmit`, `npm run build`, 195 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
 ## [1.36.0] — 2026-09-02
 
 Retour de Gersom sur le design de « + Invité » (capture d'écran de `/plan-table`) et sur `/admin/users` (capture d'écran de « Comptes de l'équipe »).

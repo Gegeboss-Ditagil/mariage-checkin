@@ -4,7 +4,8 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { BottomNav } from '@/components/BottomNav';
 import { TopBar } from '@/components/TopBar';
-import { CloseIcon } from '@/components/icons';
+import { CloseIcon, ChevronRightIcon } from '@/components/icons';
+import { ResponsablePicker } from '@/components/ResponsablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
@@ -100,13 +101,16 @@ export default function AgendaPage() {
   const [editing, setEditing] = useState<AgendaItem | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);
   const [canManage, setCanManage] = useState(false);
-  // Brouillon du champ "nom libre" (responsable sans compte) -- vidé à
-  // chaque ouverture/fermeture de la fiche pour ne pas fuiter d'une activité
-  // à l'autre (state du parent, la modale se démonte/remonte mais pas la page).
-  const [customNameDraft, setCustomNameDraft] = useState('');
+  // Fiche plein ecran de recherche des responsables -- demande de Gersom le
+  // 02/09/2026 : "au lieu d'avoir toute la liste des responsables a
+  // defiler... un champ" (voir components/ResponsablePicker.tsx). Fermee a
+  // chaque ouverture/fermeture de la fiche d'activite pour ne pas rester
+  // ouverte d'une activite a l'autre (state du parent, elle se
+  // demonte/remonte mais pas la page).
+  const [responsablePickerOpen, setResponsablePickerOpen] = useState(false);
 
   function openEditing(item: AgendaItem | null) {
-    setCustomNameDraft('');
+    setResponsablePickerOpen(false);
     setEditing(item);
   }
 
@@ -274,83 +278,41 @@ export default function AgendaPage() {
             </div>
             <div>
               <FieldLabel>Responsables</FieldLabel>
-              <div className="space-y-2">{people.map((person) => {
-                const checked = editing.assignee_ids.includes(person.id);
-                return (
-                  <label key={person.id} className={clsx('action-row flex cursor-pointer items-center gap-3 text-left', checked && 'border-accent bg-accent-tint')}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => {
-                        const ids = checked ? editing.assignee_ids.filter((id) => id !== person.id) : [...editing.assignee_ids, person.id];
-                        setEditing({ ...editing, assignee_ids: ids });
-                      }}
-                      className="sr-only"
-                    />
-                    <span aria-hidden className={clsx('flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-accent text-xs font-bold transition-colors', checked ? 'bg-accent text-on-accent' : 'text-transparent')}>✓</span>
-                    <span className="min-w-0 flex-1 text-text">
-                      <strong className="block truncate">{person.nom_complet || person.nom_affichage}</strong>
-                      <small className="block text-text-muted">{person.role}{person.email ? ` · ${person.email}` : ''}</small>
-                    </span>
-                  </label>
-                );
-              })}</div>
-
-              {/* Nom libre (sans compte dans l'appli) -- demande de Gersom le
-                  02/09/2026 : "permet d'ajouter un nom personnalisé... si
-                  c'est une tâche particulière" (ex: un prestataire externe). */}
-              {(editing.custom_assignees || []).length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {(editing.custom_assignees || []).map((customName) => (
-                    <div key={customName} className="action-row flex items-center justify-between gap-3 text-left">
-                      <span className="min-w-0 flex-1 truncate font-semibold">{customName}</span>
-                      <button
-                        type="button"
-                        aria-label={'Retirer ' + customName}
-                        onClick={() => setEditing({ ...editing, custom_assignees: (editing.custom_assignees || []).filter((n) => n !== customName) })}
-                        className="shrink-0 text-text-faint"
-                      >
-                        <CloseIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="mt-2 flex gap-2">
-                <input
-                  value={customNameDraft}
-                  onChange={(e) => setCustomNameDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key !== 'Enter') return;
-                    e.preventDefault();
-                    const name = customNameDraft.trim();
-                    if (name && !(editing.custom_assignees || []).includes(name)) {
-                      setEditing({ ...editing, custom_assignees: [...(editing.custom_assignees || []), name] });
-                    }
-                    setCustomNameDraft('');
-                  }}
-                  placeholder="Nom personnalisé (ex. Nourdine, électricien)"
-                  className="input flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const name = customNameDraft.trim();
-                    if (name && !(editing.custom_assignees || []).includes(name)) {
-                      setEditing({ ...editing, custom_assignees: [...(editing.custom_assignees || []), name] });
-                    }
-                    setCustomNameDraft('');
-                  }}
-                  disabled={!customNameDraft.trim()}
-                  className="btn-secondary shrink-0 px-4 disabled:opacity-50"
-                >
-                  Ajouter
-                </button>
-              </div>
+              {/* Fiche de recherche plein ecran au lieu d'une longue liste
+                  toujours depliee -- demande de Gersom le 02/09/2026 (capture
+                  d'ecran a l'appui) : "au lieu d'avoir toute la liste des
+                  responsables a defiler... un champ... quand je clique dessus
+                  ca me demande de choisir la personne". */}
+              <button
+                type="button"
+                onClick={() => setResponsablePickerOpen(true)}
+                className="action-row flex items-center justify-between gap-2 text-left"
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {(() => {
+                    const names = [
+                      ...editing.assignee_ids.map((id) => peopleById.get(id)).filter(Boolean).map((p) => (p as Person).nom_complet || (p as Person).nom_affichage),
+                      ...(editing.custom_assignees || []),
+                    ];
+                    return names.length > 0 ? names.join(', ') : 'Choisir les responsables';
+                  })()}
+                </span>
+                <ChevronRightIcon className="h-5 w-5 shrink-0 text-text-faint" />
+              </button>
             </div>
             <button type="submit" className="btn-primary w-full">Enregistrer et partager</button>
           </form>
         </div>
+      )}
+
+      {editing && responsablePickerOpen && (
+        <ResponsablePicker
+          people={people}
+          selectedPersonIds={editing.assignee_ids}
+          selectedCustomNames={editing.custom_assignees || []}
+          onChange={({ assigneeIds, customNames }) => setEditing({ ...editing, assignee_ids: assigneeIds, custom_assignees: customNames })}
+          onClose={() => setResponsablePickerOpen(false)}
+        />
       )}
     </div>
   );
