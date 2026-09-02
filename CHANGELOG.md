@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.34.0] — 2026-09-02
+
+Retour de Gersom sur le fonctionnement d'`/approbations` en test réel (capture d'écran à l'appui d'une décision qui a échoué) et sur le design de l'application (« je veux que tout soit vraiment bien flottant... que ça l'air d'une application faite par Apple », en référence explicite au thème « Liquid Glass », avec captures d'écran d'Apple Musique et de l'Horloge en modèles).
+
+### Ajouté
+- **Placement automatique à l'approbation** (`0045_auto_assign_table_for_guest_approval.sql`, fonction `auto_assign_table_for_guest_approval`) : « je n'ai pas besoin de voir réserver une table directement quand je vais sur la page approbation... être capable de approuver ou refuser rapidement ». Approuver une demande n'exige plus de choisir une table au préalable — la personne est placée automatiquement, dans l'ordre demandé : (1) la table excédentaire (réserve/Table 41) si elle a de la place, quel que soit le côté ; (2) sinon la table avec le plus de place libre du même côté que l'invité (côté déduit des invitations déjà assises à cette table) ; (3) sinon la table avec le plus de place libre de l'autre côté ; (4) si aucune table n'a de place nulle part, la demande reste approuvée sans table — jamais de double booking silencieux, un placeur ou directeur reprend la main manuellement comme avant. Le directeur de festin reste libre de déplacer la personne ensuite vers une autre table via les outils de déplacement existants. Le mécanisme de réservation avant approbation (v1.33.0, migration `0044`) reste fonctionnel sous le capot mais n'est plus le parcours principal.
+- **Approuver/Refuser directement sur la carte de la liste** `/approbations`, sans ouvrir la fiche détaillée — jusqu'ici ces boutons n'existaient que dans la fiche.
+- **Thème « verre liquide » (iOS Liquid Glass) appliqué aux surfaces partagées de toute l'application** : `.card`, `.action-row`/`.action-row-muted` et `.btn-secondary` (utilisés sur presque tous les écrans) reprennent désormais le même flou + saturation + reflet intérieur + ombre flottante que la barre de navigation du bas, dans les deux thèmes (Atrium clair et Maison sombre) — auparavant `.card` utilisait `shadow-card` (`var(--elev-1)`, littéralement `none` en Maison : aucune ombre) et un flou réservé au thème sombre uniquement, ce qui donnait des cartes plates (« juste une ligne et un chiffre dans une forme »). Les boutons Approuver/Refuser passent en verre teinté (couleur en filtre translucide façon Centre de contrôle iOS, `color-mix()`) plutôt qu'en aplat plein.
+
+### Corrigé
+- Le message de succès après approbation reflète désormais le vrai comportement (placement automatique) au lieu de mentionner une réservation qui n'existe plus dans ce parcours.
+
+### Tests
+- `tests/guest-approval-reservation.test.ts` : nouvelles régressions pour `auto_assign_table_for_guest_approval` (priorité réserve → même côté → autre côté → aucune table, jamais d'exception), l'appel depuis `lib/guestApprovalDecide.ts`, l'absence du lien « Réserver une table » sur `/approbations`, et le thème verre liquide appliqué dans les deux thèmes.
+- `tests/guest-approvals.test.ts` : assertions mises à jour pour le nouveau message de succès et l'absence du lien de réservation manuelle en fiche détaillée.
+- `npx tsc --noEmit`, `npm run build`, 183 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- `0045_auto_assign_table_for_guest_approval.sql` — écrite, testée, **appliquée en production le 02/09/2026** (vérifiée : `auto_assign_table_for_guest_approval` existe, `SECURITY INVOKER`).
+
 ## [1.33.1] — 2026-09-02
 
 Retour de Gersom en test réel sur le compte de Rémy (directeur, 3 captures d'écran à l'appui), trois bugs distincts : un plantage sur `/agenda`, un badge d'approbations « comme hard codé », et le bas de `/dashboard` toujours trop chargé pour tenir sans défiler.
