@@ -286,7 +286,7 @@ test('guest_approval_requests n\'a AUCUNE policy RLS anon -- le token doit reste
 
 test('assign_table_to_guest_approval refuse une demande pas encore approuvee ou deja assignee, et n\'utilise pas addInvitation', () => {
   // Action etroite (capacite guestApproval), volontairement distincte de
-  // /api/invitations/add (capacite addInvitation, reservee a l'admin) : ne
+  // /api/invitations/add (capacite addInvitation, admin/directeur) : ne
   // peut agir que sur une demande DEJA approuvee par SMS.
   assert.match(migrationSource, /if v_req\.statut <> 'approuve' then/);
   assert.match(migrationSource, /raise exception 'request_not_approved'/);

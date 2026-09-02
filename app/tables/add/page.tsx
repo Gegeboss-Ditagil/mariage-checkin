@@ -1,16 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TopBar } from '@/components/TopBar';
+import { TablePicker } from '@/components/TablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { useOnline } from '@/hooks/useOnline';
+import { hasCapability } from '@/lib/permissions';
+import { ETIQUETTES_RAPIDES } from '@/lib/tags';
+import { createClient } from '@/lib/supabase/client';
+import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
+import { InvitationRow, OverflowAssignmentRow, TableRow } from '@/lib/types';
 
 /**
  * Ajout d'UNE invitation individuelle le jour J (invite de derniere minute,
  * absent de la liste importee) -- distinct de l'import CSV en masse
- * (/admin/import, reserve a l'admin). Ouvert a admin/directeur/placeur, en
- * ligne avec ce qu'ils peuvent deja faire (modifier/deplacer les tables).
+ * (/admin/import, reserve a l'admin). Capacite dediee `addInvitation`
+ * (admin/directeur, voir lib/permissions.ts) : ouverte au directeur le
+ * 02/09/2026, demande explicite de Gersom apres le test de Remy -- jusque
+ * la, le formulaire etait visible mais la creation echouait toujours
+ * silencieusement en 401 pour ce role (bug jamais remarque, cette page
+ * n'ayant aucun lien entrant dans l'appli avant ce correctif -- voir le
+ * bouton "+" ajoute sur /plan-table).
  */
 export default function AddInvitationPage() {
   const router = useRouter();
@@ -18,11 +29,41 @@ export default function AddInvitationPage() {
   const online = useOnline();
   const [nom, setNom] = useState('');
   const [nombrePrevu, setNombrePrevu] = useState('1');
-  const [tableNumber, setTableNumber] = useState('');
+  const [telephone, setTelephone] = useState('');
+  const [tableId, setTableId] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [usages, setUsages] = useState<TableCapacity[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canAdd = role === 'admin' || role === 'directeur' || role === 'placeur';
+  const canAdd = hasCapability(role, 'addInvitation');
+  const canTag = hasCapability(role, 'manageTags');
+
+  useEffect(() => {
+    if (!canAdd) return;
+    let active = true;
+    (async () => {
+      const supabase = createClient();
+      const [{ data: tbls }, { data: invs }, { data: ov }] = await Promise.all([
+        supabase.from('tables').select('*').order('number'),
+        supabase.from('invitations').select('*'),
+        supabase.from('overflow_assignments').select('*'),
+      ]);
+      if (!active) return;
+      setUsages(
+        computeTableCapacities(
+          (tbls as TableRow[]) || [],
+          (invs as InvitationRow[]) || [],
+          (ov as OverflowAssignmentRow[]) || []
+        )
+      );
+    })();
+    return () => { active = false; };
+  }, [canAdd]);
+
+  function toggleTag(tag: string) {
+    setTags((current) => (current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]));
+  }
 
   async function handleSubmit() {
     if (!nom.trim()) {
@@ -38,7 +79,9 @@ export default function AddInvitationPage() {
         body: JSON.stringify({
           nom_affichage: nom.trim(),
           nombre_prevu: Number(nombrePrevu) || 1,
-          table_number: tableNumber.trim() ? Number(tableNumber.trim()) : undefined,
+          table_id: tableId || undefined,
+          telephone: telephone.trim() || undefined,
+          tags,
         }),
       });
       const data = await res.json();
@@ -60,12 +103,10 @@ export default function AddInvitationPage() {
   if (role && !canAdd) {
     return (
       <div className="flex min-h-dvh flex-col">
-        <TopBar title="Ajouter un invité" backHref="/tables" />
+        <TopBar title="Ajouter un invité" backHref="/plan-table" />
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
           <p className="text-lg font-semibold">Accès réservé</p>
-          <p className="text-sm text-text-faint">
-            Seuls l'admin, les directeurs de festin et les agents placeurs peuvent ajouter un invité.
-          </p>
+          <p className="text-sm text-text-faint">Seuls l'admin et les directeurs de festin peuvent ajouter un invité.</p>
         </div>
       </div>
     );
@@ -73,7 +114,7 @@ export default function AddInvitationPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title="Ajouter un invité" backHref="/tables" />
+      <TopBar title="Ajouter un invité" backHref="/plan-table" />
 
       <div className="flex-1 space-y-4 px-4 py-4">
         <p className="text-sm text-text-faint">
@@ -108,15 +149,61 @@ export default function AddInvitationPage() {
 
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">
-            Table (optionnel)
+            Téléphone (optionnel)
           </label>
           <input
-            inputMode="numeric"
+            type="tel"
+            inputMode="tel"
             className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
-            placeholder="Numéro de table"
-            value={tableNumber}
-            onChange={(e) => setTableNumber(e.target.value)}
+            placeholder="+33 6 12 34 56 78"
+            value={telephone}
+            onChange={(e) => setTelephone(e.target.value)}
           />
+          <p className="mt-1 text-xs text-text-faint">Indicatif du pays inclus (+33, +1, +243…).</p>
+        </div>
+
+        {canTag && (
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">
+              Étiquettes (optionnel)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ETIQUETTES_RAPIDES.map((e) => (
+                <button
+                  key={e.value}
+                  type="button"
+                  onClick={() => toggleTag(e.value)}
+                  className={
+                    'rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition-colors ' +
+                    (tags.includes(e.value)
+                      ? 'border-accent bg-accent text-on-accent'
+                      : 'border-hairline bg-surface text-text-muted')
+                  }
+                >
+                  {e.label}
+                </button>
+              ))}
+            </div>
+            {tags.includes('SERVICES') && (
+              <p className="mt-1 text-xs text-text-faint">Staff : visible de tout le monde sur l'écran Staff.</p>
+            )}
+          </div>
+        )}
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-text-faint">
+            Table (optionnel)
+          </label>
+          {usages.length > 0 ? (
+            <TablePicker
+              usages={usages}
+              selectedTableId={tableId}
+              onSelect={(id) => setTableId(id === tableId ? null : id)}
+              minimumEstimatedFree={0}
+            />
+          ) : (
+            <p className="text-sm text-text-faint">Chargement des tables…</p>
+          )}
           <p className="mt-1 text-xs text-text-faint">
             Laissez vide si la table n'est pas encore décidée — l'invité pourra être placé ensuite depuis sa fiche.
           </p>

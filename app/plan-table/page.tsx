@@ -356,6 +356,13 @@ export default function PlanTablePage() {
         <TopBar
           title="Plan de table"
           backHref={role && hasCapability(role, 'scan') ? '/scan' : '/dashboard'}
+          right={
+            hasCapability(role, 'addInvitation') ? (
+              <Link href="/tables/add" className="text-sm font-semibold text-accent">
+                + Invité
+              </Link>
+            ) : undefined
+          }
         />
 
         {/* Indicateur de tire-pour-rafraichir */}

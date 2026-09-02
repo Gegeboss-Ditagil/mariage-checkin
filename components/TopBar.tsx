@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AccountMenu } from '@/components/AccountMenu';
 import { useSessionRole } from '@/hooks/useSessionRole';
 
@@ -16,11 +17,17 @@ export function TopBar({
   onTitleClick?: () => void;
 }) {
   const role = useSessionRole();
+  const pathname = usePathname();
   // Pour les comptes de supervision (admin et visibilite), Retour ramene
-  // normalement au tableau de bord. Une destination racine explicite reste
-  // toutefois prioritaire : sur /dashboard, Gersom (admin) doit pouvoir
-  // revenir a l'accueil au lieu de boucler sur le tableau de bord.
-  const effectiveBackHref = backHref && backHref !== '/' && (role === 'admin' || role === 'visibilite') ? '/dashboard' : backHref;
+  // normalement au tableau de bord depuis un ecran operationnel. Cette regle
+  // ne s'applique jamais quand on est deja sur /dashboard : sa propre fleche
+  // Retour choisit sa cible explicitement (voir app/dashboard/page.tsx) et
+  // ne doit jamais etre reecrite vers elle-meme (boucle, corrige le
+  // 02/09/2026 -- Remy et l'admin restaient bloques sur la page d'accueil
+  // avant ce correctif).
+  const onDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/');
+  const effectiveBackHref =
+    backHref && backHref !== '/' && !onDashboard && (role === 'admin' || role === 'visibilite') ? '/dashboard' : backHref;
   return (
     <header className="sticky top-0 z-10 bg-glass backdrop-blur border-b border-hairline">
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-1">

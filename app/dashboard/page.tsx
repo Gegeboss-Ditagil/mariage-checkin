@@ -107,13 +107,15 @@ export default function DashboardPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Tableau de bord"
-          backHref={
-            role === 'admin' || role === 'directeur'
-              ? '/'
-              : role && hasCapability(role, 'scan')
-                ? '/scan'
-                : undefined
-          }
+          // Retour direct vers /scan des que le role peut scanner (admin et
+          // directeur inclus) -- corrige le 02/09/2026 : la cible precedente
+          // ('/') repassait par la SplashScreen, qui renvoie elle-meme vers
+          // /dashboard pour le directeur (aller-retour visible, "page
+          // passeport bleu" signalee par Remy) et vers /scan pour l'admin
+          // apres un flash inutile. visibilite (sans capacite scan) n'a
+          // toujours pas de fleche retour ici : le tableau de bord est deja
+          // son ecran d'accueil.
+          backHref={role && hasCapability(role, 'scan') ? '/scan' : undefined}
         />
 
         <PullToRefreshIndicator

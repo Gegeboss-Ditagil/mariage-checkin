@@ -11,26 +11,10 @@ import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 import { useOnline } from '@/hooks/useOnline';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { ETIQUETTES_RAPIDES, libelleEtiquette } from '@/lib/tags';
 import { GuestArrivalPanel } from '@/components/GuestArrivalPanel';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
-
-// Etiquettes courantes proposees en un clic (voir 0022_manage_invitation_tags.sql
-// pour les effets de bord automatiques sur `category`/`cote`). N'importe quelle
-// autre etiquette reste ajoutable via le champ texte libre.
-const ETIQUETTES_RAPIDES: { value: string; label: string }[] = [
-  { value: 'Côté_Gege', label: 'Côté Gege' },
-  { value: 'Côté_Nelly', label: 'Côté Nelly' },
-  { value: 'SERVICES', label: 'Staff' },
-  { value: 'Photographe', label: 'Photographe' },
-  { value: 'Prestataire', label: 'Prestataire' },
-  { value: 'DJ_Animation', label: 'Animation (DJ)' },
-  { value: 'notable', label: 'Sans table' },
-];
-
-function libelleEtiquette(tag: string): string {
-  return ETIQUETTES_RAPIDES.find((e) => e.value === tag)?.label ?? tag;
-}
 
 export default function CheckinPage() {
   const { invitationId } = useParams<{ invitationId: string }>();

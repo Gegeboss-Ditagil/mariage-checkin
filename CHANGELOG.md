@@ -3,6 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.32.0] — 2026-09-02
+
+Retour de Rémy en test sur son téléphone (rôle directeur) : trois problèmes de navigation sur `/scan` et `/dashboard`, plus une demande d'ajout d'invité enrichi pour admin/directeur.
+
+### Corrigé
+- **Bouton central de `/scan`** : pour admin/directeur, il redevenait « Tableau de bord » (icône jauge) au lieu de rester l'appareil photo — l'action la plus fréquente sur cet écran. Reste désormais toujours l'appareil photo, comme pour tous les autres rôles qui peuvent soumettre une approbation.
+- **Barre basse de `/scan`** : Approbations (déjà un gros bouton dédié juste au-dessus de la jauge d'arrivées, voir `GuestApprovalsShortcut`, et toujours dans le menu du compte) cède sa place à Tableau de bord, qui n'était sinon accessible que via un aller-retour par `/dashboard` ou le bouton central. `/dashboard` garde Approbations dans sa propre barre, seul raccourci rapide disponible sur cet écran.
+- **Retour depuis `/dashboard`** : ouvrait `/` (SplashScreen), qui redirige elle-même vers `/dashboard` pour le directeur (boucle visible, décrite par Rémy comme « la page passeport bleu ») et vers `/scan` pour l'admin après un flash inutile. Ouvre désormais directement `/scan` pour tout rôle qui peut scanner (admin, directeur) ; `TopBar` n'écrase plus cette cible en la reréécrivant vers `/dashboard` (son garde-fou général pour admin/visibilite ne s'applique plus quand on est déjà sur `/dashboard`).
+
+### Ajouté
+- **Capacité `addInvitation` ouverte au directeur de festin**, en plus de l'admin (même trajectoire que `manageTags` en v1.30.1) — corrige un bug préexistant : `/tables/add` affichait déjà le formulaire à directeur/placeur via une liste de rôles codée en dur dans la page, mais l'API exigeait `addInvitation`, réservée à l'admin seul — la création échouait donc toujours en 401 pour ces rôles. Jamais remarqué : cette page n'avait aucun lien entrant dans l'application avant ce correctif. `placeur` perd l'accès à ce formulaire (n'a jamais fonctionné pour ce rôle) ; garde tout le reste de ses capacités opérationnelles inchangées.
+- **`/plan-table` propose un raccourci « + Invité »** (réservé à `addInvitation`) vers ce formulaire, désormais réellement atteignable dans l'interface.
+- **Le formulaire capture aussi le téléphone** (indicatif du pays inclus, ex. `+33 6 12 34 56 78`) et **les étiquettes courantes** (réservées à `manageTags`, donc admin/directeur) — dont Staff, qui rend la personne visible de tout le monde sur l'écran Staff, exactement comme depuis la fiche d'une invitation existante. La sélection de table utilise désormais le même sélecteur avec places libres réelles que le reste de l'application (`TablePicker`), au lieu d'un simple champ numéro de table.
+- `lib/tags.ts` (nouveau) : la liste d'étiquettes rapides (`ETIQUETTES_RAPIDES`), auparavant définie uniquement dans `/checkin/[invitationId]`, est maintenant partagée avec `/tables/add` — plus de liste dupliquée à tenir synchronisée.
+
+### Sécurité
+- L'API `/api/invitations/add` n'applique les étiquettes reçues que si l'appelant a la capacité `manageTags`, indépendamment de ce que montre l'interface — un rôle qui peut ajouter un invité ne peut pas forcément le reclassifier (CLAUDE.md : le contrôle serveur reste obligatoire même si un bouton est masqué côté client).
+
+### Tests
+- `tests/permissions.test.ts` : matrice `addInvitation` séparée de `mergeInvitations` (qui reste admin seul), nouvelle assertion admin/directeur=true, placeur/agent_checkin/visibilite=false.
+- `tests/navigation-resilience.test.ts` : réécrit pour la nouvelle disposition contextuelle (bouton photo toujours actif sur `/scan`, Tableau de bord en raccourci latéral, retour direct vers `/scan` depuis `/dashboard`).
+- `tests/add-invitation.test.ts` (nouveau) : capacité centralisée (pas de liste de rôles locale), champs téléphone/étiquettes, restriction serveur `manageTags`, raccourci `/plan-table`, source partagée `lib/tags.ts`.
+- `npx tsc --noEmit`, `npm run build`, 15 suites de tests (`node --test`) — tous exécutés avec succès.
+
 ## [1.31.1] — 2026-09-01
 
 ### Modifié

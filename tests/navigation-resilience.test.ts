@@ -98,30 +98,51 @@ test("le retour des comptes admin et visibilite revient toujours au dashboard", 
   assert.match(topBar, /href=\{effectiveBackHref\}/);
 });
 
-test("sur le tableau de bord, Retour ouvre l accueil pour admin et directeur sans boucle dashboard", () => {
-  assert.match(dashboardPage, /role === 'admin' \|\| role === 'directeur'/);
-  assert.match(dashboardPage, /\? '\/'/);
-  assert.match(topBar, /backHref !== '\/'/);
+test("sur le tableau de bord, Retour ouvre directement le scanner pour tout role qui peut scanner, sans passer par la SplashScreen", () => {
+  // Corrige le 02/09/2026 (retour de Remy en test) : l'ancienne cible ('/')
+  // repassait par la SplashScreen, qui redirige elle-meme vers /dashboard
+  // pour le directeur (boucle visible, "page passeport bleu") et vers /scan
+  // pour l'admin apres un flash inutile -- va desormais droit au but.
+  assert.match(dashboardPage, /backHref=\{role && hasCapability\(role, 'scan'\) \? '\/scan' : undefined\}/);
+  assert.doesNotMatch(dashboardPage, /role === 'admin' \|\| role === 'directeur'\s*\n\s*\? '\//);
+  // Le garde-fou admin/visibilite de TopBar ne doit jamais reecrire cette
+  // cible en boucle vers /dashboard alors qu'on y est deja.
+  assert.match(topBar, /onDashboard = pathname === '\/dashboard' \|\| pathname\?\.startsWith\('\/dashboard\/'\)/);
+  assert.match(topBar, /backHref !== '\/' && !onDashboard/);
 });
 
-test("admin et directeur ont une navigation Dashboard/Scan contextuelle sans raccourci duplique", () => {
+test("admin et directeur gardent l'appareil photo au centre sur /scan, avec Tableau de bord en raccourci lateral", () => {
+  // Corrige le 02/09/2026 (retour de Remy en test) : le bouton central de
+  // /scan redevenait Tableau de bord au lieu de rester l'appareil photo, et
+  // Approbations -- deja un gros bouton dedie sur cette page, voir
+  // GuestApprovalsShortcut -- doublonnait inutilement la barre du bas.
   assert.match(bottomNav, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
   assert.match(bottomNav, /admin:[\s\S]*href: ['"]\/scan['"], label: ['"]Scan['"]/);
   const directeurBlock = bottomNav.slice(bottomNav.indexOf('directeur: ['), bottomNav.indexOf('placeur:'));
   assert.match(directeurBlock, /href: ['"]\/scan['"], label: ['"]Scan['"]/);
   assert.doesNotMatch(directeurBlock, /href: ['"]\/staff['"]/);
-  assert.match(bottomNav, /pathname\.startsWith\(['"]\/dashboard['"]\)[\s\S]*SCAN_ITEM/);
-  assert.match(bottomNav, /pathname\.startsWith\(['"]\/scan['"]\)[\s\S]*DASHBOARD_ITEM/);
-  assert.match(bottomNav, /\[SEARCH_ITEM, PLAN_ITEM, SCAN_ITEM, AGENDA_ITEM, APPROVALS_ITEM\]/);
-  assert.match(bottomNav, /\[SEARCH_ITEM, PLAN_ITEM, DASHBOARD_ITEM, AGENDA_ITEM, APPROVALS_ITEM\]/);
+
+  const scanBranch = bottomNav.slice(
+    bottomNav.indexOf("pathname.startsWith('/scan')"),
+    bottomNav.indexOf('} else {')
+  );
+  assert.match(scanBranch, /central = SCAN_ITEM/);
+  assert.match(scanBranch, /right = \[AGENDA_ITEM, DASHBOARD_ITEM\]/);
+  assert.doesNotMatch(scanBranch, /APPROVALS_ITEM/);
+
+  const dashboardBranch = bottomNav.slice(
+    bottomNav.indexOf("pathname.startsWith('/dashboard')"),
+    bottomNav.indexOf("pathname.startsWith('/scan')")
+  );
+  assert.match(dashboardBranch, /central = SCAN_ITEM/);
+  assert.match(dashboardBranch, /right = \[AGENDA_ITEM, \{ \.\.\.APPROVALS_ITEM, badge: pendingCount \}\]/);
+
   assert.match(bottomNav, /bottom-nav-glass/);
-  assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\)/);
+  assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\) && central\.href === ['"]\/scan['"]/);
 });
 
-test("Approbations reste dans le menu du compte et revient dans les barres Dashboard/Scan", () => {
+test("Approbations reste dans le menu du compte, dans la barre Dashboard mais plus dans la barre Scan (deja un gros bouton dedie)", () => {
   assert.match(bottomNav, /APPROVALS_ITEM/);
-  assert.doesNotMatch(bottomNav, /ADMIN_DASHBOARD_ITEMS/);
-  assert.match(bottomNav, /admin: \[[\s\S]*href: '\/scan'[\s\S]*href: '\/dashboard'/);
   assert.match(accountMenu, /href="\/approbations"/);
   assert.match(accountMenu, /pendingApprovals/);
 });
