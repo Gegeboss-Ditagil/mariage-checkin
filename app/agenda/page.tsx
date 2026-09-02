@@ -187,7 +187,7 @@ export default function AgendaPage() {
                     <div className="min-w-0 flex-1 text-left">
                       <div className="flex flex-wrap items-start justify-between gap-2"><p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p><span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span></div>
                       {item.details && <p className="mt-1 text-xs leading-relaxed text-text-muted">{item.details}</p>}
-                      <p className="mt-2 text-xs font-semibold text-text-muted">{assignees.length ? assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ') : 'Responsable à attribuer'}</p>
+                      {assignees.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">{assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ')}</p>}
                     </div>
                   </article>
                 </li>;

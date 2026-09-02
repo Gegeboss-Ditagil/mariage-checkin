@@ -78,3 +78,13 @@ test('toute la carte d\'une activite ouvre la modification (pas seulement le blo
   assert.doesNotMatch(agendaPage, /Modifier l.heure, les détails ou les responsables/);
   assert.doesNotMatch(agendaPage, /text-status-partial/);
 });
+
+// Corrige le 02/09/2026 (retour de Gersom) : "Ni le texte orange, on
+// affiche responsable seulement si il y en a un dans la carte" -- le
+// placeholder "Responsable à attribuer" (texte + couleur) est retire de la
+// liste ; la ligne responsables ne s'affiche plus du tout tant que
+// personne n'est assigne, au lieu de rester visible comme texte d'invite.
+test("la ligne responsables d'une carte ne s'affiche que si quelqu'un est assigne (jamais un placeholder)", () => {
+  assert.doesNotMatch(agendaPage, /Responsable à attribuer/);
+  assert.match(agendaPage, /\{assignees\.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">/);
+});

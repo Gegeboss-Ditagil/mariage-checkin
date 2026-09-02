@@ -161,7 +161,11 @@ test("l'agenda partage permet ajout, affectation et validation aux responsables 
   const agendaManagerMigration = readFileSync(new URL('../supabase/migrations/0041_agenda_manager_access.sql', import.meta.url), 'utf8');
   const nellyDirectorMigration = readFileSync(new URL('../supabase/migrations/0042_promote_nelly_directeur.sql', import.meta.url), 'utf8');
   assert.match(agendaPage, /setCanManage\(data\.canManage === true\)/);
-  assert.match(agendaPage, /Responsable à attribuer/);
+  // Le placeholder "Responsable à attribuer" a ete retire des cartes de la
+  // liste le 02/09/2026 (retour de Gersom : "on affiche responsable
+  // seulement si il y en a un") -- la ligne responsables ne s'affiche plus
+  // du tout tant que personne n'est assigne, voir tests/agenda-form.test.ts.
+  assert.doesNotMatch(agendaPage, /Responsable à attribuer/);
   assert.match(agendaPage, /Ajouter une activité ici/);
   assert.match(agendaPage, /assignee_ids/);
   assert.match(agendaPage, /completed/);
