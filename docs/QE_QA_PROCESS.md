@@ -1,7 +1,7 @@
 # Processus QE/QA pour les bugs
 
 **Version documentaire : 1.29.5**
-**Dernière mise à jour : 2026-08-30**
+**Dernière mise à jour : 2026-09-02**
 
 Ce document distingue deux moments différents et fixe ce qui est obligatoire à chacun :
 

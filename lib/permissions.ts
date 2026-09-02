@@ -63,7 +63,12 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // le 23/08/2026 : "c'est au directeur de festin, les autres n'ont pas
   // besoin d'appeler les gens". Retire de OPERATIONAL_CAPABILITIES pour ne
   // pas le donner implicitement a placeur/agent_checkin.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval'],
+  // addInvitation (formulaire "+ Ajouter un invite", /tables/add) ouvert au
+  // directeur en plus de l'admin le 02/09/2026 -- demande explicite de
+  // Gersom apres le test de Remy, meme trajectoire que manageTags
+  // (v1.30.1) : reste hors du socle operationnel commun, donc toujours
+  // refuse a placeur/agent_checkin/visibilite.
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'addInvitation'],
   placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.

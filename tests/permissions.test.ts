@@ -99,11 +99,17 @@ test('les operations sensibles restent centralisees; le directeur peut gerer les
   // pour scanner/checker, pas pour reclassifier les invites (cote, roles
   // staff, notable...). manageMembers (renommer, gerer les membres du
   // groupe) reste inchange pour ce role.
-  for (const capability of ['mergeInvitations', 'addInvitation'] as const) {
-    assert.equal(hasCapability('admin', capability), true);
-    for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
-      assert.equal(hasCapability(role, capability), false, role + ' ne doit pas avoir ' + capability);
-    }
+  assert.equal(hasCapability('admin', 'mergeInvitations'), true);
+  for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'mergeInvitations'), false, role + ' ne doit pas avoir mergeInvitations');
+  }
+  // addInvitation (formulaire "+ Ajouter un invite") ouvert au directeur en
+  // plus de l'admin le 02/09/2026, meme trajectoire que manageTags juste en
+  // dessous -- reste refuse a placeur/agent_checkin/visibilite.
+  assert.equal(hasCapability('admin', 'addInvitation'), true);
+  assert.equal(hasCapability('directeur', 'addInvitation'), true);
+  for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'addInvitation'), false, role + ' ne doit pas avoir addInvitation');
   }
   assert.equal(hasCapability('admin', 'manageTags'), true);
   assert.equal(hasCapability('directeur', 'manageTags'), true);

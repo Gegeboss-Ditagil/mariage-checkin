@@ -61,9 +61,11 @@ const ITEMS: Record<string, NavItem[]> = {
   ],
 };
 
-// Approbations vit dans AccountMenu pour tous les approbateurs. Cela garde
-// Scan disponible dans la barre admin et remet Bord dans la navigation du
-// scanner, sans changer les autorisations serveur.
+// Approbations vit toujours dans AccountMenu pour tous les approbateurs
+// (badge inclus). Elle apparait aussi dans la barre du bas sur /dashboard
+// pour admin/directeur (pas d'autre raccourci rapide sur cette page), mais
+// pas sur /scan, qui a deja son propre gros bouton dedie (voir
+// GuestApprovalsShortcut) -- voir le bloc contextuel plus bas.
 
 // Bouton central surelevé : Scan pour la plupart des roles (leur action la
 // plus frequente), mais Tableau de bord pour le directeur de festin --
@@ -130,65 +132,78 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   }, [role]);
 
   const isAdminDirector = role === 'admin' || role === 'directeur';
-  // Navigation contextuelle demandee le 01/09/2026 : Dashboard et Scan ne
-  // doivent jamais apparaitre deux fois. Depuis le dashboard, Scan est le
-  // gros bouton central. Depuis le scanner, Bord prend le centre et la
-  // photo live garde sa propre commande sous la camera.
-  const contextualItems = pathname.startsWith('/dashboard')
-    ? [SEARCH_ITEM, PLAN_ITEM, SCAN_ITEM, AGENDA_ITEM, APPROVALS_ITEM]
-    : pathname.startsWith('/scan')
-      ? [SEARCH_ITEM, PLAN_ITEM, DASHBOARD_ITEM, AGENDA_ITEM, APPROVALS_ITEM]
-      : null;
-  const roleItems = isAdminDirector && contextualItems ? contextualItems : (ITEMS[role] ?? ITEMS.agent_checkin);
-  const items = roleItems.map((item) =>
-    item.href === '/approbations' ? { ...item, badge: pendingCount } : item
-  );
 
-  const centralHref = isAdminDirector && pathname.startsWith('/dashboard')
-    ? '/scan'
-    : isAdminDirector && pathname.startsWith('/scan')
-      ? '/dashboard'
-      : (CENTRAL_HREF[role] ?? '/scan');
-  const centralItem = items.find((item) => item.href === centralHref);
-  const rest = items.filter((item) => item.href !== centralHref);
+  // Navigation contextuelle admin/directeur, affinee le 02/09/2026 (retour
+  // de Remy en test : sur /scan, le bouton central redevenait Tableau de
+  // bord au lieu de rester l'appareil photo, et Approbations -- deja un
+  // gros bouton dedie juste au-dessus de la jauge sur cette page, voir
+  // GuestApprovalsShortcut -- doublonnait inutilement la barre du bas.
+  // Depuis le dashboard, Scan reste le gros bouton central. Depuis le
+  // scanner, le centre reste l'appareil photo (jamais un aller-retour vers
+  // Bord) et Tableau de bord prend la place liberee par Approbations, qui
+  // reste accessible via le menu du compte (badge conserve).
+  let central: NavItem;
+  let left: NavItem[];
+  let right: NavItem[];
 
-  // Pas de bouton central quand le role n'a pas l'onglet vise (visibilite,
-  // qui n'a ni Scan ni Bord en central ici puisqu'il n'a pas Scan du tout) :
-  // pilule/bande a onglets plats, comme avant.
-  if (!centralItem) {
-    return (
-      <nav
-        className={clsx(
-          'bottom-nav-glass z-10 mx-auto flex w-[calc(100%-2rem)] max-w-md shrink-0 items-center justify-between',
-          'min-h-[96px] border border-hairline px-2.5 py-2 shadow-elev-2 safe-bottom',
-          'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
-          'landscape:justify-center landscape:gap-2 landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0',
-          'landscape:border-r-0 landscape:px-1 landscape:py-4 landscape:safe-right'
-        )}
-      >
-        {items.map((item) => (
-          <SideLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
-        ))}
-      </nav>
+  if (isAdminDirector && pathname.startsWith('/dashboard')) {
+    central = SCAN_ITEM;
+    left = [SEARCH_ITEM, PLAN_ITEM];
+    right = [AGENDA_ITEM, { ...APPROVALS_ITEM, badge: pendingCount }];
+  } else if (isAdminDirector && pathname.startsWith('/scan')) {
+    central = SCAN_ITEM;
+    left = [SEARCH_ITEM, PLAN_ITEM];
+    right = [AGENDA_ITEM, DASHBOARD_ITEM];
+  } else {
+    const roleItems = ITEMS[role] ?? ITEMS.agent_checkin;
+    const items = roleItems.map((item) =>
+      item.href === '/approbations' ? { ...item, badge: pendingCount } : item
     );
+    const centralHref = CENTRAL_HREF[role] ?? '/scan';
+    const found = items.find((item) => item.href === centralHref);
+
+    // Pas de bouton central quand le role n'a pas l'onglet vise (visibilite,
+    // qui n'a ni Scan ni Bord en central ici puisqu'il n'a pas Scan du
+    // tout) : pilule/bande a onglets plats, comme avant.
+    if (!found) {
+      return (
+        <nav
+          className={clsx(
+            'bottom-nav-glass z-10 mx-auto flex w-[calc(100%-2rem)] max-w-md shrink-0 items-center justify-between',
+            'min-h-[96px] border border-hairline px-2.5 py-2 shadow-elev-2 safe-bottom',
+            'landscape:mx-0 landscape:mb-0 landscape:h-full landscape:w-20 landscape:max-w-none landscape:flex-col',
+            'landscape:justify-center landscape:gap-2 landscape:rounded-none landscape:rounded-l-3xl landscape:border-y-0',
+            'landscape:border-r-0 landscape:px-1 landscape:py-4 landscape:safe-right'
+          )}
+        >
+          {items.map((item) => (
+            <SideLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
+          ))}
+        </nav>
+      );
+    }
+
+    central = found;
+    // Repartition confirmee par la maquette : deux onglets de chaque cote du
+    // bouton central, dans un ordre stable -- pas un simple decoupage en
+    // deux moities de `rest` (l'ordre metier de STAFF_ITEMS ne colle pas
+    // exactement a l'ordre visuel voulu par la maquette). Fonctionne quel
+    // que soit l'onglet choisi comme central pour ce role (Scan pour la
+    // plupart des roles, Tableau de bord pour le directeur de festin en
+    // dehors de /scan et /dashboard -- voir CENTRAL_HREF).
+    const rest = items.filter((item) => item.href !== centralHref);
+    const sorted = [...rest].sort((a, b) => SIDE_ORDER.indexOf(a.href) - SIDE_ORDER.indexOf(b.href));
+    const mid = Math.ceil(sorted.length / 2);
+    left = sorted.slice(0, mid);
+    right = sorted.slice(mid);
   }
 
-  // Repartition confirmee par la maquette : deux onglets de chaque cote du
-  // bouton central, dans un ordre stable -- pas un simple decoupage en deux
-  // moities de `rest` (l'ordre metier de STAFF_ITEMS ne colle pas exactement
-  // a l'ordre visuel voulu par la maquette). Fonctionne quel que soit
-  // l'onglet choisi comme central pour ce role (Scan pour la plupart des
-  // roles, Tableau de bord pour le directeur de festin -- voir CENTRAL_HREF).
-  const sorted = [...rest].sort((a, b) => SIDE_ORDER.indexOf(a.href) - SIDE_ORDER.indexOf(b.href));
-  const mid = Math.ceil(sorted.length / 2);
-  const left = sorted.slice(0, mid);
-  const right = sorted.slice(mid);
-  const CentralGlyph = centralItem.icon;
-  const centralActive = pathname.startsWith(centralItem.href);
-  // Sur /scan, l'action photo prend temporairement la place du raccourci
-  // central du role. Le directeur conserve donc Bord comme centre ailleurs,
-  // tout en obtenant le declencheur photo quand la camera est ouverte.
-  const photoActionActive = !!onCentralAction && pathname.startsWith('/scan') && centralHref === '/scan';
+  const CentralGlyph = central.icon;
+  const centralActive = pathname.startsWith(central.href);
+  // Sur /scan, l'action photo prend la place du raccourci central. Vrai
+  // pour tous les roles qui peuvent soumettre une approbation, y compris
+  // admin/directeur dont le central reste toujours '/scan' sur cette page.
+  const photoActionActive = !!onCentralAction && pathname.startsWith('/scan') && central.href === '/scan';
 
   return (
     <nav
@@ -220,8 +235,8 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
           </button>
         ) : (
           <Link
-            href={centralItem.href}
-            aria-label={centralItem.label}
+            href={central.href}
+            aria-label={central.label}
             className={clsx(
               'bottom-nav-central -mt-8 flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full border-2 border-white/30 bg-accent text-on-accent',
               'shadow-elev-2 transition-transform active:scale-[0.96] landscape:-ml-6 landscape:mt-0',
