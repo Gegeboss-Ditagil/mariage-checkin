@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.33.0**
+**Version actuelle : 1.33.1**
 **Dernière mise à jour documentaire : 2026-09-02**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.33.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.33.1-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,17 +27,20 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.33.0**.
+- Branche de production : `main`; version proposée : **1.33.1**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
-- **Migrations 0043 et 0044 (v1.33.0) en attente d'application en production** : `custom_assignees` sur `agenda_items`, et `reserved_table_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation` sur `guest_approval_requests`. Voir la section « Données et production » ci-dessous pour le SQL exact à exécuter dans le SQL Editor Supabase.
+- **Migrations 0043 et 0044 (v1.33.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, et `reserved_table_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation` sur `guest_approval_requests`. Vérifié après coup : les deux colonnes et les deux fonctions (`SECURITY INVOKER`) existent bien en base.
 - Ne jamais appliquer un ancien diff aveuglément : récupérer `origin/main`, comparer les fichiers réels et conserver tout changement plus récent.
 - Les permissions sont centralisées dans `lib/permissions.ts`; les capacités doivent être vérifiées à la fois dans l'interface et dans chaque route API.
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.33.0
+## État fonctionnel v1.33.1
 
+- **`/agenda` ne plante plus si la migration `0043` (colonne `custom_assignees`) venait à manquer** (elle est désormais appliquée en production, voir plus haut) : l'API normalise ce champ en tableau et la page ajoute un filet côté client — le rendu sur une colonne manquante plantait auparavant toute la page (« Mise à jour de l'application », déconnexion forcée), donnant l'impression de déconnexions fréquentes.
+- **Le badge de demandes en attente (avatar du compte, menu déroulant, barre du bas) est désormais réellement en temps réel** : la réponse `GET /api/guest-approvals?count=pending` était réutilisable depuis le cache HTTP du navigateur faute d'en-tête explicite, figeant le compte sur une ancienne valeur qui semblait « hard codée ».
+- **`/dashboard` tient désormais sans avoir à défiler** jusqu'à la dernière table de réserve : espacements et cartes resserrés dans tout l'empilement, pas seulement en bas de page.
 - **`/scan` affiche la prochaine activité du chronogramme** juste au-dessus du raccourci Approbations — s'appuie sur la case « terminé » de chaque activité (pas sur l'heure de l'appareil), réservé à admin/directeur, un tap ouvre l'agenda complet.
 - **Réservation de table avant approbation** : depuis la fiche d'une demande encore en attente, un placeur/directeur/admin/visibilite peut désormais voir les tables disponibles et en réserver une tout de suite, sans attendre la décision — la place est comptée aussitôt (aucune autre demande en attente ne peut la prendre) mais aucune invitation n'est créée. Dès que la demande est approuvée, la réservation est automatiquement transformée en vraie assignation ; si elle est refusée, elle est simplement libérée. Corrige le double booking possible auparavant entre l'approbation et l'assignation manuelle.
 - **Fiabilité des décisions Approuver/Refuser** : un double-appui rapide pouvait déclencher deux requêtes avant que le bouton ne se désactive, la seconde recevant à tort « déjà traitée » — verrouillage synchrone ajouté. Le message reflète désormais le statut réel renvoyé par le serveur (Approuvée/Refusée) plutôt qu'un texte générique.
@@ -174,4 +177,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.33.0** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.33.1** et l'historique des versions.

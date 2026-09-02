@@ -62,6 +62,7 @@ const webPushSource = readFileSync(new URL('../lib/webPush.ts', import.meta.url)
 const pushButtonSource = readFileSync(new URL('../components/PushNotificationButton.tsx', import.meta.url), 'utf8');
 const pushKeyRouteSource = readFileSync(new URL('../app/api/push/vapid-public-key/route.ts', import.meta.url), 'utf8');
 const pushSubscribeRouteSource = readFileSync(new URL('../app/api/push/subscribe/route.ts', import.meta.url), 'utf8');
+const guestApprovalsShortcutSource = readFileSync(new URL('../components/GuestApprovalsShortcut.tsx', import.meta.url), 'utf8');
 
 test('les droits photo, approbation et assignation sont separes par role', () => {
   assert.equal(hasCapability('admin', 'submitGuestApproval'), true);
@@ -410,4 +411,20 @@ test('decided_via (web/whatsapp) est une colonne additive (migration 0034), jama
 
 test('le webhook WhatsApp entrant reste sous le prefixe public /api/public (deja couvert par middleware.ts)', () => {
   assert.match(middlewareSource, /'\/api\/public'/);
+});
+
+// Corrige le 02/09/2026 (retour de Gersom : "j'ai comme l'impression que la
+// valeur deux est hard coded... assure-toi que les approbations, c'est en
+// live"). Le badge (AccountMenu, BottomNav, GuestApprovalsShortcut) reste
+// fige sur un ancien compte si la reponse GET ?count=pending est mise en
+// cache par le navigateur -- il faut a la fois que le serveur l'exclue
+// explicitement du cache HTTP et que chaque appelant le demande sans cache.
+test('le compte d\'approbations en attente est explicitement exclu du cache HTTP, cote serveur et cote client', () => {
+  assert.match(
+    createRouteSource,
+    /pending_count: count \|\| 0, latest: latest \|\| null \},\s*\n\s*\{ headers: \{ 'Cache-Control': 'private, no-store' \} \}/
+  );
+  for (const source of [accountMenuSource, bottomNavSource, guestApprovalsShortcutSource]) {
+    assert.match(source, /fetch\('\/api\/guest-approvals\?count=pending', \{ cache: 'no-store' \}\)/);
+  }
 });

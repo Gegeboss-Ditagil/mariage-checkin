@@ -17,6 +17,18 @@ function sanitizeCustomAssignees(value: unknown): string[] {
   return Array.from(seen);
 }
 
+// Le client (app/agenda/page.tsx) fait `...item.custom_assignees` sans
+// verification -- si la migration 0043 n'est pas encore appliquee en prod,
+// `select('*')` renvoie simplement des lignes sans cette colonne (Postgrest
+// ignore une colonne inexistante au lieu d'echouer), et `undefined` n'est pas
+// iterable : la page entiere plantait au premier item, capturee par
+// app/error.tsx comme "Mise a jour de l'application" (retour de Gersom le
+// 02/09/2026, testee sur le compte de Remy). On garantit ici un tableau,
+// meme si la migration n'a pas encore tourne.
+function normalizeAgendaItem<T extends { custom_assignees?: unknown }>(item: T): T & { custom_assignees: string[] } {
+  return { ...item, custom_assignees: Array.isArray(item.custom_assignees) ? (item.custom_assignees as string[]) : [] };
+}
+
 export async function GET() {
   const user = getSessionUser();
   if (!user || !hasCapability(user.role, 'viewAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
@@ -26,7 +38,10 @@ export async function GET() {
     supabase.from('users').select('id, nom_affichage, nom_complet, role, email').eq('event_id', user.event_id).eq('active', true).order('nom_affichage'),
   ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ items: items || [], people: users || [], canManage: hasCapability(user.role, 'manageAgenda') }, { headers: { 'Cache-Control': 'private, no-store' } });
+  return NextResponse.json(
+    { items: (items || []).map(normalizeAgendaItem), people: users || [], canManage: hasCapability(user.role, 'manageAgenda') },
+    { headers: { 'Cache-Control': 'private, no-store' } }
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -49,7 +64,7 @@ export async function POST(req: NextRequest) {
     created_by: user.id,
   }).select('*').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ item: data }, { status: 201 });
+  return NextResponse.json({ item: normalizeAgendaItem(data) }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -75,5 +90,5 @@ export async function PATCH(req: NextRequest) {
   const supabase = createAdminClient();
   const { data, error } = await supabase.from('agenda_items').update(updates).eq('id', id).eq('event_id', user.event_id).select('*').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ item: data });
+  return NextResponse.json({ item: normalizeAgendaItem(data) });
 }

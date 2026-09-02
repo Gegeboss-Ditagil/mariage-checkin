@@ -145,7 +145,16 @@ export async function GET(req: NextRequest) {
         .maybeSingle(),
     ]);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ pending_count: count || 0, latest: latest || null });
+    // Corrige le 02/09/2026 (retour de Gersom : "j'ai comme l'impression que
+    // la valeur deux est hard coded") -- ce GET n'avait pas de Cache-Control
+    // explicite, contrairement a la liste complete juste en dessous. Safari
+    // en PWA reutilisait la reponse HTTP mise en cache pour cette meme URL
+    // sondee toutes les 5-15s (AccountMenu/BottomNav/GuestApprovalsShortcut),
+    // figeant le badge sur l'ancien compte au lieu de repartir du reseau.
+    return NextResponse.json(
+      { pending_count: count || 0, latest: latest || null },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
   }
   const { data, error } = await supabase
     .from('guest_approval_requests')

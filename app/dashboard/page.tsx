@@ -125,13 +125,17 @@ export default function DashboardPage() {
           pullThreshold={pullThreshold}
         />
 
-        {/* pb-10 (au lieu de py-4 symetrique) : la derniere carte (Table 41)
-            restait juste sous le bord visible sur iPhone, "coupee un peu" --
-            retour de Remy le 02/09/2026 -- il fallait toujours scroller un
-            tout petit peu pour la voir entierement malgre BottomNav deja en
-            flux normal (pas en position fixed) sous ce conteneur. */}
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 pt-4 pb-10">
-          <div className="card">
+        {/* Densite resserree le 02/09/2026 (retour de Gersom : "trop
+            d'informations, il faut scroll down... pour que tout rentre dans
+            la page") -- l'empilement complet (jauge + 2 grilles de stats +
+            Staff + reserve) depassait la hauteur d'un iPhone meme apres le
+            pb-10 du 02/09/2026 precedent qui ne visait que la derniere carte.
+            Espacements et cartes resserres (space-y-6->4, gap-3->2, cartes en
+            py-2.5, valeurs en text-3xl) plutot qu'un padding de bas de page :
+            le contenu entier doit tenir sans scroll, pas juste finir proprement
+            apres un scroll. */}
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 pt-3 pb-6">
+          <div className="card py-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-semibold">Remplissage de la salle</p>
               <p className="text-xs text-text-faint">
@@ -141,7 +145,7 @@ export default function DashboardPage() {
             </div>
             <CapacityGauge percent={remplissageSalle} size="lg" warningAt={seuilOfficielPct} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <StatTile label="Invités attendus" value={stats.attendus} onClick={() => voir('tous')} />
             <StatTile
               label="Arrivés"
@@ -158,7 +162,7 @@ export default function DashboardPage() {
             <StatTile label="Taux d'arrivée" value={stats.taux.toFixed(1) + '%'} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-sm">
             <MiniStat label="Complètes" value={stats.tablesCompletes} color="bg-status-complete" onClick={() => voir('complet')} />
             <MiniStat label="Partielles" value={stats.tablesPartielles} color="bg-status-partial" onClick={() => voir('partiel')} />
             <MiniStat label="Non arrivées" value={stats.nonArrives} color="bg-status-none" onClick={() => voir('non_arrive')} />
@@ -177,14 +181,14 @@ export default function DashboardPage() {
                 en-tetes de section de la maquette (ex: "Placement & presence"
                 sur /plan-table), accent en Maison. Le libelle s'adapte si
                 Staff n'est pas visible pour ce role (canSeeStaffSection). */}
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint dark:text-accent">
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-text-faint dark:text-accent">
               {canSeeStaffSection ? 'Staff & réserve' : 'Tables de réserve'}
             </p>
             {canSeeStaffSection && (
               <button
                 type="button"
                 onClick={() => router.push('/staff')}
-                className="card mb-2 flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+                className="card mb-1.5 flex w-full items-center justify-between py-2.5 text-left active:scale-[0.98] transition-transform"
               >
                 <span className="font-semibold">Staff</span>
                 <span className="text-text-muted">
@@ -192,7 +196,7 @@ export default function DashboardPage() {
                 </span>
               </button>
             )}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {reserveTables.map((t) => {
                 const used = usageByTable.get(t.id) || 0;
                 const full = used >= t.capacity;
@@ -201,7 +205,7 @@ export default function DashboardPage() {
                     key={t.id}
                     type="button"
                     onClick={() => router.push('/tables/' + t.id)}
-                    className="card flex w-full items-center justify-between py-3 text-left active:scale-[0.98] transition-transform"
+                    className="card flex w-full items-center justify-between py-2.5 text-left active:scale-[0.98] transition-transform"
                   >
                     <span className="font-semibold">Table {t.number}</span>
                     <span className={full ? 'font-bold text-status-over' : 'text-text-muted'}>
@@ -234,19 +238,19 @@ function StatTile({
   const content = (
     <>
       <p className="text-xs uppercase tracking-wide text-text-faint">{label}</p>
-      <p className={'mt-1 text-4xl font-bold tabular-nums ' + (accent || '')}>{value}</p>
+      <p className={'mt-0.5 text-3xl font-bold tabular-nums ' + (accent || '')}>{value}</p>
     </>
   );
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className="card w-full text-center active:scale-[0.98] transition-transform">
+      <button type="button" onClick={onClick} className="card py-3 w-full text-center active:scale-[0.98] transition-transform">
         {content}
       </button>
     );
   }
 
-  return <div className="card text-center">{content}</div>;
+  return <div className="card py-3 text-center">{content}</div>;
 }
 
 function MiniStat({
@@ -275,14 +279,14 @@ function MiniStat({
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center justify-between rounded-xl2 bg-surface p-3 text-left shadow-card active:scale-[0.98] transition-transform"
+        className="flex w-full items-center justify-between rounded-xl2 bg-surface p-2.5 text-left shadow-card active:scale-[0.98] transition-transform"
       >
         {content}
       </button>
     );
   }
 
-  return <div className="flex items-center justify-between rounded-xl2 bg-surface p-3 shadow-card">{content}</div>;
+  return <div className="flex items-center justify-between rounded-xl2 bg-surface p-2.5 shadow-card">{content}</div>;
 }
 
 

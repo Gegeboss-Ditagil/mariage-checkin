@@ -95,7 +95,11 @@ test("la ligne responsables d'une carte ne s'affiche que si quelqu'un est assign
   // Noms libres (ex: prestataires sans compte) affiches avec les comptes
   // assignes -- demande de Gersom le 02/09/2026.
   assert.match(agendaPage, /custom_assignees: string\[\]/);
-  assert.match(agendaPage, /\.\.\.item\.custom_assignees/);
+  // Filet cote client (`|| []`) : voir le test de normalisation cote API
+  // plus bas -- si la migration 0043 n'est pas encore appliquee en prod,
+  // ce champ manque sur les items deja en memoire et un spread sur
+  // `undefined` plantait toute la page (retour de Gersom, 02/09/2026).
+  assert.match(agendaPage, /\.\.\.\(item\.custom_assignees \|\| \[\]\)/);
 });
 
 // Demande de Gersom le 02/09/2026 : "permet aussi d'ajouter un nom
@@ -109,5 +113,11 @@ test('la fiche de modification permet d\'ajouter un responsable au nom libre, sa
   assert.match(agendaApiSource, /if \('custom_assignees' in updates\) updates\.custom_assignees = sanitizeCustomAssignees/);
   assert.match(agendaPage, /customNameDraft/);
   assert.match(agendaPage, /placeholder="Nom personnalisé \(ex\. Nourdine, électricien\)"/);
-  assert.match(agendaPage, /custom_assignees: editing\.custom_assignees/);
+  assert.match(agendaPage, /custom_assignees: editing\.custom_assignees \|\| \[\]/);
+});
+
+test("l'API /api/agenda normalise custom_assignees en tableau meme si la migration 0043 n'est pas encore appliquee (select('*') omet silencieusement une colonne manquante)", () => {
+  assert.match(agendaApiSource, /function normalizeAgendaItem/);
+  assert.match(agendaApiSource, /items: \(items \|\| \[\]\)\.map\(normalizeAgendaItem\)/);
+  assert.match(agendaApiSource, /item: normalizeAgendaItem\(data\)/);
 });
