@@ -90,6 +90,21 @@ body {
   @apply text-xs font-semibold uppercase tracking-[0.2em] text-text-faint;
 }
 
+/* Champ de formulaire texte standard (input/textarea/select). Utilisee sur
+   /agenda depuis la creation du chronogramme partage (v1.30.0) via
+   `className="input"`, mais jamais definie -- meme situation que .eyebrow
+   ci-dessus : la classe ne faisait rien, le champ retombait sur le style
+   par defaut du navigateur (bordure fine noire, fond qui suit color-scheme,
+   libelle colle au champ faute d'espacement propre). Corrige le 02/09/2026
+   (retour de Gersom sur le design du formulaire d'agenda) -- reprend le
+   meme habillage que /tables/add (bordure claire, coins genereux, focus en
+   accent). Toujours combiner avec un `<label>` separe au-dessus du champ,
+   jamais accole au texte du libelle. */
+.input {
+  @apply w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg text-text
+    placeholder:text-text-faint focus:border-accent focus:outline-none;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
