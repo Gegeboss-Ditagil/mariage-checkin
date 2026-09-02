@@ -30,12 +30,15 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
 
   const signedUrl = await getSignedPhotoUrl(supabase, request.photo_url);
 
-  return NextResponse.json({
-    cote: request.cote,
-    nom_invite: request.nom_invite,
-    nombre_invites: request.nombre_invites,
-    statut: request.statut,
-    photo_signed_url: signedUrl,
-    created_at: request.created_at,
-  });
+  return NextResponse.json(
+    {
+      cote: request.cote,
+      nom_invite: request.nom_invite,
+      nombre_invites: request.nombre_invites,
+      statut: request.statut,
+      photo_signed_url: signedUrl,
+      created_at: request.created_at,
+    },
+    { headers: { 'Cache-Control': 'private, no-store' } }
+  );
 }

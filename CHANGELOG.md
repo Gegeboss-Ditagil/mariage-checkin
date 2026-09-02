@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.38.0] — 2026-09-02
+
+### Corrigé
+- Les réponses de l'API publique d'approbation d'invité portent désormais `Cache-Control: private, no-store` afin d'éviter la conservation de données personnelles et d'URL photo signée dans les caches.
+- La route de check-in utilise la capacité centralisée `checkin` au lieu d'une liste locale de rôles.
+- La réinitialisation des données de test passe par une fonction SQL transactionnelle, verrouille l'événement et refuse elle-même le mode LIVE. Les erreurs ne sont plus ignorées.
+
+### Migrations
+- `0047_atomic_reset_test_event_data.sql` — nouvelle fonction de réinitialisation atomique; à appliquer après validation, sans écriture automatique en production.
+
 ## [1.37.0] — 2026-09-02
 
 Retour de Gersom sur `/agenda` (capture d'écran de la fiche de modification à l'appui) : « au lieu d'avoir toute la liste des responsables à défiler... un champ... quand je clique dessus ça me demande de choisir la personne ».

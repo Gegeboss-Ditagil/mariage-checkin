@@ -57,6 +57,10 @@ const strictAssignmentSource = readFileSync(
   new URL('../supabase/migrations/0038_strict_guest_approval_assignment.sql', import.meta.url),
   'utf8'
 );
+const publicApprovalGetRouteSource = readFileSync(
+  new URL('../app/api/public/guest-approvals/[token]/route.ts', import.meta.url),
+  'utf8'
+);
 const assignPageSource = readFileSync(new URL('../app/approbations/[id]/assign/page.tsx', import.meta.url), 'utf8');
 const webPushSource = readFileSync(new URL('../lib/webPush.ts', import.meta.url), 'utf8');
 const pushButtonSource = readFileSync(new URL('../components/PushNotificationButton.tsx', import.meta.url), 'utf8');
@@ -83,6 +87,10 @@ test('les droits photo, approbation et assignation sont separes par role', () =>
   assert.equal(canAccessPath('placeur', '/approbations'), true);
   assert.equal(canAccessPath('agent_checkin', '/approbations'), false);
   assert.equal(canAccessPath('visibilite', '/approbations'), true);
+});
+
+test("la lecture publique d'une approbation ne doit jamais etre mise en cache", () => {
+  assert.match(publicApprovalGetRouteSource, /Cache-Control': 'private, no-store'/);
 });
 
 test('une demande est ouvrable et montre photo, cote, decision et choix de table dans l application', () => {

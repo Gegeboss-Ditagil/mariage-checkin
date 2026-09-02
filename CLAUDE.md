@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.37.0**
+**Version documentaire : 1.38.0**
 **Dernière mise à jour : 2026-09-02**
 
 Avant toute modification, lire dans cet ordre :
@@ -49,12 +49,12 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.34.0 : `auto_assign_table_for_guest_approval` (`0045_auto_assign_table_for_guest_approval.sql`, exécutée et vérifiée en production Supabase le 02/09/2026, `SECURITY INVOKER`) place automatiquement une demande approuvée sans réservation préalable — table excédentaire en priorité, sinon la table la plus libre du même côté que l'invité, sinon de l'autre côté, sinon approuvée sans table. `/approbations` ne propose plus de réserver une table manuellement comme parcours principal (retour de Gersom : « je n'ai pas besoin de voir réserver une table directement... être capable de approuver ou refuser rapidement ») ; le mécanisme de réservation de 0044 reste fonctionnel sous le capot. `app/globals.css` : `.card`/`.action-row`/`.action-row-muted`/`.btn-secondary` reprennent le thème « verre liquide » (flou + saturation + reflet + `var(--elev-2)`) déjà utilisé par la barre du bas, dans les deux thèmes — ne pas revenir à `shadow-card` (`var(--elev-1)`, `none` en Maison).
 - v1.35.0 : `linked_invitation_id` (`0046_guest_approval_linked_invitation.sql`, exécutée et vérifiée en production Supabase le 02/09/2026) lie une demande d'invité surprise à l'invitation du groupe avec qui la personne est arrivée — nouveau point d'entrée sur `/checkin/[invitationId]` (« 📷 Invité surprise », réservé à `submitGuestApproval`), côté préempli depuis l'invitation. `auto_assign_table_for_guest_approval` gagne une priorité 0 : la table de ce groupe si elle a de la place, avant même la table excédentaire. **`app/api/members/add-unplanned/route.ts` exige désormais `submitGuestApproval` au lieu de `checkin`** (retour de Gersom : « les scanners ne vont même pas traiter votre demande... c'est les placeurs qui vont gérer le reste ») — `agent_checkin` ne peut plus ajouter d'invité non prévu, ni par ce bouton ni par le nouveau parcours photo ; `set-arrival-status` (check-in normal) reste inchangé sur `checkin` pour tous.
 - v1.36.0 : `+ Invité` devient un bouton rond en verre (`components/AddInvitationButton.tsx`, `.glass-icon-button` dans `app/globals.css` — même recette réutilisée pour la flèche Retour de `TopBar`), présent sur `/plan-table` ET `/dashboard`, toujours réservé à `addInvitation` (admin/directeur). `/admin/users` : bascule Actif/Désactivé en `.glass-toggle` (verre liquide) et changement de rôle/accès possible depuis la fiche d'édition — `PATCH /api/admin/users` exige le nouvel identifiant (email+mot de passe ou PIN) quand `role` change et efface le mode devenu obsolète, aucune migration nécessaire (`users_role_check`, 0015, accepte déjà les cinq rôles).
-- v1.37.0 : `/agenda` remplace la longue liste de cases à cocher « Responsables » par `components/ResponsablePicker.tsx`, une fiche de recherche plein écran (équipe affichée par défaut, invités recherchés à partir de 2 caractères via `ilike` sur `invitations.nom_affichage`, jamais toute la liste chargée d'un coup). Toujours les mêmes deux champs (`assignee_ids`, `custom_assignees`), aucune migration.
+- v1.38.0 : les réponses publiques d'approbation sont privées et non mises en cache; le check-in utilise les capacités centralisées; la réinitialisation de test est atomique via la migration `0047_atomic_reset_test_event_data.sql`.
 
 ## Reprise rapide pour Claude AI
 
 1. Commencer par `git fetch origin main` et comparer `HEAD` à `origin/main`; ne jamais supposer qu'un diff transmis est encore manquant.
-2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.37.0`.
+2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.38.0`.
 3. Pour les approbations, lire ensemble `app/approbations/page.tsx`, `app/approbations/[id]/assign/page.tsx`, `lib/guestApprovalDecide.ts`, `lib/webPush.ts` et la migration `0038`.
 4. Pour la navigation, modifier la source centralisée `components/BottomNav.tsx`; ne pas recopier des menus dans les pages.
 5. Ne pas modifier la règle des rôles sans mettre à jour `lib/permissions.ts`, les routes API, `tests/permissions.test.ts`, `tests/guest-approvals.test.ts` et `docs/BUSINESS_RULES.md` dans le même lot.

@@ -17,10 +17,16 @@ const arrivalRouteSource = readFileSync(
   new URL('../app/api/members/set-arrival-status/route.ts', import.meta.url),
   'utf8'
 );
+const checkinRouteSource = readFileSync(new URL('../app/api/checkin/route.ts', import.meta.url), 'utf8');
 
 test("la route d'arrivee utilise la capacite checkin centralisee", () => {
   assert.match(arrivalRouteSource, /hasCapability\(user\.role, 'checkin'\)/);
   assert.doesNotMatch(arrivalRouteSource, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
+});
+
+test("le check-in agregé utilise aussi la capacite centralisee", () => {
+  assert.match(checkinRouteSource, /hasCapability\(user\.role, 'checkin'\)/);
+  assert.doesNotMatch(checkinRouteSource, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
 });
 
 test('remplace le compteur agrege par un etat par personne, jamais de nombre "arrivees" sans savoir qui', () => {

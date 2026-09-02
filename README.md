@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.37.0**
+**Version actuelle : 1.38.0**
 **Dernière mise à jour documentaire : 2026-09-02**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.37.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.38.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.37.0**.
+- Branche de production : `main`; version proposée : **1.38.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
@@ -36,7 +36,7 @@ Avant toute modification, lire :
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.37.0
+## État fonctionnel v1.38.0
 
 - **`/agenda` : sélecteur de responsables en recherche plein écran**, à la place de la longue liste de cases à cocher — l'équipe s'affiche par défaut, et à partir de 2 caractères la recherche porte aussi sur les invités (pour assigner quelqu'un du cortège aidant à la dernière minute), sans jamais charger toute la liste des invités d'un coup.
 - **`+ Invité` en bouton rond en verre** (au lieu d'un simple lien texte), désormais présent aussi sur `/dashboard` au même endroit qu'`/plan-table` (coin supérieur droit, à côté du menu du compte) — réservé à `addInvitation` (admin/directeur uniquement).
