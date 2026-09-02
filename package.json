@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.32.0",
+  "version": "1.32.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -22,6 +22,7 @@
     "test:guestapprovals": "node --test tests/guest-approvals.test.ts",
     "test:tableactions": "node --test tests/table-selection-actions.test.ts",
     "test:addinvitation": "node --test tests/add-invitation.test.ts",
+    "test:agendaform": "node --test tests/agenda-form.test.ts",
     "seed": "tsx scripts/seed.ts",
     "reset-test-data": "tsx scripts/reset-test-data.ts"
   },

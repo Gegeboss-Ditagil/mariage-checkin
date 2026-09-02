@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.32.1] — 2026-09-02
+
+Retour de Gersom sur le design des pop-up de `/agenda` (captures d'écran à l'appui) : « Améliore le UX et le design surtout au niveau des champs à remplir (...) more iOS style (...) Heure met le roll comme iPhone pour choisir ».
+
+### Corrigé
+- **`className="input"` sur `/agenda` ne faisait rien** : la classe n'a jamais été définie (même défaut que `.eyebrow` avant lui, voir `app/globals.css`), donc chaque champ retombait sur le style par défaut du navigateur — bordure fine, fond calé sur `color-scheme`, et surtout le libellé texte collé directement contre le champ dans le même `<label>` (« Heure08:00 », « ActivitéDécorateurs au Festif Chan » sur la capture). `.input` est maintenant définie pour de bon (bordure claire, coins généreux, focus en accent — même habillage que `/tables/add`), et chaque libellé vit dans son propre `<label>` séparé au-dessus du champ.
+
+### Ajouté
+- **Heure : roue native iOS/Android** (`<input type="time">`) au lieu d'un champ texte libre — demande explicite : « met le roll comme iPhone pour choisir ». Une case « + Ajouter une heure de fin » révèle une seconde roue pour saisir une plage (ex. `18:30–19:00`, format déjà utilisé par le chronogramme seed) ; la valeur composée continue d'être stockée telle quelle dans `time_label` (texte libre côté API, aucun changement de schéma).
+- **Bouton de fermeture rond en verre** sur les deux pop-up (nouvelle activité, modifier l'activité), même motif que la fiche détaillée de `/approbations`, à la place du simple lien texte « Fermer ».
+- **Coche personnalisée** (rond en accent, coche blanche) pour la liste des responsables, à la place de la case à cocher par défaut du navigateur.
+
+### Tests
+- `tests/agenda-form.test.ts` (nouveau) : `.input` réellement définie, libellés séparés des champs, roue native avec plage optionnelle, bouton de fermeture en verre, coche personnalisée.
+- `npx tsc --noEmit`, `npm run build`, 16 suites de tests (`node --test`) — tous exécutés avec succès.
+
+### Documentation
+- Rattrape un décalage de version préexistant sur `ASSIGNATION_TABLES.md`, `docs/DATA_CHANGE_INSTRUCTIONS.md` et `docs/QE_QA_PROCESS.md` : coincés à « 1.29.5 » depuis plusieurs releases (leur date affichée avançait à chaque bump alors que le numéro de version ne correspondait plus à aucune chaîne recherchée par le script de mise à jour) — les 10 documents versionnés affichent de nouveau tous la même version.
+
 ## [1.32.0] — 2026-09-02
 
 Retour de Rémy en test sur son téléphone (rôle directeur) : trois problèmes de navigation sur `/scan` et `/dashboard`, plus une demande d'ajout d'invité enrichi pour admin/directeur.
