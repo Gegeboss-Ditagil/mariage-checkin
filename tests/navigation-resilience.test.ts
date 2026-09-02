@@ -143,6 +143,15 @@ test("admin et directeur gardent l'appareil photo au centre sur /scan, avec Tabl
   assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\) && central\.href === ['"]\/scan['"]/);
 });
 
+test("sur /agenda, Agenda et Tableau de bord echangent leurs raccourcis lateraux", () => {
+  const agendaBranch = bottomNav.slice(
+    bottomNav.indexOf("pathname.startsWith('/agenda')"),
+    bottomNav.indexOf("pathname.startsWith('/scan')")
+  );
+  assert.match(agendaBranch, /central = SCAN_ITEM/);
+  assert.match(agendaBranch, /right = \[AGENDA_ITEM, DASHBOARD_ITEM\]/);
+});
+
 test("Approbations reste dans le menu du compte, dans la barre Dashboard mais plus dans la barre Scan (deja un gros bouton dedie)", () => {
   assert.match(bottomNav, /APPROVALS_ITEM/);
   assert.match(accountMenu, /href="\/approbations"/);

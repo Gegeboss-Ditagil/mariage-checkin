@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.38.1] — 2026-09-02
+
+### Corrigé
+- Sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés afin que le widget Agenda conserve sa position habituelle sur cette page, sans modifier la navigation de `/dashboard` ou `/scan`.
+
+### Tests
+- `tests/navigation-resilience.test.ts` : non-régression de l'ordre contextuel des raccourcis sur `/agenda`.
+
+Version: 1.38.0 → 1.38.1
+
 ## [1.38.0] — 2026-09-02
 
 ### Corrigé

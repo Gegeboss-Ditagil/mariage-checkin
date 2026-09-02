@@ -153,6 +153,10 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     central = SCAN_ITEM;
     left = [SEARCH_ITEM, PLAN_ITEM];
     right = [AGENDA_ITEM, { ...APPROVALS_ITEM, badge: pendingCount }];
+  } else if (isAdminDirector && pathname.startsWith('/agenda')) {
+    central = SCAN_ITEM;
+    left = [SEARCH_ITEM, PLAN_ITEM];
+    right = [AGENDA_ITEM, DASHBOARD_ITEM];
   } else if (isAdminDirector && pathname.startsWith('/scan')) {
     central = SCAN_ITEM;
     left = [SEARCH_ITEM, PLAN_ITEM];
