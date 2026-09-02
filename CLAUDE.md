@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.38.1**
+**Version documentaire : 1.39.1**
 **Dernière mise à jour : 2026-09-02**
 
 Avant toute modification, lire dans cet ordre :
@@ -51,11 +51,13 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.36.0 : `+ Invité` devient un bouton rond en verre (`components/AddInvitationButton.tsx`, `.glass-icon-button` dans `app/globals.css` — même recette réutilisée pour la flèche Retour de `TopBar`), présent sur `/plan-table` ET `/dashboard`, toujours réservé à `addInvitation` (admin/directeur). `/admin/users` : bascule Actif/Désactivé en `.glass-toggle` (verre liquide) et changement de rôle/accès possible depuis la fiche d'édition — `PATCH /api/admin/users` exige le nouvel identifiant (email+mot de passe ou PIN) quand `role` change et efface le mode devenu obsolète, aucune migration nécessaire (`users_role_check`, 0015, accepte déjà les cinq rôles).
 - v1.38.0 : les réponses publiques d'approbation sont privées et non mises en cache; le check-in utilise les capacités centralisées; la réinitialisation de test est atomique via la migration `0047_atomic_reset_test_event_data.sql`.
 - v1.38.1 : sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés; `/dashboard` et `/scan` restent inchangés.
+- v1.39.0 : la création d'une activité permet de choisir les responsables dès la modale « Nouvelle activité », avec les mêmes comptes, invités recherchés et noms libres que la modification.
+- v1.39.1 : les approbations et abonnements push utilisent l'événement de la session; les lectures d'approbations sont sans cache et l'activation push gère iOS installé et Android.
 
 ## Reprise rapide pour Claude AI
 
 1. Commencer par `git fetch origin main` et comparer `HEAD` à `origin/main`; ne jamais supposer qu'un diff transmis est encore manquant.
-2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.38.1`.
+2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.39.1`.
 3. Pour les approbations, lire ensemble `app/approbations/page.tsx`, `app/approbations/[id]/assign/page.tsx`, `lib/guestApprovalDecide.ts`, `lib/webPush.ts` et la migration `0038`.
 4. Pour la navigation, modifier la source centralisée `components/BottomNav.tsx`; ne pas recopier des menus dans les pages.
 5. Ne pas modifier la règle des rôles sans mettre à jour `lib/permissions.ts`, les routes API, `tests/permissions.test.ts`, `tests/guest-approvals.test.ts` et `docs/BUSINESS_RULES.md` dans le même lot.

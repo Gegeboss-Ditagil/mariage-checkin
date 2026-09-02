@@ -100,6 +100,8 @@ export default function AgendaPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<AgendaItem | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);
+  const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
+  const [newCustomAssignees, setNewCustomAssignees] = useState<string[]>([]);
   const [canManage, setCanManage] = useState(false);
   // Fiche plein ecran de recherche des responsables -- demande de Gersom le
   // 02/09/2026 : "au lieu d'avoir toute la liste des responsables a
@@ -112,6 +114,13 @@ export default function AgendaPage() {
   function openEditing(item: AgendaItem | null) {
     setResponsablePickerOpen(false);
     setEditing(item);
+  }
+
+  function openInsertAt(sortOrder: number) {
+    setResponsablePickerOpen(false);
+    setNewAssigneeIds([]);
+    setNewCustomAssignees([]);
+    setInsertAt(sortOrder);
   }
 
   const load = useCallback(async () => {
@@ -153,11 +162,14 @@ export default function AgendaPage() {
     const form = new FormData(event.currentTarget);
     const response = await fetch('/api/agenda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       time_label: form.get('time_label'), title: form.get('title'), department: form.get('department'), details: form.get('details'), sort_order: insertAt,
+      assignee_ids: newAssigneeIds, custom_assignees: newCustomAssignees,
     }) });
     const data = await response.json();
     if (!response.ok) return setError(data.error || 'Ajout impossible');
     setItems((current) => [...current, data.item].sort((a, b) => a.sort_order - b.sort_order));
     setInsertAt(null);
+    setNewAssigneeIds([]);
+    setNewCustomAssignees([]);
   }
 
   return (
@@ -186,7 +198,7 @@ export default function AgendaPage() {
                   ...(item.custom_assignees || []),
                 ];
                 return <li key={item.id}>
-                  {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
+                  {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
                   <article
                     className={clsx('card flex gap-3 py-3', canManage && 'cursor-pointer transition-transform active:scale-[0.99]')}
                     onClick={() => canManage && openEditing(item)}
@@ -215,7 +227,7 @@ export default function AgendaPage() {
                   </article>
                 </li>;
               })}
-              {canManage && <li><button type="button" className="mx-auto block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt((items.at(-1)?.sort_order || 0) + 10)}>+ Ajouter une activité à la fin</button></li>}
+              {canManage && <li><button type="button" className="mx-auto block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt((items.at(-1)?.sort_order || 0) + 10)}>+ Ajouter une activité à la fin</button></li>}
             </ol>
           )}
         </div>
@@ -238,6 +250,25 @@ export default function AgendaPage() {
             <div>
               <FieldLabel>Détails et consignes</FieldLabel>
               <textarea name="details" placeholder="Déroulement, matériel et consignes…" className="input min-h-24" />
+            </div>
+            <div>
+              <FieldLabel>Responsables</FieldLabel>
+              <button
+                type="button"
+                onClick={() => setResponsablePickerOpen(true)}
+                className="action-row flex items-center justify-between gap-2 text-left"
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {(() => {
+                    const names = [
+                      ...newAssigneeIds.map((id) => peopleById.get(id)).filter(Boolean).map((p) => (p as Person).nom_complet || (p as Person).nom_affichage),
+                      ...newCustomAssignees,
+                    ];
+                    return names.length > 0 ? names.join(', ') : 'Choisir les responsables';
+                  })()}
+                </span>
+                <ChevronRightIcon className="h-5 w-5 shrink-0 text-text-faint" />
+              </button>
             </div>
             <button className="btn-primary w-full">Ajouter et partager</button>
           </form>
@@ -305,12 +336,18 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {editing && responsablePickerOpen && (
+      {responsablePickerOpen && (
         <ResponsablePicker
           people={people}
-          selectedPersonIds={editing.assignee_ids}
-          selectedCustomNames={editing.custom_assignees || []}
-          onChange={({ assigneeIds, customNames }) => setEditing({ ...editing, assignee_ids: assigneeIds, custom_assignees: customNames })}
+          selectedPersonIds={editing ? editing.assignee_ids : newAssigneeIds}
+          selectedCustomNames={editing ? editing.custom_assignees || [] : newCustomAssignees}
+          onChange={({ assigneeIds, customNames }) => {
+            if (editing) setEditing({ ...editing, assignee_ids: assigneeIds, custom_assignees: customNames });
+            else {
+              setNewAssigneeIds(assigneeIds);
+              setNewCustomAssignees(customNames);
+            }
+          }}
           onClose={() => setResponsablePickerOpen(false)}
         />
       )}

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_subscription' }, { status: 400 });
   }
   const supabase = createAdminClient();
-  const { data: event } = await supabase.from('events').select('id').limit(1).maybeSingle();
+  const { data: event } = await supabase.from('events').select('id').eq('id', user.event_id).maybeSingle();
   if (!event) return NextResponse.json({ error: 'event_not_found' }, { status: 400 });
   const { error } = await supabase.from('push_subscriptions').upsert({
     event_id: event.id,

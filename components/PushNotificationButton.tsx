@@ -16,29 +16,48 @@ export function PushNotificationButton() {
       setStatus('unsupported');
       return;
     }
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIos && !isStandalone) {
+      setStatus('in_app');
+      return;
+    }
     setStatus('loading');
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { setStatus('denied'); return; }
-    const keyResponse = await fetch('/api/push/vapid-public-key');
-    if (!keyResponse.ok) { setStatus('in_app'); return; }
-    const { public_key: publicKey } = await keyResponse.json();
-    const registration = await navigator.serviceWorker.ready;
-    const existing = await registration.pushManager.getSubscription();
-    const subscription = existing || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toUint8Array(publicKey).buffer as ArrayBuffer });
-    const response = await fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subscription.toJSON()) });
-    setStatus(response.ok ? 'enabled' : 'in_app');
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') { setStatus('denied'); return; }
+      const keyResponse = await fetch('/api/push/vapid-public-key', { cache: 'no-store' });
+      if (!keyResponse.ok) { setStatus('in_app'); return; }
+      const { public_key: publicKey } = await keyResponse.json();
+      if (typeof publicKey !== 'string' || !publicKey) { setStatus('in_app'); return; }
+      const registration = await navigator.serviceWorker.ready;
+      const existing = await registration.pushManager.getSubscription();
+      const subscription = existing || await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: toUint8Array(publicKey).buffer as ArrayBuffer,
+      });
+      const response = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+      setStatus(response.ok ? 'enabled' : 'in_app');
+    } catch (error) {
+      console.error('Echec activation notifications push', error);
+      setStatus('in_app');
+    }
   }
 
   const label = status === 'enabled'
-    ? 'Notifications iPhone activées'
+    ? 'Notifications activées'
     : status === 'loading'
       ? 'Activation…'
       : status === 'denied'
-        ? 'Notifications refusées dans les réglages de l’iPhone'
+        ? 'Notifications refusées dans les réglages'
         : status === 'unsupported'
           ? 'Alertes dans l’application actives'
           : status === 'in_app'
-            ? 'Alertes dans l’application actives · push iPhone à configurer'
-            : 'Activer les notifications iPhone';
+            ? 'Alertes dans l’application actives · notifications à configurer'
+            : 'Activer les notifications';
   return <button type="button" onClick={enable} disabled={status === 'loading' || status === 'enabled'} className="action-row mb-3 text-sm disabled:opacity-60">🔔 {label}</button>;
 }

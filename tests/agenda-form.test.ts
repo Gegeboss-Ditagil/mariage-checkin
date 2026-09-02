@@ -123,6 +123,15 @@ test('la fiche de modification permet d\'ajouter un responsable au nom libre, sa
   assert.match(responsablePickerSource, /placeholder="Ex\. Nourdine, électricien"/);
 });
 
+test("la creation d'une activite permet de choisir les responsables avant le partage", () => {
+  assert.match(agendaPage, /newAssigneeIds/);
+  assert.match(agendaPage, /newCustomAssignees/);
+  assert.match(agendaPage, /assignee_ids: newAssigneeIds, custom_assignees: newCustomAssignees/);
+  assert.match(agendaPage, /<FieldLabel>Responsables<\/FieldLabel>/);
+  assert.match(agendaPage, /return names\.length > 0 \? names\.join\(', '\) : 'Choisir les responsables'/);
+  assert.match(agendaPage, /selectedPersonIds=\{editing \? editing\.assignee_ids : newAssigneeIds\}/);
+});
+
 test("le picker de responsables recherche aussi parmi les invites (aide de derniere minute), en plus de l'equipe et du nom libre", () => {
   // Demande de Gersom le 02/09/2026 : "ça va me montrer toutes les
   // personnes qui ont l'étiquette staff... mais aussi l'option de

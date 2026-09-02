@@ -1,6 +1,6 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.38.1**
+**Version documentaire : 1.39.1**
 **Dernière mise à jour : 2026-09-02**
 
 ## Source de vérité
