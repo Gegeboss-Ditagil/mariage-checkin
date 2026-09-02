@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.33.1] — 2026-09-02
+
+Retour de Gersom en test réel sur le compte de Rémy (directeur, 3 captures d'écran à l'appui), trois bugs distincts : un plantage sur `/agenda`, un badge d'approbations « comme hard codé », et le bas de `/dashboard` toujours trop chargé pour tenir sans défiler.
+
+### Corrigé
+- **`/agenda` plantait à l'ouverture (écran « Mise à jour de l'application », déconnexion forcée) tant que la migration `0043_agenda_custom_assignees.sql` n'est pas appliquée en production.** `select('*')` ne renvoie tout simplement pas la colonne `custom_assignees` si elle n'existe pas encore côté base — Postgrest ignore une colonne inexistante au lieu d'échouer — et le rendu faisait `...item.custom_assignees` (spread) sans vérification : `undefined` n'est pas itérable, ce qui plantait la page entière au premier item et déclenchait le filet de secours générique de `app/error.tsx`, qui déconnecte et renvoie vers `/login` quel que soit le type d'erreur réel — d'où l'impression de déconnexions fréquentes après « quelques manipulations ». `app/api/agenda/route.ts` normalise désormais ce champ en tableau (GET/POST/PATCH), et `app/agenda/page.tsx` ajoute un filet côté client (`|| []`) partout où ce champ est lu ou modifié, pour ne plus jamais planter même sur des données déjà en mémoire.
+- **Le badge de demandes en attente restait figé (ex. « 2 ») alors que `/approbations` affichait « Aucune demande d'invité surprise pour l'instant ».** Les trois emplacements du badge (`AccountMenu` — avatar et menu déroulant —, `BottomNav`, `GuestApprovalsShortcut`) sondent tous `GET /api/guest-approvals?count=pending`, mais cette réponse n'excluait pas explicitement le cache HTTP (contrairement à la liste complète, qui portait déjà `Cache-Control: private, no-store`) : Safari/PWA pouvait réutiliser une ancienne réponse pour cette même URL sondée en boucle au lieu de repasser par le réseau, figeant le compte sur une valeur périmée qui semblait « hard codée ». Le serveur renvoie désormais le même en-tête `no-store` sur cette réponse, et les trois appelants passent explicitement `{ cache: 'no-store' }` — le compte reflète maintenant le vrai total en temps réel.
+- **`/dashboard` restait trop chargé pour tenir sur un écran d'iPhone sans défiler** (« trop d'informations, il faut scroll down (...) pour que tout rentre dans la page »). Le `pb-10` de la version précédente ne visait que la dernière carte (Table 41) coupée, pas la hauteur totale de l'empilement. Resserré dans son ensemble : espacements entre sections (`space-y-6` → `space-y-4`), grilles de statistiques (`gap-3` → `gap-2`, valeurs `text-4xl` → `text-3xl`), cartes Staff/réserve (`py-3` → `py-2.5`) — tout le contenu, jusqu'à la dernière table de réserve, tient désormais sans défiler sur les appareils visés.
+
+### Tests
+- `tests/guest-approvals.test.ts` : nouvelle régression vérifiant l'en-tête `Cache-Control: private, no-store` sur `GET ?count=pending` et `{ cache: 'no-store' }` dans les trois appelants (`AccountMenu`, `BottomNav`, `GuestApprovalsShortcut`).
+- `tests/agenda-form.test.ts` : régression pour la normalisation serveur (`normalizeAgendaItem`) et les filets côté client (`|| []`) sur `custom_assignees`.
+- `tests/guest-approval-reservation.test.ts` : assertion du tableau de bord mise à jour pour le nouvel espacement resserré.
+- `npx tsc --noEmit`, `npm run build`, 18 suites de tests (`node --test tests/*.test.ts`, 180 tests) — tous exécutés avec succès.
+
+### Migrations
+- Aucune nouvelle migration. Rappel : `0043_agenda_custom_assignees.sql` et `0044_guest_approval_pre_approval_reservation.sql` (v1.33.0) restent en attente d'application en production — voir les instructions SQL déjà transmises à Gersom. Le correctif `/agenda` de cette version rend l'application tolérante à cette migration manquante, mais ne remplace pas son application (le nom personnalisé ne peut pas être enregistré tant qu'elle n'a pas tourné).
+
 ## [1.33.0] — 2026-09-02
 
 Retour détaillé de Gersom en test réel (captures d'écran de `/dashboard`, `/agenda`, `/scan` et `/approbations` à l'appui), demandant explicitement que « le système d'appro soit fluide et fonctionne de bout en bout dans l'app ».

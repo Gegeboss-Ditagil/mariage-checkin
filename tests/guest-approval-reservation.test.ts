@@ -105,9 +105,14 @@ test('le message "deja traitee" reflete le vrai statut actuel renvoye par le ser
   assert.match(approbationsPageSource, /maintenant Refusée/);
 });
 
-test("le tableau de bord laisse assez d'espace en bas (Table 41 etait coupee, obligeant a scroller un peu)", () => {
+test("le tableau de bord est resserre pour que tout (jusqu'a la reserve/Table 41) tienne sans avoir a scroller", () => {
   const dashboardSource = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');
-  assert.match(dashboardSource, /className="flex-1 space-y-6 overflow-y-auto px-4 pt-4 pb-10"/);
+  // Corrige le 02/09/2026 (retour de Gersom) : le pb-10 precedent ne visait
+  // que la derniere carte, mais l'empilement complet restait trop haut --
+  // resserre partout (espacements, grilles, cartes) plutot qu'un simple
+  // padding de bas de page.
+  assert.match(dashboardSource, /className="flex-1 space-y-4 overflow-y-auto px-4 pt-3 pb-6"/);
+  assert.match(dashboardSource, /className="grid grid-cols-2 gap-2">/);
 });
 
 test("/scan n'a plus de bouton \"Prendre une photo\" redondant sous la camera (le gros bouton central suffit)", () => {

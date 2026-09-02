@@ -53,7 +53,10 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
     if (!hasCapability(role, 'viewGuestApprovals')) return;
     let active = true;
     const load = async () => {
-      const response = await fetch('/api/guest-approvals?count=pending').catch(() => null);
+      // cache: 'no-store' -- sans ca, Safari/PWA pouvait reutiliser une
+      // reponse HTTP mise en cache pour cette meme URL sondee toutes les 5s,
+      // figeant le badge (retour Gersom du 02/09/2026, valeur "hard coded").
+      const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
       if (!response?.ok || !active) return;
       const data = await response.json();
       const nextCount = data.pending_count || 0;

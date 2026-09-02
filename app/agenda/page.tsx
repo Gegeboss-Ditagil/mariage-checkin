@@ -175,7 +175,11 @@ export default function AgendaPage() {
                 // dans l'appli) affiches ensemble, sans les distinguer visuellement.
                 const assigneeNames = [
                   ...assignees.map((person) => person.nom_complet || person.nom_affichage),
-                  ...item.custom_assignees,
+                  // Filet cote client : l'API normalise deja custom_assignees en
+                  // tableau (voir app/api/agenda/route.ts), mais un item deja en
+                  // memoire avant un rechargement ne doit jamais faire planter le
+                  // rendu si ce champ manquait encore.
+                  ...(item.custom_assignees || []),
                 ];
                 return <li key={item.id}>
                   {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
@@ -249,7 +253,7 @@ export default function AgendaPage() {
                 department: form.get('department'),
                 details: form.get('details'),
                 assignee_ids: editing.assignee_ids,
-                custom_assignees: editing.custom_assignees,
+                custom_assignees: editing.custom_assignees || [],
               });
               if (saved) openEditing(null);
             }}
@@ -295,15 +299,15 @@ export default function AgendaPage() {
               {/* Nom libre (sans compte dans l'appli) -- demande de Gersom le
                   02/09/2026 : "permet d'ajouter un nom personnalisé... si
                   c'est une tâche particulière" (ex: un prestataire externe). */}
-              {editing.custom_assignees.length > 0 && (
+              {(editing.custom_assignees || []).length > 0 && (
                 <div className="mt-2 space-y-2">
-                  {editing.custom_assignees.map((customName) => (
+                  {(editing.custom_assignees || []).map((customName) => (
                     <div key={customName} className="action-row flex items-center justify-between gap-3 text-left">
                       <span className="min-w-0 flex-1 truncate font-semibold">{customName}</span>
                       <button
                         type="button"
                         aria-label={'Retirer ' + customName}
-                        onClick={() => setEditing({ ...editing, custom_assignees: editing.custom_assignees.filter((n) => n !== customName) })}
+                        onClick={() => setEditing({ ...editing, custom_assignees: (editing.custom_assignees || []).filter((n) => n !== customName) })}
                         className="shrink-0 text-text-faint"
                       >
                         <CloseIcon className="h-4 w-4" />
@@ -320,8 +324,8 @@ export default function AgendaPage() {
                     if (e.key !== 'Enter') return;
                     e.preventDefault();
                     const name = customNameDraft.trim();
-                    if (name && !editing.custom_assignees.includes(name)) {
-                      setEditing({ ...editing, custom_assignees: [...editing.custom_assignees, name] });
+                    if (name && !(editing.custom_assignees || []).includes(name)) {
+                      setEditing({ ...editing, custom_assignees: [...(editing.custom_assignees || []), name] });
                     }
                     setCustomNameDraft('');
                   }}
@@ -332,8 +336,8 @@ export default function AgendaPage() {
                   type="button"
                   onClick={() => {
                     const name = customNameDraft.trim();
-                    if (name && !editing.custom_assignees.includes(name)) {
-                      setEditing({ ...editing, custom_assignees: [...editing.custom_assignees, name] });
+                    if (name && !(editing.custom_assignees || []).includes(name)) {
+                      setEditing({ ...editing, custom_assignees: [...(editing.custom_assignees || []), name] });
                     }
                     setCustomNameDraft('');
                   }}

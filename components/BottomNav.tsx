@@ -121,7 +121,10 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     if (!hasCapability(role, 'viewGuestApprovals')) return;
     let active = true;
     const load = async () => {
-      const response = await fetch('/api/guest-approvals?count=pending').catch(() => null);
+      // cache: 'no-store' -- voir AccountMenu.tsx pour le meme correctif
+      // (badge fige par une reponse HTTP mise en cache, retour Gersom du
+      // 02/09/2026).
+      const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
       if (!response?.ok || !active) return;
       const data = await response.json();
       setPendingCount(data.pending_count || 0);
