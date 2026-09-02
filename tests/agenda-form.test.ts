@@ -4,6 +4,11 @@ import test from 'node:test';
 
 const agendaPage = readFileSync(new URL('../app/agenda/page.tsx', import.meta.url), 'utf8');
 const globalStyles = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+const agendaApiSource = readFileSync(new URL('../app/api/agenda/route.ts', import.meta.url), 'utf8');
+const agendaCustomAssigneesMigration = readFileSync(
+  new URL('../supabase/migrations/0043_agenda_custom_assignees.sql', import.meta.url),
+  'utf8'
+);
 
 // Corrige le 02/09/2026 (retour de Gersom sur le design du formulaire) :
 // `className="input"` etait utilise sur /agenda depuis la creation du
@@ -51,7 +56,7 @@ test('les deux formulaires (nouvelle activite, modifier) ont un bouton de fermet
   assert.match(agendaPage, /CloseIcon/);
   assert.match(agendaPage, /rounded-full border border-white\/30 bg-surface\/75.*backdrop-blur-xl/);
   assert.match(agendaPage, /<ModalHeader title="Nouvelle activité" onClose=\{\(\) => setInsertAt\(null\)\} \/>/);
-  assert.match(agendaPage, /<ModalHeader title="Modifier l’activité" onClose=\{\(\) => setEditing\(null\)\} \/>/);
+  assert.match(agendaPage, /<ModalHeader title="Modifier l’activité" onClose=\{\(\) => openEditing\(null\)\} \/>/);
 });
 
 test('la liste des responsables utilise une coche personnalisee (rond accent) au lieu de la case a cocher par defaut du navigateur', () => {
@@ -66,10 +71,10 @@ test('la liste des responsables utilise une coche personnalisee (rond accent) au
 // ouvrir la modification) etait le seul autre element interactif.
 test('toute la carte d\'une activite ouvre la modification (pas seulement le bloc de texte), la case terminee reste independante, et le lien jaune redondant a disparu', () => {
   assert.match(agendaPage, /role=\{canManage \? 'button' : undefined\}/);
-  assert.match(agendaPage, /onClick=\{\(\) => canManage && setEditing\(item\)\}/);
+  assert.match(agendaPage, /onClick=\{\(\) => canManage && openEditing\(item\)\}/);
   // La carte entiere porte le onClick -- l'ancien <button> qui n'enveloppait
   // que le texte est redevenu un simple <div>.
-  assert.doesNotMatch(agendaPage, /<button type="button" onClick=\{\(\) => canManage && setEditing\(item\)\}/);
+  assert.doesNotMatch(agendaPage, /<button type="button" onClick=\{\(\) => canManage && (setEditing|openEditing)\(item\)\}/);
   // La case cochee stoppe la propagation pour ne pas aussi ouvrir la carte.
   assert.match(agendaPage, /onClick=\{\(e\) => \{ e\.stopPropagation\(\); void patchItem\(item\.id, \{ completed: !item\.completed \}\); \}\}/);
   // Le lien texte en accent devenu redondant (la carte entiere s'ouvre déjà)
@@ -84,7 +89,25 @@ test('toute la carte d\'une activite ouvre la modification (pas seulement le blo
 // placeholder "Responsable à attribuer" (texte + couleur) est retire de la
 // liste ; la ligne responsables ne s'affiche plus du tout tant que
 // personne n'est assigne, au lieu de rester visible comme texte d'invite.
-test("la ligne responsables d'une carte ne s'affiche que si quelqu'un est assigne (jamais un placeholder)", () => {
+test("la ligne responsables d'une carte ne s'affiche que si quelqu'un est assigne (jamais un placeholder), et combine comptes + noms libres", () => {
   assert.doesNotMatch(agendaPage, /Responsable à attribuer/);
-  assert.match(agendaPage, /\{assignees\.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">/);
+  assert.match(agendaPage, /\{assigneeNames\.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">/);
+  // Noms libres (ex: prestataires sans compte) affiches avec les comptes
+  // assignes -- demande de Gersom le 02/09/2026.
+  assert.match(agendaPage, /custom_assignees: string\[\]/);
+  assert.match(agendaPage, /\.\.\.item\.custom_assignees/);
+});
+
+// Demande de Gersom le 02/09/2026 : "permet aussi d'ajouter un nom
+// personnalisé... si c'est une tâche personnelle ou une tâche en
+// particulier" (ex: "Nourdine, électricien") -- un responsable sans compte
+// dans l'application, en plus des comptes existants.
+test('la fiche de modification permet d\'ajouter un responsable au nom libre, sans compte', () => {
+  assert.match(agendaCustomAssigneesMigration, /alter table agenda_items add column if not exists custom_assignees text\[\] not null default '\{\}'/);
+  assert.match(agendaApiSource, /function sanitizeCustomAssignees/);
+  assert.match(agendaApiSource, /custom_assignees: sanitizeCustomAssignees\(body\.custom_assignees\)/);
+  assert.match(agendaApiSource, /if \('custom_assignees' in updates\) updates\.custom_assignees = sanitizeCustomAssignees/);
+  assert.match(agendaPage, /customNameDraft/);
+  assert.match(agendaPage, /placeholder="Nom personnalisé \(ex\. Nourdine, électricien\)"/);
+  assert.match(agendaPage, /custom_assignees: editing\.custom_assignees/);
 });

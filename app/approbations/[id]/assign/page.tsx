@@ -11,23 +11,30 @@ import { useOnline } from '@/hooks/useOnline';
 import { hasCapability } from '@/lib/permissions';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 
-interface ApprovedRequest {
+interface TargetRequest {
   id: string;
   nom_invite: string;
   nombre_invites: number;
   cote: 'Nelly' | 'Gege';
   statut: string;
   table_id: string | null;
+  reserved_table_id: string | null;
   photo_signed_url: string | null;
 }
 
 /**
- * Assigne une table à une demande d'invité surprise déjà APPROUVÉE par SMS
- * -- même sélecteur de table (TablePicker, avec capacités en direct) que
- * /tables/move/[invitationId] et /tables/move-guest/[guestId], plutôt que le
- * formulaire libre de /tables/add (capacité addInvitation, réservée à
- * l'admin -- volontairement pas réutilisé ici, voir
- * app/api/guest-approvals/[id]/assign-table/route.ts).
+ * Deux modes selon l'état de la demande, même écran :
+ * - "assign" (déjà APPROUVÉE) : crée l'invitation à la table choisie
+ *   (RPC assign_table_to_guest_approval_strict, 0038) -- comportement
+ *   d'origine, avec réorganisation possible si la table est trop pleine.
+ * - "reserve" (encore EN ATTENTE) : réserve une table sans créer
+ *   d'invitation (RPC reserve_table_for_guest_approval, 0044) -- demande de
+ *   Gersom le 02/09/2026, "pour ne pas qu'on fasse du double booking" en
+ *   attendant la décision. Finalisée automatiquement en vraie assignation
+ *   dès l'approbation (lib/guestApprovalDecide.ts). Pas de réorganisation
+ *   ici : trop tôt pour déplacer de vrais invités pour une demande pas
+ *   encore décidée -- si la table choisie n'a plus assez de place, l'agent
+ *   en choisit une autre.
  */
 export default function AssignGuestApprovalTablePage() {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +42,7 @@ export default function AssignGuestApprovalTablePage() {
   const role = useSessionRole();
   const online = useOnline();
 
-  const [request, setRequest] = useState<ApprovedRequest | null>(null);
+  const [request, setRequest] = useState<TargetRequest | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [usages, setUsages] = useState<TableCapacity[]>([]);
   const [chosenTableId, setChosenTableId] = useState<string | null>(null);
@@ -45,6 +52,8 @@ export default function AssignGuestApprovalTablePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const mode: 'assign' | 'reserve' = request?.statut === 'en_attente' ? 'reserve' : 'assign';
 
   const recommendations = useMemo(() => {
     const needed = request?.nombre_invites || 1;
@@ -63,13 +72,17 @@ export default function AssignGuestApprovalTablePage() {
       if (!active) return;
       if (res.ok) {
         const data = await res.json();
-        const found = (data.requests || []).find((r: ApprovedRequest) => r.id === id) || null;
-        if (!found || found.statut !== 'approuve' || found.table_id) {
+        const found = (data.requests || []).find((r: TargetRequest) => r.id === id) || null;
+        const eligible = !!found && !found.table_id && (found.statut === 'approuve' || found.statut === 'en_attente');
+        if (!eligible) {
           setNotFound(true);
           setLoading(false);
           return;
         }
         setRequest(found);
+        // Réouverture sur une demande déjà réservée : pré-sélectionne sa
+        // table actuelle, pour que "modifier" affiche l'état courant.
+        if (found.statut === 'en_attente' && found.reserved_table_id) setChosenTableId(found.reserved_table_id);
       }
 
       const supabase = createClient();
@@ -95,34 +108,43 @@ export default function AssignGuestApprovalTablePage() {
     };
   }, [id]);
 
-  async function handleAssign() {
+  async function handleSubmit() {
     if (!chosenTableId) return;
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/guest-approvals/' + id + '/assign-table', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          table_id: chosenTableId,
-          relocations: relocationIds.map((invitation_id) => ({ invitation_id, destination_table_id: relocationTableId })),
-        }),
-      });
+      const res = await fetch(
+        '/api/guest-approvals/' + id + (mode === 'reserve' ? '/reserve-table' : '/assign-table'),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            mode === 'reserve'
+              ? { table_id: chosenTableId }
+              : {
+                  table_id: chosenTableId,
+                  relocations: relocationIds.map((invitation_id) => ({ invitation_id, destination_table_id: relocationTableId })),
+                }
+          ),
+        }
+      );
       const data = await res.json();
       if (!res.ok) {
         setError(
           data.error === 'request_already_assigned'
             ? 'Déjà assignée entre-temps'
-            : data.error?.includes('arrived_guest_cannot_move')
-              ? 'Une personne sélectionnée est déjà arrivée et ne peut plus être déplacée.'
-              : data.error?.includes('capacity_exceeded')
-                ? 'La capacité a changé entre-temps. Actualisez les tables et recommencez.'
-                : data.error || 'Échec de l\'assignation'
+            : data.error === 'request_not_pending'
+              ? 'Cette demande a déjà été décidée entre-temps — actualisez la liste.'
+              : data.error?.includes('arrived_guest_cannot_move')
+                ? 'Une personne sélectionnée est déjà arrivée et ne peut plus être déplacée.'
+                : data.error?.includes('capacity_exceeded')
+                  ? 'La capacité a changé entre-temps. Actualisez les tables et recommencez.'
+                  : data.error || 'Échec de l\'opération'
         );
         setSubmitting(false);
         return;
       }
-      router.push('/checkin/' + data.invitation.id);
+      router.push(mode === 'reserve' ? '/approbations' : '/checkin/' + data.invitation.id);
     } catch {
       setError('Erreur réseau — réessayez');
       setSubmitting(false);
@@ -158,11 +180,11 @@ export default function AssignGuestApprovalTablePage() {
   const targetOccupants = invitations.filter((inv) => inv.table_id === chosenTableId && !inv.ne_viendra_pas);
   const selectedRelocations = targetOccupants.filter((inv) => relocationIds.includes(inv.id));
   const seatsFreed = selectedRelocations.reduce((sum, inv) => sum + Math.max(inv.nombre_prevu, inv.nombre_arrive), 0);
-  const relocationReady = shortage === 0 || (!!relocationTableId && seatsFreed >= shortage);
+  const relocationReady = mode === 'reserve' ? shortage === 0 : shortage === 0 || (!!relocationTableId && seatsFreed >= shortage);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
-      <TopBar title="Assigner une table" backHref="/approbations" />
+      <TopBar title={mode === 'reserve' ? 'Réserver une table' : 'Assigner une table'} backHref="/approbations" />
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <div className="card flex items-center gap-3">
@@ -177,10 +199,17 @@ export default function AssignGuestApprovalTablePage() {
             <p className="text-sm font-bold uppercase tracking-wide text-accent">{request.nom_invite}</p>
             <p className="text-sm text-text-muted">
               {request.nombre_invites} invité{request.nombre_invites > 1 ? 's' : ''} · Côté{' '}
-              {request.cote === 'Gege' ? 'Gégé' : 'Nelly'} · approuvé
+              {request.cote === 'Gege' ? 'Gégé' : 'Nelly'} · {mode === 'reserve' ? 'en attente de décision' : 'approuvé'}
             </p>
           </div>
         </div>
+
+        {mode === 'reserve' && (
+          <p className="rounded-2xl bg-accent-tint px-4 py-3 text-sm font-semibold text-accent">
+            Cette place sera réservée pendant que la demande attend une décision — personne d’autre ne pourra la
+            prendre entre-temps. Elle est confirmée automatiquement dès l’approbation.
+          </p>
+        )}
 
         <section className="card space-y-3">
           <div>
@@ -216,7 +245,7 @@ export default function AssignGuestApprovalTablePage() {
           )}
         </section>
 
-        {chosenTableId && shortage > 0 && (
+        {mode === 'assign' && chosenTableId && shortage > 0 && (
           <section className="card space-y-3">
             <div>
               <h2 className="font-display text-lg font-semibold">Libérer {shortage} place{shortage > 1 ? 's' : ''}</h2>
@@ -266,6 +295,13 @@ export default function AssignGuestApprovalTablePage() {
           </section>
         )}
 
+        {mode === 'reserve' && chosenTableId && shortage > 0 && (
+          <p className="rounded-2xl bg-status-over/10 px-4 py-3 text-sm font-semibold text-status-over">
+            Cette table n’a plus assez de places libres (capacité changée entre-temps) — choisissez-en une autre.
+            La réorganisation d’invités déjà en place n’est proposée qu’après approbation.
+          </p>
+        )}
+
         {error && <p className="text-sm font-medium text-status-over">{error}</p>}
       </div>
 
@@ -273,9 +309,9 @@ export default function AssignGuestApprovalTablePage() {
         <button
           className="btn-primary w-full"
           disabled={!chosenTableId || !relocationReady || submitting || !online}
-          onClick={handleAssign}
+          onClick={handleSubmit}
         >
-          {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER CETTE TABLE'}
+          {submitting ? '…' : !online ? 'HORS LIGNE' : mode === 'reserve' ? 'RÉSERVER CETTE TABLE' : 'ASSIGNER CETTE TABLE'}
         </button>
       </div>
     </div>

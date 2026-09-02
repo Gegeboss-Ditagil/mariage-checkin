@@ -11,7 +11,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
 import { GuestApprovalsShortcut } from '@/components/GuestApprovalsShortcut';
-import { CameraIcon } from '@/components/icons';
+import { NextAgendaActivity } from '@/components/NextAgendaActivity';
 
 // Enleve les accents, la casse et la ponctuation pour comparer des noms de
 // ville de facon tolerante (ex: "GENEVE" doit correspondre a "Geneve").
@@ -136,25 +136,42 @@ export default function ScanPage() {
             l'appli, ca libere la hauteur qui manquait en mode paysage/web
             large (le bouton Staff passait sous la ligne de flottaison sans
             pouvoir defiler jusqu'a lui). */}
-        <div className="flex-1 overflow-y-auto px-4 pt-2">
-          <p className="eyebrow">Staff</p>
-          <h1 className="font-display text-xl">Scanner un QR code</h1>
-          <p className="text-xs text-text-faint">Présentez le QR de l'invité devant la caméra</p>
+        {/* Paysage (02/09/2026, retour de Gersom : "la portion camera est
+            plus petite ... ca va mal") : la camera devient carree a gauche
+            et les trois cartes (agenda/approbations/bord) forment une
+            colonne etroite a sa droite, au lieu de rester empilees en
+            pleine largeur sous une camera ecrasee par la faible hauteur du
+            paysage. Le titre se resume au strict minimum pour laisser toute
+            la hauteur disponible a cette rangee. Portrait inchange. */}
+        <div className="flex-1 overflow-y-auto px-4 pt-2 landscape:flex landscape:flex-col landscape:overflow-hidden">
+          <p className="eyebrow landscape:hidden">Staff</p>
+          <h1 className="font-display text-xl landscape:mb-1 landscape:text-base">Scanner un QR code</h1>
+          <p className="text-xs text-text-faint landscape:hidden">Présentez le QR de l'invité devant la caméra</p>
 
-          <div className="py-2">
-            {roleReady ? (
-              <QrScanner ref={scannerRef} onScan={handleScan} />
-            ) : (
-              <div className="flex h-[clamp(340px,55dvh,680px)] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint">
-                Chargement…
-              </div>
-            )}
-            {role && hasCapability(role, 'submitGuestApproval') && (
-              <button type="button" onClick={captureGuestPhoto} className="btn-secondary mt-2 flex min-h-12 w-full items-center justify-center gap-2" aria-label="Prendre une photo pour une demande d’approbation">
-                <CameraIcon className="h-6 w-6" />
-                Prendre une photo
-              </button>
-            )}
+          {/* Le bouton "Prendre une photo" sous la camera a ete retire le
+              02/09/2026 (retour de Remy : "on n'en a pas besoin, on a le
+              gros bouton en bas") -- captureGuestPhoto reste la meme
+              fonction, declenchee par le bouton central de BottomNav. */}
+          <div className="flex flex-col gap-3 py-2 landscape:min-h-0 landscape:flex-1 landscape:flex-row landscape:items-stretch landscape:gap-3 landscape:py-1">
+            <div className="landscape:flex landscape:h-full landscape:shrink-0 landscape:items-stretch">
+              {roleReady ? (
+                <QrScanner ref={scannerRef} onScan={handleScan} />
+              ) : (
+                <div className="flex h-[clamp(320px,46dvh,620px)] items-center justify-center rounded-xl2 bg-surface-2 text-text-faint landscape:aspect-square landscape:h-full landscape:w-auto">
+                  Chargement…
+                </div>
+              )}
+            </div>
+
+            {/* Ordre demande par Gersom le 02/09/2026 : la prochaine
+                activite du chronogramme juste au-dessus d'Approbations, puis
+                Bord -- empiles en pleine largeur sous la camera en portrait,
+                colonne etroite a droite de la camera carree en paysage. */}
+            <div className="flex flex-col landscape:min-w-[220px] landscape:flex-1 landscape:justify-center landscape:overflow-y-auto">
+              {role && <NextAgendaActivity role={role} />}
+              {role && <GuestApprovalsShortcut role={role} />}
+              {role && <ScanStatsStrip />}
+            </div>
           </div>
 
           {status === 'looking' && (
@@ -167,9 +184,6 @@ export default function ScanPage() {
           )}
 
         </div>
-
-        {role && <GuestApprovalsShortcut role={role} />}
-        {role && <ScanStatsStrip />}
       </div>
       {role && <BottomNav role={role} onCentralAction={hasCapability(role, 'submitGuestApproval') ? captureGuestPhoto : undefined} />}
       {approvalPhoto && <GuestApprovalCaptureFlow photo={approvalPhoto} onClose={() => setApprovalPhoto(null)} />}

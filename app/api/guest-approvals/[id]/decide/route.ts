@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (body.decision !== 'approuve' && body.decision !== 'refuse') {
     return NextResponse.json({ error: 'invalid_decision' }, { status: 400 });
   }
-  const result = await applyGuestApprovalDecision(createAdminClient(), { id: params.id }, body.decision, 'app');
+  const result = await applyGuestApprovalDecision(createAdminClient(), { id: params.id }, body.decision, 'app', user.id);
   if (!result.ok) {
     return NextResponse.json(result, { status: result.reason === 'not_found' ? 404 : 409 });
   }

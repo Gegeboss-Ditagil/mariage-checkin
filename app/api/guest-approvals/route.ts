@@ -151,7 +151,8 @@ export async function GET(req: NextRequest) {
     .from('guest_approval_requests')
     .select(
       'id, cote, nom_invite, nombre_invites, photo_url, statut, decided_at, decided_via, table_id, assigned_at, created_at, ' +
-      'requested_by:requested_by(nom_affichage), table:table_id(number)'
+      'reserved_table_id, ' +
+      'requested_by:requested_by(nom_affichage), table:table_id(number), reserved_table:reserved_table_id(number)'
     )
     .order('created_at', { ascending: false })
     .limit(200);
@@ -173,6 +174,8 @@ export async function GET(req: NextRequest) {
       decided_via: row.decided_via,
       table_id: row.table_id,
       table_number: row.table?.number ?? null,
+      reserved_table_id: row.reserved_table_id,
+      reserved_table_number: row.reserved_table?.number ?? null,
       assigned_at: row.assigned_at,
       created_at: row.created_at,
       requested_by_nom: row.requested_by?.nom_affichage ?? null,

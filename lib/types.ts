@@ -182,6 +182,11 @@ export interface GuestApprovalRequestRow {
   // texte WhatsApp ("Oui"/"Non") -- migration 0034. NULL tant que en_attente.
     decided_via: 'web' | 'whatsapp' | 'app' | null;
   table_id: string | null;
+  // Table pre-reservee pendant que la demande est encore en_attente (voir
+  // 0044_guest_approval_pre_approval_reservation.sql) -- jamais une
+  // invitation, juste une intention comptee dans le calcul de capacite tant
+  // que la demande reste en attente. Finalisee en table_id des l'approbation.
+  reserved_table_id: string | null;
   assigned_by: string | null;
   assigned_at: string | null;
   created_at: string;

@@ -3,6 +3,36 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.33.0] — 2026-09-02
+
+Retour détaillé de Gersom en test réel (captures d'écran de `/dashboard`, `/agenda`, `/scan` et `/approbations` à l'appui), demandant explicitement que « le système d'appro soit fluide et fonctionne de bout en bout dans l'app ».
+
+### Ajouté
+- **Réservation de table avant approbation** (`0044_guest_approval_pre_approval_reservation.sql`, nouvelles colonnes/RPC `reserve_table_for_guest_approval` et `release_guest_approval_reservation`) : « je veux pouvoir cliquer tout de suite, voir les tables disponibles, la mettre sur une table (...) pour ne pas qu'on fasse du double booking ». Un placeur/directeur/admin/visibilite peut désormais réserver une table pour une demande encore `en_attente` — la place est aussitôt comptée dans la capacité (aucune autre demande en attente ne peut la prendre) sans créer d'invitation. À l'approbation, `lib/guestApprovalDecide.ts` finalise automatiquement la réservation en vraie assignation en réutilisant `assign_table_to_guest_approval_strict` (0038, aucune duplication de la logique de capacité) ; au refus, elle est simplement libérée. `/approbations/[id]/assign` gère désormais deux modes (réserver / assigner) selon le statut de la demande — pas de réorganisation d'invités déjà assis pour une demande pas encore décidée, seulement après approbation.
+- **Agenda : responsable au nom libre** (`0043_agenda_custom_assignees.sql`, colonne `custom_assignees text[]`) : « permet d'ajouter un nom personnalisé... si c'est une tâche particulière » (ex. « Nourdine, électricien ») — un prestataire ou une tâche ponctuelle sans avoir à créer un compte, affiché avec les responsables habituels sur chaque carte.
+- **`/scan` affiche la prochaine activité du chronogramme**, juste au-dessus du raccourci Approbations : « un bouton qui ramène à l'agenda, mais qui affiche directement c'est quoi la prochaine activité (...) rapidement la personne voit c'est quoi la prochaine étape ». Réservé à admin/directeur (capacité `viewAgenda`, même accès que l'onglet Agenda) ; s'appuie sur la case « terminé » de chaque activité plutôt que sur l'heure de l'appareil, pour rester correct même après minuit ou si le déroulement prend de l'avance/du retard. La hauteur de la caméra est resserrée (55dvh → 46dvh) pour que tout reste visible sans avoir à défiler.
+- **Badge persistant sur l'avatar du compte** (`AccountMenu`) dès qu'une approbation est en attente, visible sur tous les écrans sans ouvrir le menu déroulant — auparavant le compteur n'existait que dans le menu.
+- **`/scan` en paysage : caméra carrée à gauche, cartes en colonne à droite.** Retour de Gersom (capture d'écran à l'appui) : « quand on rotate l'iPhone... la portion caméra est plus petite... ça va mal », les trois cartes (prochaine activité, Approbations, Bord) empilées en pleine largeur écrasaient la caméra dans la faible hauteur du paysage. Choisi parmi les deux options proposées par Gersom : la caméra devient carrée (pleine hauteur) à gauche, les trois cartes forment une colonne étroite à sa droite, avec un titre réduit au minimum pour laisser toute la hauteur disponible — tout reste visible sans défiler. Le portrait n'est pas affecté.
+
+### Corrigé
+- **`/dashboard`** : la dernière carte (Table 41) restait légèrement coupée en bas d'écran sur iPhone, obligeant à un petit scroll. Espace de respiration augmenté en bas de la liste.
+- **`/scan`** : le bouton « Prendre une photo » sous la caméra faisait doublon avec le gros bouton central déjà dédié à cette action — retiré.
+- **Fiabilité des décisions Approuver/Refuser** : un double-appui rapide pouvait envoyer deux requêtes avant que le bouton ne se désactive (le state React `decidingId` n'était pas encore mis à jour), la seconde recevant à tort « Cette demande avait déjà été traitée » alors qu'elle semblait toujours en attente. Verrouillage synchrone (`useRef`) ajouté en plus du state. Le message « déjà traitée » reflète maintenant le **vrai statut actuel** renvoyé par le serveur (« maintenant Approuvée »/« maintenant Refusée ») au lieu d'un texte générique qui pouvait sembler contredire l'écran.
+- La notification push envoyée aux placeurs à l'approbation porte désormais le vrai numéro de table quand une réservation vient d'être finalisée automatiquement (auparavant toujours « sans table » à ce stade, le numéro n'arrivait qu'à l'assignation manuelle ultérieure).
+
+### Notifications push iPhone
+- L'infrastructure était déjà complète (table `push_subscriptions`, `notifyGuestApprovalReviewers`/`notifyGuestApprovalPlaceurs`, bouton d'activation) — il manquait uniquement les variables d'environnement `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` sur Vercel, d'où le statut « push iPhone à configurer » resté affiché. Aucun changement de code : une paire de clés VAPID a été générée et transmise à Gersom avec les instructions de configuration Vercel. La demande d'autorisation de notification reste — et restera toujours — déclenchée par un geste explicite de l'utilisateur (contrainte du navigateur/iOS, aucun moyen de la rendre automatique).
+
+### Tests
+- `tests/guest-approval-reservation.test.ts` (nouveau) : garantie anti double-booking du RPC de réservation (compte les autres réservations en attente sur la même table), finalisation automatique à l'approbation sans dupliquer la logique de capacité, libération au refus, deux modes de l'écran d'assignation, garde anti double-tap, message de décision reflétant le vrai statut, badge persistant, retrait du bouton photo redondant, espacement du tableau de bord.
+- `tests/agenda-form.test.ts` : régression pour le responsable au nom libre ; assertions mises à jour pour le renommage `setEditing` → `openEditing` (réinitialise le brouillon de nom personnalisé à l'ouverture/fermeture).
+- `tests/guest-approvals.test.ts` : assertions mises à jour pour le nouveau lien de réservation (au lieu du bouton désactivé), l'agent transmis à la décision applicative, et le numéro de table dynamique dans la notification placeurs.
+- `npx tsc --noEmit`, `npm run build`, 17 suites de tests (`node --test`) — tous exécutés avec succès.
+
+### Migrations
+- `0043_agenda_custom_assignees.sql` — écrite, testée ; en attente d'application en production (SQL Editor Supabase, voir instructions transmises à Gersom).
+- `0044_guest_approval_pre_approval_reservation.sql` — écrite, testée ; en attente d'application en production (idem).
+
 ## [1.32.1] — 2026-09-02
 
 Retour de Gersom sur le design des pop-up de `/agenda` (captures d'écran à l'appui) : « Améliore le UX et le design surtout au niveau des champs à remplir (...) more iOS style (...) Heure met le roll comme iPhone pour choisir ».

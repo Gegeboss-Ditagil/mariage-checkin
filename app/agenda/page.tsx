@@ -8,7 +8,7 @@ import { CloseIcon } from '@/components/icons';
 import { useSessionRole } from '@/hooks/useSessionRole';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
-type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; completed: boolean };
+type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; custom_assignees: string[]; completed: boolean };
 
 // `time_label` accepte une heure seule ("08:00") ou une plage ("18:30–19:00",
 // tiret cadratin -- voir le chronogramme seed dans 0039_shared_agenda.sql).
@@ -100,6 +100,15 @@ export default function AgendaPage() {
   const [editing, setEditing] = useState<AgendaItem | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);
   const [canManage, setCanManage] = useState(false);
+  // Brouillon du champ "nom libre" (responsable sans compte) -- vidé à
+  // chaque ouverture/fermeture de la fiche pour ne pas fuiter d'une activité
+  // à l'autre (state du parent, la modale se démonte/remonte mais pas la page).
+  const [customNameDraft, setCustomNameDraft] = useState('');
+
+  function openEditing(item: AgendaItem | null) {
+    setCustomNameDraft('');
+    setEditing(item);
+  }
 
   const load = useCallback(async () => {
     const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
@@ -162,15 +171,21 @@ export default function AgendaPage() {
             <ol className="space-y-2" aria-label="Chronogramme du mariage">
               {items.map((item, index) => {
                 const assignees = item.assignee_ids.map((id) => peopleById.get(id)).filter(Boolean) as Person[];
+                // Noms de compte + noms libres (ex: prestataires sans compte
+                // dans l'appli) affiches ensemble, sans les distinguer visuellement.
+                const assigneeNames = [
+                  ...assignees.map((person) => person.nom_complet || person.nom_affichage),
+                  ...item.custom_assignees,
+                ];
                 return <li key={item.id}>
                   {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => setInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
                   <article
                     className={clsx('card flex gap-3 py-3', canManage && 'cursor-pointer transition-transform active:scale-[0.99]')}
-                    onClick={() => canManage && setEditing(item)}
+                    onClick={() => canManage && openEditing(item)}
                     role={canManage ? 'button' : undefined}
                     tabIndex={canManage ? 0 : undefined}
                     aria-label={canManage ? 'Modifier ' + item.title : undefined}
-                    onKeyDown={canManage ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditing(item); } } : undefined}
+                    onKeyDown={canManage ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditing(item); } } : undefined}
                   >
                     {/* Case a part (pas dans la zone cliquable de la carte) : appuyer dessus coche/decoche sans ouvrir la modification. */}
                     {canManage && (
@@ -187,7 +202,7 @@ export default function AgendaPage() {
                     <div className="min-w-0 flex-1 text-left">
                       <div className="flex flex-wrap items-start justify-between gap-2"><p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p><span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span></div>
                       {item.details && <p className="mt-1 text-xs leading-relaxed text-text-muted">{item.details}</p>}
-                      {assignees.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">{assignees.map((person) => person.nom_complet || person.nom_affichage).join(', ')}</p>}
+                      {assigneeNames.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">{assigneeNames.join(', ')}</p>}
                     </div>
                   </article>
                 </li>;
@@ -234,11 +249,12 @@ export default function AgendaPage() {
                 department: form.get('department'),
                 details: form.get('details'),
                 assignee_ids: editing.assignee_ids,
+                custom_assignees: editing.custom_assignees,
               });
-              if (saved) setEditing(null);
+              if (saved) openEditing(null);
             }}
           >
-            <ModalHeader title="Modifier l’activité" onClose={() => setEditing(null)} />
+            <ModalHeader title="Modifier l’activité" onClose={() => openEditing(null)} />
             <TimeRangePicker key={editing.id} initialLabel={editing.time_label} />
             <div>
               <FieldLabel>Activité</FieldLabel>
@@ -275,6 +291,58 @@ export default function AgendaPage() {
                   </label>
                 );
               })}</div>
+
+              {/* Nom libre (sans compte dans l'appli) -- demande de Gersom le
+                  02/09/2026 : "permet d'ajouter un nom personnalisé... si
+                  c'est une tâche particulière" (ex: un prestataire externe). */}
+              {editing.custom_assignees.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {editing.custom_assignees.map((customName) => (
+                    <div key={customName} className="action-row flex items-center justify-between gap-3 text-left">
+                      <span className="min-w-0 flex-1 truncate font-semibold">{customName}</span>
+                      <button
+                        type="button"
+                        aria-label={'Retirer ' + customName}
+                        onClick={() => setEditing({ ...editing, custom_assignees: editing.custom_assignees.filter((n) => n !== customName) })}
+                        className="shrink-0 text-text-faint"
+                      >
+                        <CloseIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={customNameDraft}
+                  onChange={(e) => setCustomNameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const name = customNameDraft.trim();
+                    if (name && !editing.custom_assignees.includes(name)) {
+                      setEditing({ ...editing, custom_assignees: [...editing.custom_assignees, name] });
+                    }
+                    setCustomNameDraft('');
+                  }}
+                  placeholder="Nom personnalisé (ex. Nourdine, électricien)"
+                  className="input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = customNameDraft.trim();
+                    if (name && !editing.custom_assignees.includes(name)) {
+                      setEditing({ ...editing, custom_assignees: [...editing.custom_assignees, name] });
+                    }
+                    setCustomNameDraft('');
+                  }}
+                  disabled={!customNameDraft.trim()}
+                  className="btn-secondary shrink-0 px-4 disabled:opacity-50"
+                >
+                  Ajouter
+                </button>
+              </div>
             </div>
             <button type="submit" className="btn-primary w-full">Enregistrer et partager</button>
           </form>

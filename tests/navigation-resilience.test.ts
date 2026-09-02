@@ -86,7 +86,9 @@ test('la barre de navigation "verre liquide" a un contraste et des cibles plus g
 });
 
 test('la camera du scanner utilise la hauteur du viewport au lieu du petit ratio horizontal 3/2', () => {
-  assert.match(scanner, /h-\[clamp\(340px,55dvh,680px\)\]/);
+  // Resserre le 02/09/2026 (55dvh -> 46dvh) pour laisser la place a
+  // NextAgendaActivity sur /scan sans avoir a scroller.
+  assert.match(scanner, /h-\[clamp\(320px,46dvh,620px\)\]/);
   assert.match(scanner, /\[&_video\]:object-cover/);
   assert.match(scanner, /qrbox: \(viewfinderWidth, viewfinderHeight\)/);
   assert.doesNotMatch(scanner, /aspect-\[3\/2\]/);

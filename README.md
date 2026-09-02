@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.32.1**
+**Version actuelle : 1.33.0**
 **Dernière mise à jour documentaire : 2026-09-02**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.32.1-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.33.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,16 +27,23 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.32.1**.
+- Branche de production : `main`; version proposée : **1.33.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
+- **Migrations 0043 et 0044 (v1.33.0) en attente d'application en production** : `custom_assignees` sur `agenda_items`, et `reserved_table_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation` sur `guest_approval_requests`. Voir la section « Données et production » ci-dessous pour le SQL exact à exécuter dans le SQL Editor Supabase.
 - Ne jamais appliquer un ancien diff aveuglément : récupérer `origin/main`, comparer les fichiers réels et conserver tout changement plus récent.
 - Les permissions sont centralisées dans `lib/permissions.ts`; les capacités doivent être vérifiées à la fois dans l'interface et dans chaque route API.
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.32.1
+## État fonctionnel v1.33.0
 
+- **`/scan` affiche la prochaine activité du chronogramme** juste au-dessus du raccourci Approbations — s'appuie sur la case « terminé » de chaque activité (pas sur l'heure de l'appareil), réservé à admin/directeur, un tap ouvre l'agenda complet.
+- **Réservation de table avant approbation** : depuis la fiche d'une demande encore en attente, un placeur/directeur/admin/visibilite peut désormais voir les tables disponibles et en réserver une tout de suite, sans attendre la décision — la place est comptée aussitôt (aucune autre demande en attente ne peut la prendre) mais aucune invitation n'est créée. Dès que la demande est approuvée, la réservation est automatiquement transformée en vraie assignation ; si elle est refusée, elle est simplement libérée. Corrige le double booking possible auparavant entre l'approbation et l'assignation manuelle.
+- **Fiabilité des décisions Approuver/Refuser** : un double-appui rapide pouvait déclencher deux requêtes avant que le bouton ne se désactive, la seconde recevant à tort « déjà traitée » — verrouillage synchrone ajouté. Le message reflète désormais le statut réel renvoyé par le serveur (Approuvée/Refusée) plutôt qu'un texte générique.
+- **Petit badge persistant sur l'avatar du compte** (pas seulement dans le menu déroulant) dès qu'une approbation est en attente, visible sur tous les écrans sans avoir à ouvrir le menu.
+- **Agenda : responsable au nom libre** — en plus des comptes existants, la fiche de modification d'une activité permet d'ajouter un nom personnalisé (ex. un prestataire externe sans compte dans l'application).
+- `/scan` n'affiche plus de bouton « Prendre une photo » sous la caméra, redondant avec le gros bouton central. `/dashboard` laisse plus d'espace en bas de la liste (la dernière carte était légèrement coupée sur iPhone).
 - **Formulaires de l'agenda repris en style iOS** : le champ Heure utilise désormais la roue native (comme sur iPhone), avec une plage horaire optionnelle (ex. « 18:30–19:00 ») ; chaque libellé (Heure, Activité, Département, Détails) est correctement séparé de son champ — ils s'affichaient auparavant collés (« Heure08:00 ») car la classe de style du champ n'avait jamais été définie. Les deux pop-up (nouvelle activité, modifier) reçoivent un bouton de fermeture rond en verre, comme sur `/approbations`, et la liste des responsables une coche ronde personnalisée au lieu de la case à cocher par défaut du navigateur.
 - **Corrections de navigation admin/directeur remontées par Rémy en test** : sur `/scan`, le bouton central redevenait « Tableau de bord » au lieu de rester l'appareil photo — corrigé, il reste toujours l'appareil photo sur cet écran. Approbations (déjà un gros bouton dédié juste au-dessus de la jauge) cède sa place dans la barre basse à Tableau de bord, désormais accessible en un tap depuis le scanner. Retour depuis `/dashboard` ouvre directement `/scan` pour tout rôle qui peut scanner (admin, directeur), au lieu de repasser par l'écran d'accueil (qui rebouclait vers le tableau de bord pour le directeur).
 - **« + Ajouter un invité » ouvert au directeur de festin, avec table/étiquettes/téléphone** : le formulaire (accessible depuis `/plan-table`) capture désormais aussi le numéro de téléphone (avec indicatif du pays) et les étiquettes courantes (dont Staff — visible ensuite par tout le monde sur l'écran Staff), et choisit la table via le même sélecteur avec places libres que le reste de l'application. Corrige au passage un bug préexistant : le formulaire était déjà visible pour directeur/placeur mais la création échouait toujours côté serveur pour ces rôles (capacité manquante), sans lien pour le remarquer avant ce correctif.
@@ -167,4 +174,4 @@ Voir `docs/DATA_CHANGE_INSTRUCTIONS.md` pour la procédure complète.
 
 ## Release actuelle
 
-Voir `CHANGELOG.md` pour le détail de **v1.32.1** et l'historique des versions.
+Voir `CHANGELOG.md` pour le détail de **v1.33.0** et l'historique des versions.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
@@ -20,6 +20,11 @@ interface ApprovalListItem {
   decided_via: 'web' | 'whatsapp' | 'app' | null;
   table_id: string | null;
   table_number: number | null;
+  // Table pre-reservee pendant que la demande est encore en_attente (voir
+  // 0044_guest_approval_pre_approval_reservation.sql) -- distincte de
+  // table_id (assignation confirmee, apres approbation).
+  reserved_table_id: string | null;
+  reserved_table_number: number | null;
   assigned_at: string | null;
   created_at: string;
   requested_by_nom: string | null;
@@ -40,7 +45,11 @@ const STATUS_BADGE: Record<ApprovalListItem['statut'], string> = {
 
 function placementLabel(request: ApprovalListItem) {
   if (request.statut === 'refuse') return 'Refusé';
-  if (request.statut === 'en_attente') return 'En attente de décision';
+  if (request.statut === 'en_attente') {
+    return request.reserved_table_number
+      ? `En attente — Table ${request.reserved_table_number} réservée`
+      : 'En attente de décision';
+  }
   return request.table_number ? `Approuvé — Table ${request.table_number}` : 'Approuvé — sans table';
 }
 
@@ -61,6 +70,7 @@ export default function ApprobationsPage() {
   const [requests, setRequests] = useState<ApprovalListItem[]>((initialCache?.requests || []) as ApprovalListItem[]);
   const [loading, setLoading] = useState(!initialCache);
   const [decidingId, setDecidingId] = useState<string | null>(null);
+  const decidingRef = useRef<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
@@ -81,30 +91,51 @@ export default function ApprobationsPage() {
   }
 
   async function decide(id: string, decision: 'approuve' | 'refuse') {
+    // Garde synchrone (ref, pas seulement le state `decidingId`) contre un
+    // double-tap qui partirait avant le prochain rendu React -- corrige le
+    // 02/09/2026 : Gersom obtenait parfois "déjà traitée" au tout premier
+    // appui, signe possible d'un double envoi.
+    if (decidingRef.current) return;
+    decidingRef.current = id;
     setDecidingId(id);
     setActionFeedback(null);
-    const response = await fetch(`/api/guest-approvals/${id}/decide`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ decision }),
-    });
-    if (response.ok) {
-      setActionFeedback(
-        decision === 'approuve'
-          ? 'Fait — approuvé sans table. La demande est maintenant visible par les placeurs.'
-          : 'Parfait — demande refusée. La décision a bien été enregistrée.'
-      );
-      await load(true);
-    } else {
+    try {
+      const response = await fetch(`/api/guest-approvals/${id}/decide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+      });
       const data = await response.json().catch(() => null);
       await load(true);
-      setActionFeedback(
-        response.status === 409
-          ? 'Cette demande avait déjà été traitée. Son état vient d’être actualisé.'
-          : data?.error || 'La décision n’a pas pu être enregistrée. Vérifiez le réseau et réessayez.'
-      );
+      if (response.ok) {
+        // Si une table avait été réservée pendant que la demande était en
+        // attente, l'approbation la finalise automatiquement (voir
+        // lib/guestApprovalDecide.ts) -- le message le reflète au lieu de
+        // toujours dire "sans table".
+        const finalizedTableNumber = data?.request?.table?.number ?? null;
+        setActionFeedback(
+          decision === 'approuve'
+            ? finalizedTableNumber
+              ? `Fait — approuvé et placé à la Table ${finalizedTableNumber} (déjà réservée).`
+              : 'Fait — approuvé sans table. La demande est maintenant visible par les placeurs.'
+            : 'Parfait — demande refusée. La décision a bien été enregistrée.'
+        );
+      } else if (response.status === 409 && (data?.statut === 'approuve' || data?.statut === 'refuse')) {
+        // Reflete le VRAI statut actuel (renvoyé par l'API) au lieu d'un
+        // message generique -- evite la contradiction "deja traitee" a cote
+        // d'une fiche qui semble pourtant encore "en attente".
+        setActionFeedback(
+          data.statut === 'approuve'
+            ? 'Déjà traitée entre-temps : cette demande est maintenant Approuvée.'
+            : 'Déjà traitée entre-temps : cette demande est maintenant Refusée.'
+        );
+      } else {
+        setActionFeedback(data?.error || 'La décision n’a pas pu être enregistrée. Vérifiez le réseau et réessayez.');
+      }
+    } finally {
+      decidingRef.current = null;
+      setDecidingId(null);
     }
-    setDecidingId(null);
   }
 
   useEffect(() => {
@@ -206,6 +237,16 @@ export default function ApprobationsPage() {
                   <Link onClick={(event) => event.stopPropagation()} href={'/approbations/' + r.id + '/assign'} className="action-row mt-2 py-2 text-xs">
                     Assigner une table
                   </Link>
+                ) : r.statut === 'en_attente' && role && hasCapability(role, 'assignGuestApproval') ? (
+                  r.reserved_table_number ? (
+                    <Link onClick={(event) => event.stopPropagation()} href={'/approbations/' + r.id + '/assign'} className="mt-1 block text-xs font-semibold text-status-partial">
+                      Table {r.reserved_table_number} réservée — modifier
+                    </Link>
+                  ) : (
+                    <Link onClick={(event) => event.stopPropagation()} href={'/approbations/' + r.id + '/assign'} className="action-row mt-2 py-2 text-xs">
+                      Réserver une table
+                    </Link>
+                  )
                 ) : null}
               </div>
             </div>
@@ -307,16 +348,17 @@ export default function ApprobationsPage() {
                     Choisir une table
                     <ChevronRightIcon className="h-5 w-5" />
                   </Link>
+                ) : selectedRequest.statut === 'en_attente' && role && hasCapability(role, 'assignGuestApproval') ? (
+                  // Reserver une table AVANT l'approbation -- demande de
+                  // Gersom le 02/09/2026 : "voir les tables disponibles, la
+                  // mettre sur une table pour ne pas qu'on fasse du double
+                  // booking" pendant que la demande attend encore une decision.
+                  <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="mt-0.5 flex min-h-9 items-center justify-between gap-2 font-semibold text-accent underline decoration-accent/35 underline-offset-4">
+                    {selectedRequest.reserved_table_number ? `Table ${selectedRequest.reserved_table_number} réservée — modifier` : 'Réserver une table'}
+                    <ChevronRightIcon className="h-5 w-5" />
+                  </Link>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={!role || !hasCapability(role, 'reviewGuestApproval') || !hasCapability(role, 'assignGuestApproval')}
-                    onClick={() => setActionFeedback('Approuvez d’abord la demande; le choix de table s’ouvrira immédiatement ensuite.')}
-                    className="mt-0.5 flex min-h-9 w-full items-center justify-between gap-2 text-left font-semibold text-text disabled:cursor-default"
-                  >
-                    À déterminer
-                    {role && hasCapability(role, 'reviewGuestApproval') && hasCapability(role, 'assignGuestApproval') && <ChevronRightIcon className="h-5 w-5 text-accent" />}
-                  </button>
+                  <p className="mt-0.5 font-semibold text-text-muted">À déterminer</p>
                 )}
               </div>
             </div>
