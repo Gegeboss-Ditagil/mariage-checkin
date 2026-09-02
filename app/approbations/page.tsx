@@ -45,11 +45,7 @@ const STATUS_BADGE: Record<ApprovalListItem['statut'], string> = {
 
 function placementLabel(request: ApprovalListItem) {
   if (request.statut === 'refuse') return 'Refusé';
-  if (request.statut === 'en_attente') {
-    return request.reserved_table_number
-      ? `En attente — Table ${request.reserved_table_number} réservée`
-      : 'En attente de décision';
-  }
+  if (request.statut === 'en_attente') return 'En attente de décision';
   return request.table_number ? `Approuvé — Table ${request.table_number}` : 'Approuvé — sans table';
 }
 
@@ -108,16 +104,16 @@ export default function ApprobationsPage() {
       const data = await response.json().catch(() => null);
       await load(true);
       if (response.ok) {
-        // Si une table avait été réservée pendant que la demande était en
-        // attente, l'approbation la finalise automatiquement (voir
-        // lib/guestApprovalDecide.ts) -- le message le reflète au lieu de
-        // toujours dire "sans table".
+        // L'approbation place automatiquement la personne (table
+        // excédentaire en priorité, sinon la table la plus libre du bon
+        // côté -- voir lib/guestApprovalDecide.ts) -- le message le reflète
+        // au lieu de toujours dire "sans table".
         const finalizedTableNumber = data?.request?.table?.number ?? null;
         setActionFeedback(
           decision === 'approuve'
             ? finalizedTableNumber
-              ? `Fait — approuvé et placé à la Table ${finalizedTableNumber} (déjà réservée).`
-              : 'Fait — approuvé sans table. La demande est maintenant visible par les placeurs.'
+              ? `Fait — approuvé et placé automatiquement à la Table ${finalizedTableNumber}.`
+              : 'Fait — approuvé, mais aucune table n’avait de place libre. Un placeur ou directeur peut assigner une table manuellement.'
             : 'Parfait — demande refusée. La décision a bien été enregistrée.'
         );
       } else if (response.status === 409 && (data?.statut === 'approuve' || data?.statut === 'refuse')) {
@@ -237,17 +233,33 @@ export default function ApprobationsPage() {
                   <Link onClick={(event) => event.stopPropagation()} href={'/approbations/' + r.id + '/assign'} className="action-row mt-2 py-2 text-xs">
                     Assigner une table
                   </Link>
-                ) : r.statut === 'en_attente' && role && hasCapability(role, 'assignGuestApproval') ? (
-                  r.reserved_table_number ? (
-                    <Link onClick={(event) => event.stopPropagation()} href={'/approbations/' + r.id + '/assign'} className="mt-1 block text-xs font-semibold text-status-partial">
-                      Table {r.reserved_table_number} réservée — modifier
-                    </Link>
-                  ) : (
-                    <Link onClick={(event) => event.stopPropagation()} href={'/approbations/' + r.id + '/assign'} className="action-row mt-2 py-2 text-xs">
-                      Réserver une table
-                    </Link>
-                  )
                 ) : null}
+                {/* Approuver/Refuser directement sur la carte, sans passer par
+                    la fiche détaillée -- demande de Gersom le 02/09/2026 :
+                    "être capable de approuver ou refuser rapidement". Le
+                    placement se fait tout seul à l'approbation (voir
+                    lib/guestApprovalDecide.ts), plus besoin de choisir une
+                    table avant de décider. */}
+                {r.statut === 'en_attente' && role && hasCapability(role, 'reviewGuestApproval') && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={decidingId === r.id}
+                      onClick={(event) => { event.stopPropagation(); void decide(r.id, 'approuve'); }}
+                      className="glass-pill-complete min-h-10 text-sm disabled:opacity-50"
+                    >
+                      Approuver
+                    </button>
+                    <button
+                      type="button"
+                      disabled={decidingId === r.id}
+                      onClick={(event) => { event.stopPropagation(); void decide(r.id, 'refuse'); }}
+                      className="glass-pill-over min-h-10 text-sm disabled:opacity-50"
+                    >
+                      Refuser
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -348,15 +360,11 @@ export default function ApprobationsPage() {
                     Choisir une table
                     <ChevronRightIcon className="h-5 w-5" />
                   </Link>
-                ) : selectedRequest.statut === 'en_attente' && role && hasCapability(role, 'assignGuestApproval') ? (
-                  // Reserver une table AVANT l'approbation -- demande de
-                  // Gersom le 02/09/2026 : "voir les tables disponibles, la
-                  // mettre sur une table pour ne pas qu'on fasse du double
-                  // booking" pendant que la demande attend encore une decision.
-                  <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="mt-0.5 flex min-h-9 items-center justify-between gap-2 font-semibold text-accent underline decoration-accent/35 underline-offset-4">
-                    {selectedRequest.reserved_table_number ? `Table ${selectedRequest.reserved_table_number} réservée — modifier` : 'Réserver une table'}
-                    <ChevronRightIcon className="h-5 w-5" />
-                  </Link>
+                ) : selectedRequest.statut === 'en_attente' ? (
+                  // Placement automatique a l'approbation -- demande de
+                  // Gersom le 02/09/2026 : plus besoin de choisir une table
+                  // avant de decider (voir lib/guestApprovalDecide.ts).
+                  <p className="mt-0.5 font-semibold text-text-muted">Placée automatiquement à l’approbation</p>
                 ) : (
                   <p className="mt-0.5 font-semibold text-text-muted">À déterminer</p>
                 )}
@@ -371,8 +379,8 @@ export default function ApprobationsPage() {
 
             {selectedRequest.statut === 'en_attente' && role && hasCapability(role, 'reviewGuestApproval') && (
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="min-h-12 rounded-xl bg-status-complete px-4 py-3 font-bold text-white disabled:opacity-50">Approuver</button>
-                <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'refuse')} className="min-h-12 rounded-xl bg-status-over px-4 py-3 font-bold text-white disabled:opacity-50">Refuser</button>
+                <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="glass-pill-complete min-h-12 px-4 py-3 text-base disabled:opacity-50">Approuver</button>
+                <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'refuse')} className="glass-pill-over min-h-12 px-4 py-3 text-base disabled:opacity-50">Refuser</button>
               </div>
             )}
 

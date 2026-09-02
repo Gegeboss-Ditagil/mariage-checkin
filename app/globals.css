@@ -123,16 +123,38 @@ body {
 }
 
 .btn-secondary {
-  @apply btn-tap bg-surface text-text border border-hairline shadow-card;
+  @apply btn-tap bg-surface text-text border border-hairline;
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
 }
 
 .btn-danger {
   @apply btn-tap bg-status-over text-white shadow-card;
 }
 
+/* Verre liquide iOS -- demande de Gersom le 02/09/2026 : "je veux que tout
+   soit vraiment bien flottant... que ça l'air d'une application faite par
+   Apple", en reference explicite au theme "Liquid Glass" (barre du bas deja
+   dans ce style, Apple Musique/Horloge/Calculatrice en modeles). `.card`
+   etait la plus grosse source de platitude : `shadow-card` vaut
+   `var(--elev-1)`, qui est litteralement `none` en Maison (theme sombre) --
+   aucune ombre du tout, et le flou n'etait applique qu'en Maison
+   (`dark:backdrop-blur-2xl`), jamais en Atrium. Reprend desormais la meme
+   recette que la barre du bas/le dock de selection (`--elev-2`, flou +
+   saturation, reflet interieur en haut) dans LES DEUX themes, en gardant
+   `bg-surface` (deja correctement teinte par theme) plutot que `--glass` :
+   `--glass` en Maison est du quasi-noir a 92% d'opacite, presque identique
+   au fond de page -- l'utiliser aurait rendu les cartes invisibles.
+   `.action-row`/`.action-row-muted`/`.btn-secondary` reprennent la meme
+   recette juste apres pour que "vraiment partout" tienne : tout element
+   pose au-dessus du fond (carte, ligne d'action, bouton secondaire) a
+   desormais le meme flou/reflet/ombre flottante que la barre du bas. */
 .card {
-  @apply bg-surface rounded-xl2 shadow-card border border-hairline p-4
-    dark:backdrop-blur-2xl;
+  @apply bg-surface rounded-xl2 border border-hairline p-4;
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
 }
 
 /* Actions secondaires qui etaient de simples liens soulignes (ex: "Gerer les
@@ -142,13 +164,45 @@ body {
    themes ; .action-row-muted pour la variante moins engageante ("ne viendra
    pas") sans dupliquer toute la regle. */
 .action-row {
-  @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-accent shadow-card
-    active:scale-[0.98] transition-transform dark:backdrop-blur-xl;
+  @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-accent
+    active:scale-[0.98] transition-transform;
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
 }
 
 .action-row-muted {
-  @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-text-muted shadow-card
-    active:scale-[0.98] transition-transform dark:backdrop-blur-xl;
+  @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-text-muted
+    active:scale-[0.98] transition-transform;
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Boutons "verre teinte" pour Approuver/Refuser -- couleur de statut en
+   filtre translucide plutot qu'en aplat plein, comme les bascules du
+   Centre de controle iOS : la couleur reste lisible (texte + bordure
+   pleinement satures) mais le fond reste du verre, jamais un simple pave de
+   couleur. Reutilise sur la carte de liste ET dans la fiche detaillee de
+   /approbations pour rester coherent. */
+.glass-pill-complete,
+.glass-pill-over {
+  @apply flex items-center justify-center rounded-full border font-bold
+    transition-transform active:scale-[0.96];
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+
+.glass-pill-complete {
+  color: var(--status-complete);
+  border-color: color-mix(in srgb, var(--status-complete) 38%, transparent);
+  background: color-mix(in srgb, var(--status-complete) 18%, var(--glass));
+}
+
+.glass-pill-over {
+  color: var(--status-over);
+  border-color: color-mix(in srgb, var(--status-over) 38%, transparent);
+  background: color-mix(in srgb, var(--status-over) 18%, var(--glass));
 }
 
 /* Dock d'actions de selection multiple : flotte au-dessus du bord comme le
@@ -173,9 +227,11 @@ body {
 }
 
 .selection-action-button {
-  @apply btn-tap flex-1 border border-hairline bg-surface-2 text-text shadow-card;
+  @apply btn-tap flex-1 border border-hairline bg-surface-2 text-text;
   min-width: 0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--elev-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--elev-2);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
 }
 
 /* Barre basse plus nettement flottante sur les ecrans operationnels : elle

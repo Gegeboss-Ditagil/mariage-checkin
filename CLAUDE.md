@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.33.1**
+**Version documentaire : 1.34.0**
 **Dernière mise à jour : 2026-09-02**
 
 Avant toute modification, lire dans cet ordre :
@@ -46,11 +46,12 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.31.1 : Nelly est promue au rôle complet `directeur`, comme Rémy; l'application n'utilise plus l'exception nominative d'agenda.
 - v1.33.1 : `app/api/agenda/route.ts` normalise `custom_assignees` en tableau même si la colonne venait à manquer côté base (`select('*')` omet silencieusement une colonne manquante — un spread sur `undefined` plantait toute `/agenda`, capturé par le filet générique `app/error.tsx` qui déconnecte l'utilisateur quelle que soit la vraie cause). `GET /api/guest-approvals?count=pending` porte désormais `Cache-Control: private, no-store` (comme la liste complète) et les trois appelants (`AccountMenu`, `BottomNav`, `GuestApprovalsShortcut`) passent `{ cache: 'no-store' }` — le badge d'approbations en attente est réellement en temps réel, plus figé par le cache HTTP du navigateur.
 - Les migrations `0043_agenda_custom_assignees.sql` et `0044_guest_approval_pre_approval_reservation.sql` ont été exécutées et vérifiées en production Supabase le 02/09/2026 : `agenda_items.custom_assignees`, `guest_approval_requests.reserved_table_id`, et les fonctions `reserve_table_for_guest_approval`/`release_guest_approval_reservation` (toutes deux `SECURITY INVOKER`) existent en base. Ne pas les réexécuter manuellement sans raison; conserver les fichiers dans Git comme historique reproductible.
+- v1.34.0 : `auto_assign_table_for_guest_approval` (`0045_auto_assign_table_for_guest_approval.sql`, exécutée et vérifiée en production Supabase le 02/09/2026, `SECURITY INVOKER`) place automatiquement une demande approuvée sans réservation préalable — table excédentaire en priorité, sinon la table la plus libre du même côté que l'invité, sinon de l'autre côté, sinon approuvée sans table. `/approbations` ne propose plus de réserver une table manuellement comme parcours principal (retour de Gersom : « je n'ai pas besoin de voir réserver une table directement... être capable de approuver ou refuser rapidement ») ; le mécanisme de réservation de 0044 reste fonctionnel sous le capot. `app/globals.css` : `.card`/`.action-row`/`.action-row-muted`/`.btn-secondary` reprennent le thème « verre liquide » (flou + saturation + reflet + `var(--elev-2)`) déjà utilisé par la barre du bas, dans les deux thèmes — ne pas revenir à `shadow-card` (`var(--elev-1)`, `none` en Maison).
 
 ## Reprise rapide pour Claude AI
 
 1. Commencer par `git fetch origin main` et comparer `HEAD` à `origin/main`; ne jamais supposer qu'un diff transmis est encore manquant.
-2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.33.1`.
+2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.34.0`.
 3. Pour les approbations, lire ensemble `app/approbations/page.tsx`, `app/approbations/[id]/assign/page.tsx`, `lib/guestApprovalDecide.ts`, `lib/webPush.ts` et la migration `0038`.
 4. Pour la navigation, modifier la source centralisée `components/BottomNav.tsx`; ne pas recopier des menus dans les pages.
 5. Ne pas modifier la règle des rôles sans mettre à jour `lib/permissions.ts`, les routes API, `tests/permissions.test.ts`, `tests/guest-approvals.test.ts` et `docs/BUSINESS_RULES.md` dans le même lot.

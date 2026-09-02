@@ -102,7 +102,7 @@ test('la fenetre detaillee navigue entre les demandes et confirme clairement cha
   assert.match(approbationsPageSource, /Demande suivante/);
   assert.match(approbationsPageSource, /moveSelection\(-1\)/);
   assert.match(approbationsPageSource, /moveSelection\(1\)/);
-  assert.match(approbationsPageSource, /Fait — approuvé sans table/);
+  assert.match(approbationsPageSource, /aucune table n’avait de place libre/);
   assert.match(approbationsPageSource, /Parfait — demande refusée/);
   assert.match(approbationsPageSource, /Approuvé — Table/);
   assert.match(approbationsPageSource, /Approuvé — sans table/);
@@ -172,17 +172,20 @@ test('le choix rapide ne montre que les tables réellement libres et priorise la
   assert.match(assignPageSource, /Seules les tables qui peuvent accueillir tout le groupe sont proposées/);
 });
 
-test('la fiche a un vrai bouton fermer et rend le placement actionnable après approbation ou réservable avant', () => {
+test('la fiche a un vrai bouton fermer et rend le placement actionnable après approbation ; en attente, le placement est automatique', () => {
   assert.match(approbationsPageSource, /aria-label="Fermer la demande"/);
   assert.match(approbationsPageSource, /<CloseIcon/);
   assert.match(approbationsPageSource, /Choisir une table/);
-  // Le bouton desactive "Approuvez d'abord la demande..." est remplace le
-  // 02/09/2026 par un vrai lien de reservation pendant l'attente (voir
-  // 0044_guest_approval_pre_approval_reservation.sql) -- plus besoin
-  // d'attendre l'approbation pour choisir une table.
   assert.doesNotMatch(approbationsPageSource, /Approuvez d’abord la demande/);
-  assert.match(approbationsPageSource, /Réserver une table/);
-  assert.match(approbationsPageSource, /réservée — modifier/);
+  // Retire le 02/09/2026 (retour de Gersom : "je n'ai pas besoin de voir
+  // reserver une table directement... etre capable de approuver ou refuser
+  // rapidement") -- le placement se fait desormais tout seul a
+  // l'approbation (voir tests/guest-approval-reservation.test.ts pour le
+  // placement automatique), plus de lien de reservation manuelle sur cette
+  // page.
+  assert.doesNotMatch(approbationsPageSource, /Réserver une table/);
+  assert.doesNotMatch(approbationsPageSource, /réservée — modifier/);
+  assert.match(approbationsPageSource, /Placée automatiquement à l’approbation/);
 });
 
 test('les alertes dans l application restent actives meme sans cles VAPID', () => {

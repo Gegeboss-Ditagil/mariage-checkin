@@ -18,6 +18,10 @@ const reservationMigration = readFileSync(
   new URL('../supabase/migrations/0044_guest_approval_pre_approval_reservation.sql', import.meta.url),
   'utf8'
 );
+const autoAssignMigration = readFileSync(
+  new URL('../supabase/migrations/0045_auto_assign_table_for_guest_approval.sql', import.meta.url),
+  'utf8'
+);
 const decideLibSource = readFileSync(new URL('../lib/guestApprovalDecide.ts', import.meta.url), 'utf8');
 const reserveRouteSource = readFileSync(new URL('../app/api/guest-approvals/[id]/reserve-table/route.ts', import.meta.url), 'utf8');
 const listRouteSource = readFileSync(new URL('../app/api/guest-approvals/route.ts', import.meta.url), 'utf8');
@@ -85,11 +89,33 @@ test("l'ecran d'assignation a deux modes selon le statut : reserver (en_attente)
   assert.match(assignPageSource, /ASSIGNER CETTE TABLE/);
 });
 
-test("la fiche d'approbation propose de reserver une table (ou de la modifier) pendant que la demande est encore en attente, sans attendre l'approbation", () => {
-  assert.match(approbationsPageSource, /statut === 'en_attente' && role && hasCapability\(role, 'assignGuestApproval'\)/);
-  assert.match(approbationsPageSource, /Réserver une table/);
-  assert.match(approbationsPageSource, /réservée — modifier/);
-  assert.match(approbationsPageSource, /En attente — Table \$\{request\.reserved_table_number\} réservée/);
+test("l'approbation place automatiquement (retour de Gersom le 02/09/2026 : \"je n'ai pas besoin de voir reserver une table directement... etre capable de approuver ou refuser rapidement\") -- la carte de liste a un Approuver/Refuser direct, plus de lien de reservation manuelle", () => {
+  assert.match(approbationsPageSource, /r\.statut === 'en_attente' && role && hasCapability\(role, 'reviewGuestApproval'\)/);
+  assert.match(approbationsPageSource, /onClick=\{\(event\) => \{ event\.stopPropagation\(\); void decide\(r\.id, 'approuve'\); \}\}/);
+  assert.match(approbationsPageSource, /onClick=\{\(event\) => \{ event\.stopPropagation\(\); void decide\(r\.id, 'refuse'\); \}\}/);
+  assert.doesNotMatch(approbationsPageSource, /Réserver une table/);
+  assert.doesNotMatch(approbationsPageSource, /réservée — modifier/);
+  assert.match(approbationsPageSource, /function placementLabel/);
+  assert.doesNotMatch(approbationsPageSource, /reserved_table_number\s*\n\s*\? `En attente/);
+});
+
+test("auto_assign_table_for_guest_approval place la table excedentaire en priorite, puis la table la plus libre du meme cote, puis l'autre cote, jamais de double booking silencieux", () => {
+  assert.match(autoAssignMigration, /create or replace function auto_assign_table_for_guest_approval/);
+  assert.match(autoAssignMigration, /if v_req\.statut <> 'approuve' then raise exception 'request_not_approved'/);
+  assert.match(autoAssignMigration, /if v_req\.table_id is not null then raise exception 'request_already_assigned'/);
+  // Priorite 1 : table de reserve, quel que soit le cote.
+  assert.match(autoAssignMigration, /where t\.event_id = v_req\.event_id and t\.is_reserve/);
+  // Priorite 2 : sinon, la table la plus libre -- meme cote d'abord.
+  assert.match(autoAssignMigration, /order by candidates\.meme_cote desc, candidates\.libres desc, candidates\.number/);
+  // Priorite 3 : aucune place nulle part -- jamais d'exception, juste pas de table.
+  assert.match(autoAssignMigration, /if v_table_id is null then\s*\n\s*return null;/);
+  assert.match(autoAssignMigration, /security invoker set search_path = public, pg_temp/);
+});
+
+test('finalizeDecision appelle le placement automatique a l\'approbation quand aucune reservation n\'a ete posee, jamais si une table est deja assignee', () => {
+  assert.match(decideLibSource, /else if \(decision === 'approuve' && !updated\.table_id\)/);
+  assert.match(decideLibSource, /supabase\.rpc\('auto_assign_table_for_guest_approval', \{/);
+  assert.match(decideLibSource, /p_request_id: updated\.id,\s*\n\s*p_agent_id: decidedByAgentId \?\? null,\s*\n\s*\}\);\s*\n\s*if \(!autoAssignError && assigned\)/);
 });
 
 test('le double-tap sur Approuver/Refuser est bloque par une garde synchrone (ref), pas seulement par le state React qui peut retarder d\'un rendu', () => {
@@ -121,6 +147,27 @@ test("/scan n'a plus de bouton \"Prendre une photo\" redondant sous la camera (l
   assert.doesNotMatch(scanPageSource, /CameraIcon/);
   // captureGuestPhoto reste declenche par BottomNav (bouton central).
   assert.match(scanPageSource, /onCentralAction=\{hasCapability\(role, 'submitGuestApproval'\) \? captureGuestPhoto : undefined\}/);
+});
+
+test('le theme "verre liquide" (demande de Gersom le 02/09/2026 : "je veux que tout soit vraiment bien flottant... que ça l\'air d\'une application faite par Apple") est applique aux surfaces partagees, dans les deux themes, pas seulement en Maison', () => {
+  const cssSource = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+  // .card utilisait shadow-card (var(--elev-1), litteralement "none" en
+  // Maison -- aucune ombre du tout) et un flou reserve a dark: -- corrige :
+  // var(--elev-2) + flou/saturation dans les deux themes, comme la barre du
+  // bas et le dock de selection.
+  const cardBlock = cssSource.slice(cssSource.indexOf('.card {'), cssSource.indexOf('.card {') + 400);
+  assert.match(cardBlock, /box-shadow: var\(--elev-2\), inset 0 1px 0 rgba\(255, 255, 255, 0\.2\);/);
+  assert.match(cardBlock, /backdrop-filter: blur\(20px\) saturate\(160%\);/);
+  assert.doesNotMatch(cardBlock, /shadow-card/);
+  // .action-row/.action-row-muted/.btn-secondary reprennent la meme recette
+  // -- "vraiment partout", pas seulement une carte isolee.
+  assert.match(cssSource, /\.action-row \{[\s\S]{0,300}?backdrop-filter: blur\(16px\) saturate\(160%\);/);
+  assert.match(cssSource, /\.btn-secondary \{[\s\S]{0,300}?backdrop-filter: blur\(20px\) saturate\(160%\);/);
+  // Boutons Approuver/Refuser en verre teinte (couleur en filtre translucide,
+  // jamais un aplat plein) -- reference explicite Centre de controle iOS.
+  assert.match(cssSource, /\.glass-pill-complete \{/);
+  assert.match(cssSource, /\.glass-pill-over \{/);
+  assert.match(cssSource, /color-mix\(in srgb, var\(--status-complete\) 18%, var\(--glass\)\)/);
 });
 
 test("le menu du compte affiche un badge persistant sur l'avatar (pas seulement dans le menu deroulant) pour les approbations en attente", () => {

@@ -109,9 +109,10 @@ async function finalizeDecision(
   // immediatement en vraie assignation (meme RPC atomique que
   // l'assignation manuelle post-approbation, 0038) au lieu de laisser
   // l'agent repasser par /approbations/[id]/assign pour une table deja
-  // choisie -- exactement le "pas de double booking" demande par Gersom.
-  // Au refus, la reservation n'a jamais cree d'invitation : on la libere
-  // simplement pour ne pas laisser une colonne orpheline.
+  // choisie. Au refus, la reservation n'a jamais cree d'invitation : on la
+  // libere simplement pour ne pas laisser une colonne orpheline. Ce
+  // mecanisme reste disponible (route reserve-table) mais n'est plus le
+  // parcours principal depuis le 02/09/2026 -- voir la branche suivante.
   let tableNumber: number | null = null;
   if (decision === 'approuve' && updated.reserved_table_id && !updated.table_id) {
     const { data: assigned, error: assignError } = await supabase.rpc('assign_table_to_guest_approval_strict', {
@@ -135,6 +136,30 @@ async function finalizeDecision(
     // sans table -- meme filet de securite que l'assignation manuelle,
     // jamais de double booking silencieux. L'agent reprend alors la main
     // depuis /approbations, comme avant cette fonctionnalite.
+  } else if (decision === 'approuve' && !updated.table_id) {
+    // Placement automatique -- demande de Gersom le 02/09/2026 : "je n'ai
+    // pas besoin de voir reserver une table directement... etre capable de
+    // approuver ou refuser rapidement". Priorite table excedentaire, puis
+    // la table avec le plus de place libre du meme cote, puis l'autre cote
+    // (voir 0045_auto_assign_table_for_guest_approval.sql).
+    const { data: assigned, error: autoAssignError } = await supabase.rpc('auto_assign_table_for_guest_approval', {
+      p_request_id: updated.id,
+      p_agent_id: decidedByAgentId ?? null,
+    });
+    if (!autoAssignError && assigned) {
+      const { data: refreshed } = await supabase
+        .from('guest_approval_requests')
+        .select('*, table:table_id(number)')
+        .eq('id', updated.id)
+        .maybeSingle<GuestApprovalRequestRow & { table: { number: number } | null }>();
+      if (refreshed) {
+        updated = refreshed;
+        tableNumber = refreshed.table?.number ?? null;
+      }
+    }
+    // Si aucune table n'a de place nulle part, la demande reste approuvee
+    // sans table -- jamais de double booking silencieux ; un placeur ou
+    // directeur reprend la main manuellement depuis /approbations.
   } else if (decision === 'refuse' && updated.reserved_table_id) {
     await supabase.rpc('release_guest_approval_reservation', {
       p_request_id: updated.id,
