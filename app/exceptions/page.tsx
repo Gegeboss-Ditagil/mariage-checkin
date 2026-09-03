@@ -6,6 +6,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { debounce } from '@/lib/debounce';
+import { applyRowDelta } from '@/lib/realtimeDelta';
 
 const TYPE_LABELS: Record<string, string> = {
   pas_de_qr: 'Pas de QR',
@@ -46,7 +47,13 @@ export default function ExceptionsPage() {
     load();
     const channel = supabase
       .channel('exceptions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'exceptions' }, debounce(load, 400))
+      // Chemin chaud : une exception resolue = UPDATE (resolved=true), applique
+      // localement. INSERT/DELETE (rare) restent debounces.
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'exceptions' }, (payload) =>
+        setExceptions((prev) => applyRowDelta(prev, payload))
+      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exceptions' }, debounce(load, 400))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'exceptions' }, debounce(load, 400))
       .subscribe();
 
     return () => {

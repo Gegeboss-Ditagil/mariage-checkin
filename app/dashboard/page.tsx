@@ -13,6 +13,7 @@ import { hasCapability } from '@/lib/permissions';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
 import { debounce } from '@/lib/debounce';
+import { applyRowDelta } from '@/lib/realtimeDelta';
 
 export default function DashboardPage() {
   const role = useSessionRole();
@@ -45,12 +46,18 @@ export default function DashboardPage() {
 
     load();
 
-    // Regroupe une rafale d'evenements (reimport CSV, correction en lot) en
-    // un seul rechargement -- voir lib/debounce.ts.
+    // Le chemin chaud (chaque check-in = UPDATE d'une invitation) est applique
+    // LOCALEMENT via le payload Realtime (~1 Ko) au lieu d'un rechargement
+    // complet de ~100-300 Ko sur chaque tablette ouverte. INSERT/DELETE (rare :
+    // reimport CSV, corrections en lot) restent debounces -- voir lib/debounce.ts.
     const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, debouncedLoad)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invitations' }, (payload) =>
+        setInvitations((prev) => applyRowDelta(prev, payload))
+      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invitations' }, debouncedLoad)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'invitations' }, debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, debouncedLoad)
       .subscribe();
 

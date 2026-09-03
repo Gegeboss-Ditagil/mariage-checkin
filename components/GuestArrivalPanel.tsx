@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { GuestArrivalStatus, GuestRow, InvitationRow } from '@/lib/types';
 import { useOnline } from '@/hooks/useOnline';
 import { parseMembersFromNotes } from '@/lib/membersNotes';
+import { debounce } from '@/lib/debounce';
 
 // Remplace l'ancien compteur agrege "Personnes arrivees" (0..nombre_prevu,
 // sans savoir QUI) par une case a cocher PAR PERSONNE, a trois etats.
@@ -63,6 +64,11 @@ export function GuestArrivalPanel({
   const [newNom, setNewNom] = useState('');
   const [addSubmitting, setAddSubmitting] = useState(false);
 
+  // Ids des membres actuellement listes -- permet de filtrer LOCALEMENT les
+  // evenements Realtime de la table globale `guests` (impossible de filtrer
+  // cote serveur : le lien vers l'invitation vit dans invitation_guests).
+  const memberIdsRef = useRef<Set<string>>(new Set());
+
   async function load() {
     const supabase = createClient();
     const { data: links } = await supabase
@@ -74,6 +80,7 @@ export function GuestArrivalPanel({
       .filter(Boolean)
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
     setMembers(list);
+    memberIdsRef.current = new Set(list.map((g) => g.id));
     setLoading(false);
     return list;
   }
@@ -113,10 +120,18 @@ export function GuestArrivalPanel({
       if (!cancelled) setInitializing(false);
     })();
     const supabase = createClient();
+    // La table `guests` n'est pas filtrable par invitation cote serveur (le
+    // lien vit dans invitation_guests) : on filtre donc LOCALEMENT avec les
+    // membres deja listes -- une edition d'un invite d'une AUTRE invitation
+    // ne declenche plus ce panneau. Tout est debounce pour les rafales.
+    const reloadRelevant = debounce((payload: { new?: Record<string, unknown> | null; old?: Record<string, unknown> | null }) => {
+      const guestId = (payload.new && payload.new.id) || (payload.old && payload.old.id);
+      if (guestId && memberIdsRef.current.has(String(guestId))) void load();
+    }, 300);
     const channel = supabase
       .channel('guest-arrival-' + invitation.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitation_guests', filter: 'invitation_id=eq.' + invitation.id }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitation_guests', filter: 'invitation_id=eq.' + invitation.id }, debounce(() => void load(), 300))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, reloadRelevant)
       .subscribe();
     return () => {
       cancelled = true;

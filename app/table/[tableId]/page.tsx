@@ -16,6 +16,7 @@ import {
   saveBulkMoveSelection,
 } from '@/lib/bulkMoveSession';
 import { debounce } from '@/lib/debounce';
+import { applyRowDelta } from '@/lib/realtimeDelta';
 
 function volCode(number: number): string | null {
   if (number < 1 || number > 40) return null;
@@ -153,7 +154,10 @@ export default function TablePage() {
           .select('*')
           .eq('table_id', tableId)
           .order('nom_affichage'),
-        supabase.from('overflow_assignments').select('*').eq('reserve_table_id', tableId),
+        // Jointure directe sur les invitations pour les noms en excedent :
+        // evite la 2e requete (SELECT id, nom_affichage ... in(...)) qui
+        // refetchait des invitations a chaque chargement de la page.
+        supabase.from('overflow_assignments').select('*, invitations(nom_affichage)').eq('reserve_table_id', tableId),
       ]);
       if (!active) return;
 
@@ -175,22 +179,17 @@ export default function TablePage() {
 
       setTable(t as TableRow | null);
       setInvitations((invs as InvitationRow[]) || []);
-      const overflowRows = (ov as OverflowAssignmentRow[]) || [];
+      const overflowRows = (ov as (OverflowAssignmentRow & { invitations?: { nom_affichage?: string } | null })[]) || [];
       setOverflow(overflowRows);
 
-      const invIds = Array.from(new Set(overflowRows.map((o) => o.invitation_id)));
-      if (invIds.length > 0) {
-        const { data: noms } = await supabase
-          .from('invitations')
-          .select('id, nom_affichage')
-          .in('id', invIds);
-        if (!active) return;
-        const map = new Map<string, string>();
-        (noms || []).forEach((n: any) => map.set(n.id, n.nom_affichage));
-        setOverflowNoms(map);
-      } else {
-        setOverflowNoms(new Map());
+      // Noms des invitations en excedent, pour affichage (au lieu d'une
+      // ligne anonyme "Excedent affecte") -- on les lit directement sur la
+      // jointure ci-dessus, sans requete supplementaire.
+      const map = new Map<string, string>();
+      for (const o of overflowRows) {
+        if (o.invitations?.nom_affichage) map.set(o.invitation_id, o.invitations.nom_affichage);
       }
+      setOverflowNoms(map);
 
       setLoading(false);
     }
@@ -202,11 +201,13 @@ export default function TablePage() {
     const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('table-' + tableId)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId },
-        debouncedLoad
+      // Chemin chaud : check-in / deplacement = UPDATE d'une invitation de
+      // cette table, applique localement au lieu d'un rechargement complet.
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId }, (payload) =>
+        setInvitations((prev) => applyRowDelta(prev, payload))
       )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId }, debouncedLoad)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'invitations', filter: 'table_id=eq.' + tableId }, debouncedLoad)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'overflow_assignments', filter: 'reserve_table_id=eq.' + tableId },
