@@ -86,15 +86,6 @@ export default function CheckinPage() {
   const [tagError, setTagError] = useState<string | null>(null);
   const [customTag, setCustomTag] = useState('');
 
-  // -- Invite imprevu ("+ Invite supplementaire") -- ajout NOMME depuis
-  // v1.23.0 (demande de Gersom le 30/08/2026) : ne touche jamais
-  // nombre_prevu (add_unplanned_arrival, migration 0030), pour continuer a
-  // declencher l'assignation de table de reserve en cas de depassement,
-  // comme le faisait l'ancien "+1" anonyme.
-  const [addingUnplanned, setAddingUnplanned] = useState(false);
-  const [unplannedPrenom, setUnplannedPrenom] = useState('');
-  const [unplannedNom, setUnplannedNom] = useState('');
-
   // -- Invite surprise lie a ce groupe (photo + approbation) -- demande de
   // Gersom le 02/09/2026, voir 0046_guest_approval_linked_invitation.sql.
   // Pas de flux camera live ici (contrairement a /scan) : un simple input
@@ -104,6 +95,22 @@ export default function CheckinPage() {
   const surprisePhotoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Corrige le 03/09/2026 (retour de Gersom : "je vois comme l'ancienne
+    // page en premier et ensuite je vois la nouvelle") -- Next.js reutilise
+    // cette meme instance de composant en passant d'une fiche a une autre
+    // (ex: liste d'une table -> autre invite), donc sans ce reset l'ancienne
+    // invitation restait affichee integralement pendant que la nouvelle
+    // requete etait encore en vol.
+    setInvitation(null);
+    setNotFound(false);
+    setStep('confirm');
+    setArriveValue(0);
+    setInvitationTable(null);
+    invitationTableIdRef.current = null;
+    setHasMemberList(true);
+    setError(null);
+    setSyncNotice(null);
+
     const supabase = createClient();
     supabase
       .from('invitations')
@@ -287,51 +294,16 @@ export default function CheckinPage() {
     }
   }
 
-  async function handleAddUnplanned() {
-    if (!invitation) return;
-    if (!unplannedPrenom.trim() && !unplannedNom.trim()) { setAddingUnplanned(false); return; }
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setError('CONNEXION REQUISE POUR VALIDER CETTE ENTRÉE');
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/members/add-unplanned', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          invitation_id: invitation.id,
-          prenom: unplannedPrenom.trim() || null,
-          nom: unplannedNom.trim() || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Échec de l'ajout");
-        return;
-      }
-
-      const updated = data.invitation as InvitationRow;
-      setInvitation(updated);
-      setArriveValue(updated.nombre_arrive);
-      setLastDelta(1);
-      setSyncNotice(null);
-      setAddingUnplanned(false);
-      setUnplannedPrenom('');
-      setUnplannedNom('');
-      const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
-
-      if (exc > 0) {
-        await openOverflowFlow(exc);
-      } else {
-        setStep('success');
-      }
-    } catch {
-      setError('Erreur réseau — réessayez');
-    } finally {
-      setSubmitting(false);
+  // Appele par GuestArrivalPanel (son propre "+", desormais un ajout DEJA
+  // ARRIVE via add-unplanned) apres un ajout reussi -- remplace l'ancien
+  // handleAddUnplanned de cette page, consolidation du 03/09/2026 (retour de
+  // Gersom : "quand on ajoute la personne qui est avec Lys, ça veut dire
+  // que par définition on approuve la personne et il faut la placer sur
+  // une table").
+  async function handlePanelAdd(updated: InvitationRow) {
+    const exc = Math.max(0, updated.nombre_arrive - updated.nombre_prevu);
+    if (exc > 0) {
+      await openOverflowFlow(exc);
     }
   }
 
@@ -923,17 +895,11 @@ export default function CheckinPage() {
           invitation={invitation}
           onInvitationUpdate={setInvitation}
           onVisibilityChange={setHasMemberList}
+          onAfterAdd={handlePanelAdd}
           canManage={canRename}
+          canAdd={canSubmitGuestApproval}
           canMove={canMoveGuest}
         />
-
-        <button
-          type="button"
-          className="action-row mb-3"
-          onClick={() => router.push('/checkin/' + invitation.id + '/members')}
-        >
-          Gérer les membres du groupe (ajouter, retirer, nommer)
-        </button>
 
         {canMerge && (
           <button
@@ -984,55 +950,27 @@ export default function CheckinPage() {
         {hasMemberList ? (
           // Groupe : chaque personne se coche individuellement dans
           // GuestArrivalPanel ci-dessus (instantane, pas de bouton
-          // "Confirmer" a part) -- seul reste a couvrir le cas d'un invite
-          // qui se presente sans etre sur la liste nominative. Ajout NOMME
-          // depuis v1.23.0 (add_unplanned_arrival, migration 0030) : ne
-          // touche jamais nombre_prevu, pour continuer a declencher
-          // l'assignation de table de reserve en cas de depassement.
+          // "Confirmer" a part). Le "+" de ce meme panneau couvre desormais
+          // aussi le cas d'un invite non prevu qui arrive avec le groupe
+          // (consolidation du 03/09/2026, retour de Gersom : "quand on
+          // ajoute la personne qui est avec Lys, ça veut dire que par
+          // définition on approuve la personne et il faut la placer sur
+          // une table ... [+Non prévu et Ajouter un invité] sont déjà pris
+          // en compte avec le plus") -- reste ici seulement le parcours
+          // photo, pour les cas ou une approbation visuelle stricte est
+          // voulue ("le bouton photo invité surprise peut être intéressant
+          // si on veut vraiment que la personne ... doit impérativement se
+          // faire approuver par photo").
           !canSubmitGuestApproval ? (
-            // Ni l'ajout instantané ni le parcours photo ne sont accessibles
-            // à ce rôle (agent_checkin, visibilite) -- un excédent de
-            // personnes remonte toujours à un placeur/directeur/admin.
+            // Ni l'ajout instantané (dans GuestArrivalPanel) ni le parcours
+            // photo ne sont accessibles à ce rôle (agent_checkin,
+            // visibilite) -- un excédent de personnes remonte toujours à un
+            // placeur/directeur/admin.
             <p className="action-row-muted mb-3 cursor-default text-text-muted">
               Une personne en plus ? Un placeur ou directeur peut l’ajouter.
             </p>
-          ) : addingUnplanned ? (
-            <div className="card mb-3">
-              <p className="mb-2 text-sm font-semibold">Invité supplémentaire (non prévu)</p>
-              <div className="flex gap-1.5">
-                <input
-                  autoFocus
-                  className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
-                  placeholder="Prénom"
-                  value={unplannedPrenom}
-                  onChange={(e) => setUnplannedPrenom(e.target.value)}
-                />
-                <input
-                  className="min-w-0 flex-1 rounded-lg border border-hairline bg-surface-2 px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
-                  placeholder="Nom"
-                  value={unplannedNom}
-                  onChange={(e) => setUnplannedNom(e.target.value)}
-                />
-              </div>
-              <div className="mt-2 flex justify-end gap-3 text-xs font-semibold">
-                <button type="button" className="text-text-faint" onClick={() => setAddingUnplanned(false)} disabled={submitting}>
-                  Annuler
-                </button>
-                <button type="button" className="text-accent" onClick={handleAddUnplanned} disabled={submitting || !online}>
-                  {submitting ? '…' : !online ? 'HORS LIGNE' : 'Ajouter, déjà arrivé'}
-                </button>
-              </div>
-            </div>
           ) : (
-            <div className="mb-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                className="action-row py-2 text-xs"
-                disabled={submitting || !online}
-                onClick={() => setAddingUnplanned(true)}
-              >
-                {!online ? 'HORS LIGNE' : '+ Non prévu'}
-              </button>
+            <>
               {/* Invite surprise lie a ce groupe : nom + photo + approbation,
                   avec cote/groupe deja preremplis (voir
                   GuestApprovalCaptureFlow). input file avec
@@ -1052,13 +990,13 @@ export default function CheckinPage() {
               />
               <button
                 type="button"
-                className="action-row py-2 text-xs"
+                className="action-row mb-3"
                 disabled={submitting || !online}
                 onClick={() => surprisePhotoInputRef.current?.click()}
               >
                 {!online ? 'HORS LIGNE' : '📷 Invité surprise'}
               </button>
-            </div>
+            </>
           )
         ) : (
           <>

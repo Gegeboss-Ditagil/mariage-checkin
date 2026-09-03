@@ -63,6 +63,17 @@ export default function MembresInvitationPage() {
   }
 
   useEffect(() => {
+    // Corrige le 03/09/2026 (retour de Gersom sur le flash de navigation) --
+    // meme reset que /checkin/[invitationId] et /table(s)/[tableId] : sans
+    // ca, l'ancienne fiche (invitation/membres) restait affichee pendant que
+    // la nouvelle requete pour ce nouvel invitationId etait encore en vol.
+    setLoading(true);
+    setInvitation(null);
+    setNotFound(false);
+    setMembers([]);
+    setDraft([]);
+    setError(null);
+
     load();
     const supabase = createClient();
     // Regroupe une rafale d'evenements (reimport CSV, correction en lot) en

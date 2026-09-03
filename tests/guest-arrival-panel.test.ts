@@ -92,22 +92,40 @@ test('la visibilite du panneau/compteur repose sur hasMemberList (etat reel), ja
   assert.doesNotMatch(checkinSource, /\{invitation\.nombre_prevu <= 1 && \(/);
 });
 
-test('un groupe propose "+ Non prévu" au lieu du compteur/bouton "Confirmer"', () => {
-  // Libellé raccourci le 02/09/2026 (voir 0046_guest_approval_linked_invitation)
-  // pour partager la ligne avec le nouveau bouton "Invité surprise" -- le
-  // libellé complet reste affiché dans l'en-tête du mini-formulaire.
-  assert.match(checkinSource, /\+ Non prévu/);
-  assert.match(checkinSource, /Invité supplémentaire \(non prévu\)/);
+// Corrige le 03/09/2026 (retour de Gersom sur la fiche de Lys Landu :
+// "il y a du doublon et puis des trucs qui ne marchent pas... [+Non prévu
+// et Ajouter un invité] sont déjà pris en compte avec le plus") -- l'ancien
+// "+ Non prévu" (bouton et mini-formulaire propres a la page checkin) a
+// disparu ; son comportement vit desormais entierement dans le "+" de
+// GuestArrivalPanel (canAdd), qui appelle add-unplanned au lieu de add.
+test('l\'ancien bouton "+ Non prévu" (mini-formulaire dans la page checkin) a disparu, consolide dans le "+" de GuestArrivalPanel', () => {
+  assert.doesNotMatch(checkinSource, /\+ Non prévu/);
+  assert.doesNotMatch(checkinSource, /addingUnplanned/);
+  assert.doesNotMatch(checkinSource, /async function handleAddUnplanned/);
+  // Ne fait plus l'appel reseau lui-meme (juste une reference en
+  // commentaire vers /api/members/add-unplanned, desormais appele par
+  // GuestArrivalPanel) -- voir le test suivant pour la source qui appelle
+  // vraiment l'API.
+  assert.doesNotMatch(checkinSource, /fetch\('\/api\/members\/add-unplanned'/);
 });
 
-test('"+ Invité supplémentaire" est un ajout NOMME (add-unplanned), pas un +1 anonyme, pour garder le declenchement de la table de reserve', () => {
-  // v1.23.0 : add_invitation_member (utilise par le "+" de GuestArrivalPanel)
+test('"Gérer les membres du groupe" a disparu de la page checkin (retour de Gersom : "elle ne sert plus à rien", on ajoute directement dans la fiche) -- la route reste jointe (/checkin/[id]/members)', () => {
+  assert.doesNotMatch(checkinSource, /Gérer les membres du groupe/);
+  assert.doesNotMatch(checkinSource, /router\.push\('\/checkin\/' \+ invitation\.id \+ '\/members'\)/);
+});
+
+test('le "+" de GuestArrivalPanel est un ajout NOMME et DEJA ARRIVE (add-unplanned), pas un ajout a la liste prevue (add), pour garder le declenchement de la table de reserve', () => {
+  // v1.23.0 : add_invitation_member (l'ancien "+" de GuestArrivalPanel,
+  // encore utilise par /checkin/[id]/members pour la liste prevue)
   // augmente nombre_prevu en meme temps qu'il ajoute la personne, ce qui ne
   // cree jamais de depassement -- add_unplanned_arrival (migration 0030) ne
   // touche jamais nombre_prevu, pour continuer a declencher l'assignation de
   // table comme le faisait l'ancien "+1" anonyme (/api/checkin).
-  assert.match(checkinSource, /members\/add-unplanned/);
+  assert.match(panelSource, /members\/add-unplanned/);
+  assert.match(panelSource, /onAfterAdd\?\.\(updated\)/);
+  assert.match(checkinSource, /async function handlePanelAdd\(updated: InvitationRow\) \{/);
   assert.match(checkinSource, /const exc = Math\.max\(0, updated\.nombre_arrive - updated\.nombre_prevu\);\s*\n\s*if \(exc > 0\) \{\s*\n\s*await openOverflowFlow\(exc\);/);
+  assert.match(checkinSource, /onAfterAdd=\{handlePanelAdd\}/);
   const migrationSource = readFileSync(
     new URL('../supabase/migrations/0030_add_unplanned_arrival.sql', import.meta.url),
     'utf8'
@@ -134,7 +152,7 @@ test('une ancienne invitation avec compteur agrege retrouve automatiquement ses 
 test('un accompagnant non prevu doit avoir un nom avant le placement direct', () => {
   const route = readFileSync(new URL('../app/api/members/add-unplanned/route.ts', import.meta.url), 'utf8');
   assert.match(route, /Le nom de l’invité est requis/);
-  assert.match(checkinSource, /placeholder="Prénom"/);
+  assert.match(panelSource, /placeholder="Prénom"/);
   assert.match(checkinSource, /openOverflowFlow\(exc\)/);
 });
 
@@ -159,10 +177,16 @@ test('taper le nom d\'une personne le modifie directement (comme le titre de la 
   assert.match(checkinSource, /canManage=\{canRename\}/);
 });
 
-test('bouton "+" pour ajouter une personne au groupe, reserve a manageMembers, meme capacite que "Gerer les membres"', () => {
-  assert.match(panelSource, /canManage && !adding/);
-  assert.match(panelSource, /members\/add/);
-  assert.doesNotMatch(panelSource, /hasCapability/); // capacite fournie par le parent (prop canManage), pas re-decidee ici
+test('bouton "+" pour ajouter une personne (deja arrivee) au groupe, reserve a submitGuestApproval (canAdd), distinct de canManage (reserve au renommage)', () => {
+  // Consolidation du 03/09/2026 : ce "+" faisait un ajout a la liste prevue
+  // (canManage/manageMembers, add_invitation_member) ; il fait desormais un
+  // ajout DEJA ARRIVE (canAdd/submitGuestApproval, add_unplanned_arrival) --
+  // agent_checkin garde manageMembers (peut renommer) mais jamais
+  // submitGuestApproval, donc ne doit plus voir ce bouton.
+  assert.match(panelSource, /canAdd && !adding/);
+  assert.match(panelSource, /members\/add-unplanned/);
+  assert.doesNotMatch(panelSource, /hasCapability/); // capacite fournie par le parent (prop canAdd), pas re-decidee ici
+  assert.match(checkinSource, /canAdd=\{canSubmitGuestApproval\}/);
 });
 
 test('bouton "deplacer" par personne, reserve a moveGuests (meme capacite que le deplacement d\'une invitation entiere)', () => {

@@ -64,7 +64,11 @@ test('GuestApprovalCaptureFlow saute l\'étape "quel côté" quand initialCote e
   assert.match(captureFlowSource, /if \(linkedInvitationId\) form\.append\('invitation_id', linkedInvitationId\)/);
 });
 
-test("/checkin/[invitationId] offre '+ Non prévu' ET '📷 Invité surprise' côte à côte pour submitGuestApproval, et un message sans bouton pour les autres rôles (jamais agent_checkin)", () => {
+// Le "+ Non prévu" autonome de cette page a disparu le 03/09/2026 (consolide
+// dans le "+" de GuestArrivalPanel, voir tests/guest-arrival-panel.test.ts)
+// -- seul reste ici le parcours photo, pour les cas ou une approbation
+// visuelle stricte est voulue.
+test("/checkin/[invitationId] offre '📷 Invité surprise' pour submitGuestApproval, et un message sans bouton pour les autres rôles (jamais agent_checkin)", () => {
   assert.match(checkinPageSource, /const canSubmitGuestApproval = hasCapability\(role, 'submitGuestApproval'\)/);
   assert.match(checkinPageSource, /!canSubmitGuestApproval \? \(/);
   assert.match(checkinPageSource, /Une personne en plus \? Un placeur ou directeur peut l’ajouter\./);

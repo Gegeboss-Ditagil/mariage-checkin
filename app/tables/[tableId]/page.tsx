@@ -45,6 +45,7 @@ function TableDetailInner() {
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
   const [overflowNoms, setOverflowNoms] = useState<Map<string, string>>(new Map());
+  const [loading, setLoading] = useState(true);
 
   // -- Selection multiple (transfert/echange en lot) -------------------------
   // echangeAvec dans l'URL = deuxieme moitie d'un echange : on est venu ici
@@ -150,6 +151,18 @@ function TableDetailInner() {
     const supabase = createClient();
     let active = true;
 
+    // Corrige le 03/09/2026 (retour de Gersom : "je vois comme l'ancienne
+    // page en premier et ensuite je vois la nouvelle") -- meme reset que
+    // /table/[tableId] : Next.js reutilise cette instance de composant d'une
+    // table a une autre (seul tableId change), donc sans ce reset l'ancienne
+    // table restait affichee integralement pendant que la nouvelle requete
+    // etait encore en vol.
+    setLoading(true);
+    setTable(null);
+    setInvitations([]);
+    setOverflow([]);
+    setOverflowNoms(new Map());
+
     async function load() {
       const [{ data: t }, { data: invs }, { data: ov }] = await Promise.all([
         supabase.from('tables').select('*').eq('id', tableId).maybeSingle(),
@@ -193,6 +206,8 @@ function TableDetailInner() {
       } else {
         setOverflowNoms(new Map());
       }
+
+      setLoading(false);
     }
 
     load();
@@ -235,6 +250,15 @@ function TableDetailInner() {
       (table.label ? ' — ' + table.label : '') +
       (volCode(table.number) ? ' — ' + volCode(table.number) : '')
     : 'Table';
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title="Table" backHref="/tables" />
+        <p className="p-4 text-center text-text-faint">Chargement…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col">

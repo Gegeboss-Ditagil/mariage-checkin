@@ -222,6 +222,30 @@ test('la barre de navigation devient une bande verticale au bord droit en paysag
   }
 });
 
+test("changer de table ou de fiche invite (meme route dynamique) reinitialise l'etat avant de recharger, pour ne jamais afficher l'ancienne page en attendant la nouvelle", () => {
+  // Corrige le 03/09/2026 (retour de Gersom : "à chaque fois que je change
+  // de page ... surtout dans l'option des tables, je vois comme l'ancienne
+  // page en premier et ensuite je vois la nouvelle") -- Next.js reutilise la
+  // meme instance de composant en passant d'un /table/[tableId] (ou
+  // /checkin/[invitationId]) a un autre : sans un reset explicite au debut
+  // de l'effet garde sur le parametre d'URL, l'ancien contenu restait
+  // entierement affiche pendant que la nouvelle requete etait en vol.
+  const tableScanPage = readFileSync(new URL('../app/table/[tableId]/page.tsx', import.meta.url), 'utf8');
+  const tableListPage = readFileSync(new URL('../app/tables/[tableId]/page.tsx', import.meta.url), 'utf8');
+  const checkinPage = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
+  const membersPage = readFileSync(new URL('../app/checkin/[invitationId]/members/page.tsx', import.meta.url), 'utf8');
+
+  assert.match(tableScanPage, /setLoading\(true\);\s*\n\s*setTable\(null\);\s*\n\s*setInvitations\(\[\]\);/);
+  // /tables/[tableId] n'avait meme pas d'etat "loading" avant ce correctif --
+  // l'ancienne table s'affichait donc integralement, sans le moindre flash
+  // de chargement pour masquer la transition.
+  assert.match(tableListPage, /const \[loading, setLoading\] = useState\(true\);/);
+  assert.match(tableListPage, /setLoading\(true\);\s*\n\s*setTable\(null\);\s*\n\s*setInvitations\(\[\]\);/);
+  assert.match(tableListPage, /if \(loading\) \{\s*\n\s*return \(/);
+  assert.match(checkinPage, /setInvitation\(null\);\s*\n\s*setNotFound\(false\);/);
+  assert.match(membersPage, /setLoading\(true\);\s*\n\s*setInvitation\(null\);/);
+});
+
 test('/scan affiche une bande d\'information de base (arrivees/remplissage) juste au-dessus de la barre de navigation', () => {
   // Demande de Gersom : "en dessous de l'ecran scan ... de l'information de
   // base du tableau de bord -- le nombre d'invites, le nombre arrives, la
