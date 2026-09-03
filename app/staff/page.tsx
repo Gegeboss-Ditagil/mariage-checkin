@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -9,6 +9,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { restants } from '@/lib/statusLogic';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { usePolling } from '@/hooks/usePolling';
 import { isStaffWithoutTable } from '@/lib/staffVisibility';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { extractPrenoms } from '@/lib/membersNotes';
@@ -38,38 +39,41 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [tableFilter, setTableFilter] = useState<'sans' | 'avec'>('sans');
+  const activeRef = useRef(true);
+
+  const load = useCallback(async () => {
+    const response = await fetch('/api/staff', { cache: 'no-store' });
+    const payload = await response.json().catch(() => null);
+    if (!activeRef.current) return;
+    setInvitations(response.ok ? ((payload?.invitations as StaffInvitation[]) || []) : []);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      const response = await fetch('/api/staff', { cache: 'no-store' });
-      const payload = await response.json().catch(() => null);
-      if (!active) return;
-      setInvitations(response.ok ? ((payload?.invitations as StaffInvitation[]) || []) : []);
-      setLoading(false);
-    }
-
-    load();
-    // La session de l'application n'est pas une session Supabase Auth : une
-    // souscription Realtime ouverte depuis le navigateur utiliserait donc le
-    // role anon et recevrait potentiellement le payload complet avant le
-    // filtrage applicatif. On rafraichit exclusivement via l'API protegee.
-    const refreshInterval = window.setInterval(load, 10_000);
-    const refreshOnFocus = () => load();
+    activeRef.current = true;
+    void load();
+    const refreshOnFocus = () => void load();
     const refreshOnVisibility = () => {
-      if (document.visibilityState === 'visible') load();
+      if (document.visibilityState === 'visible') void load();
     };
     window.addEventListener('focus', refreshOnFocus);
     document.addEventListener('visibilitychange', refreshOnVisibility);
 
     return () => {
-      active = false;
-      window.clearInterval(refreshInterval);
+      activeRef.current = false;
       window.removeEventListener('focus', refreshOnFocus);
       document.removeEventListener('visibilitychange', refreshOnVisibility);
     };
-  }, []);
+  }, [load]);
+
+  // Le polling est mis en pause quand l'ecran passe en arriere-plan (voir
+  // hooks/usePolling.ts) -- un retour au premier plan declenche de toute
+  // facon un refresh immediat via le listener de visibilite ci-dessus.
+  // La session de l'application n'est pas une session Supabase Auth : une
+  // souscription Realtime ouverte depuis le navigateur utiliserait donc le
+  // role anon et recevrait potentiellement le payload complet avant le
+  // filtrage applicatif. On rafraichit exclusivement via l'API protegee.
+  usePolling(load, 10000);
 
   // /staff n'affiche que le personnel SANS table (tag "notable" -- photographe,
   // DJ, MC, prestataires...), pour tous les roles -- precise par Gersom le

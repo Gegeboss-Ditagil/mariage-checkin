@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSessionName } from '@/hooks/useSessionName';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { useTheme, ThemePref } from '@/hooks/useTheme';
+import { usePolling } from '@/hooks/usePolling';
 import { hasCapability } from '@/lib/permissions';
 import { ROLE_LABELS } from '@/lib/types';
 import { clearGuestApprovalsCache } from '@/lib/guestApprovalClientCache';
@@ -49,28 +50,32 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
     };
   }, [open]);
 
+  const loadPendingApprovals = useCallback(async () => {
+    // cache: 'no-store' -- sans ca, Safari/PWA pouvait reutiliser une
+    // reponse HTTP mise en cache pour cette meme URL sondee toutes les 5s,
+    // figeant le badge (retour Gersom du 02/09/2026, valeur "hard coded").
+    const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json();
+    const nextCount = data.pending_count || 0;
+    if (previousPendingRef.current !== null && nextCount > previousPendingRef.current && data.latest?.id) {
+      setApprovalAlert({ id: data.latest.id, name: data.latest.nom_invite || 'Nouvel invité' });
+      window.setTimeout(() => setApprovalAlert(null), 8000);
+    }
+    previousPendingRef.current = nextCount;
+    setPendingApprovals(nextCount);
+  }, []);
+
+  const canPollApprovals = hasCapability(role, 'viewGuestApprovals');
+
   useEffect(() => {
-    if (!hasCapability(role, 'viewGuestApprovals')) return;
-    let active = true;
-    const load = async () => {
-      // cache: 'no-store' -- sans ca, Safari/PWA pouvait reutiliser une
-      // reponse HTTP mise en cache pour cette meme URL sondee toutes les 5s,
-      // figeant le badge (retour Gersom du 02/09/2026, valeur "hard coded").
-      const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
-      if (!response?.ok || !active) return;
-      const data = await response.json();
-      const nextCount = data.pending_count || 0;
-      if (previousPendingRef.current !== null && nextCount > previousPendingRef.current && data.latest?.id) {
-        setApprovalAlert({ id: data.latest.id, name: data.latest.nom_invite || 'Nouvel invité' });
-        window.setTimeout(() => setApprovalAlert(null), 8000);
-      }
-      previousPendingRef.current = nextCount;
-      setPendingApprovals(nextCount);
-    };
-    void load();
-    const timer = window.setInterval(load, 5000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [role]);
+    if (!canPollApprovals) return;
+    void loadPendingApprovals();
+  }, [loadPendingApprovals, canPollApprovals]);
+
+  // Sondage maille a la visibilite de l'onglet : mis en pause automatiquement
+  // quand l'app passe en arriere-plan (voir hooks/usePolling.ts).
+  usePolling(loadPendingApprovals, canPollApprovals ? 5000 : 0);
 
   async function handleLogout() {
     if (typeof window !== 'undefined' && !window.confirm('Se déconnecter ?')) return;

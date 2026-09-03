@@ -40,19 +40,24 @@ export default function DeplacerEnLotPage() {
 
     async function load() {
       const [{ data: invs }, { data: tables }, { data: assignments }] = await Promise.all([
-        supabase.from('invitations').select('*').in('id', selection!.invitationIds),
+        // UNE seule requete pour toutes les invitations : la selection en est
+        // un sous-ensemble et `usages` a besoin du dataset complet pour
+        // computeTableCapacities. Avant, deux fetches sequentiels (selected
+        // puis all) partaient a chaque chargement.
+        supabase.from('invitations').select('*'),
         supabase.from('tables').select('*').order('is_reserve', { ascending: true }).order('number'),
         supabase.from('overflow_assignments').select('*'),
       ]);
       if (!active) return;
-      setInvitations((invs as InvitationRow[]) || []);
+      const allInvs = (invs as InvitationRow[]) || [];
+      const selectedIds = new Set(selection!.invitationIds);
+      setInvitations(allInvs.filter((i) => selectedIds.has(i.id)));
       const tbls = (tables as TableRow[]) || [];
       // Toutes les invitations selectionnees viennent de la meme table
       // (fromTableId) : toutes les autres, non exclues, sont des
       // destinations valides.
-      const { data: allInvs } = await supabase.from('invitations').select('*');
       setUsages(
-        computeTableCapacities(tbls, (allInvs as InvitationRow[]) || [], (assignments as OverflowAssignmentRow[]) || [])
+        computeTableCapacities(tbls, allInvs, (assignments as OverflowAssignmentRow[]) || [])
       );
       setLoading(false);
     }

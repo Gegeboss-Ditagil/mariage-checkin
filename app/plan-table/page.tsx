@@ -22,6 +22,7 @@ import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
+import { applyRowDelta } from '@/lib/realtimeDelta';
 import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
 import clsx from 'clsx';
 
@@ -142,7 +143,15 @@ export default function PlanTablePage() {
     const debouncedLoad = debounce(load, 400);
     const channel = supabase
       .channel('plan-table')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, debouncedLoad)
+      // Chemin chaud : un check-in = UPDATE d'une invitation, applique
+      // localement (~1 Ko) au lieu d'un rechargement complet de toutes les
+      // invitations sur chaque tablette ouverte. INSERT/DELETE (rarissimes
+      // ici) restent debounces.
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'invitations' }, (payload) =>
+        setInvitations((prev) => applyRowDelta(prev, payload))
+      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invitations' }, debouncedLoad)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'invitations' }, debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, debouncedLoad)
       .subscribe();
     const refreshWhenVisible = () => {

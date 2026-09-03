@@ -197,7 +197,10 @@ test('la fiche a un vrai bouton fermer et rend le placement actionnable après a
 });
 
 test('les alertes dans l application restent actives meme sans cles VAPID', () => {
-  assert.match(accountMenuSource, /setInterval\(load, 5000\)/);
+  // Le sondage du badge vit desormais dans hooks/usePolling (pause auto en
+  // arriere-plan), mais reste branche sur le meme chargement 5s quand
+  // l'ecran est visible -- le compte garde son alerte "Nouvelle approbation".
+  assert.match(accountMenuSource, /usePolling\(loadPendingApprovals, canPollApprovals \? 5000 : 0\)/);
   assert.match(accountMenuSource, /Nouvelle approbation/);
   assert.match(pushButtonSource, /Alertes dans l.application actives/);
   assert.match(webPushSource, /approbations\?request=\$\{request\.id\}/);

@@ -119,7 +119,9 @@ test('la fiche de modification permet d\'ajouter un responsable au nom libre, sa
   // Deplace le 02/09/2026 dans components/ResponsablePicker.tsx (voir le
   // test dedie plus bas) ; la page elle-meme ne fait plus que transmettre
   // custom_assignees au picker et le reflete dans le resume du champ.
-  assert.match(agendaPage, /selectedCustomNames=\{editing\.custom_assignees \|\| \[\]\}/);
+  // La page transmet custom_assignees en gardant la distinction fiche en
+  // cours d'edition / nouvelle activite -- le ternaire reflete le meme flux.
+  assert.match(agendaPage, /selectedCustomNames=\{editing \? editing\.custom_assignees \|\| \[\] : newCustomAssignees\}/);
   assert.match(responsablePickerSource, /placeholder="Ex\. Nourdine, électricien"/);
 });
 

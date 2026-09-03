@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { TopBar } from '@/components/TopBar';
 import {
   DEFAULT_INVITATION_MESSAGE,
@@ -55,6 +54,9 @@ export default function DiffusionInvitationsPage() {
     setStatusOverrides({});
 
     try {
+      // xlsx (~450 Ko, admin uniquement) charge a la demande, seulement quand
+      // un fichier est reellement ouvert -- pas dans le bundle initial.
+      const XLSX = await import('xlsx');
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: '', raw: false });
@@ -84,7 +86,10 @@ export default function DiffusionInvitationsPage() {
     setNotice(`Message de ${contact.famille} copié.`);
   }
 
-  function exportTracking() {
+  async function exportTracking() {
+    // Meme lazy-load que handleFile : le paquet xlsx n'est charge que a
+    // l'export, pas a l'ouverture de la page admin.
+    const XLSX = await import('xlsx');
     const exported = contacts.map((contact) => ({
       Famille: contact.famille,
       Prénom: contact.prenom,

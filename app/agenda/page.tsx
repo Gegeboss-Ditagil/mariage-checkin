@@ -7,6 +7,7 @@ import { TopBar } from '@/components/TopBar';
 import { CloseIcon, ChevronRightIcon } from '@/components/icons';
 import { ResponsablePicker } from '@/components/ResponsablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { usePolling } from '@/hooks/usePolling';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
 type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; custom_assignees: string[]; completed: boolean };
@@ -139,9 +140,11 @@ export default function AgendaPage() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(load, 10000);
-    return () => window.clearInterval(timer);
   }, [load]);
+
+  // Le sondage est mis en pause quand l'ecran passe en arriere-plan (voir
+  // hooks/usePolling.ts).
+  usePolling(load, 10000);
 
   const peopleById = useMemo(() => new Map(people.map((person) => [person.id, person])), [people]);
 
