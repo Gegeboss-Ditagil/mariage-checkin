@@ -54,7 +54,7 @@ function SearchInner() {
   const [allTables, setAllTables] = useState<TableRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [allInvitations, setAllInvitations] = useState<Result[]>([]);
-  const [loadingAll, setLoadingAll] = useState(true);
+  const [loadingAll, setLoadingAll] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const country = PHONE_COUNTRIES.find((c) => c.code === countryCode) || PHONE_COUNTRIES[0];
@@ -78,23 +78,16 @@ function SearchInner() {
 
   useEffect(() => {
     const supabase = createClient();
+    // Chargement differe volontairement : le "parcourir toutes les
+    // invitations" ne declenche le fetch du dataset complet QUE lorsque
+    // l'agent est reellement en mode parcours (nom sans saisie), au lieu de
+    // telecharger tout l'evenement a l'ouverture de /search. Colonnes
+    // limitees a ce que la liste affiche.
     supabase
       .from('tables')
       .select('*')
       .order('number')
       .then(({ data }) => setAllTables((data as TableRow[]) || []));
-  }, []);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from('invitations')
-      .select('*, table:tables(*)')
-      .order('nom_affichage')
-      .then(({ data }) => {
-        setAllInvitations((data as Result[]) || []);
-        setLoadingAll(false);
-      });
   }, []);
 
   const tableResults = useMemo(() => {
@@ -173,6 +166,31 @@ function SearchInner() {
 
   const browsing = mode === 'nom' && !hasQuery;
   const listeAffichee = browsing ? allInvitations : results;
+
+  // Parcours complet : charge le dataset (colonnes reduites) seulement quand
+  // l'ecran bascule en mode "parcourir toutes les invitations" -- plus aucun
+  // fetch du jour J complet au simple montage de /search.
+  useEffect(() => {
+    if (!browsing) return;
+    let active = true;
+    setLoadingAll(true);
+    const supabase = createClient();
+    supabase
+      .from('invitations')
+      .select('id, nom_affichage, groupe, category, tags, notes, statut, nombre_prevu, nombre_arrive, cote, table:tables(id, number, label)')
+      .order('nom_affichage')
+      .then(({ data }) => {
+        if (!active) return;
+        // Lignes reduites (voir select ci-dessus) : InvitationItem n'utilise
+        // que ces colonnes, le cast via unknown documente l'ecart volontaire
+        // avec le type complet Result.
+        setAllInvitations((data as unknown as Result[]) || []);
+        setLoadingAll(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [browsing]);
 
   function InvitationItem({ r }: { r: Result }) {
     const prenoms = extractPrenoms(r.notes);

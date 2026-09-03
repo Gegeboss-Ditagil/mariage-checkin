@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Ne pas exposer l'en-tete X-Powered-By (hygiene minimale et ~quelques
+  // octets sur chaque reponse).
+  poweredByHeader: false,
   eslint: {
     ignoreDuringBuilds: false,
   },

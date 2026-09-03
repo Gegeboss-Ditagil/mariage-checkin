@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import { TopBar } from '@/components/TopBar';
 
 const TARGET_FIELDS = [
@@ -42,6 +41,9 @@ export default function ImportPage() {
         },
       });
     } else {
+      // xlsx (~450 Ko, admin uniquement) charge a la demande, seulement quand
+      // un fichier Excel est reellement ouvert -- pas dans le bundle initial.
+      const XLSX = await import('xlsx');
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array' });
       const sheet = wb.Sheets[wb.SheetNames[0]];
