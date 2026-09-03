@@ -38,9 +38,31 @@ Avant toute modification, lire :
 
 ## État fonctionnel v1.40.0
 
-- **Le temps réel ne re-télécharge plus toute la table à chaque événement** : un check-in (UPDATE d'une ligne) est appliqué localement sur `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` et le panneau « Qui est arrivé ? » — le payload Realtime (~1 Ko) remplace un rechargement complet (~100–300 Ko) sur chaque tablette ouverte.
-- **Le polling se met en pause hors premier plan** (badges d'approbations, agenda, staff, approbations) et **le client Supabase navigateur est un singleton par onglet** — moins de requêtes et de websockets avec ~20 tablettes simultanées.
-- **Numéro de version affiché sur le splash** (en bas à droite), source unique `package.json` lu au build.
+Cette version est consacrée aux **optimisations « jour J »** (~20 tablettes simultanées) et à la traçabilité de la version déployée. **Aucune migration Supabase.**
+
+### Temps réel : le delta au lieu du refetch complet
+- **Un check-in ne re-télécharge plus toute la table.** Chaque check-in est un `UPDATE` d'une seule ligne d'`invitations` ; le payload Realtime (~1 Ko) contenait déjà la ligne, mais chaque écran relançait un `select('*')` complet (~100–300 Ko) — multiplié par chaque tablette ouverte sur l'écran. Désormais la ligne est appliquée localement via `applyRowDelta` (`lib/realtimeDelta.ts`, nouveau) sur `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` (et l'ancienne route `/table/[tableId]`) ainsi que le panneau « Qui est arrivé ? ».
+- **INSERT/DELETE restent debouncés à 400 ms** (rares : réimport CSV) — `lib/debounce.ts` regroupe les rafales en un seul rechargement.
+- **Le panneau « Qui est arrivé ? » filtre sa souscription `guests` localement** (la table n'est pas filtrable par `invitation_id` côté serveur : le lien vit dans `invitation_guests`) via les ids déjà listés, avec debounce 300 ms — une édition d'un invité d'une *autre* invitation ne recharge plus le panneau.
+
+### Polling et connexions
+- **`hooks/usePolling.ts` (nouveau)** : le `setInterval` est suspendu sur `visibilitychange` (téléphone verrouillé, PWA en arrière-plan) et repris au retour au premier plan. Adopté par `AccountMenu` (5 s), `GuestApprovalsShortcut` (5 s), `BottomNav` (15 s), `NextAgendaActivity`, `/staff` (10 s), `/agenda` (10 s) et `/approbations` (10 s) — des dizaines de requêtes inutiles par minute en moins avec ~20 appareils.
+- **Client Supabase navigateur en singleton par onglet** (`lib/supabase/client.ts`) : il était recréé à chaque `load()`, dupliquant l'état Realtime et les websockets ; il n'y a plus qu'une instance partagée et les canaux ne se dupliquent plus.
+
+### Chargements différés
+- **`/search`** : le dataset complet n'est plus fetché au simple montage de la page — seulement quand l'agent bascule en mode « parcourir toutes les invitations » (mode nom sans saisie), avec des colonnes réduites à ce que la liste affiche.
+- **`/tables/move-multiple`** : une seule requête `Promise.all` (invitations + tables + affectations excédentaires) au lieu de deux fetches séquentiels — la sélection n'est qu'un sous-ensemble du dataset complet dont `computeTableCapacities` a besoin.
+- **`xlsx` (~450 Ko) en import dynamique** sur `/admin/import` et `/admin/diffusion` : la bibliothèque n'est chargée que lorsqu'un fichier est réellement ouvert, plus dans le bundle initial de ces pages.
+- **`poweredByHeader: false`** dans `next.config.js` (hygiène, en-tête retiré des réponses).
+
+### Version visible
+- **Numéro de version affiché sur le splash** (badge « v1.40.0 » en bas à droite) : `app/page.tsx` lit `package.json` au build et le passe à `SplashScreen` — plus de doute sur la version réellement déployée.
+
+### Conventions à respecter pour les prochaines pages
+- Toute nouvelle souscription temps réel doit appliquer `applyRowDelta` pour les `UPDATE` (chemin chaud) et débouncer `INSERT`/`DELETE` (400 ms).
+- Tout nouveau sondage doit passer par `usePolling` — jamais de `setInterval` brut ; `createClient()` peut être appelé librement, le singleton garantit une instance unique par onglet.
+- Nouveaux tests : `tests/realtime-delta.test.ts` et `tests/use-polling.test.ts`. Deux assertions périmées de `tests/guest-approvals.test.ts` et `tests/agenda-form.test.ts` ont été alignées sur la source (elles échouaient déjà sur `main` avant ces changements).
+- Validation : **22/22 fichiers de tests passent** (`node --test`) et `tsc --noEmit` ne signale aucune erreur.
 
 - Le flash de navigation entre deux fiches d'une même route dynamique (deux tables, deux invités) a disparu : chaque page réinitialise son état avant de recharger, au lieu d'afficher brièvement l'ancien contenu.
 - Sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés pour conserver la position habituelle de l'agenda; `/dashboard` et `/scan` restent inchangés.
