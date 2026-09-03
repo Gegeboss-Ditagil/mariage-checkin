@@ -93,7 +93,15 @@ export default function DashboardPage() {
   const staffInvitations = invitations.filter((i) => i.category === 'Staff');
   const staffPrevu = staffInvitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const staffArrive = staffInvitations.reduce((s, i) => s + i.nombre_arrive, 0);
-  const canSeeStaffSection = hasCapability(role, 'viewAllStaff');
+  // Ouvert au placeur le 03/09/2026 (retour de Gersom : "tu peux ajouter
+  // staff dans cette page, un peu comme Rémy sa visibilité sur cette
+  // page") -- cette carte ne fait que resumer un total deja present dans
+  // le dataset du tableau de bord et pointe vers /staff, qui continue de
+  // montrer au placeur sa vue habituelle (sans table uniquement, pas
+  // d'onglets, voir docs/BUSINESS_RULES.md) : viewAllStaff (onglets +
+  // detail avec table de /staff lui-meme) reste inchangee, reservee a
+  // admin/directeur/visibilite.
+  const canSeeStaffSection = hasCapability(role, 'viewAllStaff') || role === 'placeur';
 
   const reserveTables = tables.filter((t) => t.is_reserve);
   const usageByTable = new Map<string, number>();

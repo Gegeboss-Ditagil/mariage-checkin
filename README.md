@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.39.2**
+**Version actuelle : 1.40.0**
 **Dernière mise à jour documentaire : 2026-09-03**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.39.2-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.40.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.39.2**.
+- Branche de production : `main`; version proposée : **1.40.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
@@ -36,8 +36,14 @@ Avant toute modification, lire :
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.39.2
+## État fonctionnel v1.40.0
 
+- **Le flash de navigation touche désormais aussi les écrans mono-usage** (déplacer une personne/un groupe, gérer l'excédent, assigner une table, fusionner) : ils gardent leur TopBar visible pendant le chargement, comme les fiches table/invité corrigées en premier.
+- **Bug de données corrigé : un accompagnant non prévu (le "+" de « Qui est arrivé ? ») ne fait plus dériver `nombre_prevu`** en le marquant "ne viendra pas" après coup — une nouvelle colonne `guests.is_unplanned` distingue définitivement les deux origines (comptée dans les effectifs prévus, ou jamais).
+- **Agent001 (agent scan) voit Agenda (lecture seule) à la place de Staff** dans sa barre de navigation — `/staff` reste atteignable via le badge QR "STAFF" depuis `/scan`, inchangé.
+- **La carte Staff de `/dashboard` s'ouvre aussi au placeur**, comme au directeur de festin — `/staff` continue de lui montrer sa vue habituelle une fois ouvert.
+- **Numéro de version affiché discrètement sur le splash avant connexion** (coin inférieur droit), toujours synchronisé avec `package.json`.
+- **`/checkin/[invitationId]` resserré** pour tenir sans défiler sur une fiche simple, même levier que `/dashboard` (marges et grand nombre réduits).
 - Le flash de navigation entre deux fiches d'une même route dynamique (deux tables, deux invités) a disparu : chaque page réinitialise son état avant de recharger, au lieu d'afficher brièvement l'ancien contenu.
 - Sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés pour conserver la position habituelle de l'agenda; `/dashboard` et `/scan` restent inchangés.
 - La création d'une activité permet maintenant de choisir ses responsables dès la modale « Nouvelle activité », avec le même picker de recherche que la modification.

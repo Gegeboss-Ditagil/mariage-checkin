@@ -272,7 +272,15 @@ export default function MembresInvitationPage() {
   }
 
   if (loading || !invitation) {
-    return <div className="flex min-h-dvh items-center justify-center/50">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom sur le flash de navigation). Corrige au passage
+    // "justify-center/50", une classe Tailwind invalide (jamais appliquee).
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title="Membres du groupe" backHref={'/checkin/' + invitationId} />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   return (

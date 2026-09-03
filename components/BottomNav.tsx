@@ -31,7 +31,19 @@ const STAFF_ITEMS: NavItem[] = [
 // agent_checkin (accueil) : meme barre que le staff complet -- il garde le
 // scan/recherche/dashboard/tables et peut confirmer les arrivees. Les actions
 // de deplacement restent masquees et bloquees par la matrice de permissions.
-const SCAN_ONLY_ITEMS = STAFF_ITEMS;
+// Agenda remplace Staff en dernier onglet depuis le 03/09/2026 (retour de
+// Gersom sur Agent001 : "il ne devrait pas voir en bas a droite staff...
+// il devrait voir agenda a la place") -- lecture seule (viewAgenda sans
+// manageAgenda, voir lib/permissions.ts). /staff reste atteignable par ce
+// role via le badge QR "STAFF" depuis /scan (viewStaff inchangee), seul le
+// raccourci permanent de la barre change.
+const AGENT_CHECKIN_ITEMS: NavItem[] = [
+  { href: '/scan', label: 'Scan', icon: ScanIcon },
+  { href: '/search', label: 'Recherche', icon: SearchIcon },
+  { href: '/plan-table', label: 'Plan', icon: GridIcon },
+  { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
+  { href: '/agenda', label: 'Agenda', icon: StaffIcon },
+];
 
 // visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.
 // A quand meme la capacite viewStaff (lib/permissions.ts) : garde l'onglet.
@@ -51,7 +63,7 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/agenda', label: 'Agenda', icon: StaffIcon },
   ],
   placeur: STAFF_ITEMS,
-  agent_checkin: SCAN_ONLY_ITEMS,
+  agent_checkin: AGENT_CHECKIN_ITEMS,
   visibilite: READ_ONLY_ITEMS,
   admin: [
     { href: '/search', label: 'Recherche', icon: SearchIcon },

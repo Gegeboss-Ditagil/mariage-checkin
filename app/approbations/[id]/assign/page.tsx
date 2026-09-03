@@ -172,7 +172,17 @@ export default function AssignGuestApprovalTablePage() {
   }
 
   if (loading || !request) {
-    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom sur le flash de navigation). `mode` retombe sur
+    // 'assign' tant que `request` n'est pas charge (voir sa definition
+    // ci-dessus), donc ce meme titre par defaut reste coherent avec le
+    // premier rendu une fois les donnees arrivees.
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title={mode === 'reserve' ? 'Réserver une table' : 'Assigner une table'} backHref="/approbations" />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   const targetUsage = usages.find((u) => u.table.id === chosenTableId) || null;

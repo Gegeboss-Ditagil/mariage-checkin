@@ -6,7 +6,19 @@ import { warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
 const SPLASH_DURATION_MS = 3000;
 
-export function SplashScreen({ next, warmApprovals = false }: { next: string; warmApprovals?: boolean }) {
+export function SplashScreen({
+  next,
+  warmApprovals = false,
+  version,
+}: {
+  next: string;
+  warmApprovals?: boolean;
+  // Numero de version affiche discretement en bas a droite (ex. "v1.39.2"),
+  // uniquement fourni par app/page.tsx (splash avant connexion) -- absent
+  // sur l'usage post-connexion (app/dashboard/page.tsx), qui n'a pas ce
+  // besoin de tracabilite.
+  version?: string;
+}) {
   const router = useRouter();
   const [fading, setFading] = useState(false);
 
@@ -32,6 +44,12 @@ export function SplashScreen({ next, warmApprovals = false }: { next: string; wa
         (fading ? 'opacity-0' : 'opacity-100')
       }
       style={{ backgroundImage: "url('/images/splash-bg.jpg')" }}
-    />
+    >
+      {version && (
+        <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-white/70">
+          v{version}
+        </span>
+      )}
+    </div>
   );
 }

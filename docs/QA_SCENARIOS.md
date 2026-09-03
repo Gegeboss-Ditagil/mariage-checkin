@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.39.2**
+**Version documentaire : 1.40.0**
 **Dernière mise à jour : 2026-09-03**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -193,6 +193,16 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Après cet ajout, ouvrir `/plan-table` (ou y être déjà, avec l'abonnement temps réel actif) : le nombre d'arrivés à la table de ce groupe augmente sans recharger la page.
 - « 📷 Invité surprise » reste disponible et inchangé (photo → approbation), séparé du « + » ci-dessus.
 - La route `/checkin/[invitationId]/members` reste accessible par URL directe (retrait/renommage en liste) même si plus aucun bouton n'y mène depuis la fiche de check-in.
+
+## Écrans mono-usage, is_unplanned, Agenda pour agent_checkin, splash — v1.40.0
+
+- Flash de navigation sur les écrans mono-usage : depuis `/table/[tableId]` ou `/tables/[tableId]`, toucher ⇄ sur une personne ou un groupe (`/tables/move-guest/[guestId]`, `/tables/move/[invitationId]`), « Gérer l'excédent » (`/tables/overflow/[assignmentId]`), un transfert/échange en lot (`/tables/move-multiple`), « Fusionner avec un autre groupe » (`/checkin/[invitationId]/merge`) et « Assigner une table »/« Réserver une table » depuis `/approbations/[id]/assign` : le TopBar (titre + flèche retour) doit rester affiché pendant le court chargement, jamais une page sans en-tête qui apparaît puis disparaît.
+- Bug `nombre_prevu` : sur une invitation de groupe, ajouter un accompagnant via le "+" de « Qui est arrivé ? » (nommé, marqué arrivé), puis le marquer "ne viendra pas" (✕) — `nombre_prevu` de l'invitation ne doit **pas** bouger (seul `nombre_arrive` diminue). Le rebasculer en "attendu" ou "arrivé" ne doit toujours pas toucher `nombre_prevu`. Un accompagnant "classique" (ajouté depuis `/checkin/[invitationId]/members`, compté dans les effectifs prévus) continue lui de faire bouger `nombre_prevu` normalement en "ne viendra pas"/"attendu".
+- Déplacer individuellement (⇄) un accompagnant non prévu vers une autre table : la nouvelle fiche créée doit afficher "0 prévue" (pas "1 prévue"), toujours "1 arrivée" s'il était coché.
+- Connexion en tant qu'agent scan (Agent001 ou similaire) : la barre du bas affiche Agenda (pas Staff) en dernier onglet ; ouvrir Agenda affiche le chronogramme du jour J sans possibilité de le modifier (pas de bouton d'ajout/modification) ; `/staff` reste accessible via le badge QR "STAFF" depuis `/scan`.
+- Connexion en tant que placeur : `/dashboard` affiche désormais la carte "Staff & réserve" (comme pour le directeur) ; l'ouvrir mène à `/staff`, qui continue de n'afficher que le personnel sans table (pas d'onglets "Avec table"), inchangé par rapport à avant.
+- Ouvrir l'application sans être connecté (`/`, splash avant `/login`) : un petit texte blanc discret en bas à droite affiche la version courante (ex. "v1.40.0"), identique à `package.json`.
+- Sur `/checkin/[invitationId]` (invitation simple, un seul invité, pas d'étiquette) : la fiche tient sur un iPhone standard sans avoir à défiler pour voir les boutons du bas.
 
 ## Contrôle de version avant merge
 

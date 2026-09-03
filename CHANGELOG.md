@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.40.0] — 2026-09-03
+
+Retour de Gersom (quatre captures d'écran à l'appui : `/approbations`, la fiche « Lys Landu » avec des accompagnants de test marqués "ne viendra pas", `/staff` en scan, `/dashboard`) sur cinq points distincts.
+
+### Corrigé
+- **Le flash de navigation touchait aussi les écrans mono-usage** non couverts par le correctif de la v1.39.2 : `/tables/overflow/[assignmentId]`, `/tables/move-guest/[guestId]`, `/tables/move/[invitationId]`, `/tables/move-multiple`, `/checkin/[invitationId]/merge`, `/approbations/[id]/assign`. Ces six écrans faisaient un retour anticipé **sans TopBar** pendant le chargement — l'en-tête apparaissait brusquement une fois les données chargées, ce qui se lisait comme un flash entre deux pages. Corrigé au passage : `justify-center/50`, une classe Tailwind invalide (jamais appliquée) copiée-collée sur trois de ces écrans.
+- **Bug de données : un accompagnant non prévu faisait retomber `nombre_prevu` à 0** en le marquant "ne viendra pas" après coup. Racine : `add_unplanned_arrival` (le "+" de `GuestArrivalPanel`, consolidé en v1.39.2) n'a jamais compté ces personnes dans `nombre_prevu` — voulu — mais `set_guest_arrival_status` (les boutons ✓/✕ par personne) supposait que **tout** guest de la liste y comptait, et le décrémentait à tort dès qu'on bascule un tel accompagnant vers "ne viendra pas". Nouvelle colonne `guests.is_unplanned` (migration `0048`) : `set_guest_arrival_status`, `remove_invitation_member` et `split_guest_to_new_invitation` ignorent désormais ce delta pour un guest `is_unplanned = true`, quel que soit son `arrival_status` — seul `nombre_arrive` bouge pour lui. Les deux accompagnants de test déjà affectés sur la fiche de Gersom (et l'invitation elle-même) ont été corrigés directement en production, cas isolé confirmé par une requête groupée sur `audit_logs` (2 lignes au total, toutes deux ses propres tests).
+
+### Ajouté
+- **Agent001 (agent scan) voit Agenda (lecture seule) à la place de Staff** dans sa barre de navigation (« il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ») — nouvelle capacité `viewAgenda` en lecture seule pour `agent_checkin` (jamais `manageAgenda`, réservée à admin/directeur). `/staff` reste atteignable pour ce rôle via le badge QR "STAFF" depuis `/scan`, inchangé — seul le raccourci permanent de la barre change.
+- **La carte Staff de `/dashboard` s'ouvre aussi au `placeur`**, comme au directeur de festin (« tu peux ajouter staff dans cette page, un peu comme Rémy sa visibilité ») — la carte résume un total déjà présent dans le dataset du tableau de bord et pointe vers `/staff`, qui continue de montrer au placeur sa vue habituelle (sans table uniquement, pas d'onglets) : `viewAllStaff` (onglets + détail avec table de `/staff` lui-même) reste inchangée.
+- **Numéro de version affiché discrètement sur le splash avant connexion** (bas à droite, ex. « v1.40.0 ») — « chaque fois que j'ouvre, je peux savoir si je suis en train de voir la dernière version ». Importé directement depuis `package.json` dans `app/page.tsx` (source de vérité unique, voir `docs/VERSIONING.md`) plutôt qu'une variable d'environnement dupliquée : ne peut donc jamais dériver du numéro réellement déployé.
+
+### Modifié
+- **`/checkin/[invitationId]` resserré** pour tenir sans défiler sur une fiche simple (« j'aimerais qu'on évite de scroll... un peu comme on avait fait dans le tableau de bord ») — même levier que la compaction de `/dashboard` (v1.34.0) : marges entre cartes réduites (`mb-4`→`mb-3`, `mb-6`→`mb-3`) et le grand nombre « Personnes prévues » resserré (`text-4xl`→`text-3xl`).
+
+### Tests
+- `tests/navigation-resilience.test.ts` : nouveaux tests pour le TopBar pendant le chargement sur les six écrans mono-usage, le remplacement Staff→Agenda pour `agent_checkin`, et le filigrane de version du splash.
+- `tests/permissions.test.ts` : `agent_checkin` a désormais `viewAgenda` (mais pas `manageAgenda`) ; nouveau test pour la carte Staff du placeur sur `/dashboard`.
+- `tests/guest-arrival-panel.test.ts` : nouveau test pour `guests.is_unplanned` et la migration `0048`.
+- `npx tsc --noEmit`, `npm run build`, 214 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- `0048_unplanned_guest_never_counts_toward_prevu.sql` — appliquée et vérifiée en production Supabase le 03/09/2026 (`guests.is_unplanned`, `SECURITY INVOKER`). Données corrigées manuellement pour le seul cas affecté (2 guests de test).
+
+Version: 1.39.2 → 1.40.0
+
 ## [1.39.2] — 2026-09-03
 
 Retour de Gersom sur trois points (captures d'écran de `/approbations`, de la fiche « Lys Landu » et de « Membres du groupe » à l'appui) : le flash de navigation entre deux fiches d'une même route, le doublon d'ajout d'invité sur la fiche de check-in, et le plan de table qui ne semblait pas se mettre à jour.

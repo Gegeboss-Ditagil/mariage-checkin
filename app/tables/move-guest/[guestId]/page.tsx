@@ -156,7 +156,17 @@ export default function DeplacerGuestPage() {
   }
 
   if (loading || !guest || !sourceInvitation) {
-    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom : "à chaque fois que je navigue... un flash, une
+    // petite page qui apparaît") -- sans lui, l'en-tête apparaissait
+    // brusquement une fois les donnees chargees, donnant l'impression d'un
+    // flash entre deux pages differentes.
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title="Déplacer vers une table" backHref="/tables" />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   return (
