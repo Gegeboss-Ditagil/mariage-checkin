@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApprovalIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
+import { usePolling } from '@/hooks/usePolling';
 import type { Role } from '@/lib/types';
 
 /**
@@ -14,22 +15,25 @@ import type { Role } from '@/lib/types';
 export function GuestApprovalsShortcut({ role }: { role: Role }) {
   const [pendingCount, setPendingCount] = useState(0);
 
+  const loadPendingCount = useCallback(async () => {
+    // cache: 'no-store' -- voir AccountMenu.tsx pour le meme correctif
+    // (badge fige par une reponse HTTP mise en cache, retour Gersom du
+    // 02/09/2026).
+    const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json();
+    setPendingCount(data.pending_count || 0);
+  }, []);
+
+  const canPollApprovals = hasCapability(role, 'viewGuestApprovals');
+
   useEffect(() => {
-    if (!hasCapability(role, 'viewGuestApprovals')) return;
-    let active = true;
-    const load = async () => {
-      // cache: 'no-store' -- voir AccountMenu.tsx pour le meme correctif
-      // (badge fige par une reponse HTTP mise en cache, retour Gersom du
-      // 02/09/2026).
-      const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
-      if (!response?.ok || !active) return;
-      const data = await response.json();
-      setPendingCount(data.pending_count || 0);
-    };
-    void load();
-    const timer = window.setInterval(load, 5000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [role]);
+    if (!canPollApprovals) return;
+    void loadPendingCount();
+  }, [loadPendingCount, canPollApprovals]);
+
+  // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts).
+  usePolling(loadPendingCount, canPollApprovals ? 5000 : 0);
 
   if (!hasCapability(role, 'viewGuestApprovals')) return null;
 

@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
-import { ComponentType, useEffect, useState } from 'react';
+import { ComponentType, useCallback, useEffect, useState } from 'react';
 import { Role } from '@/lib/types';
 import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
+import { usePolling } from '@/hooks/usePolling';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
 
@@ -117,22 +118,26 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   const pathname = usePathname();
   const [pendingCount, setPendingCount] = useState(0);
 
+  const loadPendingCount = useCallback(async () => {
+    // cache: 'no-store' -- voir AccountMenu.tsx pour le meme correctif
+    // (badge fige par une reponse HTTP mise en cache, retour Gersom du
+    // 02/09/2026).
+    const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json();
+    setPendingCount(data.pending_count || 0);
+  }, []);
+
+  const canPollApprovals = hasCapability(role, 'viewGuestApprovals');
+
   useEffect(() => {
-    if (!hasCapability(role, 'viewGuestApprovals')) return;
-    let active = true;
-    const load = async () => {
-      // cache: 'no-store' -- voir AccountMenu.tsx pour le meme correctif
-      // (badge fige par une reponse HTTP mise en cache, retour Gersom du
-      // 02/09/2026).
-      const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
-      if (!response?.ok || !active) return;
-      const data = await response.json();
-      setPendingCount(data.pending_count || 0);
-    };
-    void load();
-    const timer = window.setInterval(load, 15000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [role]);
+    if (!canPollApprovals) return;
+    void loadPendingCount();
+  }, [loadPendingCount, canPollApprovals]);
+
+  // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts) :
+  // la mise a jour du badge n'a aucun interet quand l'ecran est en arriere-plan.
+  usePolling(loadPendingCount, canPollApprovals ? 15000 : 0);
 
   const isAdminDirector = role === 'admin' || role === 'directeur';
 

@@ -9,6 +9,7 @@ import { hasCapability } from '@/lib/permissions';
 import { PushNotificationButton } from '@/components/PushNotificationButton';
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
+import { usePolling } from '@/hooks/usePolling';
 
 interface ApprovalListItem {
   id: string;
@@ -150,12 +151,14 @@ export default function ApprobationsPage() {
       setLoading(false);
     }
     loadCurrent();
-    const interval = setInterval(() => { void load(true); }, POLL_INTERVAL_MS);
     return () => {
       active = false;
-      clearInterval(interval);
     };
   }, []);
+
+  // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts) :
+  // le suivi des approbations n'a pas besoin de tourner en arriere-plan.
+  usePolling(() => void load(true), POLL_INTERVAL_MS);
 
   useEffect(() => {
     if (!selectedId) return;

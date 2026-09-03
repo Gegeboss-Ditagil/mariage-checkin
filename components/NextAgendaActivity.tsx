@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
+import { usePolling } from '@/hooks/usePolling';
 import type { Role } from '@/lib/types';
 
 type AgendaItem = { id: string; time_label: string; title: string; completed: boolean };
@@ -24,20 +25,23 @@ type AgendaItem = { id: string; time_label: string; title: string; completed: bo
 export function NextAgendaActivity({ role }: { role: Role }) {
   const [next, setNext] = useState<AgendaItem | null | undefined>(undefined);
 
+  const loadNext = useCallback(async () => {
+    const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json();
+    const items = (data.items || []) as AgendaItem[];
+    setNext(items.find((item) => !item.completed) ?? null);
+  }, []);
+
+  const canPollAgenda = hasCapability(role, 'viewAgenda');
+
   useEffect(() => {
-    if (!hasCapability(role, 'viewAgenda')) return;
-    let active = true;
-    const load = async () => {
-      const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
-      if (!response?.ok || !active) return;
-      const data = await response.json();
-      const items = (data.items || []) as AgendaItem[];
-      setNext(items.find((item) => !item.completed) ?? null);
-    };
-    void load();
-    const timer = window.setInterval(load, 30000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [role]);
+    if (!canPollAgenda) return;
+    void loadNext();
+  }, [loadNext, canPollAgenda]);
+
+  // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts).
+  usePolling(loadNext, canPollAgenda ? 30000 : 0);
 
   if (!hasCapability(role, 'viewAgenda') || next === undefined) return null;
 
