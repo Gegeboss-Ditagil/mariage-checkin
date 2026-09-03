@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.39.2**
+**Version actuelle : 1.40.0**
 **Dernière mise à jour documentaire : 2026-09-03**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.39.2-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.40.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.39.2**.
+- Branche de production : `main`; version proposée : **1.40.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
@@ -36,7 +36,33 @@ Avant toute modification, lire :
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.39.2
+## État fonctionnel v1.40.0
+
+Cette version est consacrée aux **optimisations « jour J »** (~20 tablettes simultanées) et à la traçabilité de la version déployée. **Aucune migration Supabase.**
+
+### Temps réel : le delta au lieu du refetch complet
+- **Un check-in ne re-télécharge plus toute la table.** Chaque check-in est un `UPDATE` d'une seule ligne d'`invitations` ; le payload Realtime (~1 Ko) contenait déjà la ligne, mais chaque écran relançait un `select('*')` complet (~100–300 Ko) — multiplié par chaque tablette ouverte sur l'écran. Désormais la ligne est appliquée localement via `applyRowDelta` (`lib/realtimeDelta.ts`, nouveau) sur `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` (et l'ancienne route `/table/[tableId]`) ainsi que le panneau « Qui est arrivé ? ».
+- **INSERT/DELETE restent debouncés à 400 ms** (rares : réimport CSV) — `lib/debounce.ts` regroupe les rafales en un seul rechargement.
+- **Le panneau « Qui est arrivé ? » filtre sa souscription `guests` localement** (la table n'est pas filtrable par `invitation_id` côté serveur : le lien vit dans `invitation_guests`) via les ids déjà listés, avec debounce 300 ms — une édition d'un invité d'une *autre* invitation ne recharge plus le panneau.
+
+### Polling et connexions
+- **`hooks/usePolling.ts` (nouveau)** : le `setInterval` est suspendu sur `visibilitychange` (téléphone verrouillé, PWA en arrière-plan) et repris au retour au premier plan. Adopté par `AccountMenu` (5 s), `GuestApprovalsShortcut` (5 s), `BottomNav` (15 s), `NextAgendaActivity`, `/staff` (10 s), `/agenda` (10 s) et `/approbations` (10 s) — des dizaines de requêtes inutiles par minute en moins avec ~20 appareils.
+- **Client Supabase navigateur en singleton par onglet** (`lib/supabase/client.ts`) : il était recréé à chaque `load()`, dupliquant l'état Realtime et les websockets ; il n'y a plus qu'une instance partagée et les canaux ne se dupliquent plus.
+
+### Chargements différés
+- **`/search`** : le dataset complet n'est plus fetché au simple montage de la page — seulement quand l'agent bascule en mode « parcourir toutes les invitations » (mode nom sans saisie), avec des colonnes réduites à ce que la liste affiche.
+- **`/tables/move-multiple`** : une seule requête `Promise.all` (invitations + tables + affectations excédentaires) au lieu de deux fetches séquentiels — la sélection n'est qu'un sous-ensemble du dataset complet dont `computeTableCapacities` a besoin.
+- **`xlsx` (~450 Ko) en import dynamique** sur `/admin/import` et `/admin/diffusion` : la bibliothèque n'est chargée que lorsqu'un fichier est réellement ouvert, plus dans le bundle initial de ces pages.
+- **`poweredByHeader: false`** dans `next.config.js` (hygiène, en-tête retiré des réponses).
+
+### Version visible
+- **Numéro de version affiché sur le splash** (badge « v1.40.0 » en bas à droite) : `app/page.tsx` lit `package.json` au build et le passe à `SplashScreen` — plus de doute sur la version réellement déployée.
+
+### Conventions à respecter pour les prochaines pages
+- Toute nouvelle souscription temps réel doit appliquer `applyRowDelta` pour les `UPDATE` (chemin chaud) et débouncer `INSERT`/`DELETE` (400 ms).
+- Tout nouveau sondage doit passer par `usePolling` — jamais de `setInterval` brut ; `createClient()` peut être appelé librement, le singleton garantit une instance unique par onglet.
+- Nouveaux tests : `tests/realtime-delta.test.ts` et `tests/use-polling.test.ts`. Deux assertions périmées de `tests/guest-approvals.test.ts` et `tests/agenda-form.test.ts` ont été alignées sur la source (elles échouaient déjà sur `main` avant ces changements).
+- Validation : **22/22 fichiers de tests passent** (`node --test`) et `tsc --noEmit` ne signale aucune erreur.
 
 - Le flash de navigation entre deux fiches d'une même route dynamique (deux tables, deux invités) a disparu : chaque page réinitialise son état avant de recharger, au lieu d'afficher brièvement l'ancien contenu.
 - Sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés pour conserver la position habituelle de l'agenda; `/dashboard` et `/scan` restent inchangés.

@@ -6,7 +6,15 @@ import { warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
 const SPLASH_DURATION_MS = 3000;
 
-export function SplashScreen({ next, warmApprovals = false }: { next: string; warmApprovals?: boolean }) {
+export function SplashScreen({
+  next,
+  warmApprovals = false,
+  version,
+}: {
+  next: string;
+  warmApprovals?: boolean;
+  version?: string;
+}) {
   const router = useRouter();
   const [fading, setFading] = useState(false);
 
@@ -32,6 +40,17 @@ export function SplashScreen({ next, warmApprovals = false }: { next: string; wa
         (fading ? 'opacity-0' : 'opacity-100')
       }
       style={{ backgroundImage: "url('/images/splash-bg.jpg')" }}
-    />
+    >
+      {/* Numero de version (package.json, lu au build) : toujours savoir sur
+          quelle version on ouvre l'app, sans ouvrir les outils de dev. */}
+      {version ? (
+        <span
+          className="absolute bottom-3 right-4 text-xs font-semibold tracking-wide text-white/80"
+          style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.65)' }}
+        >
+          v{version}
+        </span>
+      ) : null}
+    </div>
   );
 }

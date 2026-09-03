@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.39.2**
+**Version documentaire : 1.40.0**
 **Dernière mise à jour : 2026-09-03**
 
 Avant toute modification, lire dans cet ordre :
@@ -55,11 +55,13 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.39.0 : la création d'une activité permet de choisir les responsables dès la modale « Nouvelle activité », avec les mêmes comptes, invités recherchés et noms libres que la modification.
 - v1.39.1 : les approbations et abonnements push utilisent l'événement de la session; les lectures d'approbations sont sans cache et l'activation push gère iOS installé et Android.
 - v1.39.2 : deux corrections d'affichage/navigation, aucune migration. (1) Le flash de navigation entre deux fiches d'une même route dynamique (`/table/[tableId]`, `/tables/[tableId]`, `/checkin/[invitationId]`, `/checkin/[invitationId]/members`) est corrigé : chaque page réinitialise son état au tout début de l'effet gardé sur le paramètre d'URL, avant de relancer la requête (Next.js réutilise l'instance de composant, l'état ne se réinitialise jamais tout seul). (2) Le "+" de `GuestArrivalPanel` (« Qui est arrivé ? ») appelle désormais `add_unplanned_arrival` au lieu de `add_invitation_member` — la personne ajoutée est nommée ET marquée arrivée immédiatement (déclenche l'assignation de table de réserve en cas de dépassement), réservé à la nouvelle capacité `canAdd` (= `submitGuestApproval`, distincte de `canManage` = `manageMembers` toujours réservée au renommage). L'ancien bouton autonome « + Non prévu » et le lien « Gérer les membres du groupe » ont disparu de `/checkin/[invitationId]` (consolidés dans ce "+" ; la route `/checkin/[invitationId]/members` reste fonctionnelle par URL directe). « 📷 Invité surprise » est inchangé. `/plan-table` reflète maintenant les arrivées ajoutées ainsi, sans changement de code de son côté (son abonnement temps réel était déjà correct).
+- v1.40.0 : optimisations « jour J » + version visible sur le splash, aucune migration. (1) Temps réel : les UPDATE `postgres_changes` sont appliqués localement (`lib/realtimeDelta.ts`) par `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` (+ ancienne route `/table/[tableId]`) et `GuestArrivalPanel` au lieu d'un refetch complet ; INSERT/DELETE restent debouncés à 400 ms ; la souscription `guests` du panneau est filtrée localement par ids déjà listés. (2) `hooks/usePolling.ts` suspend les intervalles (`AccountMenu`, `GuestApprovalsShortcut`, `BottomNav`, `/staff`, `/agenda`, `/approbations`) quand l'onglet est masqué. (3) `lib/supabase/client.ts` : singleton navigateur par onglet. (4) `/search` : dataset complet chargé seulement en mode « parcourir », colonnes réduites ; `/tables/move-multiple` : une requête `Promise.all` ; `xlsx` en import dynamique sur les pages admin ; `poweredByHeader: false`. (5) `app/page.tsx` lit `package.json` (`version`) et le passe à `SplashScreen` (badge « v1.40.0 » en bas à droite).
+
 
 ## Reprise rapide pour Claude AI
 
 1. Commencer par `git fetch origin main` et comparer `HEAD` à `origin/main`; ne jamais supposer qu'un diff transmis est encore manquant.
-2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.39.2`.
+2. Vérifier `package.json` : la version attendue au moment de cette transmission est `1.40.0`.
 3. Pour les approbations, lire ensemble `app/approbations/page.tsx`, `app/approbations/[id]/assign/page.tsx`, `lib/guestApprovalDecide.ts`, `lib/webPush.ts` et la migration `0038`.
 4. Pour la navigation, modifier la source centralisée `components/BottomNav.tsx`; ne pas recopier des menus dans les pages.
 5. Ne pas modifier la règle des rôles sans mettre à jour `lib/permissions.ts`, les routes API, `tests/permissions.test.ts`, `tests/guest-approvals.test.ts` et `docs/BUSINESS_RULES.md` dans le même lot.
