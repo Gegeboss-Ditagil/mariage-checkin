@@ -3,6 +3,32 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.39.2] — 2026-09-03
+
+Retour de Gersom sur trois points (captures d'écran de `/approbations`, de la fiche « Lys Landu » et de « Membres du groupe » à l'appui) : le flash de navigation entre deux fiches d'une même route, le doublon d'ajout d'invité sur la fiche de check-in, et le plan de table qui ne semblait pas se mettre à jour.
+
+### Corrigé
+- **Flash de navigation ("l'ancienne page en premier, puis la nouvelle")** : Next.js réutilise la même instance de composant en passant d'une table (ou d'une fiche invité) à une autre au sein de la même route dynamique — sans réinitialisation explicite au début de l'effet gardé sur le paramètre d'URL, l'ancien contenu restait affiché intégralement pendant que la nouvelle requête était encore en vol. Corrigé sur `/table/[tableId]`, `/tables/[tableId]` (qui n'avait même pas d'état de chargement avant ce correctif), `/checkin/[invitationId]` et `/checkin/[invitationId]/members` : chacun réinitialise désormais son état (et re-affiche « Chargement… ») dès que le paramètre change, avant de relancer la requête.
+- **Plan de table pas à jour après un ajout/placement** : conséquence directe du point suivant — un excédent ajouté via l'ancien "+" (`add_invitation_member`) n'était jamais marqué arrivé, donc `nombre_arrive` ne changeait jamais et `/plan-table` (déjà abonné en temps réel sur `invitations`/`tables`, aucun bug de son côté) n'avait simplement rien de nouveau à refléter. Résolu par la consolidation ci-dessous.
+
+### Modifié
+- **Consolidation de l'ajout d'invité sur `/checkin/[invitationId]`** (retour de Gersom sur la fiche de Lys Landu : « il y a du doublon et puis des trucs qui ne marchent pas... quand on ajoute la personne qui est avec Lys, ça veut dire que par définition on approuve la personne et il faut la placer sur une table... [+Non prévu et Ajouter un invité] sont déjà pris en compte avec le plus »). Trois affordances faisaient à peu près la même chose avec un comportement différent ; il n'en reste plus que deux, cohérents :
+  - Le **"+" de `GuestArrivalPanel`** (« Qui est arrivé ? ») appelle désormais `add_unplanned_arrival` (comme le faisait l'ancien bouton autonome « + Non prévu », retiré) au lieu de `add_invitation_member` : la personne ajoutée est nommée **et marquée arrivée immédiatement**, ce qui déclenche l'assignation de table de réserve en cas de dépassement — au lieu d'être simplement ajoutée à la liste prévue sans jamais apparaître comme arrivée. Nouvelle capacité dédiée `canAdd` (= `submitGuestApproval`), distincte de `canManage` (= `manageMembers`, toujours réservée au renommage) : `agent_checkin` garde la capacité de renommer mais ne voit plus ce bouton — même règle que `/api/members/add-unplanned` depuis la v1.35.0.
+  - Le bouton autonome **« + Non prévu »** (mini-formulaire propre à la page checkin) a disparu, remplacé par le "+" ci-dessus.
+  - Le lien **« Gérer les membres du groupe »** a disparu de la fiche de check-in (« elle ne sert plus à rien parce qu'on peut faire ça directement dans la page ») — la route `/checkin/[invitationId]/members` reste fonctionnelle (accès direct par URL) pour la liste pré-événement et le retrait définitif d'une ligne, simplement plus reliée depuis ce parcours.
+  - **« 📷 Invité surprise » reste inchangé** — toujours utile quand une approbation visuelle stricte est voulue (« si on veut vraiment que la personne ... doit impérativement se faire approuver par photo »).
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` : assertions mises à jour pour le "+" de `GuestArrivalPanel` (`add-unplanned`, `canAdd`, `onAfterAdd`) au lieu de `add`/`canManage` ; suppression des tests sur l'ancien "+ Non prévu" et « Gérer les membres du groupe » de la page checkin.
+- `tests/guest-approval-linked-invitation.test.ts` : titre de test ajusté (retrait de la référence à l'ancien "+ Non prévu" côte à côte).
+- `tests/navigation-resilience.test.ts` : nouveau test vérifiant la réinitialisation d'état sur les quatre pages touchées par le flash de navigation.
+- `npx tsc --noEmit`, `npm run build`, 197 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.39.1 → 1.39.2
+
 ## [1.39.1] — 2026-09-02
 
 ### Corrigé
@@ -22,9 +48,6 @@ Version: 1.39.0 → 1.39.1
 
 ### Tests
 - `tests/agenda-form.test.ts` : non-régression de la sélection des responsables dès la création.
-
-### Migrations
-- Aucune.
 
 Version: 1.38.1 → 1.39.0
 

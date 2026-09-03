@@ -20,7 +20,9 @@ export function GuestArrivalPanel({
   invitation,
   onInvitationUpdate,
   onVisibilityChange,
+  onAfterAdd,
   canManage,
+  canAdd,
   canMove,
 }: {
   invitation: InvitationRow;
@@ -34,10 +36,27 @@ export function GuestArrivalPanel({
   // trouve par Gersom le 29/08/2026 : le panneau (et Mona dedans) disparaissait
   // completement des ce moment-la, plus aucun moyen de l'annuler.
   onVisibilityChange?: (visible: boolean) => void;
+  // Appele apres un ajout reussi (voir saveAdd), avec l'invitation a jour --
+  // permet au parent de declencher l'assignation d'excedent si besoin (le
+  // "+" ajoute desormais quelqu'un DEJA ARRIVE, voir canAdd ci-dessous).
+  onAfterAdd?: (updated: InvitationRow) => void;
   // Meme capacite que le renommage de l'invitation entiere (TopBar) --
   // demande de Gersom le 30/08/2026 : taper un nom modifie directement,
   // plus besoin de passer par "Gerer les membres du groupe" pour renommer.
   canManage?: boolean;
+  // Ajouter quelqu'un qui arrive avec le groupe a la derniere minute : le
+  // "+" appelle desormais add_unplanned_arrival (marque arrive tout de
+  // suite, declenche l'excedent), pas add_invitation_member -- reserve a
+  // submitGuestApproval, PAS a manageMembers (agent_checkin peut renommer
+  // mais ne doit jamais faire apparaitre quelqu'un de deja arrive sans
+  // passer par un placeur). Consolidation du 03/09/2026 (retour de Gersom :
+  // "quand on ajoute la personne qui est avec Lys, ça veut dire que par
+  // définition on approuve la personne et il faut la placer sur une table
+  // ... [le bouton +Non prévu et le bouton Ajouter un invité] sont déjà
+  // pris en compte avec le plus") -- remplace l'ancien "+ Non prévu" qui
+  // vivait dans app/checkin/[invitationId]/page.tsx, avec exactement le
+  // meme comportement (voir /api/members/add-unplanned).
+  canAdd?: boolean;
   // Deplacer UNE personne vers une autre table, separement du reste du
   // groupe -- meme capacite que le deplacement d'une invitation entiere
   // (moveGuests). Demande de Gersom le 30/08/2026 : "ça va faciliter le
@@ -205,7 +224,10 @@ export function GuestArrivalPanel({
     setAddSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/members/add', {
+      // add-unplanned (pas add) : cette personne arrive AVEC le groupe, elle
+      // doit donc etre marquee arrivee immediatement, pas simplement ajoutee
+      // a la liste prevue -- voir canAdd ci-dessus.
+      const res = await fetch('/api/members/add-unplanned', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invitation_id: invitation.id, prenom: newPrenom.trim() || null, nom: newNom.trim() || null }),
@@ -215,11 +237,13 @@ export function GuestArrivalPanel({
         setError(data.error || "Échec de l'ajout");
         return;
       }
-      onInvitationUpdate(data.invitation as InvitationRow);
+      const updated = data.invitation as InvitationRow;
+      onInvitationUpdate(updated);
       await load();
       setAdding(false);
       setNewPrenom('');
       setNewNom('');
+      onAfterAdd?.(updated);
     } catch {
       setError('Erreur réseau — réessayez');
     } finally {
@@ -351,8 +375,9 @@ export function GuestArrivalPanel({
           );
         })}
 
-        {canManage && adding && (
+        {canAdd && adding && (
           <li className="rounded-xl border border-hairline p-2">
+            <p className="mb-1.5 text-xs font-semibold text-text-muted">Invité supplémentaire (non prévu)</p>
             <div className="flex gap-1.5">
               <input
                 autoFocus
@@ -373,19 +398,19 @@ export function GuestArrivalPanel({
                 Annuler
               </button>
               <button type="button" className="text-accent" onClick={saveAdd} disabled={addSubmitting || !online}>
-                Ajouter
+                {addSubmitting ? '…' : !online ? 'HORS LIGNE' : 'Ajouter, déjà arrivé'}
               </button>
             </div>
           </li>
         )}
       </ul>
 
-      {canManage && !adding && (
+      {canAdd && !adding && (
         <button
           type="button"
           onClick={startAdd}
           className="mt-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-hairline text-lg font-bold text-text-faint active:scale-90 transition-transform"
-          aria-label="Ajouter une personne au groupe"
+          aria-label="Ajouter une personne arrivée avec le groupe"
         >
           +
         </button>

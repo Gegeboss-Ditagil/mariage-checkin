@@ -145,6 +145,18 @@ export default function TablePage() {
     const supabase = createClient();
     let active = true;
 
+    // Corrige le 03/09/2026 (retour de Gersom : "je vois comme l'ancienne
+    // page en premier et ensuite je vois la nouvelle") -- Next.js reutilise
+    // cette meme instance de composant en passant d'une table a une autre
+    // (seul tableId change), donc sans ce reset l'ancienne table restait
+    // affichee integralement (loading deja a false depuis le premier
+    // montage) pendant que la nouvelle requete etait encore en vol.
+    setLoading(true);
+    setTable(null);
+    setInvitations([]);
+    setOverflow([]);
+    setOverflowNoms(new Map());
+
     async function load() {
       const [{ data: t }, { data: invs }, { data: ov }] = await Promise.all([
         supabase.from('tables').select('*').eq('id', tableId).maybeSingle(),

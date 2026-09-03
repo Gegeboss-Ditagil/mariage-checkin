@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.39.1**
-**Dernière mise à jour : 2026-09-02**
+**Version documentaire : 1.39.2**
+**Dernière mise à jour : 2026-09-03**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -183,6 +183,16 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Vérifier que `SUPABASE_SERVICE_ROLE_KEY` n'apparaît jamais côté client sur `/approve/[token]` (page publique).
 - Sans les variables d'environnement Twilio SMS configurées sur Vercel : la demande est quand même créée (photo/infos conservées), l'agent voit un message clair indiquant que le SMS n'est pas parti et doit prévenir l'approbateur autrement.
 - Sans `TWILIO_WHATSAPP_NUMBER`/`TWILIO_WHATSAPP_CONTENT_SID_REQUEST` configurés : le canal WhatsApp est silencieusement absent, le SMS continue de fonctionner seul (pas d'erreur visible pour l'agent).
+
+## Flash de navigation + consolidation de l'ajout d'invité — v1.39.2
+
+- Ouvrir `/tables`, entrer sur une table pleine de monde, puis toucher une autre table depuis le lien de retour/recherche sans repasser par un écran de chargement intermédiaire : la fiche de la première table ne doit plus rester affichée pendant que la seconde se charge — attendre soit « Chargement… », soit directement la bonne table, jamais l'ancienne. Refaire le même test via `/table/[tableId]` (scan QR d'une table puis d'une autre) et entre deux fiches `/checkin/[invitationId]` (ouvrir l'invité A depuis une liste, revenir, ouvrir l'invité B).
+- Sur `/checkin/[invitationId]` (fiche d'un groupe, ex. « Lys Landu ») : la fiche ne montre plus qu'un seul bouton « + » dans « Qui est arrivé ? » pour ajouter un accompagnant de dernière minute — plus de bouton « + Non prévu » séparé, plus de lien « Gérer les membres du groupe ».
+- Rôle avec `submitGuestApproval` (placeur/directeur/admin) : toucher le « + » de « Qui est arrivé ? », saisir un nom, valider → la personne apparaît immédiatement dans la liste avec la coche ✓ déjà cochée (arrivée), le total « Actuellement enregistrées » augmente, et si le total dépasse `nombre_prevu`, l'écran de gestion de l'excédent s'ouvre automatiquement (comme avant avec « + Non prévu »).
+- Rôle `agent_checkin` : le « + » de « Qui est arrivé ? » n'apparaît pas (seul le renommage par tap reste disponible s'il a `manageMembers`) ; un appel direct à `POST /api/members/add-unplanned` avec sa session → rejeté (401).
+- Après cet ajout, ouvrir `/plan-table` (ou y être déjà, avec l'abonnement temps réel actif) : le nombre d'arrivés à la table de ce groupe augmente sans recharger la page.
+- « 📷 Invité surprise » reste disponible et inchangé (photo → approbation), séparé du « + » ci-dessus.
+- La route `/checkin/[invitationId]/members` reste accessible par URL directe (retrait/renommage en liste) même si plus aucun bouton n'y mène depuis la fiche de check-in.
 
 ## Contrôle de version avant merge
 

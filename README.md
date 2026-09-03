@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.39.1**
-**Dernière mise à jour documentaire : 2026-09-02**
+**Version actuelle : 1.39.2**
+**Dernière mise à jour documentaire : 2026-09-03**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.39.1-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.39.2-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.39.1**.
+- Branche de production : `main`; version proposée : **1.39.2**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
@@ -36,14 +36,15 @@ Avant toute modification, lire :
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.39.1
+## État fonctionnel v1.39.2
 
+- Le flash de navigation entre deux fiches d'une même route dynamique (deux tables, deux invités) a disparu : chaque page réinitialise son état avant de recharger, au lieu d'afficher brièvement l'ancien contenu.
 - Sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés pour conserver la position habituelle de l'agenda; `/dashboard` et `/scan` restent inchangés.
 - La création d'une activité permet maintenant de choisir ses responsables dès la modale « Nouvelle activité », avec le même picker de recherche que la modification.
 - **`/agenda` : sélecteur de responsables en recherche plein écran**, à la place de la longue liste de cases à cocher — l'équipe s'affiche par défaut, et à partir de 2 caractères la recherche porte aussi sur les invités (pour assigner quelqu'un du cortège aidant à la dernière minute), sans jamais charger toute la liste des invités d'un coup.
 - **`+ Invité` en bouton rond en verre** (au lieu d'un simple lien texte), désormais présent aussi sur `/dashboard` au même endroit qu'`/plan-table` (coin supérieur droit, à côté du menu du compte) — réservé à `addInvitation` (admin/directeur uniquement).
 - **`/admin/users` : bascule Actif/Désactivé en verre liquide** (thème iOS) et **possibilité de changer le rôle/accès d'un compte** directement depuis sa fiche d'édition — le nouvel identifiant (email+mot de passe ou PIN) est requis quand le rôle change, puisque le mode de connexion en dépend.
-- **Invité surprise lié à un groupe déjà invité** : depuis `/checkin/[invitationId]`, un placeur/directeur/admin peut démarrer une demande d'approbation pour une personne arrivée avec le groupe affiché sur la fiche — côté préempli automatiquement, photo prise avec l'appareil natif, nom saisi, puis même circuit d'approbation que `/scan`. Le placement automatique priorise désormais la table de ce groupe avant même la table excédentaire. Coexiste avec le bouton rapide « + Non prévu » (ex-« + Invité supplémentaire (non prévu) »), tous deux réservés au même rôle — jamais `agent_checkin` : « si les scanners scannent, vous dites vous êtes quatre mais dans l'invitation il y a deux, ils ne vont même pas traiter votre demande... c'est les placeurs qui vont gérer le reste ».
+- **Invité surprise lié à un groupe déjà invité** : depuis `/checkin/[invitationId]`, un placeur/directeur/admin peut démarrer une demande d'approbation pour une personne arrivée avec le groupe affiché sur la fiche — côté préempli automatiquement, photo prise avec l'appareil natif, nom saisi, puis même circuit d'approbation que `/scan`. Le placement automatique priorise désormais la table de ce groupe avant même la table excédentaire. Coexiste avec le "+" de « Qui est arrivé ? » (ajout instantané sans photo, voir plus bas), tous deux réservés au même rôle — jamais `agent_checkin` : « si les scanners scannent, vous dites vous êtes quatre mais dans l'invitation il y a deux, ils ne vont même pas traiter votre demande... c'est les placeurs qui vont gérer le reste ».
 - **Placement automatique à l'approbation** : approuver une demande n'exige plus de choisir une table au préalable — la personne est placée automatiquement (table excédentaire en priorité, sinon la table la plus libre du même côté, sinon de l'autre côté, sinon approuvée sans table si tout est plein). Le directeur de festin reste libre de la déplacer ensuite.
 - **Approuver/Refuser directement sur la carte de la liste** `/approbations`, sans ouvrir la fiche détaillée.
 - **Thème « verre liquide » (iOS Liquid Glass) appliqué aux surfaces partagées de toute l'application** (`.card`, lignes d'action, boutons) : flou + saturation + reflet intérieur + ombre flottante, dans les deux thèmes — la barre de navigation du bas avait déjà ce style, il manquait au reste des écrans.
@@ -78,8 +79,8 @@ Avant toute modification, lire :
 - **Historique (`/history`) réservé à l'admin** : les autres rôles (directeur, placeur, agent scan) n'y ont plus accès.
 - **Déplacer une personne seule vers une autre table** : depuis « Qui est arrivé ? », un bouton ⇄ par personne (réservé aux rôles avec la capacité de déplacer) la détache de son groupe et crée une fiche à une seule personne à la table choisie — pour la regrouper avec une invitation déjà présente à cette table, utiliser ensuite « Fusionner avec un autre groupe » depuis la nouvelle fiche.
 - **Bouton central de la barre de navigation adapté au rôle** : Scan pour la plupart des rôles, mais Tableau de bord pour le directeur de festin — son travail commence par surveiller le remplissage. Le directeur possède aussi un onglet Scan dédié à la place de Staff; une fois sur le scanner, le bouton central devient la prise de photo.
-- **« + Invité supplémentaire (non prévu) » ajoute maintenant une personne nommée** (visible avec ✓/✕ dans « Qui est arrivé ? »), tout en gardant le déclenchement de l'assignation à une table de réserve en cas de dépassement de capacité — plus un simple compteur anonyme.
-- **Renommer et ajouter directement depuis la fiche** : taper le nom d'une personne dans « Qui est arrivé ? » le modifie sur place (comme le titre de la fiche) ; un bouton « + » ajoute une personne au groupe sans passer par « Gérer les membres du groupe » — réservé aux rôles avec la capacité de gérer les membres.
+- **Ajout d'un invité consolidé dans « Qui est arrivé ? »** : le bouton « + » de cette liste ajoute une personne nommée **déjà marquée arrivée**, en gardant le déclenchement de l'assignation à une table de réserve en cas de dépassement — l'ancien bouton autonome « + Non prévu » et le lien « Gérer les membres du groupe » ont disparu de la fiche de check-in (consolidés ici), réservé aux rôles avec la capacité de soumettre une approbation d'invité. « 📷 Invité surprise » (approbation photo) reste disponible séparément pour les cas où une vérification visuelle stricte est voulue.
+- **Renommer directement depuis la fiche** : taper le nom d'une personne dans « Qui est arrivé ? » le modifie sur place (comme le titre de la fiche) — réservé aux rôles avec la capacité de gérer les membres.
 - **Thème « Atrium » (clair) / « Maison » (sombre)**, choisi une seule fois à la première connexion puis modifiable à tout moment (menu du compte), avec un mode « Automatique » qui suit le réglage clair/sombre de l'appareil en direct. Toutes les pages en profitent, y compris `/login`.
 - **Arrivée par personne** sur les fiches de groupe : un bouton ✓/✕ par personne nommée (jamais un simple compteur global), toujours réversible, place libérée sans jamais supprimer la personne.
 - **Barre de navigation à 5 icônes** adaptée au rôle : l'admin garde Scan directement, le directeur remplace Staff par Agenda et conserve Tableau de bord au centre ; sur `/scan`, le grand bouton central devient la prise de photo. En portrait la pilule et ses cibles sont plus hautes ; en paysage elle devient une bande verticale au bord droit.
