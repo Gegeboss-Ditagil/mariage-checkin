@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.40.0] — 2026-09-03
+
+Optimisations « jour J » de bout en bout (réseau, temps réel, batterie), pensées pour ~20 tablettes simultanées — et numéro de version désormais visible à l'ouverture de l'app.
+
+### Ajouté
+- **Numéro de version affiché sur le splash** (en bas à droite, ex. « v1.40.0 ») : la source unique est `package.json` (`version`), lu côté serveur au build par `app/page.tsx` et passé à `SplashScreen` — plus aucun doute sur la version déployée quand on ouvre l'app.
+
+### Modifié — performance
+- **Temps réel : delta appliqué localement** (`lib/realtimeDelta.ts`) : un check-in est un UPDATE d'une seule ligne ; le payload `postgres_changes` (~1 Ko) est désormais appliqué directement à l'état local de `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` (et l'ancienne route `/table/[tableId]`) et de `GuestArrivalPanel`, au lieu de re-télécharger toute la table (~100–300 Ko) sur chaque tablette ouverte. `INSERT`/`DELETE` (rares : réimport CSV) restent regroupés par debounce 400 ms. `GuestArrivalPanel` filtre en plus localement sa souscription sur `guests` (non filtrable par invitation côté serveur) : une édition d'un invité d'une autre invitation ne recharge plus le panneau.
+- **Le polling se met en pause hors premier plan** (`hooks/usePolling.ts`) : les intervalles de `AccountMenu` (5 s), `GuestApprovalsShortcut` (5 s), `BottomNav` (15 s), `/staff` (10 s), `/agenda` (10 s) et `/approbations` (10 s) sont suspendus quand l'écran est verrouillé ou l'app en arrière-plan, et repris au retour — des dizaines de requêtes inutiles par minute en moins avec ~20 appareils.
+- **Client Supabase navigateur en singleton** (`lib/supabase/client.ts`) : une seule instance par onglet au lieu d'une recréation à chaque chargement — les canaux Realtime ne se dupliquent plus.
+- **`/search`** : le dataset complet n'est plus chargé à l'ouverture de la page, seulement quand l'agent bascule en mode « parcourir toutes les invitations », avec des colonnes réduites au strict nécessaire.
+- **`/tables/move-multiple`** : une seule requête `Promise.all` au lieu de deux fetches séquentiels (les invitations sélectionnées sont un sous-ensemble du dataset, `usages` a besoin du dataset complet).
+- **`xlsx` (~450 Ko) chargé à la demande** sur `/admin/import` et `/admin/diffusion`, uniquement quand un fichier est réellement ouvert.
+- `next.config.js` : `poweredByHeader: false`.
+
+### Tests
+- Nouveaux `tests/realtime-delta.test.ts` et `tests/use-polling.test.ts` (delta par id, pause/reprise de l'intervalle sur `visibilitychange`).
+- `tests/guest-approvals.test.ts` et `tests/agenda-form.test.ts` : assertions périmées alignées sur la source (elles échouaient déjà sur `main` avant ces changements).
+- `tsc --noEmit` et 22 fichiers de tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.39.2 → 1.40.0
+
+
 ## [1.39.2] — 2026-09-03
 
 Retour de Gersom sur trois points (captures d'écran de `/approbations`, de la fiche « Lys Landu » et de « Membres du groupe » à l'appui) : le flash de navigation entre deux fiches d'une même route, le doublon d'ajout d'invité sur la fiche de check-in, et le plan de table qui ne semblait pas se mettre à jour.

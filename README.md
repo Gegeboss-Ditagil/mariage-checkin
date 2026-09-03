@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.39.2**
+**Version actuelle : 1.40.0**
 **Dernière mise à jour documentaire : 2026-09-03**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.39.2-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.40.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.39.2**.
+- Branche de production : `main`; version proposée : **1.40.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
@@ -36,7 +36,11 @@ Avant toute modification, lire :
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.39.2
+## État fonctionnel v1.40.0
+
+- **Le temps réel ne re-télécharge plus toute la table à chaque événement** : un check-in (UPDATE d'une ligne) est appliqué localement sur `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` et le panneau « Qui est arrivé ? » — le payload Realtime (~1 Ko) remplace un rechargement complet (~100–300 Ko) sur chaque tablette ouverte.
+- **Le polling se met en pause hors premier plan** (badges d'approbations, agenda, staff, approbations) et **le client Supabase navigateur est un singleton par onglet** — moins de requêtes et de websockets avec ~20 tablettes simultanées.
+- **Numéro de version affiché sur le splash** (en bas à droite), source unique `package.json` lu au build.
 
 - Le flash de navigation entre deux fiches d'une même route dynamique (deux tables, deux invités) a disparu : chaque page réinitialise son état avant de recharger, au lieu d'afficher brièvement l'ancien contenu.
 - Sur `/agenda`, les raccourcis latéraux `Agenda` et `Bord` sont inversés pour conserver la position habituelle de l'agenda; `/dashboard` et `/scan` restent inchangés.
