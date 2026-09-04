@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.41.1] — 2026-09-04
+
+Alerte CodeQL ("DOM text reinterpreted as HTML") sur `components/GuestApprovalCaptureFlow.tsx` — l'aperçu de la photo capturée (`preview`, un état React alimenté par `URL.createObjectURL`) était rendu directement comme `src` d'`<img>`. En pratique `preview` ne peut jamais être autre chose qu'une URL `blob:` locale, mais l'analyse statique ne peut pas le prouver à partir du seul type `string`.
+
+### Corrigé
+- **Garde-fou explicite sur l'aperçu photo** : `safePreview` ne laisse passer que les valeurs commençant par `blob:` avant de les rendre comme `src` — rend la contrainte vérifiable statiquement (satisfait CodeQL) sans changer le comportement (la valeur était déjà toujours une URL blob: locale en pratique).
+
+### Tests
+- `tests/guest-approval-linked-invitation.test.ts` : nouveau test vérifiant le garde-fou `safePreview` et l'absence de `<img src={preview}>` non filtré.
+- `npx tsc --noEmit`, `npm run build`, 218 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.41.0 → 1.41.1
+
 ## [1.41.0] — 2026-09-03
 
 Retour de Gersom : quand l'événement est plein, approuver un invité surprise ne permettait pas de le placer sur une table — l'écran d'assignation ne proposait que les tables avec assez de places libres et le RPC refusait tout dépassement (`target_capacity_exceeded`), l'invité approuvé restait sans table.
