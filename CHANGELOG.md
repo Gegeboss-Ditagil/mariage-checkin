@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.41.3] — 2026-09-04
+
+Suite de la v1.41.2 : le commentaire de suppression CodeQL documenté par GitHub (`codeql[js/xss-through-dom]`) sur `components/GuestApprovalCaptureFlow.tsx` n'avait en réalité aucun effet — confirmé empiriquement sur PR #68 avec deux placements essayés (ligne précédente isolée, commentaire de fin de ligne), l'alerte étant relevée à l'identique aux deux scans suivants. Ce repo utilise le Default setup de GitHub pour CodeQL (aucun `.github/workflows/*codeql*` versionné), qui ne semble pas traiter ces commentaires de suppression inline comme le ferait un Advanced setup. Gersom a rejeté l'alerte manuellement (faux positif) dans l'onglet Security → Code scanning de GitHub.
+
+### Corrigé
+- **Nettoyage du commentaire de suppression inefficace** : `components/GuestApprovalCaptureFlow.tsx` ne porte plus le commentaire `codeql[js/xss-through-dom]` (sans effet, trompeur) ; le garde-fou `safePreview` (seule protection ayant un effet réel, même non reconnue par CodeQL comme sanitizer) reste inchangé, avec un commentaire qui documente l'historique complet et le rejet manuel de l'alerte.
+- `tests/guest-approval-linked-invitation.test.ts` : le test de régression ne vérifie plus la présence du commentaire de suppression (retiré), seulement le garde-fou de type.
+
+### Tests
+- `npx tsc --noEmit`, `npm run build`, 218 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.41.2 → 1.41.3
+
 ## [1.41.2] — 2026-09-04
 
 Suite immédiate de la v1.41.1 : le commit contenant le garde-fou `safePreview` a été fusionné (PR #67) avant que le second commit — la suppression CodeQL documentée qui règle réellement l'alerte — n'ait fini de se propager, donc `main` s'est retrouvé avec le correctif incomplet (le garde-fou seul ne suffit pas, CodeQL ne reconnaît pas `.startsWith()` comme un sanitizer pour `js/xss-through-dom`, confirmé par le check CodeQL toujours en échec sur ce commit).

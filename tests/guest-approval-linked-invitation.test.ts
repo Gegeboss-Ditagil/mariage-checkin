@@ -70,14 +70,17 @@ test('GuestApprovalCaptureFlow saute l\'étape "quel côté" quand initialCote e
 // qu'il s'agit bien d'une URL blob: locale. Un garde-fou explicite (préfixe
 // whitelist) rend la contrainte vérifiable statiquement, mais CodeQL ne
 // reconnaît pas `.startsWith()` comme un sanitizer pour cette requête (alerte
-// toujours levée après le garde-fou, vérifié sur PR #67) -- suppression
-// documentée en complément, avec justification (blob: same-origin, jamais de
-// script exécutable via <img src>).
-test("l'aperçu photo de GuestApprovalCaptureFlow ne peut atteindre l'attribut src qu'en tant qu'URL blob: locale (garde-fou + suppression CodeQL documentée)", () => {
+// toujours levée après le garde-fou, vérifié sur PR #67), et le commentaire
+// de suppression inline documenté par GitHub n'a lui non plus aucun effet en
+// Default setup (deux placements essayés sur PR #68, alerte relevée à
+// l'identique à chaque scan) -- alerte rejetée manuellement comme faux
+// positif dans l'onglet Security de GitHub le 04/09/2026 (blob: same-origin,
+// jamais de script exécutable via <img src>). Le garde-fou reste en code
+// pour la clarté et la robustesse, même sans effet sur CodeQL.
+test("l'aperçu photo de GuestApprovalCaptureFlow ne peut atteindre l'attribut src qu'en tant qu'URL blob: locale (garde-fou de type)", () => {
   assert.match(captureFlowSource, /const safePreview = preview\.startsWith\('blob:'\) \? preview : '';/);
   assert.match(captureFlowSource, /<img src=\{safePreview\}/);
   assert.doesNotMatch(captureFlowSource, /<img src=\{preview\}/);
-  assert.match(captureFlowSource, /codeql\[js\/xss-through-dom\]/);
 });
 
 // Le "+ Non prévu" autonome de cette page a disparu le 03/09/2026 (consolide
