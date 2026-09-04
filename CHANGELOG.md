@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.41.0] — 2026-09-03
+
+Retour de Gersom : quand l'événement est plein, approuver un invité surprise ne permettait pas de le placer sur une table — l'écran d'assignation ne proposait que les tables avec assez de places libres et le RPC refusait tout dépassement (`target_capacity_exceeded`), l'invité approuvé restait sans table.
+
+### Ajouté
+- **Forçage d'assignation sur une table pleine** (`supabase/migrations/0049_force_assign_guest_approval.sql`, paramètre `p_force` ajouté à `assign_table_to_guest_approval_strict`, comportement strict par défaut inchangé) : un placeur/directeur/admin peut désormais forcer l'invité approuvé sur la table choisie même au-delà de sa capacité (une chaise en plus, même philosophie qu'un déplacement, migration 0008). Une réorganisation éventuelle reste possible mais ses destinations restent strictes — on ne déplace jamais quelqu'un vers une autre table déjà pleine ; les arrivés ne sont jamais déplacés. Le forçage est tracé dans `audit_logs` (`details.force = true`) pour rester réconciliable avec la capacité officielle (400 places / absolue 410).
+- **Toggle « Forcer le placement » sur `/approbations/[id]/assign`** (`app/approbations/[id]/assign/page.tsx`) : quand aucune table n'a assez de places, l'agent bascule en « toutes les tables » et peut valider sans réorganisation complète. L'erreur `target_capacity_exceeded` renvoie explicitement vers ce toggle. `app/api/guest-approvals/[id]/assign-table/route.ts` transmet `p_force` au RPC.
+- `tests/guest-approval-force-assign.test.ts` : 3 tests — l'écran propose le forçage, l'API transmet `p_force`, la migration 0049 permet le forçage sans casser le comportement strict.
+
+### Corrigé
+- `tests/navigation-resilience.test.ts` : la fenêtre de caractères `{0,200}` avant `<TopBar>` sur `/tables/move-multiple` était trop serrée depuis l'ajout du commentaire explicatif du correctif flash (2 lignes) — élargie à `{0,400}`.
+
+### Tests
+- Nouveau `tests/guest-approval-force-assign.test.ts` (3 tests).
+- `tsc --noEmit`, 23 fichiers de tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- `0049_force_assign_guest_approval.sql` (appliquer en production : `p_force boolean default false` ajouté à `assign_table_to_guest_approval_strict`).
+
+Version: 1.40.0 → 1.41.0
+
+
 ## [1.40.0] — 2026-09-03
 
 Optimisations « jour J » de bout en bout (réseau, temps réel, batterie), pensées pour ~20 tablettes simultanées — et numéro de version désormais visible à l'ouverture de l'app.

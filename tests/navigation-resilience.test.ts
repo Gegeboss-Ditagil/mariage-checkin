@@ -269,7 +269,7 @@ test("le flash de navigation touchait aussi les ecrans mono-usage (deplacer/gere
     assert.doesNotMatch(source, /className="[^"]*justify-center\/50/, path);
   }
   const moveMultiple = readFileSync(new URL('../app/tables/move-multiple/page.tsx', import.meta.url), 'utf8');
-  assert.match(moveMultiple, /if \(loading\) \{[\s\S]{0,200}<TopBar/);
+  assert.match(moveMultiple, /if \(loading\) \{[\s\S]{0,400}<TopBar/);
   const assignPage = readFileSync(new URL('../app/approbations/[id]/assign/page.tsx', import.meta.url), 'utf8');
   assert.match(assignPage, /if \(loading \|\| !request\) \{[\s\S]{0,500}<TopBar/);
 });

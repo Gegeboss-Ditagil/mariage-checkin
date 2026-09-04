@@ -23,6 +23,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const body = await req.json().catch(() => ({}));
   const tableId = typeof body.table_id === 'string' ? body.table_id : null;
   const relocations = Array.isArray(body.relocations) ? body.relocations : [];
+  // v1.41.0, retour de Gersom : quand l'événement est plein, l'agent doit
+  // pouvoir forcer l'invité approuvé sur la table choisie (au-delà de la
+  // capacité, comme une chaise en plus lors d'un déplacement 0008) au lieu
+  // d'être bloqué sans aucune table disponible. Le défaut reste strict.
+  const force = body.force === true;
   if (!tableId) {
     return NextResponse.json({ error: 'table_id_required' }, { status: 400 });
   }
@@ -47,6 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       p_table_id: tableId,
       p_agent_id: user.id,
       p_relocations: relocations,
+      p_force: force,
     })
     .single();
 

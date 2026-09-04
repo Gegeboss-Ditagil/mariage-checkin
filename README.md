@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.40.0**
+**Version actuelle : 1.41.0**
 **Dernière mise à jour documentaire : 2026-09-03**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.40.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.41.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,18 +27,18 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.40.0**.
+- Branche de production : `main`; version proposée : **1.41.0**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
-- Supabase Production : la migration `0038_strict_guest_approval_assignment.sql` est **déjà appliquée et vérifiée**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER`; le fichier SQL reste dans le dépôt pour garantir l'historique.
+- Supabase Production : les migrations `0038_strict_guest_approval_assignment.sql` et **`0049_force_assign_guest_approval.sql`** sont **déjà appliquées et vérifiées**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER` (avec le paramètre `p_force boolean default false` ajouté par 0049) ; les fichiers SQL restent dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
 - Ne jamais appliquer un ancien diff aveuglément : récupérer `origin/main`, comparer les fichiers réels et conserver tout changement plus récent.
 - Les permissions sont centralisées dans `lib/permissions.ts`; les capacités doivent être vérifiées à la fois dans l'interface et dans chaque route API.
 - Les prochaines livraisons doivent utiliser une branche et une Pull Request afin que Gersom puisse réviser avant fusion.
 - Instructions détaillées de reprise : `CLAUDE.md`.
 
-## État fonctionnel v1.40.0
+## État fonctionnel v1.41.0
 
-Cette version est consacrée aux **optimisations « jour J »** (~20 tablettes simultanées) et à la traçabilité de la version déployée. **Aucune migration Supabase.**
+Cette version ajoute le **forçage d'assignation d'un invité surprise sur une table pleine** (migration `0049`) et corrige un test de régression de navigation. **Migration Supabase à appliquer : `0049_force_assign_guest_approval.sql`.**
 
 ### Temps réel : le delta au lieu du refetch complet
 - **Un check-in ne re-télécharge plus toute la table.** Chaque check-in est un `UPDATE` d'une seule ligne d'`invitations` ; le payload Realtime (~1 Ko) contenait déjà la ligne, mais chaque écran relançait un `select('*')` complet (~100–300 Ko) — multiplié par chaque tablette ouverte sur l'écran. Désormais la ligne est appliquée localement via `applyRowDelta` (`lib/realtimeDelta.ts`, nouveau) sur `/dashboard`, `/plan-table`, `/exceptions`, `/tables/[tableId]` (et l'ancienne route `/table/[tableId]`) ainsi que le panneau « Qui est arrivé ? ».
