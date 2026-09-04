@@ -13,6 +13,10 @@ export function SplashScreen({
 }: {
   next: string;
   warmApprovals?: boolean;
+  // Numero de version affiche discretement en bas a droite (ex. "v1.39.2"),
+  // uniquement fourni par app/page.tsx (splash avant connexion) -- absent
+  // sur l'usage post-connexion (app/dashboard/page.tsx), qui n'a pas ce
+  // besoin de tracabilite.
   version?: string;
 }) {
   const router = useRouter();
@@ -41,16 +45,11 @@ export function SplashScreen({
       }
       style={{ backgroundImage: "url('/images/splash-bg.jpg')" }}
     >
-      {/* Numero de version (package.json, lu au build) : toujours savoir sur
-          quelle version on ouvre l'app, sans ouvrir les outils de dev. */}
-      {version ? (
-        <span
-          className="absolute bottom-3 right-4 text-xs font-semibold tracking-wide text-white/80"
-          style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.65)' }}
-        >
+      {version && (
+        <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-white/70">
           v{version}
         </span>
-      ) : null}
+      )}
     </div>
   );
 }

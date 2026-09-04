@@ -29,13 +29,17 @@ test('staff est accessible a tous les roles operationnels, visibilite en lecture
   assert.equal(hasCapability('visibilite', 'checkin'), false);
 });
 
-test("l'agenda du jour J est reserve aux roles admin et directeur", () => {
+test("l'agenda du jour J se modifie seulement en admin/directeur ; agent_checkin le consulte en lecture seule depuis le 03/09/2026 (retour de Gersom : Agenda remplace Staff dans sa barre du bas)", () => {
   for (const role of ['admin', 'directeur'] as const) {
     assert.equal(hasCapability(role, 'viewAgenda'), true);
     assert.equal(hasCapability(role, 'manageAgenda'), true);
     assert.equal(canAccessPath(role, '/agenda'), true);
   }
-  for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) {
+  // agent_checkin : viewAgenda mais jamais manageAgenda (lecture seule).
+  assert.equal(hasCapability('agent_checkin', 'viewAgenda'), true);
+  assert.equal(hasCapability('agent_checkin', 'manageAgenda'), false);
+  assert.equal(canAccessPath('agent_checkin', '/agenda'), true);
+  for (const role of ['placeur', 'visibilite'] as const) {
     assert.equal(hasCapability(role, 'viewAgenda'), false);
     assert.equal(hasCapability(role, 'manageAgenda'), false);
     assert.equal(canAccessPath(role, '/agenda'), false);
@@ -51,6 +55,16 @@ test('la visibilite des lignes staff est restreinte selon le role', () => {
   assert.equal(hasCapability('agent_checkin', 'viewAllStaff'), false);
   assert.equal(isStaffWithoutTable({ tags: ['Côté_Gege', 'no-table'] }), true);
   assert.equal(isStaffWithoutTable({ tags: ['SERVICES', 'T030'] }), false);
+});
+
+test("la carte Staff de /dashboard s'ouvre aussi au placeur (comme le directeur), sans changer ce que /staff lui montre ensuite", () => {
+  // Retour de Gersom le 03/09/2026 : "tu peux ajouter staff dans cette
+  // page [/dashboard]. Un peu comme Rémy sa visibilité sur cette page."
+  // La carte resume un total deja present dans le dataset du tableau de
+  // bord et pointe vers /staff, qui continue de filtrer selon viewAllStaff
+  // (inchangee, voir le test precedent) -- seule la carte-resume s'ouvre.
+  const dashboardSource = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');
+  assert.match(dashboardSource, /const canSeeStaffSection = hasCapability\(role, ['"]viewAllStaff['"]\) \|\| role === ['"]placeur['"]/);
 });
 
 test('la page staff conserve le filtrage serveur et ne lit pas directement invitations', () => {

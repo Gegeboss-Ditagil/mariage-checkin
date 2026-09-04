@@ -586,8 +586,16 @@ export default function CheckinPage() {
   }
 
   if (!invitation) {
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom : "à chaque fois que je navigue... un flash, une
+    // petite page qui apparaît") -- cette fiche est la plus visitee de
+    // l'application (chaque check-in y passe), donc l'ancien flash "pas
+    // d'en-tete puis en-tete" y etait particulierement visible.
     return (
-      <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title="Chargement…" backHref="/scan" />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
     );
   }
 
@@ -772,8 +780,14 @@ export default function CheckinPage() {
     <div className="flex min-h-dvh flex-col">
       <TopBar title={invitation.nom_affichage} backHref="/scan" onTitleClick={canRename ? startRename : undefined} />
 
-      <div className="flex-1 px-4 py-6">
-        <div className="card mb-4 space-y-1 text-center">
+      {/* Densite resserree le 03/09/2026 (retour de Gersom : "j'aimerais qu'on
+          évite de scroll dans l'application... un peu comme on avait fait
+          dans le tableau de bord") -- meme levier que /dashboard : marges
+          entre cartes reduites (mb-4->mb-3, mb-6->mb-3) et le grand nombre
+          resserre (text-4xl->text-3xl), pour qu'une fiche simple (un seul
+          invite, pas d'etiquette) tienne sans defiler sur un iPhone. */}
+      <div className="flex-1 px-4 py-4">
+        <div className="card mb-3 space-y-1 text-center">
           {invitationTable && (
             <p className="text-sm font-semibold uppercase tracking-wide text-accent">
               Table {invitationTable.number}
@@ -782,14 +796,14 @@ export default function CheckinPage() {
             </p>
           )}
           <p className="text-sm uppercase tracking-wide text-text-faint">Personnes prévues</p>
-          <p className="font-display text-4xl font-bold ">{invitation.nombre_prevu}</p>
+          <p className="font-display text-3xl font-bold ">{invitation.nombre_prevu}</p>
           <p className="text-sm text-text-faint">Actuellement enregistrées : {invitation.nombre_arrive}</p>
           {invitation.ne_viendra_pas && (
             <p className="text-sm font-semibold text-status-over">Marqué "ne viendra pas"</p>
           )}
         </div>
 
-        <div className="card mb-4 flex flex-wrap items-center justify-center gap-2 py-3">
+        <div className="card mb-3 flex flex-wrap items-center justify-center gap-2 py-2">
           {invitation.notes?.toLowerCase().includes('approuvé') && (
             <span className="rounded-full bg-status-complete/15 px-3 py-1 text-xs font-bold text-status-complete">✓ Invitation approuvée</span>
           )}
@@ -832,7 +846,7 @@ export default function CheckinPage() {
         )}
 
         {(invitation.tags.length > 0 || canManageTags) && (
-          <div className="mb-4 rounded-xl2 border-2 border-hairline bg-surface p-3">
+          <div className="mb-3 rounded-xl2 border-2 border-hairline bg-surface p-3">
             <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
             {invitation.tags.length === 0 && <p className="mb-2 text-xs text-text-faint">Aucune étiquette pour l'instant.</p>}
             <div className={canManageTags ? 'mb-2 flex flex-wrap gap-2' : 'flex flex-wrap gap-2'}>
@@ -938,7 +952,7 @@ export default function CheckinPage() {
           <button
             type="button"
             disabled={noShowSubmitting || !online}
-            className="action-row-muted mb-6 disabled:opacity-40"
+            className="action-row-muted mb-3 disabled:opacity-40"
             onClick={() => handleToggleNoShow(!invitation.ne_viendra_pas)}
           >
             {invitation.ne_viendra_pas

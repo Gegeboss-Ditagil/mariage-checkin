@@ -219,3 +219,36 @@ test('la route de deplacement de personne utilise la capacite moveGuests central
   assert.match(moveRouteSource, /hasCapability\(user\.role, 'moveGuests'\)/);
   assert.match(moveRouteSource, /split_guest_to_new_invitation/);
 });
+
+// Corrige le 03/09/2026 (retour de Gersom, capture d'ecran : "Lys Landu"
+// retombe a "PERSONNES PREVUES : 0" apres avoir ajoute puis marque "ne
+// viendra pas" des accompagnants non prevus depuis le "+" consolide de
+// GuestArrivalPanel). Racine : add_unplanned_arrival n'a jamais compte ces
+// personnes dans nombre_prevu (voulu), mais set_guest_arrival_status
+// supposait que TOUT guest en comptait un, et le decrementait a tort des
+// qu'on bascule un tel accompagnant en 'ne_viendra_pas'.
+test('guests.is_unplanned distingue un accompagnant ajoute via add_unplanned_arrival ; ses allers-retours de statut ne touchent plus jamais nombre_prevu', () => {
+  const migrationSource = readFileSync(
+    new URL('../supabase/migrations/0048_unplanned_guest_never_counts_toward_prevu.sql', import.meta.url),
+    'utf8'
+  );
+  assert.match(migrationSource, /alter table guests add column if not exists is_unplanned boolean not null default false/);
+  assert.match(migrationSource, /values \(v_inv\.event_id, v_nom, v_prenom, coalesce\(v_affichage, 'Invité sans nom'\), 'arrive', true\)/);
+  // set_guest_arrival_status : le delta sur nombre_prevu est desormais
+  // conditionne a `not v_is_unplanned`.
+  assert.match(
+    migrationSource,
+    /if not v_is_unplanned then\s*\n\s*if v_old_status = 'ne_viendra_pas' then v_prevu_delta := v_prevu_delta \+ 1; end if;\s*\n\s*if p_status = 'ne_viendra_pas' then v_prevu_delta := v_prevu_delta - 1; end if;\s*\n\s*end if;/
+  );
+  // remove_invitation_member et split_guest_to_new_invitation : un guest
+  // is_unplanned ne redecremente jamais nombre_prevu en le retirant/
+  // deplacant, quel que soit son arrival_status.
+  assert.match(migrationSource, /v_new_prevu := case\s*\n\s*when v_is_unplanned then v_inv\.nombre_prevu/);
+  assert.match(migrationSource, /v_new_prevu := case\s*\n\s*when v_is_unplanned then v_source\.nombre_prevu/);
+  // La nouvelle fiche issue d'un deplacement individuel reste "0 prevue"
+  // pour un guest is_unplanned, plutot que de silencieusement le compter.
+  assert.match(migrationSource, /case when v_is_unplanned then 0 else 1 end,/);
+
+  const typesSource = readFileSync(new URL('../lib/types.ts', import.meta.url), 'utf8');
+  assert.match(typesSource, /is_unplanned: boolean;/);
+});

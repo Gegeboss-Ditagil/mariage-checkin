@@ -90,6 +90,10 @@ export interface GuestRow {
   notes: string | null;
   created_at: string;
   arrival_status: GuestArrivalStatus;
+  // Ajoute via add_unplanned_arrival (le "+" de GuestArrivalPanel) : ne
+  // compte jamais dans nombre_prevu, meme apres un aller-retour de
+  // arrival_status -- voir la migration 0048.
+  is_unplanned: boolean;
 }
 
 export interface QrCodeRow {

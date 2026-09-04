@@ -160,7 +160,16 @@ export default function DeplacerInvitationPage() {
   }
 
   if (loading || !invitation) {
-    return <div className="flex min-h-dvh items-center justify-center/50">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom sur le flash de navigation) -- evite l'apparition
+    // brusque de l'en-tete une fois les donnees chargees. Corrige au passage
+    // "justify-center/50", une classe Tailwind invalide (jamais appliquee).
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title="Déplacer vers une table" backHref="/tables" />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   return (

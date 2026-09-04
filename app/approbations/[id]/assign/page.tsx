@@ -55,15 +55,22 @@ export default function AssignGuestApprovalTablePage() {
 
   const mode: 'assign' | 'reserve' = request?.statut === 'en_attente' ? 'reserve' : 'assign';
 
+  // v1.41.0, retour de Gersom : « si j'approuve quelqu'un, il faut bien le
+  // mettre quelque part ». Quand l'événement est plein, la liste vide
+  // bloquait tout placement — un invité surprise approuvé doit pouvoir être
+  // forcé sur la table choisie (une chaise de plus, comme lors d'un
+  // déplacement 0008), jamais laissé sans table.
+  const [force, setForce] = useState(false);
   const recommendations = useMemo(() => {
     const needed = request?.nombre_invites || 1;
     return usages
-      .filter((usage) => usage.libresEstimees >= needed)
+      .filter((usage) => force || usage.libresEstimees >= needed)
       .sort((a, b) => {
-        const priority = (usage: TableCapacity) => usage.table.number === 41 ? 0 : usage.table.is_reserve ? 1 : 2;
+        const priority = (usage: TableCapacity) =>
+          usage.libresEstimees >= needed ? (usage.table.number === 41 ? 0 : usage.table.is_reserve ? 1 : 2) : 3;
         return priority(a) - priority(b) || a.table.number - b.table.number;
       });
-  }, [request?.nombre_invites, usages]);
+  }, [request?.nombre_invites, usages, force]);
 
   useEffect(() => {
     let active = true;
@@ -124,6 +131,7 @@ export default function AssignGuestApprovalTablePage() {
               : {
                   table_id: chosenTableId,
                   relocations: relocationIds.map((invitation_id) => ({ invitation_id, destination_table_id: relocationTableId })),
+                  force,
                 }
           ),
         }
@@ -137,9 +145,11 @@ export default function AssignGuestApprovalTablePage() {
               ? 'Cette demande a déjà été décidée entre-temps — actualisez la liste.'
               : data.error?.includes('arrived_guest_cannot_move')
                 ? 'Une personne sélectionnée est déjà arrivée et ne peut plus être déplacée.'
-                : data.error?.includes('capacity_exceeded')
-                  ? 'La capacité a changé entre-temps. Actualisez les tables et recommencez.'
-                  : data.error || 'Échec de l\'opération'
+                : data.error?.includes('target_capacity_exceeded')
+                  ? 'Table pleine — activez « Forcer le placement » pour asseoir l’invité quand même.'
+                  : data.error?.includes('capacity_exceeded')
+                    ? 'La capacité a changé entre-temps. Actualisez les tables et recommencez.'
+                    : data.error || 'Échec de l\'opération'
         );
         setSubmitting(false);
         return;
@@ -172,7 +182,17 @@ export default function AssignGuestApprovalTablePage() {
   }
 
   if (loading || !request) {
-    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom sur le flash de navigation). `mode` retombe sur
+    // 'assign' tant que `request` n'est pas charge (voir sa definition
+    // ci-dessus), donc ce meme titre par defaut reste coherent avec le
+    // premier rendu une fois les donnees arrivees.
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title={mode === 'reserve' ? 'Réserver une table' : 'Assigner une table'} backHref="/approbations" />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   const targetUsage = usages.find((u) => u.table.id === chosenTableId) || null;
@@ -219,7 +239,28 @@ export default function AssignGuestApprovalTablePage() {
             </p>
           </div>
           {recommendations.length === 0 ? (
-            <p className="text-sm font-semibold text-status-partial">Aucune table n’a assez de places libres pour accueillir ce groupe.</p>
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-status-partial">
+                Aucune table n’a assez de places libres pour accueillir ce groupe (événement complet).
+              </p>
+              {mode === 'assign' && (
+                <>
+                  <p className="text-sm text-text-muted">
+                    Vous pouvez quand même forcer le placement : l’invité sera assis sur la table choisie, avec une chaise ajoutée au-delà de sa
+                    capacité (comme lors d’un déplacement).
+                  </p>
+                  <label className="flex items-start gap-3 rounded-xl2 border border-hairline bg-surface p-3">
+                    <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} className="mt-1 h-5 w-5" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">Forcer le placement sur une table pleine</span>
+                      <span className="block text-xs text-text-muted">
+                        Toutes les tables deviennent choisissables, même au-delà de leur capacité. Le dépassement est tracé dans l’audit.
+                      </span>
+                    </span>
+                  </label>
+                </>
+              )}
+            </div>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {recommendations.map((usage) => {
@@ -252,6 +293,11 @@ export default function AssignGuestApprovalTablePage() {
               <p className="text-sm text-text-muted">
                 Cette table serait trop pleine. Choisissez au moins {shortage} place{shortage > 1 ? 's' : ''} parmi les invités non arrivés, puis leur nouvelle table.
               </p>
+              {force && (
+                <p className="text-sm text-text-muted">
+                  En mode forcé, cette réorganisation est optionnelle : validez sans rien cocher pour asseoir l’invité au-delà de la capacité de la table.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               {targetOccupants.map((inv) => {
@@ -308,7 +354,7 @@ export default function AssignGuestApprovalTablePage() {
       <div className="px-4 pb-6">
         <button
           className="btn-primary w-full"
-          disabled={!chosenTableId || !relocationReady || submitting || !online}
+          disabled={!chosenTableId || (mode === 'assign' && force ? false : !relocationReady) || submitting || !online}
           onClick={handleSubmit}
         >
           {submitting ? '…' : !online ? 'HORS LIGNE' : mode === 'reserve' ? 'RÉSERVER CETTE TABLE' : 'ASSIGNER CETTE TABLE'}
