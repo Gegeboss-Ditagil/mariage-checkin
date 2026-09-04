@@ -84,17 +84,19 @@ export function GuestApprovalCaptureFlow({
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         {safePreview && (
-          // Alerte CodeQL confirmee comme faux positif : `safePreview` ne
-          // peut contenir qu'une URL blob: locale meme origine, creee juste
-          // au-dessus par URL.createObjectURL(photo) et filtree par le
-          // prefixe "blob:" (voir plus haut) -- jamais de markup ni de
-          // script attaquant. Un <img src> ne peut de toute facon pas
-          // executer de script, meme avec une valeur arbitraire ; CodeQL
-          // signale ce sink de maniere conservatrice sur tout
-          // React.createElement('img', { src }), sans connaitre le schema
-          // blob:. Suppression documentee : https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-alerts/example-alert-suppression
-          // codeql[js/xss-through-dom]
-          <img src={safePreview} alt="Photo prise depuis le scanner" className="mx-auto max-h-[42dvh] rounded-xl2 border border-hairline object-contain" /> // codeql[js/xss-through-dom]
+          // Alerte CodeQL "DOM text reinterpreted as HTML" (js/xss-through-dom)
+          // rejetee manuellement comme faux positif dans l'onglet Security de
+          // GitHub le 04/09/2026 : le commentaire de suppression inline
+          // `codeql[js/xss-through-dom]` documente par GitHub n'a aucun effet
+          // en Default setup (confirme empiriquement -- deux placements
+          // essayes, alerte relevee a l'identique a chaque scan), donc on ne
+          // le garde pas ici. `safePreview` ne peut contenir qu'une URL blob:
+          // locale meme origine, creee juste au-dessus par
+          // URL.createObjectURL(photo) et filtree par le prefixe "blob:"
+          // (voir plus haut) -- jamais de markup ni de script attaquant, et
+          // un <img src> ne peut de toute facon pas executer de script,
+          // meme avec une valeur arbitraire.
+          <img src={safePreview} alt="Photo prise depuis le scanner" className="mx-auto max-h-[42dvh] rounded-xl2 border border-hairline object-contain" />
         )}
 
         {step === 'cote' && (
