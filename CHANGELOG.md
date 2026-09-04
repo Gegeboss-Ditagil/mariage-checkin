@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.41.2] — 2026-09-04
+
+Suite immédiate de la v1.41.1 : le commit contenant le garde-fou `safePreview` a été fusionné (PR #67) avant que le second commit — la suppression CodeQL documentée qui règle réellement l'alerte — n'ait fini de se propager, donc `main` s'est retrouvé avec le correctif incomplet (le garde-fou seul ne suffit pas, CodeQL ne reconnaît pas `.startsWith()` comme un sanitizer pour `js/xss-through-dom`, confirmé par le check CodeQL toujours en échec sur ce commit).
+
+### Corrigé
+- **Le commit manquant de la v1.41.1 est maintenant sur `main`** : le commentaire de suppression documenté par GitHub (`codeql[js/xss-through-dom]`) sur `components/GuestApprovalCaptureFlow.tsx`, avec la justification inline (URL `blob:` locale même origine, jamais de markup attaquant, `<img src>` n'exécute aucun script) et son test de régression.
+
+### Tests
+- `npx tsc --noEmit`, `npm run build`, 218 tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.41.1 → 1.41.2
+
 ## [1.41.1] — 2026-09-04
 
 Alerte CodeQL ("DOM text reinterpreted as HTML") sur `components/GuestApprovalCaptureFlow.tsx` — l'aperçu de la photo capturée (`preview`, un état React alimenté par `URL.createObjectURL`) était rendu directement comme `src` d'`<img>`. En pratique `preview` ne peut jamais être autre chose qu'une URL `blob:` locale, mais l'analyse statique ne peut pas le prouver à partir du seul type `string`.
