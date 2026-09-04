@@ -39,6 +39,15 @@ export function GuestApprovalCaptureFlow({
     return () => URL.revokeObjectURL(url);
   }, [photo]);
 
+  // Corrige une alerte CodeQL ("DOM text reinterpreted as HTML") sur le
+  // rendu de `preview` en tant que src d'image : `preview` ne peut en
+  // pratique jamais etre autre chose qu'une URL blob: locale creee ci-dessus
+  // par URL.createObjectURL, mais l'analyse statique ne peut pas le prouver
+  // a partir du seul type `string`. Ce garde-fou explicite (prefixe
+  // whitelist) rend la contrainte verifiable et empeche toute valeur autre
+  // qu'une blob: locale d'atteindre l'attribut src.
+  const safePreview = preview.startsWith('blob:') ? preview : '';
+
   async function submit() {
     if (!cote || !nomInvite.trim()) return;
     setStep('submitting');
@@ -74,7 +83,7 @@ export function GuestApprovalCaptureFlow({
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-        {preview && <img src={preview} alt="Photo prise depuis le scanner" className="mx-auto max-h-[42dvh] rounded-xl2 border border-hairline object-contain" />}
+        {safePreview && <img src={safePreview} alt="Photo prise depuis le scanner" className="mx-auto max-h-[42dvh] rounded-xl2 border border-hairline object-contain" />}
 
         {step === 'cote' && (
           <div className="space-y-3">

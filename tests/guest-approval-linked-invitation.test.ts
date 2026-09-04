@@ -64,6 +64,17 @@ test('GuestApprovalCaptureFlow saute l\'étape "quel côté" quand initialCote e
   assert.match(captureFlowSource, /if \(linkedInvitationId\) form\.append\('invitation_id', linkedInvitationId\)/);
 });
 
+// Alerte CodeQL ("DOM text reinterpreted as HTML") sur l'aperçu photo :
+// `preview` (état React alimenté par URL.createObjectURL) est rendu tel
+// quel comme src d'image, sans que le type `string` ne prouve qu'il s'agit
+// bien d'une URL blob: locale. Corrigé par un garde-fou explicite (préfixe
+// whitelist) qui rend la contrainte vérifiable statiquement.
+test("l'aperçu photo de GuestApprovalCaptureFlow ne peut atteindre l'attribut src qu'en tant qu'URL blob: locale (garde-fou CodeQL)", () => {
+  assert.match(captureFlowSource, /const safePreview = preview\.startsWith\('blob:'\) \? preview : '';/);
+  assert.match(captureFlowSource, /<img src=\{safePreview\}/);
+  assert.doesNotMatch(captureFlowSource, /<img src=\{preview\}/);
+});
+
 // Le "+ Non prévu" autonome de cette page a disparu le 03/09/2026 (consolide
 // dans le "+" de GuestArrivalPanel, voir tests/guest-arrival-panel.test.ts)
 // -- seul reste ici le parcours photo, pour les cas ou une approbation

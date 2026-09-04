@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.41.0**
-**Dernière mise à jour documentaire : 2026-09-03**
+**Version actuelle : 1.41.1**
+**Dernière mise à jour documentaire : 2026-09-04**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.41.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.41.1-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -27,7 +27,7 @@ Avant toute modification, lire :
 
 ## Transmission rapide à Claude AI
 
-- Branche de production : `main`; version proposée : **1.41.0**.
+- Branche de production : `main`; version proposée : **1.41.1**.
 - Le socle v1.29.5 est en production. v1.30.0 corrige la navigation contextuelle Dashboard/Scan et ajoute l’agenda partagé.
 - Supabase Production : les migrations `0038_strict_guest_approval_assignment.sql` et **`0049_force_assign_guest_approval.sql`** sont **déjà appliquées et vérifiées**. La fonction `assign_table_to_guest_approval_strict` existe en mode `INVOKER` (avec le paramètre `p_force boolean default false` ajouté par 0049) ; les fichiers SQL restent dans le dépôt pour garantir l'historique.
 - **Migrations 0043, 0044 (v1.33.0), 0045 et 0046 (v1.34.0/v1.35.0) appliquées en production le 02/09/2026** : `custom_assignees` sur `agenda_items`, `reserved_table_id`/`linked_invitation_id` + les RPC `reserve_table_for_guest_approval`/`release_guest_approval_reservation`/`auto_assign_table_for_guest_approval` sur `guest_approval_requests`. Vérifié après coup : les colonnes et les fonctions (`SECURITY INVOKER`) existent bien en base.
