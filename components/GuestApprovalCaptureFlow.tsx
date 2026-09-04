@@ -83,7 +83,19 @@ export function GuestApprovalCaptureFlow({
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-        {safePreview && <img src={safePreview} alt="Photo prise depuis le scanner" className="mx-auto max-h-[42dvh] rounded-xl2 border border-hairline object-contain" />}
+        {safePreview && (
+          // Alerte CodeQL confirmee comme faux positif : `safePreview` ne
+          // peut contenir qu'une URL blob: locale meme origine, creee juste
+          // au-dessus par URL.createObjectURL(photo) et filtree par le
+          // prefixe "blob:" (voir plus haut) -- jamais de markup ni de
+          // script attaquant. Un <img src> ne peut de toute facon pas
+          // executer de script, meme avec une valeur arbitraire ; CodeQL
+          // signale ce sink de maniere conservatrice sur tout
+          // React.createElement('img', { src }), sans connaitre le schema
+          // blob:. Suppression documentee : https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-alerts/example-alert-suppression
+          // codeql[js/xss-through-dom]
+          <img src={safePreview} alt="Photo prise depuis le scanner" className="mx-auto max-h-[42dvh] rounded-xl2 border border-hairline object-contain" /> // codeql[js/xss-through-dom]
+        )}
 
         {step === 'cote' && (
           <div className="space-y-3">
