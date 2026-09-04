@@ -246,6 +246,71 @@ test("changer de table ou de fiche invite (meme route dynamique) reinitialise l'
   assert.match(membersPage, /setLoading\(true\);\s*\n\s*setInvitation\(null\);/);
 });
 
+test("le flash de navigation touchait aussi les ecrans mono-usage (deplacer/gerer l'excedent/assigner/fusionner), pas seulement les fiches table/invite -- meme correctif : TopBar reste visible pendant le chargement", () => {
+  // Corrige le 03/09/2026 (retour de Gersom, deuxieme signalement : "à
+  // chaque fois que je navigue... un flash" persistait apres le premier
+  // correctif) -- ces six ecrans faisaient un retour anticipe SANS TopBar
+  // pendant le chargement (contrairement a /table(s)/[tableId] deja
+  // corriges) : l'en-tete apparaissait donc brusquement une fois les
+  // donnees chargees, ce qui se lisait comme un flash entre deux pages.
+  const affected: { path: string; title: string }[] = [
+    { path: '../app/tables/overflow/[assignmentId]/page.tsx', title: "Gérer l'excédent" },
+    { path: '../app/tables/move-guest/[guestId]/page.tsx', title: 'Déplacer vers une table' },
+    { path: '../app/tables/move/[invitationId]/page.tsx', title: 'Déplacer vers une table' },
+    { path: '../app/checkin/[invitationId]/merge/page.tsx', title: 'Fusionner avec un autre groupe' },
+  ];
+  for (const { path, title } of affected) {
+    const source = readFileSync(new URL(path, import.meta.url), 'utf8');
+    assert.match(source, new RegExp('<TopBar title="' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"'), path + ' doit garder son TopBar pendant le chargement');
+    // Plus de classe Tailwind invalide "justify-center/50" (jamais
+    // appliquee -- copiee/collee sans jamais avoir ete remarquee) dans un
+    // attribut className -- seule la mention en commentaire explicatif
+    // peut subsister.
+    assert.doesNotMatch(source, /className="[^"]*justify-center\/50/, path);
+  }
+  const moveMultiple = readFileSync(new URL('../app/tables/move-multiple/page.tsx', import.meta.url), 'utf8');
+  assert.match(moveMultiple, /if \(loading\) \{[\s\S]{0,200}<TopBar/);
+  const assignPage = readFileSync(new URL('../app/approbations/[id]/assign/page.tsx', import.meta.url), 'utf8');
+  assert.match(assignPage, /if \(loading \|\| !request\) \{[\s\S]{0,500}<TopBar/);
+});
+
+test("agent_checkin voit Agenda (lecture seule) a la place de Staff dans sa barre du bas, /staff reste atteignable par le badge QR", () => {
+  // Retour de Gersom le 03/09/2026 sur Agent001 : "il ne devrait pas voir
+  // en bas a droite staff... il devrait voir agenda a la place".
+  assert.match(bottomNav, /AGENT_CHECKIN_ITEMS/);
+  assert.match(bottomNav, /agent_checkin: AGENT_CHECKIN_ITEMS/);
+  const agentBlock = bottomNav.slice(
+    bottomNav.indexOf('const AGENT_CHECKIN_ITEMS'),
+    bottomNav.indexOf('const READ_ONLY_ITEMS')
+  );
+  assert.match(agentBlock, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
+  assert.doesNotMatch(agentBlock, /href: ['"]\/staff['"]/);
+});
+
+test("le splash avant connexion affiche discretement la version applicative, toujours synchronisee avec package.json (jamais une variable dupliquee)", () => {
+  // Retour de Gersom le 03/09/2026 : "chaque fois que j'ouvre, je peux
+  // savoir si je suis en train de voir la dernière version... on va mettre
+  // ça à jour à chaque fois". Importee directement depuis package.json
+  // (source de verite, voir docs/VERSIONING.md) dans app/page.tsx (server
+  // component), transmise en prop au splash -- ne peut donc jamais deriver
+  // du numero reellement deploye.
+  const homeSource = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
+  const splashSource = readFileSync(new URL('../components/SplashScreen.tsx', import.meta.url), 'utf8');
+  assert.match(homeSource, /import \{ version \} from ['"]@\/package\.json['"]/);
+  assert.match(homeSource, /version=\{version\}/);
+  assert.match(splashSource, /version\?: string/);
+  assert.match(splashSource, /\{version && \(/);
+  assert.match(splashSource, /v\{version\}/);
+  // Pas affiche sur l'usage post-connexion (app/dashboard/page.tsx) : pas
+  // de prop `version` passee la-bas.
+  const dashboardSource = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');
+  const dashboardSplashUsage = dashboardSource.slice(
+    dashboardSource.indexOf('<SplashScreen'),
+    dashboardSource.indexOf('<SplashScreen') + 200
+  );
+  assert.doesNotMatch(dashboardSplashUsage, /version=/);
+});
+
 test('/scan affiche une bande d\'information de base (arrivees/remplissage) juste au-dessus de la barre de navigation', () => {
   // Demande de Gersom : "en dessous de l'ecran scan ... de l'information de
   // base du tableau de bord -- le nombre d'invites, le nombre arrives, la

@@ -283,11 +283,11 @@ export function GuestArrivalPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settled, visible]);
 
-  if (!settled) return <div className="card mb-4 text-center text-sm text-text-faint">Chargement des membres…</div>;
+  if (!settled) return <div className="card mb-3 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;
 
   return (
-    <div className="card mb-4">
+    <div className="card mb-3">
       <p className="mb-2 text-sm font-semibold">Qui est arrivé ?</p>
       <ul className="space-y-1.5">
         {members.map((guest) => {

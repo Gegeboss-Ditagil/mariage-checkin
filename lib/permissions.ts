@@ -75,11 +75,17 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // Conserve manageMembers (renommer, gerer les membres du groupe) : seule
   // la gestion des etiquettes a ete retiree, sur demande explicite de
   // Gersom le 23/08/2026 -- ce role est la pour scanner/checker, pas pour
-  // reclassifier les invites.
+  // reclassifier les invites. viewAgenda ajoute le 03/09/2026 (retour de
+  // Gersom sur Agent001 : "il devrait voir agenda a la place de staff" en
+  // bas a droite) -- lecture seule (jamais manageAgenda, reserve a
+  // admin/directeur) : ce role peut desormais consulter le chronogramme du
+  // jour J, sans le modifier. viewStaff reste inchangee (le badge QR
+  // "STAFF" depuis /scan reste fonctionnel) -- seul le raccourci permanent
+  // de la barre du bas change, voir components/BottomNav.tsx.
   agent_checkin: [
     'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin',
     'assignOverflow', 'manageMembers', 'markNoShow',
-    'resolveExceptions',
+    'resolveExceptions', 'viewAgenda',
   ],
   visibilite: [
     'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff',
@@ -110,9 +116,12 @@ const FULL_STAFF_PREFIXES = [
   '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/api',
 ];
 
+// '/agenda' ajoute le 03/09/2026 (agent_checkin gagne viewAgenda en lecture
+// seule) -- reste filtre plus bas par hasCapability(role, 'viewAgenda'),
+// comme pour les autres roles.
 const SCAN_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/api',
+  '/plan-table', '/exceptions', '/agenda', '/api',
 ];
 
 const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/approbations', '/api'];

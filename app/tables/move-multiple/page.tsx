@@ -132,7 +132,17 @@ export default function DeplacerEnLotPage() {
   }
 
   if (loading) {
-    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom sur le flash de navigation).
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar
+          title={selection.mode === 'exchange-pick-b' ? 'Échanger avec quelle table ?' : 'Transférer vers quelle table ?'}
+          backHref={'/tables/' + selection.fromTableId}
+        />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   return (

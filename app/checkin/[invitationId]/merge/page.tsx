@@ -124,7 +124,14 @@ export default function FusionnerInvitationPage() {
   }
 
   if (loading || !source) {
-    return <div className="flex min-h-dvh items-center justify-center text-text-faint">Chargement…</div>;
+    // Garde le TopBar visible pendant le chargement (corrige le 03/09/2026,
+    // retour de Gersom sur le flash de navigation).
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <TopBar title="Fusionner avec un autre groupe" backHref={'/checkin/' + invitationId} />
+        <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
+      </div>
+    );
   }
 
   return (
