@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.45.0] — 2026-09-13
+
+Navigation d'agent_checkin réorganisée (Tableau de bord au centre, Agenda + Approbations) et écran vraiment figé pendant le défilement (retour de Gersom).
+
+### Corrigé
+- **Navigation agent_checkin (Agent001, Ruben Lopez...)** : "les agents scan sont là seulement pour scanner, pas pour approuver — s'il y a un problème ils redirigent vers le placeur qui fait la photo." La barre du bas devient Recherche, Plan, **Tableau de bord** (gros bouton central), Agenda, Approbations — Scan n'a plus d'onglet dédié : `/scan` reste sa page d'atterrissage par défaut et reste joignable depuis Approbations (flèche Retour du TopBar) ou, via Dashboard, depuis Agenda.
+- **"Ça ne reste pas figé" pendant le défilement, bouton central injoignable après** : deux causes trouvées.
+  1. `hooks/usePullToRefresh.ts` (utilisé par `/dashboard`) gardait "seulement en haut de page" avec `window.scrollY <= 0` — structurellement toujours vrai dans cette application (page ancrée, seul un `<div overflow-y-auto>` interne défile) : le garde-fou ne protégeait donc jamais rien, et le geste "tirer pour actualiser" pouvait se déclencher, et rester bloqué (aucun `touchcancel`), au milieu d'un défilement normal, décalant la mise en page en dessous. Corrigé en vérifiant le `scrollTop` du vrai conteneur défilant (comme `/plan-table` le faisait déjà) et en réinitialisant sur `touchcancel`.
+  2. Chaque écran principal passe de `h-dvh` seul à **`fixed inset-0`** : ancré directement au viewport réel plutôt que dépendant d'un recalcul de hauteur dynamique pendant qu'une barre d'outils système (Safari iOS) apparaît/disparaît en cours de défilement — "make it really fixed like in an app". Aucun changement du flex interne : `BottomNav` garde exactement la même place, aucun padding à ajouter nulle part.
+
+### Tests
+- Nouveau `tests/scroll-fixed-shell.test.ts`.
+- `tests/navigation-resilience.test.ts`, `tests/approbations-ux-improvements.test.ts` : assertions mises à jour pour le nouveau layout d'agent_checkin.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.44.0 → 1.45.0
+
 ## [1.44.0] — 2026-09-13
 
 Reconsidérer un refus place désormais l'invité sur une table choisie, avant l'approbation (retour de Gersom).

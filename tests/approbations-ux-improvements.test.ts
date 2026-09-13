@@ -221,12 +221,16 @@ test('le tire-pour-rafraichir de /plan-table ignore les gestes a plusieurs doigt
 
 const permissionsSource = readFileSync(new URL('../lib/permissions.ts', import.meta.url), 'utf8');
 
-test("agent_checkin gagne viewGuestApprovals en lecture seule (jamais reviewGuestApproval ni assignGuestApproval) -- Approbations remplace Agenda en dernier onglet, l'agenda reste visible sur /scan via NextAgendaActivity", () => {
+test("agent_checkin gagne viewGuestApprovals en lecture seule (jamais reviewGuestApproval ni assignGuestApproval) -- Agenda et Approbations en derniers onglets, NextAgendaActivity reste aussi visible sur /scan", () => {
   assert.match(permissionsSource, /'viewAgenda', 'viewGuestApprovals',/);
   assert.match(permissionsSource, /if \(matchesPrefix\(pathname, '\/approbations'\) && !hasCapability\(role, 'viewGuestApprovals'\)\) return false;/);
   const agentBlock = bottomNav.slice(bottomNav.indexOf('const AGENT_CHECKIN_ITEMS'), bottomNav.indexOf('const READ_ONLY_ITEMS'));
   assert.match(agentBlock, /APPROVALS_ITEM/);
-  assert.doesNotMatch(agentBlock, /\/agenda/);
+  // Depuis le 13/09/2026 (meme jour, second retour sur Agent001) : Agenda
+  // est reintroduit comme onglet dedie (plus seulement via
+  // NextAgendaActivity) -- voir le troisieme test de
+  // navigation-resilience.test.ts sur ce meme bloc pour le detail complet.
+  assert.match(agentBlock, /AGENDA_ITEM/);
   const nextAgendaActivity = readFileSync(new URL('../components/NextAgendaActivity.tsx', import.meta.url), 'utf8');
   assert.match(nextAgendaActivity, /hasCapability\(role, 'viewAgenda'\)/);
 });

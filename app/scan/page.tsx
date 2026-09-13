@@ -124,7 +124,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row">
       <div className="flex flex-1 flex-col overflow-hidden">
         <UserMenu />
         {/* La caméra utilise désormais la hauteur disponible du viewport au
