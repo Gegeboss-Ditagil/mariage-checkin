@@ -31,18 +31,24 @@ const STAFF_ITEMS: NavItem[] = [
 // agent_checkin (accueil) : meme barre que le staff complet -- il garde le
 // scan/recherche/dashboard/tables et peut confirmer les arrivees. Les actions
 // de deplacement restent masquees et bloquees par la matrice de permissions.
-// Agenda remplace Staff en dernier onglet depuis le 03/09/2026 (retour de
-// Gersom sur Agent001 : "il ne devrait pas voir en bas a droite staff...
-// il devrait voir agenda a la place") -- lecture seule (viewAgenda sans
-// manageAgenda, voir lib/permissions.ts). /staff reste atteignable par ce
-// role via le badge QR "STAFF" depuis /scan (viewStaff inchangee), seul le
-// raccourci permanent de la barre change.
+// Agenda a remplace Staff en dernier onglet le 03/09/2026, puis remplace a
+// son tour par Approbations le 13/09/2026 (retour de Gersom : "en bas a
+// droite... ca devrait etre approbation. Et on doit voir l'agenda dans la
+// page principale") -- l'agenda (lecture seule, viewAgenda sans
+// manageAgenda) reste visible via NextAgendaActivity sur /scan meme sans
+// onglet dedie, donc plus besoin des deux ici avec seulement 4
+// emplacements disponibles. Approbations (lecture seule, viewGuestApprovals
+// sans reviewGuestApproval/assignGuestApproval, voir lib/permissions.ts) :
+// ce role continue de renvoyer vers un placeur pour decider/assigner,
+// seule la LISTE (avec badge de comptage) est visible. /staff reste
+// atteignable par ce role via le badge QR "STAFF" depuis /scan (viewStaff
+// inchangee), seul le raccourci permanent de la barre change.
 const AGENT_CHECKIN_ITEMS: NavItem[] = [
   { href: '/scan', label: 'Scan', icon: ScanIcon },
   { href: '/search', label: 'Recherche', icon: SearchIcon },
   { href: '/plan-table', label: 'Plan', icon: GridIcon },
   { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-  { href: '/agenda', label: 'Agenda', icon: StaffIcon },
+  APPROVALS_ITEM,
 ];
 
 // visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.

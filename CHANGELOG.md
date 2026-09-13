@@ -3,6 +3,29 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.43.0] — 2026-09-13
+
+Deuxième lot du jour (retour de Gersom, 5 photos) sur les approbations, le plan de salle et le check-in.
+
+### Corrigé
+- **Refus reconsidérable** : une demande refusée par erreur peut désormais être reconsidérée et approuvée depuis l'application (liste et fiche détaillée) — jamais l'inverse (une approbation peut déjà avoir une table assignée), et jamais depuis le lien public `/approve/[token]` ni WhatsApp.
+- **Flash résiduel de `GuestArrivalPanel`** ("la photo 3 arrive, reste quelques millisecondes, puis la photo 2 arrive", surtout depuis `/plan-table`) : la branche de secours "ensure" (backfill générique d'une invitation jamais encore matérialisée) ne marquait pas `initializing=true` avant son propre appel réseau, contrairement à la branche "initialize" juste au-dessus — une fenêtre où `settled` devenait vrai avec `visible=false`, suffisante pour faire flasher l'ancien compteur `+/-`.
+- **Pincement cassé sur `/plan-table` après rotation** ("les zooms... disparaissent, je ne peux plus pinch") : le geste de tire-pour-rafraîchir (Touch Events, `touches[0]` seul) vivait sur le même conteneur défilant que le plan de salle (Pointer Events) et interceptait les gestes à deux doigts. Les deux gestionnaires ignorent désormais tout geste à plus d'un doigt.
+
+### Ajouté
+- **Swipe pour supprimer** une demande déjà décidée (approuvée ou refusée) sur `/approbations`, réservé à l'admin (`components/SwipeableDeleteCard.tsx`, nouvelle route `DELETE /api/guest-approvals/[id]` qui refuse toute demande encore `en_attente`).
+- **Texte de `/approbations/[id]/assign` raccourci** : un badge "Automatique"/"Sélectionnée" remplace le paragraphe détaillant l'ordre de priorité des tables.
+- **agent_checkin voit désormais Approbations** (lecture seule — jamais `reviewGuestApproval` ni `assignGuestApproval`, ce rôle continue de renvoyer vers un placeur) en dernier onglet, à la place d'Agenda ; l'agenda du jour reste visible sur `/scan` via `NextAgendaActivity` (déjà affiché pour ce rôle, pas besoin d'onglet dédié pour les deux).
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts` complété ; `tests/guest-approvals.test.ts` et `tests/navigation-resilience.test.ts` mis à jour.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.42.1 → 1.43.0
+
 ## [1.42.1] — 2026-09-13
 
 Ajustement mineur du badge de version sur le splash (retour de Gersom).

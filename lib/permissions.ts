@@ -79,13 +79,20 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // Gersom sur Agent001 : "il devrait voir agenda a la place de staff" en
   // bas a droite) -- lecture seule (jamais manageAgenda, reserve a
   // admin/directeur) : ce role peut desormais consulter le chronogramme du
-  // jour J, sans le modifier. viewStaff reste inchangee (le badge QR
+  // jour J, sans le modifier ; affiche sur /scan via NextAgendaActivity
+  // (deja gate sur cette meme capacite), pas besoin d'onglet dedie pour ça.
+  // viewGuestApprovals ajoute le 13/09/2026 (retour de Gersom : "en bas a
+  // droite... ca devrait etre approbation") -- lecture seule ici aussi :
+  // jamais reviewGuestApproval ni assignGuestApproval, ce role continue de
+  // renvoyer vers un placeur pour decider/assigner (regle du 02/09/2026,
+  // voir app/api/members/add-unplanned/route.ts), il peut seulement suivre
+  // l'etat des demandes en cours. viewStaff reste inchangee (le badge QR
   // "STAFF" depuis /scan reste fonctionnel) -- seul le raccourci permanent
   // de la barre du bas change, voir components/BottomNav.tsx.
   agent_checkin: [
     'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin',
     'assignOverflow', 'manageMembers', 'markNoShow',
-    'resolveExceptions', 'viewAgenda',
+    'resolveExceptions', 'viewAgenda', 'viewGuestApprovals',
   ],
   visibilite: [
     'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff',
@@ -118,10 +125,12 @@ const FULL_STAFF_PREFIXES = [
 
 // '/agenda' ajoute le 03/09/2026 (agent_checkin gagne viewAgenda en lecture
 // seule) -- reste filtre plus bas par hasCapability(role, 'viewAgenda'),
-// comme pour les autres roles.
+// comme pour les autres roles. '/approbations' ajoute le 13/09/2026 (meme
+// role gagne viewGuestApprovals en lecture seule) -- filtre de la meme
+// facon par hasCapability(role, 'viewGuestApprovals').
 const SCAN_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/agenda', '/api',
+  '/plan-table', '/exceptions', '/agenda', '/approbations', '/api',
 ];
 
 const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/approbations', '/api'];
@@ -144,6 +153,7 @@ export function canAccessPath(role: Role, pathname: string): boolean {
   if (!prefixes.some((prefix) => matchesPrefix(pathname, prefix))) return false;
 
   if (matchesPrefix(pathname, '/agenda') && !hasCapability(role, 'viewAgenda')) return false;
+  if (matchesPrefix(pathname, '/approbations') && !hasCapability(role, 'viewGuestApprovals')) return false;
 
   if (role === 'agent_checkin') {
     // Note : /checkin/[invitationId]/merge n'est PAS dans cette liste --

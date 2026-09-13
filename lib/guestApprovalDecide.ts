@@ -31,18 +31,30 @@ export async function applyGuestApprovalDecision(
   // ou le parent approbateur n'a pas de compte). Sert uniquement a
   // finaliser une reservation de table pre-approbation (voir
   // 0044_guest_approval_pre_approval_reservation.sql) ; jamais requis.
-  decidedByAgentId?: string
+  decidedByAgentId?: string,
+  // Permet de revenir sur un refus par erreur -- demande de Gersom le
+  // 13/09/2026 : "si j'ai refusé, je peux recliquer dessus et refaire...
+  // au cas où c'était une erreur, les réapprouver par la suite". Vrai
+  // uniquement depuis /api/guest-approvals/[id]/decide (jamais depuis le
+  // lien public /approve/[token] ni WhatsApp, canaux externes ou un tiers
+  // pourrait rouvrir une decision deja communiquee). Un-directionnel :
+  // seul refuse -> approuve est permis (jamais l'inverse -- une demande
+  // deja approuvee peut avoir une table assignee, defaire ça est une tout
+  // autre operation, non demandee ici).
+  allowReconsiderFromRefused = false
 ): Promise<DecideResult> {
   let requestId: string | null = null;
 
   if ('token' in lookup || 'id' in lookup) {
     const column = 'token' in lookup ? 'token' : 'id';
     const value = 'token' in lookup ? lookup.token : lookup.id;
+    const eligibleStatuts =
+      allowReconsiderFromRefused && decision === 'approuve' ? ['en_attente', 'refuse'] : ['en_attente'];
     const { data: updated } = await supabase
       .from('guest_approval_requests')
       .update({ statut: decision, decided_at: new Date().toISOString(), decided_via: decidedVia })
       .eq(column, value)
-      .eq('statut', 'en_attente')
+      .in('statut', eligibleStatuts)
       .select('*')
       .maybeSingle<GuestApprovalRequestRow>();
 

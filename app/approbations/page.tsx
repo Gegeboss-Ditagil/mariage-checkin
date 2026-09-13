@@ -10,6 +10,7 @@ import { PushNotificationButton } from '@/components/PushNotificationButton';
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 import { usePolling } from '@/hooks/usePolling';
+import { SwipeableDeleteCard } from '@/components/SwipeableDeleteCard';
 
 interface ApprovalListItem {
   id: string;
@@ -142,6 +143,24 @@ export default function ApprobationsPage() {
     }
   }
 
+  // Swipe pour supprimer (admin) -- voir components/SwipeableDeleteCard.tsx
+  // et l'API DELETE /api/guest-approvals/[id] (refuse toute demande encore
+  // en_attente cote serveur, meme filet que cote UI ci-dessous). Retrait
+  // optimiste de la liste locale ; en cas d'echec (ex: deja decidee/
+  // supprimee entre-temps), on resynchronise simplement depuis le serveur.
+  async function handleDelete(id: string) {
+    try {
+      const response = await fetch('/api/guest-approvals/' + id, { method: 'DELETE' });
+      if (response.ok) {
+        setRequests((current) => current.filter((request) => request.id !== id));
+      } else {
+        await load(true);
+      }
+    } catch {
+      await load(true);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     async function loadCurrent() {
@@ -203,8 +222,12 @@ export default function ApprobationsPage() {
           )}
 
           {requests.map((r) => (
-            <div
+            <SwipeableDeleteCard
               key={r.id}
+              enabled={role === 'admin' && r.statut !== 'en_attente'}
+              onDelete={() => handleDelete(r.id)}
+            >
+            <div
               role="button"
               tabIndex={0}
               aria-label={'Ouvrir la demande de ' + r.nom_invite}
@@ -280,8 +303,25 @@ export default function ApprobationsPage() {
                     </button>
                   </div>
                 )}
+                {/* Revenir sur un refus par erreur -- demande de Gersom le
+                    13/09/2026 : "si j'ai refusé, je peux recliquer dessus et
+                    refaire... au cas où c'était une erreur, les réapprouver
+                    par la suite". Volontairement à sens unique (jamais de
+                    bouton pour annuler une approbation -- une table peut
+                    déjà être assignée). */}
+                {r.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && (
+                  <button
+                    type="button"
+                    disabled={decidingId === r.id}
+                    onClick={(event) => { event.stopPropagation(); void decide(r.id, 'approuve'); }}
+                    className="glass-pill-complete mt-2 min-h-10 w-full text-sm disabled:opacity-50"
+                  >
+                    Reconsidérer → Approuver
+                  </button>
+                )}
               </div>
             </div>
+            </SwipeableDeleteCard>
           ))}
         </div>
       </div>
@@ -419,6 +459,14 @@ export default function ApprobationsPage() {
                 <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="glass-pill-complete min-h-12 px-4 py-3 text-base disabled:opacity-50">Approuver</button>
                 <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'refuse')} className="glass-pill-over min-h-12 px-4 py-3 text-base disabled:opacity-50">Refuser</button>
               </div>
+            )}
+
+            {/* Revenir sur un refus par erreur -- voir la même note sur la
+                carte de liste plus haut. */}
+            {selectedRequest.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && (
+              <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="glass-pill-complete mt-3 w-full min-h-12 px-4 py-3 text-base disabled:opacity-50">
+                Reconsidérer → Approuver
+              </button>
             )}
 
             {selectedRequest.statut === 'approuve' && !selectedRequest.table_id && role && hasCapability(role, 'assignGuestApproval') && (

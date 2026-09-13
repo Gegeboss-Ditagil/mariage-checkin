@@ -271,12 +271,20 @@ export default function AssignGuestApprovalTablePage() {
 
         <section className="card space-y-3">
           <div>
-            <h2 className="font-display text-lg font-semibold">Tables disponibles</h2>
-            <p className="text-sm text-text-muted">
-              Seules les tables qui peuvent accueillir tout le groupe sont proposées, la meilleure déjà sélectionnée
-              (modifiable en touchant une autre table) : en priorité la table du groupe avec qui l’invité est arrivé,
-              puis la table 41 (excédentaire), puis les autres tables de réserve, puis les tables normales.
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-lg font-semibold">Tables disponibles</h2>
+              {/* Texte raccourci le 13/09/2026 (retour de Gersom : "le texte
+                  est long... il faudra que ça soit plus intuitif, tout
+                  simplement... automatique") -- un badge court plutôt qu'un
+                  paragraphe : "Automatique" tant que rien n'est touché
+                  (chosenTableId déjà présélectionné plus haut), le détail des
+                  priorités reste visible via le badge ★ sur la table
+                  concernée plus bas. */}
+              <span className="rounded-full bg-accent-tint px-2.5 py-0.5 text-xs font-bold text-accent">
+                {chosenTableId === recommendations[0]?.table.id ? 'Automatique' : 'Sélectionnée'}
+              </span>
+            </div>
+            <p className="text-sm text-text-muted">Touchez une autre table pour changer.</p>
           </div>
           {recommendations.length === 0 ? (
             <div className="space-y-3">

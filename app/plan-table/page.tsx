@@ -175,6 +175,19 @@ export default function PlanTablePage() {
   }
 
   function onTouchStart(e: React.TouchEvent) {
+    // Corrige le 13/09/2026 (retour de Gersom : "je fais la rotation, les
+    // zooms sur la map disparaissent... je ne peux plus pinch") -- ce
+    // gestionnaire tire-pour-rafraichir vivait sur le meme conteneur
+    // defilant que le plan de salle (ZoomableFloorPlan, en Pointer Events).
+    // Sans ce garde-fou, un pincement a deux doigts sur le plan demarrait
+    // AUSSI ce suivi tire-pour-rafraichir (Touch Events, bases sur
+    // touches[0] seul) : les deux systemes d'evenements se disputaient le
+    // meme geste, perturbant le pincement et pouvant declencher un
+    // rafraichissement involontaire en cours de route.
+    if (e.touches.length > 1) {
+      touchStartY.current = null;
+      return;
+    }
     if (scrollRef.current && scrollRef.current.scrollTop <= 0) {
       touchStartY.current = e.touches[0].clientY;
     } else {
@@ -183,6 +196,13 @@ export default function PlanTablePage() {
   }
 
   function onTouchMove(e: React.TouchEvent) {
+    // Un deuxieme doigt qui rejoint en cours de geste (debut d'un
+    // pincement) annule le suivi tire-pour-rafraichir deja commence.
+    if (e.touches.length > 1) {
+      touchStartY.current = null;
+      setPull(0);
+      return;
+    }
     if (touchStartY.current === null || refreshing) return;
     const delta = e.touches[0].clientY - touchStartY.current;
     if (delta > 0) {

@@ -274,17 +274,21 @@ test("le flash de navigation touchait aussi les ecrans mono-usage (deplacer/gere
   assert.match(assignPage, /if \(loading \|\| !request\) \{[\s\S]{0,500}<TopBar/);
 });
 
-test("agent_checkin voit Agenda (lecture seule) a la place de Staff dans sa barre du bas, /staff reste atteignable par le badge QR", () => {
+test("agent_checkin voit Approbations (lecture seule) en dernier onglet -- Agenda visible sur /scan via NextAgendaActivity plutot qu'en onglet dedie, /staff reste atteignable par le badge QR", () => {
   // Retour de Gersom le 03/09/2026 sur Agent001 : "il ne devrait pas voir
-  // en bas a droite staff... il devrait voir agenda a la place".
+  // en bas a droite staff... il devrait voir agenda a la place" -- puis le
+  // 13/09/2026 : "ca devrait etre approbation. Et on doit voir l'agenda
+  // dans la page principale" (NextAgendaActivity, deja gate sur
+  // viewAgenda, deja rendu sur /scan pour ce role -- pas besoin d'onglet).
   assert.match(bottomNav, /AGENT_CHECKIN_ITEMS/);
   assert.match(bottomNav, /agent_checkin: AGENT_CHECKIN_ITEMS/);
   const agentBlock = bottomNav.slice(
     bottomNav.indexOf('const AGENT_CHECKIN_ITEMS'),
     bottomNav.indexOf('const READ_ONLY_ITEMS')
   );
-  assert.match(agentBlock, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
+  assert.match(agentBlock, /APPROVALS_ITEM,\s*\n\];/);
   assert.doesNotMatch(agentBlock, /href: ['"]\/staff['"]/);
+  assert.doesNotMatch(agentBlock, /href: ['"]\/agenda['"]/);
 });
 
 test("le splash avant connexion affiche discretement la version applicative, toujours synchronisee avec package.json (jamais une variable dupliquee)", () => {

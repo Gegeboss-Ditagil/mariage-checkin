@@ -150,6 +150,17 @@ export function GuestArrivalPanel({
       // mais aucune (ou trop peu de) lignes nominatives. Complète les lignes
       // manquantes sans modifier les totaux, puis affiche immédiatement ✓/X.
       if (list.length < expectedRows && canManage) {
+        // Corrige le 13/09/2026 (retour de Gersom : "la photo trois... reste
+        // là quelques millisecondes et boom après la photo 2 arrive",
+        // surtout en arrivant depuis /plan-table -- une invitation jamais
+        // encore ouverte, donc pas encore materialisee). `load()` ci-dessus
+        // vient deja de faire `setLoading(false)` en trouvant 0 ligne ; sans
+        // ce `setInitializing(true)` ICI (contrairement a la branche
+        // "initialize" juste au-dessus, qui le fait), `settled` devenait
+        // brievement vrai avec `visible=false` pendant cet appel --
+        // suffisant pour que le parent bascule sur l'ancien compteur +/-
+        // avant que cet appel ne resolve et ne retrouve la ligne creee.
+        setInitializing(true);
         await fetch('/api/members/ensure', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ invitation_id: invitation.id }),

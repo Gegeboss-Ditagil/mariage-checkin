@@ -85,8 +85,15 @@ test('les droits photo, approbation et assignation sont separes par role', () =>
 
   assert.equal(canAccessPath('directeur', '/approbations'), true);
   assert.equal(canAccessPath('placeur', '/approbations'), true);
-  assert.equal(canAccessPath('agent_checkin', '/approbations'), false);
   assert.equal(canAccessPath('visibilite', '/approbations'), true);
+
+  // agent_checkin gagne viewGuestApprovals en LECTURE SEULE le 13/09/2026
+  // (retour de Gersom : "en bas a droite... ca devrait etre approbation")
+  // -- la liste (avec badge) est visible, mais jamais reviewGuestApproval
+  // ni assignGuestApproval (deja verifie ci-dessus) : ce role continue de
+  // renvoyer vers un placeur pour decider/assigner.
+  assert.equal(hasCapability('agent_checkin', 'viewGuestApprovals'), true);
+  assert.equal(canAccessPath('agent_checkin', '/approbations'), true);
 });
 
 test("la lecture publique d'une approbation ne doit jamais etre mise en cache", () => {
@@ -182,7 +189,9 @@ test('le choix rapide ne montre que les tables réellement libres et priorise la
   // voir tests/approbations-ux-improvements.test.ts pour la présélection
   // automatique associée.
   assert.match(assignPageSource, /usage\.table\.number === 41 \? 1/);
-  assert.match(assignPageSource, /Seules les tables qui peuvent accueillir tout le groupe sont proposées/);
+  // Texte raccourci le 13/09/2026 (retour de Gersom : "le texte est
+  // long... plus intuitif") -- voir tests/approbations-ux-improvements.test.ts.
+  assert.match(assignPageSource, /Touchez une autre table pour changer\./);
 });
 
 test('la fiche a un vrai bouton fermer et rend le placement actionnable après approbation ; en attente, le placement est automatique', () => {
@@ -261,7 +270,9 @@ test('la decision dans l app et les abonnements push restent proteges et prives'
   // 'app' + l'id de l'agent connecte -- ajoute le 02/09/2026 pour finaliser
   // une reservation posee avant l'approbation (voir 0044) avec le bon
   // p_agent_id sur assign_table_to_guest_approval_strict.
-  assert.match(appDecideSource, /applyGuestApprovalDecision\(createAdminClient\(\), \{ id: params\.id \}, body\.decision, 'app', user\.id\)/);
+  // Le 6e argument (true, ajoute le 13/09/2026) autorise reconsiderer un
+  // refus -> approuve depuis l'app -- voir tests/approbations-ux-improvements.test.ts.
+  assert.match(appDecideSource, /applyGuestApprovalDecision\(createAdminClient\(\), \{ id: params\.id \}, body\.decision, 'app', user\.id, true\)/);
   assert.match(pushMigrationSource, /decided_via in \('web', 'whatsapp', 'app'\)/);
   assert.match(pushMigrationSource, /alter table push_subscriptions enable row level security/);
   assert.match(pushMigrationSource, /revoke all on table push_subscriptions from anon, authenticated/);
