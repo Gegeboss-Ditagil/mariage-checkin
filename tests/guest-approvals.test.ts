@@ -96,7 +96,8 @@ test("la lecture publique d'une approbation ne doit jamais etre mise en cache", 
 test('une demande est ouvrable et montre photo, cote, decision et choix de table dans l application', () => {
   assert.match(approbationsPageSource, /setSelectedId\(r\.id\)/);
   assert.match(approbationsPageSource, /role="dialog"/);
-  assert.match(approbationsPageSource, /max-h-\[42dvh\]/);
+  // Photo resserrée le 13/09/2026 (42dvh -> 26dvh) pour tenir sans défiler.
+  assert.match(approbationsPageSource, /max-h-\[26dvh\]/);
   assert.match(approbationsPageSource, /Côté \{selectedRequest\.cote/);
   assert.match(approbationsPageSource, />Approuver<\/button>/);
   assert.match(approbationsPageSource, />Refuser<\/button>/);
@@ -173,10 +174,14 @@ test('la page montre les statuts et exige une destination suffisante avant de co
   assert.match(assignPageSource, /!relocationReady/);
 });
 
-test('le choix rapide ne montre que les tables réellement libres et priorise la table 41', () => {
+test('le choix rapide ne montre que les tables réellement libres et priorise la table du groupe arrivé-avec, puis la table 41', () => {
   assert.match(assignPageSource, /Tables disponibles/);
   assert.match(assignPageSource, /libresEstimees >= needed/);
-  assert.match(assignPageSource, /usage\.table\.number === 41 \? 0/);
+  // Priorité 0 ajoutée le 13/09/2026 : la table du groupe avec qui l'invité
+  // est arrivé (linked_invitation_table_id) passe devant la table 41 --
+  // voir tests/approbations-ux-improvements.test.ts pour la présélection
+  // automatique associée.
+  assert.match(assignPageSource, /usage\.table\.number === 41 \? 1/);
   assert.match(assignPageSource, /Seules les tables qui peuvent accueillir tout le groupe sont proposées/);
 });
 

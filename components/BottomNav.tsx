@@ -46,21 +46,36 @@ const AGENT_CHECKIN_ITEMS: NavItem[] = [
 ];
 
 // visibilite (Luis, David) : lecture seule -- pas de Scan, pas de Placement.
-// A quand meme la capacite viewStaff (lib/permissions.ts) : garde l'onglet.
+// Le dernier onglet etait Staff ; remplace par Approbations le 13/09/2026
+// (retour de Gersom sur les comptes Papa David/visibilite : "il ne devrait
+// pas voir staff plutot, il devrait voir approbation") -- ce role a deja les
+// capacites viewGuestApprovals/reviewGuestApproval/assignGuestApproval
+// (lib/permissions.ts), donc un acces direct depuis la barre du bas est plus
+// utile qu'un onglet Staff qui reste de toute facon atteignable via le menu
+// du compte. Le badge (pendingCount) est injecte plus bas comme pour tous
+// les autres roles, via le `.map` sur `/approbations`.
 const READ_ONLY_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
   { href: '/plan-table', label: 'Plan', icon: GridIcon },
   { href: '/search', label: 'Recherche', icon: SearchIcon },
-  { href: '/staff', label: 'Staff', icon: StaffIcon },
+  APPROVALS_ITEM,
 ];
 
+// admin/directeur, barre generique (toutes les pages hors /dashboard, /scan
+// et /agenda, qui ont leur propre branche explicite plus bas) : le dernier
+// onglet etait Agenda ; remplace par Approbations le 13/09/2026 (retour de
+// Gersom : en visitant /approbations elle-meme, ou n'importe quelle autre
+// page, voir "Agenda" en bas a droite plutot qu'un acces direct aux
+// approbations n'avait pas de sens -- Agenda reste atteignable depuis
+// /dashboard, /scan et /agenda lui-meme, voir les branches isAdminDirector
+// plus bas dans BottomNav()).
 const ITEMS: Record<string, NavItem[]> = {
   directeur: [
     { href: '/search', label: 'Recherche', icon: SearchIcon },
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
     { href: '/scan', label: 'Scan', icon: ScanIcon },
-    { href: '/agenda', label: 'Agenda', icon: StaffIcon },
+    APPROVALS_ITEM,
   ],
   placeur: STAFF_ITEMS,
   agent_checkin: AGENT_CHECKIN_ITEMS,
@@ -70,7 +85,7 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/plan-table', label: 'Plan', icon: GridIcon },
     { href: '/scan', label: 'Scan', icon: ScanIcon },
     { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-    { href: '/agenda', label: 'Agenda', icon: StaffIcon },
+    APPROVALS_ITEM,
   ],
 };
 

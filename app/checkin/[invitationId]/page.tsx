@@ -14,6 +14,7 @@ import { hasCapability } from '@/lib/permissions';
 import { ETIQUETTES_RAPIDES, libelleEtiquette } from '@/lib/tags';
 import { GuestArrivalPanel } from '@/components/GuestArrivalPanel';
 import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
+import { PhotoCaptureCamera } from '@/components/PhotoCaptureCamera';
 
 type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_done';
 
@@ -88,11 +89,10 @@ export default function CheckinPage() {
 
   // -- Invite surprise lie a ce groupe (photo + approbation) -- demande de
   // Gersom le 02/09/2026, voir 0046_guest_approval_linked_invitation.sql.
-  // Pas de flux camera live ici (contrairement a /scan) : un simple input
-  // fichier avec capture="environment" ouvre directement l'appareil photo
-  // du telephone sur iOS/Android.
+  // Camera en direct dans l'application (PhotoCaptureCamera, voir plus bas) --
+  // corrige le 13/09/2026, meme flux que /scan (QrScanner.captureFrame).
   const [surprisePhoto, setSurprisePhoto] = useState<File | null>(null);
-  const surprisePhotoInputRef = useRef<HTMLInputElement>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   useEffect(() => {
     // Corrige le 03/09/2026 (retour de Gersom : "je vois comme l'ancienne
@@ -789,11 +789,23 @@ export default function CheckinPage() {
       <div className="flex-1 px-4 py-4">
         <div className="card mb-3 space-y-1 text-center">
           {invitationTable && (
-            <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+            // Cliquable vers la fiche de la table -- demande de Gersom le
+            // 13/09/2026 : "on peut ouvrir le check-in [de l'invite]. Par
+            // contre, on ne peut pas cliquer sur les tags de sa table...
+            // ça l'amène aussi sur la page de sa table directement, comme ça
+            // on peut voir les gens qui sont sur sa table". Utilise
+            // `invitationTable.id` (deja charge ci-dessus) plutot que de
+            // reparser l'etiquette texte "T0XX" -- fiable meme si l'etiquette
+            // n'a jamais ete synchronisee ou est absente.
+            <button
+              type="button"
+              onClick={() => router.push('/tables/' + invitationTable.id)}
+              className="mx-auto flex items-center justify-center gap-1 text-sm font-semibold uppercase tracking-wide text-accent underline decoration-accent/35 underline-offset-4"
+            >
               Table {invitationTable.number}
               {invitationTable.label ? ' — ' + invitationTable.label : ''}
               {invitationTable.is_reserve ? ' (réserve)' : ''}
-            </p>
+            </button>
           )}
           <p className="text-sm uppercase tracking-wide text-text-faint">Personnes prévues</p>
           <p className="font-display text-3xl font-bold ">{invitation.nombre_prevu}</p>
@@ -850,12 +862,33 @@ export default function CheckinPage() {
             <p className="mb-2 text-sm font-semibold">🏷️ Étiquettes</p>
             {invitation.tags.length === 0 && <p className="mb-2 text-xs text-text-faint">Aucune étiquette pour l'instant.</p>}
             <div className={canManageTags ? 'mb-2 flex flex-wrap gap-2' : 'flex flex-wrap gap-2'}>
-              {invitation.tags.map((tag) => canManageTags ? (
+              {invitation.tags.map((tag) => {
+                // Étiquette "table" (ex: T019, ajoutée à l'import) : cliquable
+                // vers la fiche de la table quand elle correspond à la table
+                // actuelle de l'invitation -- demande de Gersom le 13/09/2026
+                // (même besoin que le bloc "Table N" ci-dessus). N'affiche un
+                // lien que si `invitationTable` est bien chargée, pour ne
+                // jamais pointer vers une table qui ne correspond plus (une
+                // étiquette d'import n'est jamais mise à jour automatiquement
+                // si l'invitation est déplacée ensuite).
+                const isTableTag = /^T\d+$/i.test(tag) && !!invitationTable;
+                const label = isTableTag ? (
+                  <button
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); router.push('/tables/' + invitationTable!.id); }}
+                    className="underline decoration-accent/35 underline-offset-2"
+                  >
+                    {libelleEtiquette(tag)}
+                  </button>
+                ) : (
+                  libelleEtiquette(tag)
+                );
+                return canManageTags ? (
                   <span
                     key={tag}
                     className="flex items-center gap-1 rounded-full bg-accent-tint px-3 py-1 text-xs font-medium text-accent"
                   >
-                    {libelleEtiquette(tag)}
+                    {label}
                     <button
                       type="button"
                       aria-label={'Retirer ' + libelleEtiquette(tag)}
@@ -867,8 +900,9 @@ export default function CheckinPage() {
                     </button>
                   </span>
                 ) : (
-                  <span key={tag} className="rounded-full bg-accent-tint px-3 py-1 text-xs font-medium text-accent">{libelleEtiquette(tag)}</span>
-                ))}
+                  <span key={tag} className="rounded-full bg-accent-tint px-3 py-1 text-xs font-medium text-accent">{label}</span>
+                );
+              })}
             </div>
             {canManageTags && <>
               <div className="mb-2 flex flex-wrap gap-2">
@@ -987,26 +1021,18 @@ export default function CheckinPage() {
             <>
               {/* Invite surprise lie a ce groupe : nom + photo + approbation,
                   avec cote/groupe deja preremplis (voir
-                  GuestApprovalCaptureFlow). input file avec
-                  capture="environment" ouvre l'appareil photo natif,
-                  identique en usage a la capture live de /scan. */}
-              <input
-                ref={surprisePhotoInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) setSurprisePhoto(file);
-                  event.target.value = '';
-                }}
-              />
+                  GuestApprovalCaptureFlow). Camera en direct dans
+                  l'application (PhotoCaptureCamera, meme mecanisme que
+                  QrScanner.captureFrame sur /scan) -- corrige le 13/09/2026 :
+                  un input fichier avec capture environnement ouvrait l'app
+                  Camera native et faisait quitter l'application (retour de Gersom :
+                  "ça quitte l'appareil photo... on aurait voulu un système
+                  vraiment un peu comme la page scanner directement"). */}
               <button
                 type="button"
                 className="action-row mb-3"
                 disabled={submitting || !online}
-                onClick={() => surprisePhotoInputRef.current?.click()}
+                onClick={() => setShowCamera(true)}
               >
                 {!online ? 'HORS LIGNE' : '📷 Invité surprise'}
               </button>
@@ -1051,6 +1077,13 @@ export default function CheckinPage() {
             {boutonLabel}
           </button>
         </div>
+      )}
+
+      {showCamera && (
+        <PhotoCaptureCamera
+          onCapture={(file) => { setShowCamera(false); setSurprisePhoto(file); }}
+          onClose={() => setShowCamera(false)}
+        />
       )}
 
       {surprisePhoto && (

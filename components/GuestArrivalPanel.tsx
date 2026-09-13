@@ -110,6 +110,26 @@ export function GuestArrivalPanel({
   // de retomber sur un compteur anonyme.
   useEffect(() => {
     let cancelled = false;
+    // Corrige le 13/09/2026 (retour de Gersom : "cette page va flasher en
+    // premier... l'ancien compteur apparait encore") -- Next.js reutilise
+    // cette meme instance de GuestArrivalPanel en passant d'une invitation a
+    // une autre (meme pattern que le correctif du 03/09/2026 sur la page
+    // /checkin/[invitationId] elle-meme), donc sans ce reset les etats
+    // `loading`/`initializing`/`members` de l'invitation PRECEDENTE restaient
+    // affiches pendant que la requete pour la NOUVELLE invitation etait
+    // encore en vol. Concretement : si l'invitation precedente etait un
+    // invite solo (visible=false, donc le parent affichait deja son ancien
+    // compteur +/-), naviguer vers un GROUPE ne redeclenchait l'effet
+    // `[settled, visible]` que quand `visible` changeait reellement -- avec
+    // l'ancien `visible=false` fige, le parent restait sur le compteur
+    // jusqu'a ce que `load()` resolve, d'ou le flash. Reinitialiser
+    // synchroniquement ici (et prevenir `onVisibilityChange(true)` de facon
+    // optimiste, comme le fait deja la page parente pour son propre etat)
+    // fait disparaitre ce compteur perime des le changement d'invitation.
+    setLoading(true);
+    setInitializing(false);
+    setMembers([]);
+    onVisibilityChange?.(true);
     (async () => {
       let list = await load();
       if (cancelled) return;

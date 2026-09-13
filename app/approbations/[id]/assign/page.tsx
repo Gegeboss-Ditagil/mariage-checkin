@@ -20,6 +20,14 @@ interface TargetRequest {
   table_id: string | null;
   reserved_table_id: string | null;
   photo_signed_url: string | null;
+  // Invitation du groupe avec qui la personne est arrivée -- voir
+  // 0046_guest_approval_linked_invitation.sql. Sert à présélectionner et
+  // mettre en avant cette même table dans les recommandations (demande de
+  // Gersom le 13/09/2026).
+  linked_invitation_id: string | null;
+  linked_invitation_nom: string | null;
+  linked_invitation_table_id: string | null;
+  linked_invitation_table_number: number | null;
 }
 
 /**
@@ -63,14 +71,36 @@ export default function AssignGuestApprovalTablePage() {
   const [force, setForce] = useState(false);
   const recommendations = useMemo(() => {
     const needed = request?.nombre_invites || 1;
+    const linkedTableId = request?.linked_invitation_table_id || null;
     return usages
       .filter((usage) => force || usage.libresEstimees >= needed)
       .sort((a, b) => {
-        const priority = (usage: TableCapacity) =>
-          usage.libresEstimees >= needed ? (usage.table.number === 41 ? 0 : usage.table.is_reserve ? 1 : 2) : 3;
+        // Priorité 0 : la table du groupe avec qui l'invité est arrivé
+        // (quand elle a de la place) -- même logique que le placement
+        // automatique à l'approbation (auto_assign_table_for_guest_approval,
+        // 0045/0046), reprise ici pour l'assignation manuelle. Ensuite,
+        // même ordre qu'avant : table 41 (excédentaire) en priorité, puis
+        // réserve, puis les tables normales.
+        const priority = (usage: TableCapacity) => {
+          if (usage.libresEstimees < needed) return 4;
+          if (linkedTableId && usage.table.id === linkedTableId) return 0;
+          return usage.table.number === 41 ? 1 : usage.table.is_reserve ? 2 : 3;
+        };
         return priority(a) - priority(b) || a.table.number - b.table.number;
       });
-  }, [request?.nombre_invites, usages, force]);
+  }, [request?.nombre_invites, request?.linked_invitation_table_id, usages, force]);
+
+  // Présélectionne automatiquement la meilleure table (recommendations[0],
+  // déjà triée avec la priorité "arrivé avec ce groupe" ci-dessus) dès que
+  // la liste est prête -- demande de Gersom le 13/09/2026 : "à la base,
+  // automatiquement, ça va déjà sélectionner... [mais] s'ils cliquent sur le
+  // champ, ils peuvent aller sélectionner la table". Ne remplace jamais un
+  // choix déjà fait (rouverture d'une réservation existante, ou l'agent a
+  // déjà cliqué une autre table).
+  useEffect(() => {
+    if (chosenTableId || loading || recommendations.length === 0) return;
+    setChosenTableId(recommendations[0].table.id);
+  }, [chosenTableId, loading, recommendations]);
 
   useEffect(() => {
     let active = true;
@@ -221,6 +251,14 @@ export default function AssignGuestApprovalTablePage() {
               {request.nombre_invites} invité{request.nombre_invites > 1 ? 's' : ''} · Côté{' '}
               {request.cote === 'Gege' ? 'Gégé' : 'Nelly'} · {mode === 'reserve' ? 'en attente de décision' : 'approuvé'}
             </p>
+            {/* Demande de Gersom le 13/09/2026 : mentionner avec qui la
+                personne est arrivée, pour guider le choix de table. */}
+            {request.linked_invitation_nom && (
+              <p className="text-sm font-semibold text-accent">
+                Arrivé(e) avec {request.linked_invitation_nom}
+                {request.linked_invitation_table_number ? ' — Table ' + request.linked_invitation_table_number : ''}
+              </p>
+            )}
           </div>
         </div>
 
@@ -235,7 +273,9 @@ export default function AssignGuestApprovalTablePage() {
           <div>
             <h2 className="font-display text-lg font-semibold">Tables disponibles</h2>
             <p className="text-sm text-text-muted">
-              Seules les tables qui peuvent accueillir tout le groupe sont proposées. La table 41 est prioritaire lorsqu’elle a assez de places.
+              Seules les tables qui peuvent accueillir tout le groupe sont proposées, la meilleure déjà sélectionnée
+              (modifiable en touchant une autre table) : en priorité la table du groupe avec qui l’invité est arrivé,
+              puis la table 41 (excédentaire), puis les autres tables de réserve, puis les tables normales.
             </p>
           </div>
           {recommendations.length === 0 ? (
@@ -264,6 +304,7 @@ export default function AssignGuestApprovalTablePage() {
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {recommendations.map((usage) => {
+                const isLinkedTable = !!request.linked_invitation_table_id && usage.table.id === request.linked_invitation_table_id;
                 return (
                   <button
                     key={usage.table.id}
@@ -279,6 +320,11 @@ export default function AssignGuestApprovalTablePage() {
                     <span className="block text-xs font-semibold text-status-complete">
                       {usage.libresEstimees} place{usage.libresEstimees > 1 ? 's' : ''} libre{usage.libresEstimees > 1 ? 's' : ''}{usage.table.is_reserve ? ' · réserve' : ''}
                     </span>
+                    {/* Table du groupe avec qui l'invité est arrivé -- voir la
+                        priorité 0 dans `recommendations` ci-dessus. */}
+                    {isLinkedTable && (
+                      <span className="mt-0.5 block text-xs font-bold text-accent">★ Arrivé(e) avec ce groupe</span>
+                    )}
                   </button>
                 );
               })}
