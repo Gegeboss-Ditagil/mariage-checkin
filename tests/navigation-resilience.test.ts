@@ -301,6 +301,11 @@ test("le splash avant connexion affiche discretement la version applicative, tou
   assert.match(splashSource, /version\?: string/);
   assert.match(splashSource, /\{version && \(/);
   assert.match(splashSource, /v\{version\}/);
+  // Décalé le 13/09/2026 (retour de Gersom : "c'est trop en bas à droite...
+  // une translation d'à peu près 1 cm à l'angle 315°", cap boussole donc
+  // nord-ouest) -- toujours ancré bottom-3/right-4, mais remonté vers le
+  // centre par un transform CSS plutôt que collé pile dans l'angle.
+  assert.match(splashSource, /transform: 'translate\(-0\.71cm, -0\.71cm\)'/);
   // Pas affiche sur l'usage post-connexion (app/dashboard/page.tsx) : pas
   // de prop `version` passee la-bas.
   const dashboardSource = readFileSync(new URL('../app/dashboard/page.tsx', import.meta.url), 'utf8');

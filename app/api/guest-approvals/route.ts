@@ -182,8 +182,15 @@ export async function GET(req: NextRequest) {
     .from('guest_approval_requests')
     .select(
       'id, cote, nom_invite, nombre_invites, photo_url, statut, decided_at, decided_via, table_id, assigned_at, created_at, ' +
-      'reserved_table_id, ' +
-      'requested_by:requested_by(nom_affichage), table:table_id(number), reserved_table:reserved_table_id(number)'
+      'reserved_table_id, linked_invitation_id, ' +
+      'requested_by:requested_by(nom_affichage), table:table_id(number), reserved_table:reserved_table_id(number), ' +
+      // Invitation du groupe avec qui la personne est arrivée (voir
+      // 0046_guest_approval_linked_invitation.sql) -- affichée dans
+      // /approbations et sur /approbations/[id]/assign pour prioriser sa
+      // table, demande de Gersom le 13/09/2026 : "il faudrait que dans le
+      // programme aussi, ça soit bien mentionné avec qui la personne est
+      // venue".
+      'linked_invitation:linked_invitation_id(nom_affichage, table_id, table:table_id(number))'
     )
     .order('created_at', { ascending: false })
     .limit(200);
@@ -211,6 +218,10 @@ export async function GET(req: NextRequest) {
       created_at: row.created_at,
       requested_by_nom: row.requested_by?.nom_affichage ?? null,
       photo_signed_url: signedUrls.get(row.photo_url) ?? null,
+      linked_invitation_id: row.linked_invitation_id,
+      linked_invitation_nom: row.linked_invitation?.nom_affichage ?? null,
+      linked_invitation_table_id: row.linked_invitation?.table_id ?? null,
+      linked_invitation_table_number: row.linked_invitation?.table?.number ?? null,
     }));
 
   return NextResponse.json(

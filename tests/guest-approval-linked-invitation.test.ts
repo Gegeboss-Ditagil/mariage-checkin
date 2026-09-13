@@ -91,9 +91,29 @@ test("/checkin/[invitationId] offre '📷 Invité surprise' pour submitGuestAppr
   assert.match(checkinPageSource, /const canSubmitGuestApproval = hasCapability\(role, 'submitGuestApproval'\)/);
   assert.match(checkinPageSource, /!canSubmitGuestApproval \? \(/);
   assert.match(checkinPageSource, /Une personne en plus \? Un placeur ou directeur peut l’ajouter\./);
-  assert.match(checkinPageSource, /accept="image\/\*"/);
-  assert.match(checkinPageSource, /capture="environment"/);
   assert.match(checkinPageSource, /📷 Invité surprise/);
+});
+
+// Corrige le 13/09/2026 (retour de Gersom : "ça quitte l'appareil photo, ça
+// va vers l'application iPhone d'appareil photo... on aurait voulu un
+// système vraiment un peu comme la page scanner directement") -- remplace
+// l'ancien <input type="file" capture="environment"> (qui ouvrait l'app
+// Camera native) par une caméra en direct dans l'application, comme /scan.
+test("le bouton '📷 Invité surprise' ouvre une caméra en direct dans l'application, jamais l'app Camera native", () => {
+  assert.doesNotMatch(checkinPageSource, /type="file"/);
+  assert.doesNotMatch(checkinPageSource, /capture="environment"/);
+  assert.match(checkinPageSource, /import \{ PhotoCaptureCamera \} from '@\/components\/PhotoCaptureCamera'/);
+  assert.match(checkinPageSource, /const \[showCamera, setShowCamera\] = useState\(false\)/);
+  assert.match(checkinPageSource, /onClick=\{\(\) => setShowCamera\(true\)\}/);
+  assert.match(checkinPageSource, /showCamera && \(/);
+  assert.match(checkinPageSource, /<PhotoCaptureCamera/);
+  assert.match(checkinPageSource, /onCapture=\{\(file\) => \{ setShowCamera\(false\); setSurprisePhoto\(file\); \}\}/);
+
+  const cameraSource = readFileSync(new URL('../components/PhotoCaptureCamera.tsx', import.meta.url), 'utf8');
+  assert.match(cameraSource, /getUserMedia/);
+  assert.match(cameraSource, /facingMode: 'environment'/);
+  assert.match(cameraSource, /context\.drawImage\(video/);
+  assert.match(cameraSource, /canvas\.toBlob/);
 });
 
 test('le champ photo du check-in lie automatiquement la demande à l\'invitation courante (côté et groupe déjà connus, sans avoir à les ressaisir)', () => {

@@ -30,6 +30,13 @@ interface ApprovalListItem {
   created_at: string;
   requested_by_nom: string | null;
   photo_signed_url: string | null;
+  // Invitation du groupe avec qui la personne est arrivée -- voir
+  // 0046_guest_approval_linked_invitation.sql. Absent (tous null) pour une
+  // demande soumise depuis /scan, qui ne connaît aucune invitation.
+  linked_invitation_id: string | null;
+  linked_invitation_nom: string | null;
+  linked_invitation_table_id: string | null;
+  linked_invitation_table_number: number | null;
 }
 
 const STATUS_LABEL: Record<ApprovalListItem['statut'], string> = {
@@ -230,6 +237,16 @@ export default function ApprobationsPage() {
                   {r.requested_by_nom ? ' · demandé par ' + r.requested_by_nom : ''}
                   {r.decided_via ? ' · via ' + (r.decided_via === 'whatsapp' ? 'WhatsApp' : r.decided_via === 'app' ? "l'application" : 'lien web') : ''}
                 </p>
+                {/* Arrivé avec quel groupe -- demande de Gersom le
+                    13/09/2026 : "que dans le programme aussi, ça soit bien
+                    mentionné avec qui la personne est venue". Absent pour une
+                    demande soumise depuis /scan (aucune invitation liée). */}
+                {r.linked_invitation_nom && (
+                  <p className="mt-0.5 text-xs font-medium text-accent">
+                    Arrivé(e) avec {r.linked_invitation_nom}
+                    {r.linked_invitation_table_number ? ' — Table ' + r.linked_invitation_table_number : ''}
+                  </p>
+                )}
                 {r.table_number ? (
                   <p className="mt-1 text-xs font-semibold text-status-complete">Table {r.table_number} assignée</p>
                 ) : r.statut === 'approuve' && role && hasCapability(role, 'assignGuestApproval') ? (
@@ -303,10 +320,10 @@ export default function ApprobationsPage() {
                 </button>
               </>
             )}
-            <div className="mb-3 flex items-start justify-between gap-3">
+            <div className="mb-2 flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">Demande d'approbation</p>
-                <h2 id="approval-detail-title" className="font-display text-2xl">{selectedRequest.nom_invite}</h2>
+                <h2 id="approval-detail-title" className="font-display text-xl">{selectedRequest.nom_invite}</h2>
               </div>
               <button
                 type="button"
@@ -318,17 +335,22 @@ export default function ApprobationsPage() {
               </button>
             </div>
 
+            {/* Photo resserree le 13/09/2026 (retour de Gersom : "recise la
+                fiche d'approbation... pour qu'on n'ait pas besoin de
+                scroller") -- 42dvh->26dvh, laisse largement la place aux
+                champs et aux boutons Approuver/Refuser en dessous sans
+                defiler sur un iPhone standard. */}
             {selectedRequest.photo_signed_url ? (
               <img
                 src={selectedRequest.photo_signed_url}
                 alt={'Photo de la demande pour ' + selectedRequest.nom_invite}
-                className="max-h-[42dvh] w-full rounded-2xl bg-black object-contain"
+                className="max-h-[26dvh] w-full rounded-2xl bg-black object-contain"
               />
             ) : (
-              <div className="flex min-h-48 items-center justify-center rounded-2xl bg-surface-2 text-sm text-text-faint">Photo indisponible</div>
+              <div className="flex min-h-32 items-center justify-center rounded-2xl bg-surface-2 text-sm text-text-faint">Photo indisponible</div>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className={'rounded-full px-3 py-1 text-sm font-bold ' + (selectedRequest.cote === 'Gege' ? 'bg-gege/15 text-gege' : 'bg-nelly/15 text-nelly')}>
                 Côté {selectedRequest.cote === 'Gege' ? 'Gégé' : 'Nelly'}
               </span>
@@ -337,11 +359,23 @@ export default function ApprobationsPage() {
               </span>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-hairline bg-surface-2/70 p-2">
+            <div className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border border-hairline bg-surface-2/70 p-2">
               <div className="col-span-2 rounded-xl bg-surface px-3 py-2 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Nom</p>
                 <p className="mt-0.5 font-semibold text-text">{selectedRequest.nom_invite}</p>
               </div>
+              {/* Arrivé avec quel groupe -- demande de Gersom le 13/09/2026 :
+                  "que ça soit bien mentionné avec qui la personne est
+                  venue". Absent pour une demande soumise depuis /scan. */}
+              {selectedRequest.linked_invitation_nom && (
+                <div className="col-span-2 rounded-xl bg-surface px-3 py-2 shadow-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Arrivé(e) avec</p>
+                  <p className="mt-0.5 font-semibold text-accent">
+                    {selectedRequest.linked_invitation_nom}
+                    {selectedRequest.linked_invitation_table_number ? ' — Table ' + selectedRequest.linked_invitation_table_number : ''}
+                  </p>
+                </div>
+              )}
               <div className="rounded-xl bg-surface px-3 py-2 shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted">Invités</p>
                 <p className="mt-0.5 font-semibold text-text">{selectedRequest.nombre_invites}</p>
@@ -375,13 +409,13 @@ export default function ApprobationsPage() {
             </div>
 
             {actionFeedback && (
-              <p className="mt-4 rounded-2xl bg-accent-tint px-4 py-3 text-sm font-semibold text-accent" role="status">
+              <p className="mt-3 rounded-2xl bg-accent-tint px-4 py-3 text-sm font-semibold text-accent" role="status">
                 {actionFeedback}
               </p>
             )}
 
             {selectedRequest.statut === 'en_attente' && role && hasCapability(role, 'reviewGuestApproval') && (
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-2 gap-3">
                 <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="glass-pill-complete min-h-12 px-4 py-3 text-base disabled:opacity-50">Approuver</button>
                 <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'refuse')} className="glass-pill-over min-h-12 px-4 py-3 text-base disabled:opacity-50">Refuser</button>
               </div>

@@ -3,6 +3,47 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.42.1] — 2026-09-13
+
+Ajustement mineur du badge de version sur le splash (retour de Gersom).
+
+### Corrigé
+- **Badge de version du splash déplacé** : "c'est trop en bas à droite" — décalé d'environ 1 cm à l'angle 315° (cap boussole, donc vers le nord-ouest/le centre) via un `transform: translate(-0.71cm, -0.71cm)`, en gardant l'ancrage `bottom-3 right-4` existant. Toujours synchronisé automatiquement avec `package.json` (aucun changement sur ce point, déjà en place depuis v1.40.0 — reconfirmé par ce lot).
+
+### Tests
+- `tests/navigation-resilience.test.ts` mis à jour (nouvelle assertion sur le `transform`).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.42.0 → 1.42.1
+
+## [1.42.0] — 2026-09-13
+
+Lot de 8 correctifs/fonctionnalités demandés par Gersom (retour avec 4 photos) sur les approbations, la navigation et le check-in.
+
+### Corrigé
+- **Bug critique : Approuver/Refuser ne faisait rien dans l'application** ("La décision n'a pas pu être enregistrée. Vérifiez le réseau et réessayez.") — root-cause identifiée par reproduction en base : la contrainte `guest_approval_requests_decided_via_check` en production n'autorisait que `'web'`/`'whatsapp'`, jamais `'app'`, alors que `POST /api/guest-approvals/[id]/decide` envoie toujours `'app'`. La migration `0037_guest_approval_app_push.sql` (déjà dans le dépôt, jamais appliquée en production) corrige exactement ça — **appliquée en production le 13/09/2026**, avec au passage `push_subscriptions` (table manquante depuis le début, rendant les notifications Web Push muettes) et `0036_enable_rls_user_credential_backups.sql` (RLS manquante, signalée par l'advisor Supabase, table inutilisée par le code). Vérifié par une transaction de test (BEGIN/ROLLBACK) sur une vraie demande en attente avant et après.
+- **Flash de l'ancien compteur `+/-` dans `GuestArrivalPanel`** en changeant d'invitation (ex: solo → groupe) : le composant réutilisé par Next.js gardait l'état `loading`/`members` de l'invitation précédente le temps que la nouvelle requête arrive. Réinitialisé synchroniquement au changement d'`invitation.id`, avec un `onVisibilityChange(true)` optimiste (même logique que le correctif du 03/09/2026 sur la page parente).
+
+### Ajouté
+- **Bottom nav** : Approbations remplace Agenda (barre générique admin/directeur, hors `/dashboard`/`/scan`/`/agenda`) et Staff (visibilite) en dernière position — accès direct aux approbations pour les rôles qui en ont la capacité, Agenda restant atteignable depuis `/dashboard`, `/scan` et `/agenda` lui-même.
+- **`/checkin/[invitationId]`** : le bloc "Table N" et l'étiquette `T0XX` correspondante sont cliquables vers `/tables/[tableId]`.
+- **Caméra en direct pour "📷 Invité surprise"** (`components/PhotoCaptureCamera.tsx`, `getUserMedia` + capture canvas, même mécanisme que `QrScanner.captureFrame` sur `/scan`) — remplace un `<input capture>` qui ouvrait l'app Camera native et faisait quitter l'application.
+- **"Arrivé(e) avec"** (invitation liée, `linked_invitation_id`) affiché dans la liste et la fiche détaillée de `/approbations`, et sur `/approbations/[id]/assign` où sa table est désormais **présélectionnée automatiquement** en priorité (avant même la table 41), tout en restant modifiable en touchant une autre table.
+- Fiche détaillée de `/approbations` resserrée (photo 42dvh → 26dvh, marges réduites) pour tenir sans défiler.
+
+### Tests
+- Nouveau `tests/approbations-ux-improvements.test.ts` (bottom nav, flash, tag cliquable, caméra, linked_invitation, présélection).
+- `tests/guest-approval-linked-invitation.test.ts`, `tests/guest-approvals.test.ts` mis à jour (nouvelles valeurs 26dvh / priorité table).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune nouvelle migration écrite : `0036_enable_rls_user_credential_backups.sql` et `0037_guest_approval_app_push.sql`, déjà présentes dans le dépôt depuis longtemps, ont été appliquées en production pour la première fois (voir ci-dessus).
+
+Version: 1.41.3 → 1.42.0
+
 ## [1.41.3] — 2026-09-04
 
 Suite de la v1.41.2 : le commentaire de suppression CodeQL documenté par GitHub (`codeql[js/xss-through-dom]`) sur `components/GuestApprovalCaptureFlow.tsx` n'avait en réalité aucun effet — confirmé empiriquement sur PR #68 avec deux placements essayés (ligne précédente isolée, commentaire de fin de ligne), l'alerte étant relevée à l'identique aux deux scans suivants. Ce repo utilise le Default setup de GitHub pour CodeQL (aucun `.github/workflows/*codeql*` versionné), qui ne semble pas traiter ces commentaires de suppression inline comme le ferait un Advanced setup. Gersom a rejeté l'alerte manuellement (faux positif) dans l'onglet Security → Code scanning de GitHub.

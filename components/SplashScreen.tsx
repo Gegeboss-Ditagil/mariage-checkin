@@ -46,7 +46,17 @@ export function SplashScreen({
       style={{ backgroundImage: "url('/images/splash-bg.jpg')" }}
     >
       {version && (
-        <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-white/70">
+        // Décalé le 13/09/2026 (retour de Gersom : "c'est trop en bas à
+        // droite... une translation d'à peu près 1 cm à l'angle 315°") --
+        // 315° (cap boussole, sens horaire depuis le nord) pointe vers le
+        // nord-ouest : le badge remonte donc légèrement vers le centre au
+        // lieu de rester collé dans l'angle exact de l'écran. Un vecteur de
+        // 1 cm à 315° se décompose en ~0,71 cm vers le haut et ~0,71 cm vers
+        // la gauche (cos 45° = sin 45° ≈ 0,71).
+        <span
+          className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-white/70"
+          style={{ transform: 'translate(-0.71cm, -0.71cm)' }}
+        >
           v{version}
         </span>
       )}
