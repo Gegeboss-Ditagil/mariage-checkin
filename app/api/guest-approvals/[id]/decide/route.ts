@@ -13,7 +13,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (body.decision !== 'approuve' && body.decision !== 'refuse') {
     return NextResponse.json({ error: 'invalid_decision' }, { status: 400 });
   }
-  const result = await applyGuestApprovalDecision(createAdminClient(), { id: params.id }, body.decision, 'app', user.id);
+  // allowReconsiderFromRefused: permet de reconsiderer un refus (par
+  // erreur) et d'approuver ensuite -- demande de Gersom le 13/09/2026.
+  // Uniquement ici (decision depuis l'application, jamais sur le lien
+  // public /approve/[token] ni WhatsApp) : voir lib/guestApprovalDecide.ts.
+  const result = await applyGuestApprovalDecision(createAdminClient(), { id: params.id }, body.decision, 'app', user.id, true);
   if (!result.ok) {
     return NextResponse.json(result, { status: result.reason === 'not_found' ? 404 : 409 });
   }
