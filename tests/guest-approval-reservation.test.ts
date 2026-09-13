@@ -76,17 +76,23 @@ test('la liste des demandes expose la table reservee (distincte de la table assi
   assert.match(typesSource, /reserved_table_id: string \| null/);
 });
 
-test("l'ecran d'assignation a deux modes selon le statut : reserver (en_attente) ou assigner (approuve), sans reorganisation pour une demande pas encore decidee", () => {
-  assert.match(assignPageSource, /const mode: 'assign' \| 'reserve' = request\?\.statut === 'en_attente' \? 'reserve' : 'assign'/);
-  assert.match(assignPageSource, /found\.statut === 'approuve' \|\| found\.statut === 'en_attente'/);
+test("l'ecran d'assignation a trois modes selon le statut : reserver (en_attente), assigner (approuve) ou reconsiderer-et-placer (refuse, depuis v1.44.0), sans reorganisation hors du mode assigner", () => {
+  assert.match(
+    assignPageSource,
+    /const mode: 'assign' \| 'reserve' \| 'reconsider' =\s*\n\s*request\?\.statut === 'en_attente' \? 'reserve' : request\?\.statut === 'refuse' \? 'reconsider' : 'assign';/
+  );
+  assert.match(assignPageSource, /found\.statut === 'approuve' \|\| found\.statut === 'en_attente' \|\| found\.statut === 'refuse'/);
   assert.match(assignPageSource, /reserve-table/);
   assert.match(assignPageSource, /assign-table/);
-  // Pas de bloc de reorganisation (deplacer des invites deja assis) en mode
-  // reservation -- trop tot pour une demande pas encore approuvee.
+  assert.match(assignPageSource, /reconsider-assign/);
+  // Pas de bloc de reorganisation (deplacer des invites deja assis) hors du
+  // mode assigner -- trop tot pour une demande pas encore approuvee, meme
+  // en cours de reconsideration.
   assert.match(assignPageSource, /mode === 'assign' && chosenTableId && shortage > 0/);
-  assert.match(assignPageSource, /mode === 'reserve' && chosenTableId && shortage > 0/);
+  assert.match(assignPageSource, /mode !== 'assign' && chosenTableId && shortage > 0/);
   assert.match(assignPageSource, /RÉSERVER CETTE TABLE/);
   assert.match(assignPageSource, /ASSIGNER CETTE TABLE/);
+  assert.match(assignPageSource, /PLACER ET APPROUVER/);
 });
 
 test("l'approbation place automatiquement (retour de Gersom le 02/09/2026 : \"je n'ai pas besoin de voir reserver une table directement... etre capable de approuver ou refuser rapidement\") -- la carte de liste a un Approuver/Refuser direct, plus de lien de reservation manuelle", () => {

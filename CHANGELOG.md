@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.44.0] — 2026-09-13
+
+Reconsidérer un refus place désormais l'invité sur une table choisie, avant l'approbation (retour de Gersom).
+
+### Corrigé
+- **Reconsidérer un refus permet de choisir la table d'abord** : "Reconsidérer → Approuver" (liste et fiche détaillée de `/approbations`) ne décide plus directement — le bouton mène désormais à `/approbations/[id]/assign` (nouveau mode "reconsider"), où l'agent choisit la table avant que la demande soit approuvée. Avant ce correctif, l'approbation était immédiate et le placement automatique (`auto_assign_table_for_guest_approval`, 0045) choisissait seul la table, sans intervention possible — retour de Gersom : "je n'avais pas l'option de le mettre sur une table... le process a été automatique".
+- **Nouvelle route `POST /api/guest-approvals/[id]/reconsider-assign`** : réserve la table choisie (`reserve_table_for_guest_approval`) puis approuve (`allowReconsiderFromRefused`) en une seule action — `finalizeDecision` (lib/guestApprovalDecide.ts) détecte la réservation posée et la finalise en vraie assignation, exactement comme une réservation posée avant décision (0044). Si la réservation échoue (table pleine entre-temps), rien n'est décidé : la demande reste refusée. Exige `reviewGuestApproval` ET `assignGuestApproval` (admin, directeur, visibilite).
+
+### Migrations
+- `0050_reserve_table_for_reconsidered_refusal.sql` : `reserve_table_for_guest_approval` (0044) accepte désormais aussi le statut `refuse`, pas seulement `en_attente` — une demande refusée n'a jamais de `reserved_table_id` restant en place (libérée automatiquement au refus), donc aucun risque de collision. Appliquée et vérifiée en production Supabase le 13/09/2026.
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts` : nouveaux tests sur le mode "reconsider", la nouvelle route et la migration 0050.
+- `tests/guest-approval-reservation.test.ts` : assertions sur les trois modes de `/approbations/[id]/assign` mises à jour (au lieu de deux).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+Version: 1.43.1 → 1.44.0
+
 ## [1.43.1] — 2026-09-13
 
 Précision du bouton "Activer les notifications" (retour de Gersom).

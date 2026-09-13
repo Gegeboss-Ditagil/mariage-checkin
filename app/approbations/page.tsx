@@ -308,16 +308,19 @@ export default function ApprobationsPage() {
                     refaire... au cas où c'était une erreur, les réapprouver
                     par la suite". Volontairement à sens unique (jamais de
                     bouton pour annuler une approbation -- une table peut
-                    déjà être assignée). */}
-                {r.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && (
-                  <button
-                    type="button"
-                    disabled={decidingId === r.id}
-                    onClick={(event) => { event.stopPropagation(); void decide(r.id, 'approuve'); }}
-                    className="glass-pill-complete mt-2 min-h-10 w-full text-sm disabled:opacity-50"
+                    déjà être assignée). Passe désormais par le choix de
+                    table (/approbations/[id]/assign, mode "reconsider")
+                    plutôt qu'une approbation directe -- retour du même jour :
+                    "je n'avais pas l'option de le mettre sur une table...
+                    le process a été automatique". */}
+                {r.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && hasCapability(role, 'assignGuestApproval') && (
+                  <Link
+                    onClick={(event) => event.stopPropagation()}
+                    href={'/approbations/' + r.id + '/assign'}
+                    className="glass-pill-complete mt-2 flex min-h-10 w-full items-center justify-center text-sm"
                   >
-                    Reconsidérer → Approuver
-                  </button>
+                    Reconsidérer → choisir une table
+                  </Link>
                 )}
               </div>
             </div>
@@ -463,10 +466,10 @@ export default function ApprobationsPage() {
 
             {/* Revenir sur un refus par erreur -- voir la même note sur la
                 carte de liste plus haut. */}
-            {selectedRequest.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && (
-              <button type="button" disabled={decidingId === selectedRequest.id} onClick={() => void decide(selectedRequest.id, 'approuve')} className="glass-pill-complete mt-3 w-full min-h-12 px-4 py-3 text-base disabled:opacity-50">
-                Reconsidérer → Approuver
-              </button>
+            {selectedRequest.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && hasCapability(role, 'assignGuestApproval') && (
+              <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="glass-pill-complete mt-3 flex min-h-12 w-full items-center justify-center px-4 py-3 text-base">
+                Reconsidérer → choisir une table
+              </Link>
             )}
 
             {selectedRequest.statut === 'approuve' && !selectedRequest.table_id && role && hasCapability(role, 'assignGuestApproval') && (

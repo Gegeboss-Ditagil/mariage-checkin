@@ -11,6 +11,12 @@ import { useOnline } from '@/hooks/useOnline';
 import { hasCapability } from '@/lib/permissions';
 import { computeTableCapacities, TableCapacity } from '@/lib/capacity';
 
+const ASSIGN_PAGE_TITLES: Record<'assign' | 'reserve' | 'reconsider', string> = {
+  assign: 'Assigner une table',
+  reserve: 'Réserver une table',
+  reconsider: 'Reconsidérer et placer',
+};
+
 interface TargetRequest {
   id: string;
   nom_invite: string;
@@ -31,7 +37,7 @@ interface TargetRequest {
 }
 
 /**
- * Deux modes selon l'état de la demande, même écran :
+ * Trois modes selon l'état de la demande, même écran :
  * - "assign" (déjà APPROUVÉE) : crée l'invitation à la table choisie
  *   (RPC assign_table_to_guest_approval_strict, 0038) -- comportement
  *   d'origine, avec réorganisation possible si la table est trop pleine.
@@ -43,6 +49,13 @@ interface TargetRequest {
  *   ici : trop tôt pour déplacer de vrais invités pour une demande pas
  *   encore décidée -- si la table choisie n'a plus assez de place, l'agent
  *   en choisit une autre.
+ * - "reconsider" (REFUSÉE, en cours de reconsidération) : même écran de
+ *   choix de table que "reserve", mais valide en réservant PUIS en
+ *   approuvant en un seul appel (POST .../reconsider-assign) -- demande de
+ *   Gersom le 13/09/2026 : "si je reconsidère quelqu'un et je fais
+ *   approuver, je n'avais pas l'option de le mettre sur une table... le
+ *   process a été automatique". reserve_table_for_guest_approval accepte
+ *   ce statut depuis la migration 0050.
  */
 export default function AssignGuestApprovalTablePage() {
   const { id } = useParams<{ id: string }>();
@@ -61,7 +74,8 @@ export default function AssignGuestApprovalTablePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mode: 'assign' | 'reserve' = request?.statut === 'en_attente' ? 'reserve' : 'assign';
+  const mode: 'assign' | 'reserve' | 'reconsider' =
+    request?.statut === 'en_attente' ? 'reserve' : request?.statut === 'refuse' ? 'reconsider' : 'assign';
 
   // v1.41.0, retour de Gersom : « si j'approuve quelqu'un, il faut bien le
   // mettre quelque part ». Quand l'événement est plein, la liste vide
@@ -110,7 +124,8 @@ export default function AssignGuestApprovalTablePage() {
       if (res.ok) {
         const data = await res.json();
         const found = (data.requests || []).find((r: TargetRequest) => r.id === id) || null;
-        const eligible = !!found && !found.table_id && (found.statut === 'approuve' || found.statut === 'en_attente');
+        const eligible =
+          !!found && !found.table_id && (found.statut === 'approuve' || found.statut === 'en_attente' || found.statut === 'refuse');
         if (!eligible) {
           setNotFound(true);
           setLoading(false);
@@ -150,22 +165,21 @@ export default function AssignGuestApprovalTablePage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(
-        '/api/guest-approvals/' + id + (mode === 'reserve' ? '/reserve-table' : '/assign-table'),
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            mode === 'reserve'
-              ? { table_id: chosenTableId }
-              : {
-                  table_id: chosenTableId,
-                  relocations: relocationIds.map((invitation_id) => ({ invitation_id, destination_table_id: relocationTableId })),
-                  force,
-                }
-          ),
-        }
-      );
+      const endpoint =
+        mode === 'reserve' ? '/reserve-table' : mode === 'reconsider' ? '/reconsider-assign' : '/assign-table';
+      const res = await fetch('/api/guest-approvals/' + id + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          mode === 'assign'
+            ? {
+                table_id: chosenTableId,
+                relocations: relocationIds.map((invitation_id) => ({ invitation_id, destination_table_id: relocationTableId })),
+                force,
+              }
+            : { table_id: chosenTableId }
+        ),
+      });
       const data = await res.json();
       if (!res.ok) {
         setError(
@@ -184,7 +198,7 @@ export default function AssignGuestApprovalTablePage() {
         setSubmitting(false);
         return;
       }
-      router.push(mode === 'reserve' ? '/approbations' : '/checkin/' + data.invitation.id);
+      router.push(mode === 'assign' ? '/checkin/' + data.invitation.id : '/approbations');
     } catch {
       setError('Erreur réseau — réessayez');
       setSubmitting(false);
@@ -195,6 +209,19 @@ export default function AssignGuestApprovalTablePage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 text-center">
         <TopBar title="Assigner une table" backHref="/approbations" />
+        <p className="mt-8 text-lg font-semibold">Accès réservé</p>
+      </div>
+    );
+  }
+
+  // Reconsidérer un refus finit par une vraie approbation (voir
+  // handleSubmit) -- exige aussi reviewGuestApproval, comme le bouton
+  // "Reconsidérer -> Approuver" sur /approbations (ex: placeur a
+  // assignGuestApproval mais pas reviewGuestApproval, ne peut pas décider).
+  if (mode === 'reconsider' && role && !hasCapability(role, 'reviewGuestApproval')) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 text-center">
+        <TopBar title="Reconsidérer et placer" backHref="/approbations" />
         <p className="mt-8 text-lg font-semibold">Accès réservé</p>
       </div>
     );
@@ -219,7 +246,7 @@ export default function AssignGuestApprovalTablePage() {
     // premier rendu une fois les donnees arrivees.
     return (
       <div className="flex min-h-dvh flex-col">
-        <TopBar title={mode === 'reserve' ? 'Réserver une table' : 'Assigner une table'} backHref="/approbations" />
+        <TopBar title={ASSIGN_PAGE_TITLES[mode]} backHref="/approbations" />
         <p className="flex flex-1 items-center justify-center text-text-faint">Chargement…</p>
       </div>
     );
@@ -230,11 +257,11 @@ export default function AssignGuestApprovalTablePage() {
   const targetOccupants = invitations.filter((inv) => inv.table_id === chosenTableId && !inv.ne_viendra_pas);
   const selectedRelocations = targetOccupants.filter((inv) => relocationIds.includes(inv.id));
   const seatsFreed = selectedRelocations.reduce((sum, inv) => sum + Math.max(inv.nombre_prevu, inv.nombre_arrive), 0);
-  const relocationReady = mode === 'reserve' ? shortage === 0 : shortage === 0 || (!!relocationTableId && seatsFreed >= shortage);
+  const relocationReady = mode === 'assign' ? shortage === 0 || (!!relocationTableId && seatsFreed >= shortage) : shortage === 0;
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
-      <TopBar title={mode === 'reserve' ? 'Réserver une table' : 'Assigner une table'} backHref="/approbations" />
+      <TopBar title={ASSIGN_PAGE_TITLES[mode]} backHref="/approbations" />
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <div className="card flex items-center gap-3">
@@ -249,7 +276,8 @@ export default function AssignGuestApprovalTablePage() {
             <p className="text-sm font-bold uppercase tracking-wide text-accent">{request.nom_invite}</p>
             <p className="text-sm text-text-muted">
               {request.nombre_invites} invité{request.nombre_invites > 1 ? 's' : ''} · Côté{' '}
-              {request.cote === 'Gege' ? 'Gégé' : 'Nelly'} · {mode === 'reserve' ? 'en attente de décision' : 'approuvé'}
+              {request.cote === 'Gege' ? 'Gégé' : 'Nelly'} ·{' '}
+              {mode === 'reserve' ? 'en attente de décision' : mode === 'reconsider' ? 'refusé, à reconsidérer' : 'approuvé'}
             </p>
             {/* Demande de Gersom le 13/09/2026 : mentionner avec qui la
                 personne est arrivée, pour guider le choix de table. */}
@@ -266,6 +294,13 @@ export default function AssignGuestApprovalTablePage() {
           <p className="rounded-2xl bg-accent-tint px-4 py-3 text-sm font-semibold text-accent">
             Cette place sera réservée pendant que la demande attend une décision — personne d’autre ne pourra la
             prendre entre-temps. Elle est confirmée automatiquement dès l’approbation.
+          </p>
+        )}
+
+        {mode === 'reconsider' && (
+          <p className="rounded-2xl bg-accent-tint px-4 py-3 text-sm font-semibold text-accent">
+            Choisissez d’abord la table : la demande sera approuvée juste après, directement à cette table — plus de
+            placement automatique pour une reconsidération.
           </p>
         )}
 
@@ -395,7 +430,7 @@ export default function AssignGuestApprovalTablePage() {
           </section>
         )}
 
-        {mode === 'reserve' && chosenTableId && shortage > 0 && (
+        {mode !== 'assign' && chosenTableId && shortage > 0 && (
           <p className="rounded-2xl bg-status-over/10 px-4 py-3 text-sm font-semibold text-status-over">
             Cette table n’a plus assez de places libres (capacité changée entre-temps) — choisissez-en une autre.
             La réorganisation d’invités déjà en place n’est proposée qu’après approbation.
@@ -411,7 +446,15 @@ export default function AssignGuestApprovalTablePage() {
           disabled={!chosenTableId || (mode === 'assign' && force ? false : !relocationReady) || submitting || !online}
           onClick={handleSubmit}
         >
-          {submitting ? '…' : !online ? 'HORS LIGNE' : mode === 'reserve' ? 'RÉSERVER CETTE TABLE' : 'ASSIGNER CETTE TABLE'}
+          {submitting
+            ? '…'
+            : !online
+              ? 'HORS LIGNE'
+              : mode === 'reserve'
+                ? 'RÉSERVER CETTE TABLE'
+                : mode === 'reconsider'
+                  ? 'PLACER ET APPROUVER'
+                  : 'ASSIGNER CETTE TABLE'}
         </button>
       </div>
     </div>
