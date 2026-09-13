@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.43.1] — 2026-09-13
+
+Précision du bouton "Activer les notifications" (retour de Gersom).
+
+### Corrigé
+- **Instructions précises au lieu d'un message générique** : un refus de notifications (ou, sur iOS, l'app pas encore installée sur l'écran d'accueil) affiche désormais le chemin exact à suivre dans les réglages du téléphone (iOS/Android détectés séparément), au lieu d'un simple "à configurer" sans marche à suivre.
+- **Précision technique documentée dans le code** : aucune API web ne permet d'ouvrir directement les réglages système de notifications d'une PWA, ni sur iOS ni sur Android — contrairement à la caméra (`getUserMedia`), qui affiche sa propre invite native depuis la page elle-même. C'est une restriction de plateforme (WebKit/Android), pas un choix de ce code ; les instructions pas-à-pas sont le meilleur substitut possible.
+
+### Tests
+- Nouveau `tests/push-notification-instructions.test.ts`.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.43.0 → 1.43.1
+
 ## [1.43.0] — 2026-09-13
 
 Deuxième lot du jour (retour de Gersom, 5 photos) sur les approbations, le plan de salle et le check-in.
