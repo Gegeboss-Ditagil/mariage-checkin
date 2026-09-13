@@ -95,12 +95,33 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   const canGuestApproval = hasCapability(role, 'viewGuestApprovals');
 
   return (
-    <div ref={containerRef} className={floating ? 'fixed right-4 top-4 z-30' : 'relative z-30'}>
+    // En paysage, la barre de navigation devient une bande verticale collee
+    // au bord droit (voir components/BottomNav.tsx) -- le bouton de compte
+    // flottant (utilise sur /scan et /placement via UserMenu) se retrouvait
+    // pile dessus, superpose au premier onglet (Recherche) : "les deux SS
+    // qui vont par-dessus le bouton recherche" (retour de Gersom le
+    // 13/09/2026). Bascule a gauche uniquement en paysage (portrait
+    // inchange), avec la meme marge de securite que la bande de droite
+    // (env(safe-area-inset-left), pour l'encoche/coin arrondi de ce cote
+    // quand le telephone est tenu appareil photo a gauche).
+    <div
+      ref={containerRef}
+      className={
+        floating
+          ? 'fixed right-4 top-4 z-30 landscape:right-auto landscape:left-[calc(1rem+env(safe-area-inset-left))]'
+          : 'relative z-30'
+      }
+    >
       {approvalAlert && (
         <Link
           href={'/approbations?request=' + approvalAlert.id}
           onClick={() => setApprovalAlert(null)}
-          className="fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-surface px-4 py-3 text-sm shadow-elev-2"
+          // Meme raison qu'au-dessus : en paysage, cette bannière plein
+          // largeur (left-4 right-4) passerait sous la bande de navigation
+          // verticale de droite -- son bord droit s'arrete desormais avant
+          // elle (largeur de la bande, landscape:w-20, plus sa marge de
+          // securite).
+          className="fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-surface px-4 py-3 text-sm shadow-elev-2 landscape:left-[calc(1rem+env(safe-area-inset-left))] landscape:right-[calc(5rem+env(safe-area-inset-right)+0.75rem)]"
         >
           <span><strong>Nouvelle approbation</strong><span className="block truncate text-text-muted">{approvalAlert.name}</span></span>
           <span className="font-semibold text-accent">Ouvrir</span>
@@ -119,7 +140,19 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
         )}
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 top-12 w-64 overflow-hidden rounded-xl2 border border-hairline bg-glass p-3 text-left shadow-elev-2 backdrop-blur">
+        <div
+          role="menu"
+          className={
+            // Le bouton bascule a gauche en paysage seulement en variante
+            // flottante (voir plus haut) -- le panneau doit s'ouvrir vers la
+            // DROITE dans ce cas (sinon ses 16rem de large partiraient hors
+            // ecran vers la gauche). En variante non flottante (TopBar), le
+            // conteneur est deja cale a droite de la colonne de contenu dans
+            // les deux orientations : aucun changement necessaire.
+            'absolute top-12 w-64 overflow-hidden rounded-xl2 border border-hairline bg-glass p-3 text-left shadow-elev-2 backdrop-blur ' +
+            (floating ? 'right-0 landscape:right-auto landscape:left-0' : 'right-0')
+          }
+        >
           <p className="truncate text-sm font-semibold text-text">{name}</p>
           <p className="mb-3 truncate text-xs text-text-faint">{role ? ROLE_LABELS[role] : 'Compte connecté'}</p>
 

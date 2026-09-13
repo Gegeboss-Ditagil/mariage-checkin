@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.45.1] — 2026-09-13
+
+Le bouton de compte flottant ne recouvre plus la navigation en paysage (retour de Gersom).
+
+### Corrigé
+- **"Les deux SS qui vont par-dessus le bouton recherche"** : sur `/scan` et `/placement` (les deux seuls écrans sans TopBar, utilisant `AccountMenu floating` via `components/UserMenu.tsx`), le bouton de compte restait ancré en haut à droite du viewport quelle que soit l'orientation — en paysage, la barre de navigation devient une bande verticale collée à ce même bord droit (`components/BottomNav.tsx`), et les deux se superposaient, recouvrant le premier onglet (Recherche). Le bouton bascule désormais à gauche uniquement en paysage (portrait inchangé) ; son panneau déroulant s'ouvre vers la droite dans ce cas pour rester à l'écran. La bannière "Nouvelle approbation" du même composant, qui passait sous cette même bande en paysage, s'arrête désormais avant elle.
+- Aucun changement pour l'usage non flottant (`TopBar`, toutes les autres pages) : déjà correctement calé par le flux flex, jamais touché par ce bug.
+
+### Tests
+- Nouveau `tests/account-menu-landscape.test.ts`.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.45.0 → 1.45.1
+
 ## [1.45.0] — 2026-09-13
 
 Navigation d'agent_checkin réorganisée (Tableau de bord au centre, Agenda + Approbations) et écran vraiment figé pendant le défilement (retour de Gersom).

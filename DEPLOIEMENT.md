@@ -1,6 +1,6 @@
 # Guide de déploiement
 
-**Version documentaire : 1.45.0**
+**Version documentaire : 1.45.1**
 **Dernière mise à jour : 2026-09-13**
 
 L'application est un projet Next.js déployé sur Vercel avec Supabase en backend.
