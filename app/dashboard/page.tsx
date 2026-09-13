@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [tables, setTables] = useState<TableRow[]>([]);
   const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
   const activeRef = useRef(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // `load` sert à la fois au chargement initial, au temps réel (websocket)
   // et au rafraîchissement manuel (tirer vers le bas / retour sur l'écran)
@@ -70,7 +71,7 @@ export default function DashboardPage() {
   // Filet de sécurité si le websocket temps réel s'est endormi (téléphone
   // verrouillé, app en arrière-plan) : tirer vers le bas, ou simplement
   // revenir sur cet écran, relance un refetch rapide.
-  const { pulling, pullDistance, refreshing, pullThreshold } = usePullToRefresh(load);
+  const { pulling, pullDistance, refreshing, pullThreshold } = usePullToRefresh(load, scrollRef);
 
   const stats = useMemo(() => {
     const attendus = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
@@ -119,7 +120,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Tableau de bord"
@@ -155,7 +156,7 @@ export default function DashboardPage() {
             py-2.5, valeurs en text-3xl) plutot qu'un padding de bas de page :
             le contenu entier doit tenir sans scroll, pas juste finir proprement
             apres un scroll. */}
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 pt-3 pb-6">
+        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 pt-3 pb-6">
           <div className="card py-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-semibold">Remplissage de la salle</p>

@@ -115,7 +115,74 @@ test("un refus peut etre reconsidere et approuve depuis l'application (jamais l'
   assert.match(decideRoute, /applyGuestApprovalDecision\(createAdminClient\(\), \{ id: params\.id \}, body\.decision, 'app', user\.id, true\)/);
   assert.match(approbationsPage, /r\.statut === 'refuse' && role && hasCapability\(role, 'reviewGuestApproval'\)/);
   assert.match(approbationsPage, /selectedRequest\.statut === 'refuse' && role && hasCapability\(role, 'reviewGuestApproval'\)/);
-  assert.match(approbationsPage, /Reconsidérer → Approuver/);
+});
+
+// Troisieme lot (retour de Gersom le 13/09/2026, sur la fiche d'une demande
+// reconsideree) : "je n'avais pas l'option de le mettre sur une table...
+// le process a ete automatique" -- reconsiderer un refus doit permettre de
+// choisir la table AVANT l'approbation, pas apres via le placement
+// automatique (auto_assign_table_for_guest_approval, 0045).
+const reconsiderAssignRoute = readFileSync(
+  new URL('../app/api/guest-approvals/[id]/reconsider-assign/route.ts', import.meta.url),
+  'utf8'
+);
+const reserveMigration = readFileSync(
+  new URL('../supabase/migrations/0050_reserve_table_for_reconsidered_refusal.sql', import.meta.url),
+  'utf8'
+);
+
+test("reconsiderer un refus mene d'abord au choix de table (/approbations/[id]/assign), plus a une approbation directe", () => {
+  // Les deux boutons "Reconsidérer" (carte de liste + fiche détaillée)
+  // sont désormais des liens vers l'écran de choix de table, pas des
+  // appels directs à decide('approuve').
+  assert.match(approbationsPage, /Reconsidérer → choisir une table/);
+  assert.doesNotMatch(approbationsPage, /Reconsidérer → Approuver/);
+  assert.match(
+    approbationsPage,
+    /r\.statut === 'refuse' && role && hasCapability\(role, 'reviewGuestApproval'\) && hasCapability\(role, 'assignGuestApproval'\)/
+  );
+  assert.match(
+    approbationsPage,
+    /selectedRequest\.statut === 'refuse' && role && hasCapability\(role, 'reviewGuestApproval'\) && hasCapability\(role, 'assignGuestApproval'\)/
+  );
+});
+
+test("reserve_table_for_guest_approval (migration 0050) accepte desormais le statut 'refuse', pas seulement 'en_attente'", () => {
+  assert.match(reserveMigration, /if v_req\.statut not in \('en_attente', 'refuse'\) then raise exception 'request_not_pending'; end if;/);
+  assert.match(
+    reserveMigration,
+    /where reserved_table_id = p_table_id and statut in \('en_attente', 'refuse'\) and id <> p_request_id/
+  );
+});
+
+test("/approbations/[id]/assign gagne un troisieme mode 'reconsider' pour une demande refusee, en plus de 'assign'/'reserve'", () => {
+  assert.match(
+    assignPage,
+    /const mode: 'assign' \| 'reserve' \| 'reconsider' =\s*\n\s*request\?\.statut === 'en_attente' \? 'reserve' : request\?\.statut === 'refuse' \? 'reconsider' : 'assign';/
+  );
+  assert.match(
+    assignPage,
+    /!!found && !found\.table_id && \(found\.statut === 'approuve' \|\| found\.statut === 'en_attente' \|\| found\.statut === 'refuse'\)/
+  );
+  // Exige aussi reviewGuestApproval pour ce mode (il finit par decider),
+  // en plus de assignGuestApproval deja verifie plus haut dans la page.
+  assert.match(assignPage, /mode === 'reconsider' && role && !hasCapability\(role, 'reviewGuestApproval'\)/);
+  assert.match(assignPage, /endpoint = *\n?\s*mode === 'reserve' \? '\/reserve-table' : mode === 'reconsider' \? '\/reconsider-assign' : '\/assign-table';/);
+});
+
+test("POST /api/guest-approvals/[id]/reconsider-assign reserve la table choisie PUIS approuve (allowReconsiderFromRefused), exige reviewGuestApproval ET assignGuestApproval", () => {
+  assert.match(
+    reconsiderAssignRoute,
+    /!hasCapability\(user\.role, 'reviewGuestApproval'\) \|\| !hasCapability\(user\.role, 'assignGuestApproval'\)/
+  );
+  assert.match(reconsiderAssignRoute, /rpc\('reserve_table_for_guest_approval', \{ p_request_id: params\.id, p_table_id: tableId, p_agent_id: user\.id \}\)/);
+  assert.match(
+    reconsiderAssignRoute,
+    /applyGuestApprovalDecision\(supabase, \{ id: params\.id \}, 'approuve', 'app', user\.id, true\)/
+  );
+  // Si la reservation echoue (table pleine entre-temps...), rien n'est
+  // decide -- la demande reste refusee, l'agent choisit une autre table.
+  assert.match(reconsiderAssignRoute, /if \(reserveError\) \{/);
 });
 
 test("le texte de /approbations/[id]/assign est raccourci en un badge Automatique/Sélectionnée plutôt qu'un paragraphe", () => {
@@ -154,12 +221,16 @@ test('le tire-pour-rafraichir de /plan-table ignore les gestes a plusieurs doigt
 
 const permissionsSource = readFileSync(new URL('../lib/permissions.ts', import.meta.url), 'utf8');
 
-test("agent_checkin gagne viewGuestApprovals en lecture seule (jamais reviewGuestApproval ni assignGuestApproval) -- Approbations remplace Agenda en dernier onglet, l'agenda reste visible sur /scan via NextAgendaActivity", () => {
+test("agent_checkin gagne viewGuestApprovals en lecture seule (jamais reviewGuestApproval ni assignGuestApproval) -- Agenda et Approbations en derniers onglets, NextAgendaActivity reste aussi visible sur /scan", () => {
   assert.match(permissionsSource, /'viewAgenda', 'viewGuestApprovals',/);
   assert.match(permissionsSource, /if \(matchesPrefix\(pathname, '\/approbations'\) && !hasCapability\(role, 'viewGuestApprovals'\)\) return false;/);
   const agentBlock = bottomNav.slice(bottomNav.indexOf('const AGENT_CHECKIN_ITEMS'), bottomNav.indexOf('const READ_ONLY_ITEMS'));
   assert.match(agentBlock, /APPROVALS_ITEM/);
-  assert.doesNotMatch(agentBlock, /\/agenda/);
+  // Depuis le 13/09/2026 (meme jour, second retour sur Agent001) : Agenda
+  // est reintroduit comme onglet dedie (plus seulement via
+  // NextAgendaActivity) -- voir le troisieme test de
+  // navigation-resilience.test.ts sur ce meme bloc pour le detail complet.
+  assert.match(agentBlock, /AGENDA_ITEM/);
   const nextAgendaActivity = readFileSync(new URL('../components/NextAgendaActivity.tsx', import.meta.url), 'utf8');
   assert.match(nextAgendaActivity, /hasCapability\(role, 'viewAgenda'\)/);
 });

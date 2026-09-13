@@ -3,6 +3,94 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.45.2] — 2026-09-13
+
+En paysage, la barre gestuelle système (iPad) ne recouvre plus le dernier contenu ni le dernier onglet (retour de Gersom).
+
+### Corrigé
+- **"L'app fixée même quand on met en horizontal"** : en paysage sur iPad (barre gestuelle système horizontale même une fois l'écran tourné, contrairement à l'iPhone où elle se retrouve sur un côté), le dernier contenu visible d'une page (ex. la dernière rangée de tables sur `/plan-table`) et le dernier onglet de la barre de navigation verticale pouvaient se retrouver recouverts par cette barre système. `.bottom-nav-glass` réserve déjà cet espace en portrait (`margin-bottom`), mais la remet explicitement à 0 en paysage (elle devient une bande verticale, protégée seulement du côté `safe-right`) — rien ne protégeait le bord du bas. Probablement masqué avant `fixed inset-0` (v1.45.0) par un calcul `h-dvh` qui excluait déjà cette zone dans certains cas ; exposé une fois le viewport réel utilisé directement.
+- Corrigé en réduisant le rectangle de la coquille de chaque page en paysage (`landscape:bottom-[env(safe-area-inset-bottom)]` au lieu de `bottom-0`), qui protège d'un coup le contenu ET le dernier onglet de la barre verticale — aucun padding à ajouter dans les 11 pages individuellement.
+
+### Tests
+- `tests/scroll-fixed-shell.test.ts` : nouvelle assertion + mise à jour de l'assertion existante.
+
+### Migrations
+- Aucune.
+
+Version: 1.45.1 → 1.45.2
+
+## [1.45.1] — 2026-09-13
+
+Le bouton de compte flottant ne recouvre plus la navigation en paysage (retour de Gersom).
+
+### Corrigé
+- **"Les deux SS qui vont par-dessus le bouton recherche"** : sur `/scan` et `/placement` (les deux seuls écrans sans TopBar, utilisant `AccountMenu floating` via `components/UserMenu.tsx`), le bouton de compte restait ancré en haut à droite du viewport quelle que soit l'orientation — en paysage, la barre de navigation devient une bande verticale collée à ce même bord droit (`components/BottomNav.tsx`), et les deux se superposaient, recouvrant le premier onglet (Recherche). Le bouton bascule désormais à gauche uniquement en paysage (portrait inchangé) ; son panneau déroulant s'ouvre vers la droite dans ce cas pour rester à l'écran. La bannière "Nouvelle approbation" du même composant, qui passait sous cette même bande en paysage, s'arrête désormais avant elle.
+- Aucun changement pour l'usage non flottant (`TopBar`, toutes les autres pages) : déjà correctement calé par le flux flex, jamais touché par ce bug.
+
+### Tests
+- Nouveau `tests/account-menu-landscape.test.ts`.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.45.0 → 1.45.1
+
+## [1.45.0] — 2026-09-13
+
+Navigation d'agent_checkin réorganisée (Tableau de bord au centre, Agenda + Approbations) et écran vraiment figé pendant le défilement (retour de Gersom).
+
+### Corrigé
+- **Navigation agent_checkin (Agent001, Ruben Lopez...)** : "les agents scan sont là seulement pour scanner, pas pour approuver — s'il y a un problème ils redirigent vers le placeur qui fait la photo." La barre du bas devient Recherche, Plan, **Tableau de bord** (gros bouton central), Agenda, Approbations — Scan n'a plus d'onglet dédié : `/scan` reste sa page d'atterrissage par défaut et reste joignable depuis Approbations (flèche Retour du TopBar) ou, via Dashboard, depuis Agenda.
+- **"Ça ne reste pas figé" pendant le défilement, bouton central injoignable après** : deux causes trouvées.
+  1. `hooks/usePullToRefresh.ts` (utilisé par `/dashboard`) gardait "seulement en haut de page" avec `window.scrollY <= 0` — structurellement toujours vrai dans cette application (page ancrée, seul un `<div overflow-y-auto>` interne défile) : le garde-fou ne protégeait donc jamais rien, et le geste "tirer pour actualiser" pouvait se déclencher, et rester bloqué (aucun `touchcancel`), au milieu d'un défilement normal, décalant la mise en page en dessous. Corrigé en vérifiant le `scrollTop` du vrai conteneur défilant (comme `/plan-table` le faisait déjà) et en réinitialisant sur `touchcancel`.
+  2. Chaque écran principal passe de `h-dvh` seul à **`fixed inset-0`** : ancré directement au viewport réel plutôt que dépendant d'un recalcul de hauteur dynamique pendant qu'une barre d'outils système (Safari iOS) apparaît/disparaît en cours de défilement — "make it really fixed like in an app". Aucun changement du flex interne : `BottomNav` garde exactement la même place, aucun padding à ajouter nulle part.
+
+### Tests
+- Nouveau `tests/scroll-fixed-shell.test.ts`.
+- `tests/navigation-resilience.test.ts`, `tests/approbations-ux-improvements.test.ts` : assertions mises à jour pour le nouveau layout d'agent_checkin.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.44.0 → 1.45.0
+
+## [1.44.0] — 2026-09-13
+
+Reconsidérer un refus place désormais l'invité sur une table choisie, avant l'approbation (retour de Gersom).
+
+### Corrigé
+- **Reconsidérer un refus permet de choisir la table d'abord** : "Reconsidérer → Approuver" (liste et fiche détaillée de `/approbations`) ne décide plus directement — le bouton mène désormais à `/approbations/[id]/assign` (nouveau mode "reconsider"), où l'agent choisit la table avant que la demande soit approuvée. Avant ce correctif, l'approbation était immédiate et le placement automatique (`auto_assign_table_for_guest_approval`, 0045) choisissait seul la table, sans intervention possible — retour de Gersom : "je n'avais pas l'option de le mettre sur une table... le process a été automatique".
+- **Nouvelle route `POST /api/guest-approvals/[id]/reconsider-assign`** : réserve la table choisie (`reserve_table_for_guest_approval`) puis approuve (`allowReconsiderFromRefused`) en une seule action — `finalizeDecision` (lib/guestApprovalDecide.ts) détecte la réservation posée et la finalise en vraie assignation, exactement comme une réservation posée avant décision (0044). Si la réservation échoue (table pleine entre-temps), rien n'est décidé : la demande reste refusée. Exige `reviewGuestApproval` ET `assignGuestApproval` (admin, directeur, visibilite).
+
+### Migrations
+- `0050_reserve_table_for_reconsidered_refusal.sql` : `reserve_table_for_guest_approval` (0044) accepte désormais aussi le statut `refuse`, pas seulement `en_attente` — une demande refusée n'a jamais de `reserved_table_id` restant en place (libérée automatiquement au refus), donc aucun risque de collision. Appliquée et vérifiée en production Supabase le 13/09/2026.
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts` : nouveaux tests sur le mode "reconsider", la nouvelle route et la migration 0050.
+- `tests/guest-approval-reservation.test.ts` : assertions sur les trois modes de `/approbations/[id]/assign` mises à jour (au lieu de deux).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+Version: 1.43.1 → 1.44.0
+
+## [1.43.1] — 2026-09-13
+
+Précision du bouton "Activer les notifications" (retour de Gersom).
+
+### Corrigé
+- **Instructions précises au lieu d'un message générique** : un refus de notifications (ou, sur iOS, l'app pas encore installée sur l'écran d'accueil) affiche désormais le chemin exact à suivre dans les réglages du téléphone (iOS/Android détectés séparément), au lieu d'un simple "à configurer" sans marche à suivre.
+- **Précision technique documentée dans le code** : aucune API web ne permet d'ouvrir directement les réglages système de notifications d'une PWA, ni sur iOS ni sur Android — contrairement à la caméra (`getUserMedia`), qui affiche sa propre invite native depuis la page elle-même. C'est une restriction de plateforme (WebKit/Android), pas un choix de ce code ; les instructions pas-à-pas sont le meilleur substitut possible.
+
+### Tests
+- Nouveau `tests/push-notification-instructions.test.ts`.
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.43.0 → 1.43.1
+
 ## [1.43.0] — 2026-09-13
 
 Deuxième lot du jour (retour de Gersom, 5 photos) sur les approbations, le plan de salle et le check-in.

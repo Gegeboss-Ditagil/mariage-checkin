@@ -220,6 +220,19 @@ export default function PlanTablePage() {
     touchStartY.current = null;
   }
 
+  // Le systeme annule parfois la sequence tactile sans jamais declencher
+  // onTouchEnd (le navigateur reprend le geste comme un defilement natif,
+  // un appel entrant interrompt...) -- sans ce filet, touchStartY restait
+  // non nul et l'indicateur pouvait rester affiche/fige, decalant la mise
+  // en page sous lui (meme correctif que hooks/usePullToRefresh.ts, meme
+  // jour). Reinitialise silencieusement, sans jamais declencher le
+  // rafraichissement (contrairement a onTouchEnd) : une annulation n'est
+  // pas un relachement volontaire.
+  function onTouchCancel() {
+    touchStartY.current = null;
+    setPull(0);
+  }
+
   const invitationsByTable = useMemo(() => {
     const map = new Map<string, InvitationRow[]>();
     for (const inv of invitations) {
@@ -381,7 +394,7 @@ export default function PlanTablePage() {
   const canMessage = hasCapability(role, 'messageContacts');
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Plan de table"
@@ -403,6 +416,7 @@ export default function PlanTablePage() {
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
+          onTouchCancel={onTouchCancel}
         >
           {loadError && (
             <div className="mb-4 flex items-center justify-between gap-3 rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">

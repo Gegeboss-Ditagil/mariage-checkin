@@ -28,26 +28,29 @@ const STAFF_ITEMS: NavItem[] = [
   { href: '/staff', label: 'Staff', icon: StaffIcon },
 ];
 
-// agent_checkin (accueil) : meme barre que le staff complet -- il garde le
-// scan/recherche/dashboard/tables et peut confirmer les arrivees. Les actions
-// de deplacement restent masquees et bloquees par la matrice de permissions.
-// Agenda a remplace Staff en dernier onglet le 03/09/2026, puis remplace a
-// son tour par Approbations le 13/09/2026 (retour de Gersom : "en bas a
-// droite... ca devrait etre approbation. Et on doit voir l'agenda dans la
-// page principale") -- l'agenda (lecture seule, viewAgenda sans
-// manageAgenda) reste visible via NextAgendaActivity sur /scan meme sans
-// onglet dedie, donc plus besoin des deux ici avec seulement 4
-// emplacements disponibles. Approbations (lecture seule, viewGuestApprovals
-// sans reviewGuestApproval/assignGuestApproval, voir lib/permissions.ts) :
-// ce role continue de renvoyer vers un placeur pour decider/assigner,
-// seule la LISTE (avec badge de comptage) est visible. /staff reste
-// atteignable par ce role via le badge QR "STAFF" depuis /scan (viewStaff
-// inchangee), seul le raccourci permanent de la barre change.
+// agent_checkin (accueil) : scanner reste sa page d'atterrissage par defaut
+// (landingPathForRole) et reste joignable depuis n'importe quelle autre page
+// de ce role via la fleche Retour du TopBar (toujours '/scan' ou, depuis
+// /agenda, via /dashboard qui y ramene a son tour) -- ce role n'a donc plus
+// besoin d'un onglet Scan dedie dans la barre du bas elle-meme. Depuis le
+// 13/09/2026 (retour de Gersom, layout complet donne explicitement :
+// "recherche, plan, tableau de bord (le gros bouton), agenda, approbation") :
+// Tableau de bord devient le gros bouton central (CENTRAL_HREF ci-dessous),
+// Agenda est reintroduit a cote d'Approbations -- ce role, "seulement la
+// pour scanner et non pour approuver" (redirige vers un placeur au moindre
+// probleme), profite davantage d'une vue d'ensemble (arrivees, prochaine
+// activite) que d'un onglet Scan redondant avec la page ou il se trouve deja
+// la plupart du temps. Agenda (lecture seule, viewAgenda sans manageAgenda)
+// et Approbations (lecture seule, viewGuestApprovals sans
+// reviewGuestApproval/assignGuestApproval, voir lib/permissions.ts) : ce
+// role continue de renvoyer vers un placeur pour decider/assigner, seule la
+// LISTE (avec badge de comptage) est visible. /staff reste atteignable par
+// ce role via le badge QR "STAFF" depuis /scan (viewStaff inchangee).
 const AGENT_CHECKIN_ITEMS: NavItem[] = [
-  { href: '/scan', label: 'Scan', icon: ScanIcon },
   { href: '/search', label: 'Recherche', icon: SearchIcon },
   { href: '/plan-table', label: 'Plan', icon: GridIcon },
   { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
+  AGENDA_ITEM,
   APPROVALS_ITEM,
 ];
 
@@ -105,10 +108,15 @@ const ITEMS: Record<string, NavItem[]> = {
 // plus frequente), mais Tableau de bord pour le directeur de festin --
 // demande de Gersom le 30/08/2026 pour Remy et Tuzola : leur travail
 // commence par surveiller le remplissage, pas par scanner des QR (ça reste
-// accessible en onglet lateral). Roles absents de cette table gardent Scan
-// par defaut.
+// accessible en onglet lateral) -- et, depuis le 13/09/2026, pour
+// agent_checkin aussi (voir AGENT_CHECKIN_ITEMS ci-dessus : ce role n'a
+// justement plus d'onglet Scan lateral, /scan reste sa page d'atterrissage
+// par defaut et la fleche Retour du TopBar y ramene depuis n'importe quelle
+// autre page de ce role). Roles absents de cette table gardent Scan par
+// defaut.
 const CENTRAL_HREF: Record<string, string> = {
   directeur: '/dashboard',
+  agent_checkin: '/dashboard',
 };
 
 // Ordre canonique pour repartir les onglets restants 2 a gauche/2 a droite

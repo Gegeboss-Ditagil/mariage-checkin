@@ -49,7 +49,7 @@ export default function AdminHome() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden landscape:flex-row">
+    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar title="Administration" />
 

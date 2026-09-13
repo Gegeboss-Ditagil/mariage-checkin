@@ -216,9 +216,26 @@ test('la barre de navigation devient une bande verticale au bord droit en paysag
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
     assert.match(
       source,
-      /flex h-dvh flex-col overflow-hidden landscape:flex-row/,
+      /fixed inset-0 flex flex-col overflow-hidden landscape:flex-row/,
       relPath + " doit utiliser le patron d'ecran responsive paysage"
     );
+  }
+});
+
+test("le patron d'ecran (BottomNav) est vraiment fige au viewport (position fixed), pas seulement maintenu en place par le flux flex -- corrige le 13/09/2026", () => {
+  // Retour de Gersom : "j'appuie sur le bouton... je scroll vers le haut
+  // vers le bas, ça fait bugger un peu l'application, ça ne reste pas
+  // figé... je ne peux plus cliquer dans l'élément au milieu... make it
+  // really fixed like in an app". `h-dvh` seul peut se recalculer avec un
+  // leger decalage pendant qu'une barre d'outils systeme (Safari iOS)
+  // apparait/disparait en cours de defilement d'un conteneur interne --
+  // `fixed inset-0` ancre la coquille de chaque page au viewport reel, sans
+  // dependre de ce recalcul, sans rien changer au flex interne (BottomNav
+  // garde exactement la meme position dans le flux, aucun padding a
+  // ajouter nulle part).
+  for (const relPath of LANDSCAPE_SHELL_PAGES) {
+    const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /className="flex h-dvh flex-col overflow-hidden/, relPath);
   }
 });
 
@@ -274,20 +291,29 @@ test("le flash de navigation touchait aussi les ecrans mono-usage (deplacer/gere
   assert.match(assignPage, /if \(loading \|\| !request\) \{[\s\S]{0,500}<TopBar/);
 });
 
-test("agent_checkin voit Approbations (lecture seule) en dernier onglet -- Agenda visible sur /scan via NextAgendaActivity plutot qu'en onglet dedie, /staff reste atteignable par le badge QR", () => {
+test("agent_checkin : Tableau de bord au centre, Agenda et Approbations (lecture seule) en derniers onglets, Scan retire de la barre (reste sa page d'atterrissage, joignable via la fleche Retour du TopBar), /staff reste atteignable par le badge QR", () => {
   // Retour de Gersom le 03/09/2026 sur Agent001 : "il ne devrait pas voir
   // en bas a droite staff... il devrait voir agenda a la place" -- puis le
-  // 13/09/2026 : "ca devrait etre approbation. Et on doit voir l'agenda
-  // dans la page principale" (NextAgendaActivity, deja gate sur
-  // viewAgenda, deja rendu sur /scan pour ce role -- pas besoin d'onglet).
+  // 13/09/2026 (premier lot) : "ca devrait etre approbation. Et on doit
+  // voir l'agenda dans la page principale" -- puis le 13/09/2026 (meme
+  // jour, capture d'ecran Agent001) : "le bouton au milieu devrait etre
+  // table de bord... au milieu a droite devrait etre agenda et ensuite
+  // approbation. Donc ca va faire recherche, plan, tableau de bord (le
+  // gros bouton), agenda, approbation" -- ce role, "seulement la pour
+  // scanner et non pour approuver" (redirige vers un placeur au moindre
+  // probleme), n'a plus besoin d'un onglet Scan dedie : /scan reste sa
+  // page d'atterrissage (landingPathForRole) et la fleche Retour du TopBar
+  // y ramene depuis Approbations ou (via Dashboard) depuis Agenda.
   assert.match(bottomNav, /AGENT_CHECKIN_ITEMS/);
   assert.match(bottomNav, /agent_checkin: AGENT_CHECKIN_ITEMS/);
+  assert.match(bottomNav, /agent_checkin: ['"]\/dashboard['"]/);
   const agentBlock = bottomNav.slice(
     bottomNav.indexOf('const AGENT_CHECKIN_ITEMS'),
     bottomNav.indexOf('const READ_ONLY_ITEMS')
   );
-  assert.match(agentBlock, /APPROVALS_ITEM,\s*\n\];/);
+  assert.match(agentBlock, /AGENDA_ITEM,\s*\n\s*APPROVALS_ITEM,\s*\n\];/);
   assert.doesNotMatch(agentBlock, /href: ['"]\/staff['"]/);
+  assert.doesNotMatch(agentBlock, /href: ['"]\/scan['"]/);
   assert.doesNotMatch(agentBlock, /href: ['"]\/agenda['"]/);
 });
 
