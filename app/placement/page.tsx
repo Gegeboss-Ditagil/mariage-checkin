@@ -106,7 +106,7 @@ export default function PlacementPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row">
+    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <UserMenu />
         <div className="flex-1 overflow-y-auto">

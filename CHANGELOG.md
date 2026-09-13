@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.45.2] — 2026-09-13
+
+En paysage, la barre gestuelle système (iPad) ne recouvre plus le dernier contenu ni le dernier onglet (retour de Gersom).
+
+### Corrigé
+- **"L'app fixée même quand on met en horizontal"** : en paysage sur iPad (barre gestuelle système horizontale même une fois l'écran tourné, contrairement à l'iPhone où elle se retrouve sur un côté), le dernier contenu visible d'une page (ex. la dernière rangée de tables sur `/plan-table`) et le dernier onglet de la barre de navigation verticale pouvaient se retrouver recouverts par cette barre système. `.bottom-nav-glass` réserve déjà cet espace en portrait (`margin-bottom`), mais la remet explicitement à 0 en paysage (elle devient une bande verticale, protégée seulement du côté `safe-right`) — rien ne protégeait le bord du bas. Probablement masqué avant `fixed inset-0` (v1.45.0) par un calcul `h-dvh` qui excluait déjà cette zone dans certains cas ; exposé une fois le viewport réel utilisé directement.
+- Corrigé en réduisant le rectangle de la coquille de chaque page en paysage (`landscape:bottom-[env(safe-area-inset-bottom)]` au lieu de `bottom-0`), qui protège d'un coup le contenu ET le dernier onglet de la barre verticale — aucun padding à ajouter dans les 11 pages individuellement.
+
+### Tests
+- `tests/scroll-fixed-shell.test.ts` : nouvelle assertion + mise à jour de l'assertion existante.
+
+### Migrations
+- Aucune.
+
+Version: 1.45.1 → 1.45.2
+
 ## [1.45.1] — 2026-09-13
 
 Le bouton de compte flottant ne recouvre plus la navigation en paysage (retour de Gersom).

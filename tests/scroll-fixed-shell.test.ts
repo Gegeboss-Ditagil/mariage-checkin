@@ -73,6 +73,34 @@ const LANDSCAPE_SHELL_PAGES = [
 test("chaque ecran principal est ancre au viewport reel (position fixed + inset-0) plutot que seulement dimensionne par h-dvh, sans changer le flex interne (BottomNav garde sa place, aucun padding a ajouter)", () => {
   for (const relPath of LANDSCAPE_SHELL_PAGES) {
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
-    assert.match(source, /className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row"/, relPath);
+    assert.match(
+      source,
+      /className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-\[env\(safe-area-inset-bottom\)\]"/,
+      relPath
+    );
+  }
+});
+
+// Retour de Gersom le 13/09/2026 (deuxième signalement, /plan-table tourné
+// en paysage sur iPad) : "à déréguler ce problème de app fixé même quand on
+// met en horizontal" -- le dernier contenu visible (dernière rangée de
+// tables) se retrouvait recouvert par la barre gestuelle système (home
+// indicator), qui reste horizontale au bas de l'écran même en paysage sur
+// iPad (contrairement à l'iPhone, où elle rejoint un des côtés). Portrait
+// n'a jamais ce problème (`.bottom-nav-glass` réserve déjà cette place via
+// `margin-bottom`), mais en paysage cette marge est explicitement remise à
+// 0 (la barre devient une bande verticale, avec seulement `safe-right`
+// contre l'encoche/coin arrondi de CE côté) -- rien ne protégeait le bord
+// du BAS. Probablement masqué avant `fixed inset-0` (v1.45.0) par un calcul
+// de `h-dvh` qui excluait déjà cette zone sur certains navigateurs ;
+// exposé une fois le viewport réel utilisé directement. Corrigé en
+// réduisant le rectangle de la coquille elle-même en paysage (`bottom`
+// plutôt que `0`), qui protège d'un coup le contenu ET le dernier onglet
+// de la bande verticale, sans toucher au padding interne d'aucune des 11
+// pages.
+test("en paysage, la coquille de chaque page reserve aussi l'espace du bas (env(safe-area-inset-bottom)) -- la barre gestuelle systeme (iPad) reste horizontale meme tourne, rien ne la protegeait avant", () => {
+  for (const relPath of LANDSCAPE_SHELL_PAGES) {
+    const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
+    assert.match(source, /landscape:bottom-\[env\(safe-area-inset-bottom\)\]/, relPath);
   }
 });
