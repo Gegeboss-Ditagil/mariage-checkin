@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.42.1] — 2026-09-13
+
+Ajustement mineur du badge de version sur le splash (retour de Gersom).
+
+### Corrigé
+- **Badge de version du splash déplacé** : "c'est trop en bas à droite" — décalé d'environ 1 cm à l'angle 315° (cap boussole, donc vers le nord-ouest/le centre) via un `transform: translate(-0.71cm, -0.71cm)`, en gardant l'ancrage `bottom-3 right-4` existant. Toujours synchronisé automatiquement avec `package.json` (aucun changement sur ce point, déjà en place depuis v1.40.0 — reconfirmé par ce lot).
+
+### Tests
+- `tests/navigation-resilience.test.ts` mis à jour (nouvelle assertion sur le `transform`).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.42.0 → 1.42.1
+
 ## [1.42.0] — 2026-09-13
 
 Lot de 8 correctifs/fonctionnalités demandés par Gersom (retour avec 4 photos) sur les approbations, la navigation et le check-in.
