@@ -38,11 +38,26 @@ export async function notifyGuestApprovalReviewers(
   const userIds = Array.from(new Set(subscriptions.map((item) => item.user_id)));
   const { data: users } = await supabase.from('users').select('id, role, active').in('id', userIds).eq('active', true);
   const allowed = new Set((users || []).filter((user) => hasCapability(user.role as Role, 'reviewGuestApproval')).map((user) => user.id));
+  // v1.48.4, demande de Gersom : "le petit 1 indicateur sur l'icône avant de
+  // l'ouvrir" -- badge numérique sur l'icône de l'app (écran d'accueil),
+  // distinct du champ `badge` de showNotification ci-dessous (une simple
+  // icône monochrome, jamais un nombre). Même compte que `pending_count`
+  // (`GET /api/guest-approvals?count=pending`, déjà affiché à l'intérieur de
+  // l'app) -- le service worker (`public/sw.js`) lit `badgeCount` sur
+  // réception du push et appelle `navigator.setAppBadge` en tâche de fond,
+  // avant même que l'app soit ouverte (voir lib/appBadge.ts pour la même
+  // logique côté client, en premier plan).
+  const { count: badgeCount } = await supabase
+    .from('guest_approval_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', request.event_id)
+    .eq('statut', 'en_attente');
   const payload = JSON.stringify({
     title: 'Approbation en attente',
     body: `${request.nom_invite} · ${request.nombre_invites} · Côté ${request.cote === 'Gege' ? 'Gégé' : 'Nelly'}`,
     url: `/approbations?request=${request.id}`,
     tag: `guest-approval-${request.id}`,
+    badgeCount: badgeCount ?? 0,
   });
   await Promise.allSettled(subscriptions.filter((item) => allowed.has(item.user_id)).map(async (item) => {
     try {

@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.4] — 2026-09-14
+
+Badge numérique sur l'icône de l'app (écran d'accueil), avant même de l'ouvrir — demande de Gersom après avoir activé les notifications Push.
+
+### Ajouté
+- **`lib/appBadge.ts`** (nouveau) : `syncAppBadge`/`clearAppBadge`, enveloppe best-effort autour de la Badging API (`navigator.setAppBadge`/`clearAppBadge`), supportée par les PWA installées sur l'écran d'accueil depuis iOS 16.4. Distinct du badge déjà affiché à l'intérieur de l'app (`AccountMenu`/`BottomNav`/`GuestApprovalsShortcut`), visible uniquement une fois ouverte.
+- **`public/sw.js`** : le gestionnaire `push` lit désormais `badgeCount` dans le payload et appelle `setAppBadge`/`clearAppBadge` en tâche de fond, en plus d'afficher la notification — fonctionne même si l'app n'est pas ouverte, exactement le scénario demandé ("le petit 1 indicateur sur l'icône avant de l'ouvrir").
+- **`lib/webPush.ts`** : `notifyGuestApprovalReviewers` calcule et envoie `badgeCount` (même compte que `pending_count`, déjà utilisé par le badge interne).
+- **`AccountMenu`/`BottomNav`/`GuestApprovalsShortcut`** : chaque sondage du compte d'approbations en attente recale aussi le badge de l'icône (`syncAppBadge`) — corrige/efface le badge dès que l'app est rouverte, sans attendre un futur Push. Le badge est explicitement effacé à la déconnexion (`AccountMenu`), un appareil pouvant changer de compte.
+
+### Tests
+- `tests/app-badge.test.ts` (nouveau, 5 tests) : comportement de `syncAppBadge`/`clearAppBadge` (appel correct selon le compte, jamais d'exception si l'API est absente ou rejette).
+- `tests/guest-approvals.test.ts` (4 nouveaux tests) : câblage bout en bout — le serveur envoie `badgeCount`, le service worker le lit et appelle la Badging API, les trois sondeurs en premier plan le recalent, le badge est effacé à la déconnexion.
+
+### Migrations
+- Aucune (changement purement client + une donnée supplémentaire dans un payload Push déjà existant).
+
+Version: 1.48.3 → 1.48.4
+
 ## [1.48.3] — 2026-09-14
 
 Bug signalé par Gersom : le bouton reste sur « … » très longtemps en approuvant/reconsidérant/assignant une table + désactivation intentionnelle de Twilio via un interrupteur explicite.

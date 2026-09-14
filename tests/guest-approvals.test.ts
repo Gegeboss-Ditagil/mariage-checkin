@@ -67,6 +67,7 @@ const pushButtonSource = readFileSync(new URL('../components/PushNotificationBut
 const pushKeyRouteSource = readFileSync(new URL('../app/api/push/vapid-public-key/route.ts', import.meta.url), 'utf8');
 const pushSubscribeRouteSource = readFileSync(new URL('../app/api/push/subscribe/route.ts', import.meta.url), 'utf8');
 const guestApprovalsShortcutSource = readFileSync(new URL('../components/GuestApprovalsShortcut.tsx', import.meta.url), 'utf8');
+const swSource = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
 
 test('les droits photo, approbation et assignation sont separes par role', () => {
   assert.equal(hasCapability('admin', 'submitGuestApproval'), true);
@@ -586,4 +587,37 @@ test('le rapport aux directeurs de festin et le Push aux placeurs sont envoyes e
     /Promise\.allSettled\(\[\s*\n\s*notifyFestinDirectors\(supabase, request, table\.number, reserveRemaining\),/
   );
   assert.match(assignRouteSource, /notifyGuestApprovalPlaceurs\(supabase, request, table\.number\)\.catch/);
+});
+
+// v1.48.4 -- demande de Gersom : "le petit 1 indicateur sur l'icône avant de
+// l'ouvrir". Badge numerique sur l'icone de l'app (Badging API), distinct du
+// badge affiche a l'interieur de l'app une fois ouverte (tests/app-badge.ts
+// couvre le comportement de lib/appBadge.ts lui-meme) -- ici, on verrouille
+// le CABLAGE bout en bout : le serveur calcule et envoie badgeCount, le
+// service worker le lit et appelle la Badging API en tache de fond (avant
+// meme l'ouverture de l'app), et les trois sondeurs en premier plan
+// (AccountMenu/BottomNav/GuestApprovalsShortcut) le recalent a chaque
+// rafraichissement du compte, avec le meme compte que pending_count.
+test('notifyGuestApprovalReviewers envoie un badgeCount (meme compte que pending_count) dans le payload Push', () => {
+  assert.match(webPushSource, /eq\('event_id', request\.event_id\)\s*\n\s*\.eq\('statut', 'en_attente'\);/);
+  assert.match(webPushSource, /badgeCount: badgeCount \?\? 0,/);
+});
+
+test("le service worker met a jour le badge numerique de l'icone a la reception d'un Push, avant meme l'ouverture de l'app", () => {
+  assert.match(swSource, /'setAppBadge' in navigator/);
+  assert.match(swSource, /data\.badgeCount > 0 \? navigator\.setAppBadge\(data\.badgeCount\) : navigator\.clearAppBadge\(\)/);
+  // Le badge ne doit jamais empecher l'affichage de la notification
+  // elle-meme si l'API est absente ou si l'appel echoue.
+  assert.match(swSource, /event\.waitUntil\(Promise\.all\(\[showNotification, badgeUpdate\]\)\);/);
+});
+
+test("les trois sondeurs en premier plan (AccountMenu/BottomNav/GuestApprovalsShortcut) recalent le badge de l'icone avec le meme compte pending_count", () => {
+  for (const source of [accountMenuSource, bottomNavSource, guestApprovalsShortcutSource]) {
+    assert.match(source, /from '@\/lib\/appBadge'/);
+    assert.match(source, /syncAppBadge\(nextCount\)/);
+  }
+});
+
+test("le badge de l'icone est efface a la deconnexion (partage par appareil, pas par compte)", () => {
+  assert.match(accountMenuSource, /clearAppBadge\(\)/);
 });
