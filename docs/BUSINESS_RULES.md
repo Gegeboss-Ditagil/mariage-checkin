@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.45.2**
-**Dernière mise à jour : 2026-09-13**
+**Version documentaire : 1.46.0**
+**Dernière mise à jour : 2026-09-14**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -81,6 +81,7 @@ Depuis v1.30.1, `manageTags` est limité à `admin` et `directeur`; placeur et a
 ## Invité surprise avec approbation SMS/WhatsApp à distance (v1.27.0)
 
 - Navigation admin : Approbations est toujours dans le menu du compte. Elle apparaît aussi dans la barre du bas uniquement sur `/dashboard`, où Scan occupe le bouton central entre Recherche/Plan et Agenda/Approbations.
+- **`placeur` calque le même comportement contextuel que `directeur`** (14/09/2026, retour de Gersom sur Agent001, rôle vérifié en base) : Tableau de bord au centre hors `/dashboard`, `/scan` et `/agenda` (Scan reste alors un onglet latéral), Scan/appareil photo au centre sur ces trois pages (Agenda + Bord ou Approbations en onglets latéraux selon la page), Approbations remplace Staff en dernier onglet de la barre générique. `placeur` gagne `viewAgenda` en lecture seule pour que l'onglet Agenda affiché lui reste accessible (jamais `manageAgenda`, réservée à admin/directeur). `/staff` reste atteignable via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée).
 
 Depuis le 30/08/2026, un placeur, un directeur de festin ou l'admin peut gérer un invité non prévu directement depuis `/scan`, avec une approbation à distance **avant** de le laisser entrer — capacité dédiée `guestApproval` (jamais agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement », demande explicite de Gersom).
 

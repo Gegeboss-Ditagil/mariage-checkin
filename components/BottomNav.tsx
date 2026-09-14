@@ -18,16 +18,6 @@ const DASHBOARD_ITEM: NavItem = { href: '/dashboard', label: 'Bord', icon: Gauge
 const AGENDA_ITEM: NavItem = { href: '/agenda', label: 'Agenda', icon: StaffIcon };
 const APPROVALS_ITEM: NavItem = { href: '/approbations', label: 'Approbations', icon: ApprovalIcon };
 
-// Barre operationnelle de base. Les variantes par role plus bas remplacent
-// certains raccourcis sans modifier les autorisations serveur.
-const STAFF_ITEMS: NavItem[] = [
-  { href: '/scan', label: 'Scan', icon: ScanIcon },
-  { href: '/search', label: 'Recherche', icon: SearchIcon },
-  { href: '/plan-table', label: 'Plan', icon: GridIcon },
-  { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-  { href: '/staff', label: 'Staff', icon: StaffIcon },
-];
-
 // agent_checkin (accueil) : scanner reste sa page d'atterrissage par defaut
 // (landingPathForRole) et reste joignable depuis n'importe quelle autre page
 // de ce role via la fleche Retour du TopBar (toujours '/scan' ou, depuis
@@ -70,14 +60,27 @@ const READ_ONLY_ITEMS: NavItem[] = [
   APPROVALS_ITEM,
 ];
 
-// admin/directeur, barre generique (toutes les pages hors /dashboard, /scan
-// et /agenda, qui ont leur propre branche explicite plus bas) : le dernier
-// onglet etait Agenda ; remplace par Approbations le 13/09/2026 (retour de
-// Gersom : en visitant /approbations elle-meme, ou n'importe quelle autre
-// page, voir "Agenda" en bas a droite plutot qu'un acces direct aux
-// approbations n'avait pas de sens -- Agenda reste atteignable depuis
-// /dashboard, /scan et /agenda lui-meme, voir les branches isAdminDirector
-// plus bas dans BottomNav()).
+// admin/directeur/placeur, barre generique (toutes les pages hors
+// /dashboard, /scan et /agenda, qui ont leur propre branche explicite plus
+// bas) : le dernier onglet etait Agenda ; remplace par Approbations le
+// 13/09/2026 (retour de Gersom : en visitant /approbations elle-meme, ou
+// n'importe quelle autre page, voir "Agenda" en bas a droite plutot qu'un
+// acces direct aux approbations n'avait pas de sens -- Agenda reste
+// atteignable depuis /dashboard, /scan et /agenda lui-meme, voir les
+// branches isDirectorStyleNav plus bas dans BottomNav()).
+//
+// placeur (Agent001...) : jusqu'ici sur STAFF_ITEMS (Scan au centre, Staff
+// en dernier), jamais retouche pendant que Staff etait deja remplace par
+// Approbations pour tous les autres roles. Aligne le 14/09/2026 (retour de
+// Gersom, verification en base -- Agent001 est bien placeur, pas
+// agent_checkin comme les echanges precedents sur ce compte le
+// suggeraient) : "je m'attends plutot a voir un menu... un peu comme celui
+// de Remy Landu" -- calque desormais tout le comportement contextuel de
+// directeur (voir CENTRAL_HREF et isDirectorStyleNav ci-dessous), y compris
+// Agenda en lecture seule (nouvelle capacite viewAgenda, lib/permissions.ts)
+// sur /dashboard/scan/agenda. Staff reste atteignable via le badge QR
+// "STAFF" depuis /scan (viewStaff inchangee), seul le raccourci permanent
+// de la barre change.
 const ITEMS: Record<string, NavItem[]> = {
   directeur: [
     { href: '/search', label: 'Recherche', icon: SearchIcon },
@@ -86,7 +89,13 @@ const ITEMS: Record<string, NavItem[]> = {
     { href: '/scan', label: 'Scan', icon: ScanIcon },
     APPROVALS_ITEM,
   ],
-  placeur: STAFF_ITEMS,
+  placeur: [
+    { href: '/search', label: 'Recherche', icon: SearchIcon },
+    { href: '/plan-table', label: 'Plan', icon: GridIcon },
+    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
+    { href: '/scan', label: 'Scan', icon: ScanIcon },
+    APPROVALS_ITEM,
+  ],
   agent_checkin: AGENT_CHECKIN_ITEMS,
   visibilite: READ_ONLY_ITEMS,
   admin: [
@@ -112,10 +121,17 @@ const ITEMS: Record<string, NavItem[]> = {
 // agent_checkin aussi (voir AGENT_CHECKIN_ITEMS ci-dessus : ce role n'a
 // justement plus d'onglet Scan lateral, /scan reste sa page d'atterrissage
 // par defaut et la fleche Retour du TopBar y ramene depuis n'importe quelle
-// autre page de ce role). Roles absents de cette table gardent Scan par
-// defaut.
+// autre page de ce role). placeur rejoint cette table le 14/09/2026 (retour
+// de Gersom sur Agent001 : calquer le comportement de directeur) -- ce
+// role, lui, garde bien un onglet Scan lateral (voir ITEMS.placeur
+// ci-dessus) : contrairement a agent_checkin, il scanne encore tres
+// regulierement, Tableau de bord ne fait que prendre la place centrale
+// hors /dashboard, /scan et /agenda (memes trois branches contextuelles
+// que directeur, voir isDirectorStyleNav plus bas). Roles absents de cette
+// table gardent Scan par defaut.
 const CENTRAL_HREF: Record<string, string> = {
   directeur: '/dashboard',
+  placeur: '/dashboard',
   agent_checkin: '/dashboard',
 };
 
@@ -180,13 +196,18 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   // la mise a jour du badge n'a aucun interet quand l'ecran est en arriere-plan.
   usePolling(loadPendingCount, canPollApprovals ? 15000 : 0);
 
-  const isAdminDirector = role === 'admin' || role === 'directeur';
+  // placeur rejoint admin/directeur le 14/09/2026 (retour de Gersom sur
+  // Agent001, verifie en base -- role reellement `placeur` : "je m'attends
+  // plutot a voir un menu... un peu comme celui de Remy Landu", calque tout
+  // le comportement contextuel ci-dessous, pas seulement la barre generique
+  // -- voir ITEMS.placeur et CENTRAL_HREF.placeur plus haut).
+  const isDirectorStyleNav = role === 'admin' || role === 'directeur' || role === 'placeur';
 
-  // Navigation contextuelle admin/directeur, affinee le 02/09/2026 (retour
-  // de Remy en test : sur /scan, le bouton central redevenait Tableau de
-  // bord au lieu de rester l'appareil photo, et Approbations -- deja un
-  // gros bouton dedie juste au-dessus de la jauge sur cette page, voir
-  // GuestApprovalsShortcut -- doublonnait inutilement la barre du bas.
+  // Navigation contextuelle admin/directeur(/placeur), affinee le 02/09/2026
+  // (retour de Remy en test : sur /scan, le bouton central redevenait
+  // Tableau de bord au lieu de rester l'appareil photo, et Approbations --
+  // deja un gros bouton dedie juste au-dessus de la jauge sur cette page,
+  // voir GuestApprovalsShortcut -- doublonnait inutilement la barre du bas.
   // Depuis le dashboard, Scan reste le gros bouton central. Depuis le
   // scanner, le centre reste l'appareil photo (jamais un aller-retour vers
   // Bord) et Tableau de bord prend la place liberee par Approbations, qui
@@ -195,15 +216,15 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   let left: NavItem[];
   let right: NavItem[];
 
-  if (isAdminDirector && pathname.startsWith('/dashboard')) {
+  if (isDirectorStyleNav && pathname.startsWith('/dashboard')) {
     central = SCAN_ITEM;
     left = [SEARCH_ITEM, PLAN_ITEM];
     right = [AGENDA_ITEM, { ...APPROVALS_ITEM, badge: pendingCount }];
-  } else if (isAdminDirector && pathname.startsWith('/agenda')) {
+  } else if (isDirectorStyleNav && pathname.startsWith('/agenda')) {
     central = SCAN_ITEM;
     left = [SEARCH_ITEM, PLAN_ITEM];
     right = [AGENDA_ITEM, DASHBOARD_ITEM];
-  } else if (isAdminDirector && pathname.startsWith('/scan')) {
+  } else if (isDirectorStyleNav && pathname.startsWith('/scan')) {
     central = SCAN_ITEM;
     left = [SEARCH_ITEM, PLAN_ITEM];
     right = [AGENDA_ITEM, DASHBOARD_ITEM];

@@ -29,21 +29,23 @@ test('staff est accessible a tous les roles operationnels, visibilite en lecture
   assert.equal(hasCapability('visibilite', 'checkin'), false);
 });
 
-test("l'agenda du jour J se modifie seulement en admin/directeur ; agent_checkin le consulte en lecture seule depuis le 03/09/2026 (retour de Gersom : Agenda remplace Staff dans sa barre du bas)", () => {
+test("l'agenda du jour J se modifie seulement en admin/directeur ; agent_checkin (03/09/2026) et placeur (14/09/2026) le consultent en lecture seule", () => {
   for (const role of ['admin', 'directeur'] as const) {
     assert.equal(hasCapability(role, 'viewAgenda'), true);
     assert.equal(hasCapability(role, 'manageAgenda'), true);
     assert.equal(canAccessPath(role, '/agenda'), true);
   }
-  // agent_checkin : viewAgenda mais jamais manageAgenda (lecture seule).
-  assert.equal(hasCapability('agent_checkin', 'viewAgenda'), true);
-  assert.equal(hasCapability('agent_checkin', 'manageAgenda'), false);
-  assert.equal(canAccessPath('agent_checkin', '/agenda'), true);
-  for (const role of ['placeur', 'visibilite'] as const) {
-    assert.equal(hasCapability(role, 'viewAgenda'), false);
+  // agent_checkin et placeur : viewAgenda mais jamais manageAgenda (lecture
+  // seule) -- placeur ajoute le 14/09/2026 (retour de Gersom sur Agent001 :
+  // calquer le comportement contextuel de directeur, voir BottomNav.tsx).
+  for (const role of ['agent_checkin', 'placeur'] as const) {
+    assert.equal(hasCapability(role, 'viewAgenda'), true);
     assert.equal(hasCapability(role, 'manageAgenda'), false);
-    assert.equal(canAccessPath(role, '/agenda'), false);
+    assert.equal(canAccessPath(role, '/agenda'), true);
   }
+  assert.equal(hasCapability('visibilite', 'viewAgenda'), false);
+  assert.equal(hasCapability('visibilite', 'manageAgenda'), false);
+  assert.equal(canAccessPath('visibilite', '/agenda'), false);
 });
 
 test('la visibilite des lignes staff est restreinte selon le role', () => {

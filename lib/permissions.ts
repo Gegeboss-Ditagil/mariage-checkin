@@ -69,7 +69,14 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // (v1.30.1) : reste hors du socle operationnel commun, donc toujours
   // refuse a placeur/agent_checkin/visibilite.
   directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'addInvitation'],
-  placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval'],
+  // viewAgenda ajoutee le 14/09/2026 (retour de Gersom sur Agent001, verifie
+  // en base -- role reellement `placeur` : la barre du bas calque
+  // desormais le comportement contextuel de directeur -- voir
+  // components/BottomNav.tsx -- qui affiche un onglet Agenda sur /dashboard,
+  // /scan et /agenda) -- lecture seule (jamais manageAgenda, reservee a
+  // admin/directeur) : meme principe que agent_checkin (03/09/2026), ce
+  // role consulte le chronogramme du jour J sans le modifier.
+  placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval', 'viewAgenda'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
   // Conserve manageMembers (renommer, gerer les membres du groupe) : seule

@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.46.0] — 2026-09-14
+
+La navigation du placeur calque désormais le comportement contextuel de directeur (retour de Gersom).
+
+### Corrigé
+- **Nav du placeur alignée sur directeur** : Agent001 (rôle vérifié en base : bien `placeur`, pas `agent_checkin` comme les échanges précédents sur ce compte le suggéraient) affichait toujours l'ancienne barre (Scan au centre, Staff en dernier onglet), jamais retouchée alors que Staff avait déjà été remplacé par Approbations pour tous les autres rôles. Sur choix explicite de Gersom (calquer tout le comportement de directeur plutôt qu'un simple remplacement de dernier onglet) : `placeur` gagne désormais le même comportement contextuel que `directeur` dans `components/BottomNav.tsx` — Tableau de bord au centre hors `/dashboard`, `/scan` et `/agenda` (Scan reste alors un onglet latéral, il continue de scanner très régulièrement contrairement à `agent_checkin`), Scan/appareil photo au centre sur ces trois pages, Approbations remplace Staff en dernier onglet de la barre générique.
+- **Nouvelle capacité `viewAgenda` pour placeur** (lecture seule, jamais `manageAgenda`, réservée à admin/directeur) : nécessaire pour que l'onglet Agenda désormais affiché sur `/dashboard`/`/scan`/`/agenda` soit réellement accessible (même principe que le `viewAgenda` d'`agent_checkin`, v1.40.0). `/staff` reste atteignable via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre change.
+
+### Tests
+- Nouveau `tests/placeur-director-nav.test.ts`.
+- `tests/permissions.test.ts` : assertion mise à jour (placeur gagne `viewAgenda`).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.45.2 → 1.46.0
+
 ## [1.45.2] — 2026-09-13
 
 En paysage, la barre gestuelle système (iPad) ne recouvre plus le dernier contenu ni le dernier onglet (retour de Gersom).
