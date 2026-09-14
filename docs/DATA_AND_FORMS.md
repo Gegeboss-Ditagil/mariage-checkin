@@ -1,7 +1,7 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.45.2**
-**Dernière mise à jour : 2026-09-13**
+**Version documentaire : 1.46.1**
+**Dernière mise à jour : 2026-09-14**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 

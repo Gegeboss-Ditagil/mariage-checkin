@@ -3,6 +3,39 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.46.1] — 2026-09-14
+
+Le bouton central d'agent_checkin devient Scan sur le tableau de bord, au lieu d'un aller-retour vers lui-même (retour de Gersom).
+
+### Corrigé
+- **Bouton doré = Scan, pas Bord, quand on est déjà sur `/dashboard`** : retour de Gersom sur Scotty Sanda (`agent_checkin`) : "quand on est dans le tableau de bord, je voudrais que le bouton doré en bas soit le bouton scan plutôt." Le bouton central d'`agent_checkin` (Bord, via `CENTRAL_HREF`) pointait vers `/dashboard` même en y étant déjà — un aller-retour inutile, exactement le même problème déjà corrigé pour admin/directeur le 02/09/2026. `agent_checkin` rejoint donc `isDirectorStyleNav` (`components/BottomNav.tsx`) : Scan au centre sur `/dashboard`/`/scan`/`/agenda` (jamais l'appareil photo, ce rôle n'a pas `submitGuestApproval`), Bord au centre partout ailleurs — barre générique (`AGENT_CHECKIN_ITEMS`) inchangée.
+
+### Tests
+- `tests/placeur-director-nav.test.ts` : nouvelle assertion pour agent_checkin.
+
+### Migrations
+- Aucune.
+
+Version: 1.46.0 → 1.46.1
+
+## [1.46.0] — 2026-09-14
+
+La navigation du placeur calque désormais le comportement contextuel de directeur (retour de Gersom).
+
+### Corrigé
+- **Nav du placeur alignée sur directeur** : Agent001 (rôle vérifié en base : bien `placeur`, pas `agent_checkin` comme les échanges précédents sur ce compte le suggéraient) affichait toujours l'ancienne barre (Scan au centre, Staff en dernier onglet), jamais retouchée alors que Staff avait déjà été remplacé par Approbations pour tous les autres rôles. Sur choix explicite de Gersom (calquer tout le comportement de directeur plutôt qu'un simple remplacement de dernier onglet) : `placeur` gagne désormais le même comportement contextuel que `directeur` dans `components/BottomNav.tsx` — Tableau de bord au centre hors `/dashboard`, `/scan` et `/agenda` (Scan reste alors un onglet latéral, il continue de scanner très régulièrement contrairement à `agent_checkin`), Scan/appareil photo au centre sur ces trois pages, Approbations remplace Staff en dernier onglet de la barre générique.
+- **Nouvelle capacité `viewAgenda` pour placeur** (lecture seule, jamais `manageAgenda`, réservée à admin/directeur) : nécessaire pour que l'onglet Agenda désormais affiché sur `/dashboard`/`/scan`/`/agenda` soit réellement accessible (même principe que le `viewAgenda` d'`agent_checkin`, v1.40.0). `/staff` reste atteignable via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre change.
+
+### Tests
+- Nouveau `tests/placeur-director-nav.test.ts`.
+- `tests/permissions.test.ts` : assertion mise à jour (placeur gagne `viewAgenda`).
+- `npx tsc --noEmit`, `npm run build`, tous les tests (`node --test tests/*.test.ts`) — tous exécutés avec succès.
+
+### Migrations
+- Aucune.
+
+Version: 1.45.2 → 1.46.0
+
 ## [1.45.2] — 2026-09-13
 
 En paysage, la barre gestuelle système (iPad) ne recouvre plus le dernier contenu ni le dernier onglet (retour de Gersom).
