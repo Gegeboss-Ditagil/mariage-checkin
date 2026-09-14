@@ -110,14 +110,14 @@ Cette version ajoute le **forçage d'assignation d'un invité surprise sur une t
 - **Thème « Atrium » (clair) / « Maison » (sombre)**, choisi une seule fois à la première connexion puis modifiable à tout moment (menu du compte), avec un mode « Automatique » qui suit le réglage clair/sombre de l'appareil en direct. Toutes les pages en profitent, y compris `/login`.
 - **Arrivée par personne** sur les fiches de groupe : un bouton ✓/✕ par personne nommée (jamais un simple compteur global), toujours réversible, place libérée sans jamais supprimer la personne.
 - **Barre de navigation à 5 icônes** adaptée au rôle : l'admin garde Scan directement, le directeur remplace Staff par Agenda et conserve Tableau de bord au centre ; sur `/scan`, le grand bouton central devient la prise de photo. En portrait la pilule et ses cibles sont plus hautes ; en paysage elle devient une bande verticale au bord droit.
-- **41 tables au total**.
+- **42 tables au total** (depuis le 14/09/2026, v1.47.0).
 - **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
-- **Tables 1 à 40 : normales**.
-- **Table 41 : seule table de réserve**.
-- **Capacité officielle : 400 places**.
-- **Capacité absolue avec réserve : 410 places**.
-- Les tables 38, 39 et 40 sont des tables normales et gardent leurs occupants existants.
-- `/plan-table` affiche la capacité officielle sur 400 places.
+- **Tables 1 à 41 : normales** (la 41, ex-réserve, renommée « Houston »).
+- **Table 42 (« Johannesburg ») : seule table de réserve**.
+- **Capacité officielle : 410 places**.
+- **Capacité absolue avec réserve : 420 places**.
+- Les tables 38, 39, 40 et 41 sont des tables normales et gardent leurs occupants existants.
+- `/plan-table` affiche la capacité officielle sur 410 places.
 - Les cartes du plan de table ouvrent le détail de chaque table.
 - Le plan de salle interactif de `/plan-table` se zoome (pincement à deux doigts ou boutons +/−) pour distinguer les tables d'un coup d'œil, notamment pour appeler quelqu'un rapidement.
 - Les écrans abonnés au temps réel regroupent (debounce) une rafale d'événements — utile lors d'un réimport CSV ou d'une correction en lot — pour rester rapides avec une vingtaine de personnes connectées en même temps au lieu de multiplier les requêtes en parallèle.

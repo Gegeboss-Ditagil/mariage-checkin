@@ -14,6 +14,18 @@ import clsx from 'clsx';
 // La table 41 (reserve) a desormais une position definie ici (mise a jour
 // du 23/08/2026, confirmee par Gersom) -- avant cette date elle n'apparaissait
 // pas sur le plan, son emplacement physique n'etant pas encore fixe.
+//
+// v1.47.0 (14/09/2026) : la table 41 est devenue une table reguliere
+// ("Houston") et la nouvelle table 42 ("Johannesburg") reprend son role de
+// reserve -- ce schema garde encore l'ancienne disposition (redessinee a la
+// main a partir des photos du 23/08/2026) et n'inclut pas encore la table 42
+// ni la nouvelle configuration de zones (20 tables sud + 22 tables nord,
+// retour de Gersom du 14/09/2026) : un plan photographie plus recent existe
+// mais son OCR n'est pas encore assez fiable pour redessiner ce schema en
+// confiance -- a refaire dans une prochaine version plutot que de deviner
+// des coordonnees. En attendant, la table 42 reste pleinement fonctionnelle
+// partout ailleurs (listes, jauges de capacite, assignation) ; seul ce plan
+// SVG optionnel ne l'affiche pas encore.
 export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
   // Bloc "Tables amis" (22-41), reconstruit a partir de la photo annotee du
   // 23/08/2026 : une 6e colonne a ete ajoutee a gauche pour la table 41 :

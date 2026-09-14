@@ -64,11 +64,12 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
 
 const PULL_THRESHOLD = 70;
 
-// Cible actuelle (mise à jour le 21/08/2026) : 41 tables max (40 officielles
-// + 1 seule réserve), donc 400 invités "officiels" — le reste (jusqu'à ce
+// Cible actuelle (mise à jour le 14/09/2026, v1.47.0) : 42 tables max (41
+// officielles, dont la nouvelle table 41 "Houston" + 1 seule réserve, table
+// 42 "Johannesburg"), donc 410 invités "officiels" — le reste (jusqu'à ce
 // qu'on coupe la liste au prochain import) passe dans l'unique table de
 // réserve, clairement marquée "excédentaire".
-const CAPACITE_OFFICIELLE = 400;
+const CAPACITE_OFFICIELLE = 410;
 
 export default function PlanTablePage() {
   const role = useSessionRole();
@@ -319,8 +320,10 @@ export default function PlanTablePage() {
   }, [invitations, filtre, coteFiltre]);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
-  // Tables presentes sur le plan interactif -- 1 a 40 plus la reserve (41,
-  // qui a desormais une position definie, voir FLOOR_PLAN_TABLE_POSITIONS).
+  // Tables presentes sur le plan interactif -- 1 a 41 (positions historiques,
+  // voir FLOOR_PLAN_TABLE_POSITIONS) ; la nouvelle table 42 "Johannesburg"
+  // (reserve depuis le 14/09/2026) n'a pas encore de position sur ce schema,
+  // voir le commentaire dans components/FloorPlan.tsx.
   const tablesSurLePlan = new Set(Object.keys(FLOOR_PLAN_TABLE_POSITIONS).map(Number));
   const occupiedNumbers = new Set(
     tables.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
@@ -530,7 +533,7 @@ export default function PlanTablePage() {
               )}
 
               {/* Une seule barre (demande de Gersom le 28/08/2026) : capacite
-                  officielle (400, +10 en reserve), trait = prevu, remplissage
+                  officielle (410, +10 en reserve), trait = prevu, remplissage
                   = present. Rouge des que le present depasse le prevu. */}
               <div className="mb-4 card py-3">
                 <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
@@ -659,7 +662,7 @@ export default function PlanTablePage() {
               </div>
 
               {reserveVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-text-faint">
-                Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 400</span>
+                Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 410</span>
               </p>}
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {reserveVisibles.map((t) => (

@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.46.1**
+**Version documentaire : 1.47.0**
 **Dernière mise à jour : 2026-09-14**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -38,14 +38,14 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Le service worker ne doit jamais servir `/_next/*` depuis un ancien cache.
 - Vérifier qu'une PWA installée sur iPhone/Android récupère la nouvelle version après redéploiement.
 
-## Capacité (depuis v1.1.0)
+## Capacité (depuis v1.1.0, mis à jour v1.47.0)
 
-- 41 tables présentes : 1-40 normales, 41 réserve.
-- Capacité officielle affichée : 400.
-- Capacité absolue avec réserve : 410.
-- `/plan-table` : une invitation `table_id = NULL` (staff `notable` sans table) ne doit jamais être comptée en excédentaire/réserve — seule une invitation réellement placée en table 41 compte comme excédentaire.
-- `/dashboard` : la jauge « Remplissage de la salle » marque visuellement le seuil des 400 places officielles dans sa graduation sur 410.
-- Les tables 38-40 ne doivent plus être marquées réserve.
+- 42 tables présentes : 1-41 normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026), 42 (« Johannesburg ») réserve.
+- Capacité officielle affichée : 410.
+- Capacité absolue avec réserve : 420.
+- `/plan-table` : une invitation `table_id = NULL` (staff `notable` sans table) ne doit jamais être comptée en excédentaire/réserve — seule une invitation réellement placée en table 42 compte comme excédentaire.
+- `/dashboard` : la jauge « Remplissage de la salle » marque visuellement le seuil des 410 places officielles dans sa graduation sur 420.
+- Les tables 38-41 ne doivent plus être marquées réserve.
 
 ## Concurrence et réseau
 

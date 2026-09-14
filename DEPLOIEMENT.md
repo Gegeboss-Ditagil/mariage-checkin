@@ -1,6 +1,6 @@
 # Guide de déploiement
 
-**Version documentaire : 1.46.1**
+**Version documentaire : 1.47.0**
 **Dernière mise à jour : 2026-09-14**
 
 L'application est un projet Next.js déployé sur Vercel avec Supabase en backend.
@@ -51,13 +51,13 @@ Après un déploiement important, tester au moins une PWA déjà installée sur 
 
 Toute écriture de check-in nécessite une connexion réseau.
 
-## 5. Données et capacité de référence v1.1.0
+## 5. Données et capacité de référence (v1.1.0, mis à jour v1.47.0)
 
-- 41 tables au total.
-- Tables 1 à 40 : normales.
-- Table 41 : seule réserve.
-- Capacité officielle : 400 places.
-- Capacité absolue avec réserve : 410 places.
+- 42 tables au total.
+- Tables 1 à 41 : normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026).
+- Table 42 (« Johannesburg ») : seule réserve.
+- Capacité officielle : 410 places.
+- Capacité absolue avec réserve : 420 places.
 
 Toute modification structurelle des tables doit être faite via une nouvelle migration et documentée dans `CHANGELOG.md`.
 

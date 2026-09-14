@@ -1,6 +1,6 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.46.1**
+**Version documentaire : 1.47.0**
 **Dernière mise à jour : 2026-09-14**
 
 ## Source de vérité
@@ -60,13 +60,13 @@ Avant toute modification :
 
 Après modification, Claude doit confirmer que le code et les documents de référence correspondent à la même version.
 
-## État v1.15.3
+## État v1.47.0 (mis à jour depuis v1.15.3)
 
-- 41 tables au total.
-- Tables 1 à 40 : tables normales.
-- Table 41 : seule table de réserve.
-- Capacité officielle : 400 places.
-- Capacité absolue avec réserve : 410 places.
+- 42 tables au total.
+- Tables 1 à 41 : tables normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026).
+- Table 42 (« Johannesburg ») : seule table de réserve.
+- Capacité officielle : 410 places.
+- Capacité absolue avec réserve : 420 places.
 - Session maximale : 12 heures.
 - Une session issue d'un ancien déploiement est invalidée à la prochaine requête protégée.
 - Les assets Next.js `/_next/*` ne sont pas servis depuis l'ancien cache PWA.

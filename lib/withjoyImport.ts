@@ -1,7 +1,7 @@
 // Port serveur des règles validées par scripts/build_plan_from_csv.py et
 // scripts/assign_tables_from_labels.py. Ce module ne fait aucune écriture.
 
-export const NB_TABLES_INVITES = 40;
+export const NB_TABLES_INVITES = 41;
 export const NB_TABLES_RESERVE = 1;
 export const CAPACITY = 10;
 export const CAPACITE_OFFICIELLE = NB_TABLES_INVITES * CAPACITY;

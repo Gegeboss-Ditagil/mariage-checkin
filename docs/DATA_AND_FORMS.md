@@ -1,19 +1,19 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.46.1**
+**Version documentaire : 1.47.0**
 **Dernière mise à jour : 2026-09-14**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
 `/admin/import-withjoy` accepte uniquement un CSV With Joy et ne transmet son contenu qu'à la route serveur admin. L'aperçu n'écrit rien. La confirmation remplace les invitations dans une transaction, après une sauvegarde JSON privée incluant invitations, membres, check-ins, débordements, exceptions et audit. Elle remet volontairement les données opérationnelles à zéro et reste donc interdite en mode live/closed.
 
-## État de référence v1.15.3
+## État de référence v1.47.0 (mis à jour depuis v1.15.3)
 
-- 41 tables au total.
-- Tables 1 à 40 : normales.
-- Table 41 : seule réserve.
-- Capacité officielle : 400 places.
-- Capacité absolue avec réserve : 410 places.
+- 42 tables au total.
+- Tables 1 à 41 : normales (la table 41, ex-réserve, est devenue régulière et a été renommée « Houston » le 14/09/2026).
+- Table 42 (« Johannesburg ») : seule réserve, capacité 10 comme les autres.
+- Capacité officielle : 410 places.
+- Capacité absolue avec réserve : 420 places.
 - Toute évolution structurelle doit être reflétée dans une migration GitHub et dans `CHANGELOG.md`.
 
 ## Formulaires d'écriture
