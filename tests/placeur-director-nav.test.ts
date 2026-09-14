@@ -30,13 +30,15 @@ test('placeur gagne le meme comportement contextuel que directeur (isDirectorSty
 });
 
 test("la barre generique de placeur reprend exactement la forme de directeur (Recherche, Plan, Bord, Scan, Approbations), sans plus jamais Staff", () => {
-  const placeurBlock = bottomNav.slice(bottomNav.indexOf('placeur: ['), bottomNav.indexOf('agent_checkin: AGENT_CHECKIN_ITEMS'));
-  assert.match(placeurBlock, /href: ['"]\/search['"], label: ['"]Recherche['"]/);
-  assert.match(placeurBlock, /href: ['"]\/plan-table['"], label: ['"]Plan['"]/);
-  assert.match(placeurBlock, /href: ['"]\/dashboard['"], label: ['"]Bord['"]/);
-  assert.match(placeurBlock, /href: ['"]\/scan['"], label: ['"]Scan['"]/);
-  assert.match(placeurBlock, /APPROVALS_ITEM,/);
-  assert.doesNotMatch(placeurBlock, /href: ['"]\/staff['"]/);
+  // placeur partage desormais litteralement le meme tableau que directeur/
+  // admin (DIRECTOR_STYLE_ITEMS, deduplique le 14/09/2026) plutot qu'une
+  // copie -- "reprend exactement la forme de directeur" est donc garanti
+  // par construction, pas seulement par comparaison de contenu.
+  assert.match(bottomNav, /placeur: DIRECTOR_STYLE_ITEMS,/);
+  assert.match(bottomNav, /directeur: DIRECTOR_STYLE_ITEMS,/);
+  const sharedBlock = bottomNav.slice(bottomNav.indexOf('const DIRECTOR_STYLE_ITEMS'), bottomNav.indexOf('const ITEMS'));
+  assert.match(sharedBlock, /SEARCH_ITEM, PLAN_ITEM, DASHBOARD_ITEM, SCAN_ITEM, APPROVALS_ITEM/);
+  assert.doesNotMatch(sharedBlock, /href: ['"]\/staff['"]/);
   // La constante STAFF_ITEMS elle-meme (plus qu'un onglet parmi d'autres,
   // c'etait le tableau entier utilise par placeur) est supprimee -- seules
   // des mentions en commentaire du nom historique peuvent subsister.

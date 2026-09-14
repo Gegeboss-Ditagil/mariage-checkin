@@ -82,30 +82,22 @@ const READ_ONLY_ITEMS: NavItem[] = [
 // sur /dashboard/scan/agenda. Staff reste atteignable via le badge QR
 // "STAFF" depuis /scan (viewStaff inchangee), seul le raccourci permanent
 // de la barre change.
+// admin/directeur/placeur affichaient jusqu'ici trois litteraux (quasi-)
+// identiques ici -- seul l'ordre de declaration differait pour admin (Scan
+// avant Bord), sans aucun effet reel : la repartition gauche/centre/droite
+// plus bas se base toujours sur SIDE_ORDER et sur CENTRAL_HREF, jamais sur
+// cet ordre de tableau (voir le tri explicite dans BottomNav()). Deduplique
+// le 14/09/2026 une fois la nav de ces trois roles stabilisee (plus de
+// raison de maintenir trois copies a jour separement a chaque futur
+// changement).
+const DIRECTOR_STYLE_ITEMS: NavItem[] = [SEARCH_ITEM, PLAN_ITEM, DASHBOARD_ITEM, SCAN_ITEM, APPROVALS_ITEM];
+
 const ITEMS: Record<string, NavItem[]> = {
-  directeur: [
-    { href: '/search', label: 'Recherche', icon: SearchIcon },
-    { href: '/plan-table', label: 'Plan', icon: GridIcon },
-    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-    { href: '/scan', label: 'Scan', icon: ScanIcon },
-    APPROVALS_ITEM,
-  ],
-  placeur: [
-    { href: '/search', label: 'Recherche', icon: SearchIcon },
-    { href: '/plan-table', label: 'Plan', icon: GridIcon },
-    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-    { href: '/scan', label: 'Scan', icon: ScanIcon },
-    APPROVALS_ITEM,
-  ],
+  directeur: DIRECTOR_STYLE_ITEMS,
+  placeur: DIRECTOR_STYLE_ITEMS,
+  admin: DIRECTOR_STYLE_ITEMS,
   agent_checkin: AGENT_CHECKIN_ITEMS,
   visibilite: READ_ONLY_ITEMS,
-  admin: [
-    { href: '/search', label: 'Recherche', icon: SearchIcon },
-    { href: '/plan-table', label: 'Plan', icon: GridIcon },
-    { href: '/scan', label: 'Scan', icon: ScanIcon },
-    { href: '/dashboard', label: 'Bord', icon: GaugeIcon },
-    APPROVALS_ITEM,
-  ],
 };
 
 // Approbations vit toujours dans AccountMenu pour tous les approbateurs
