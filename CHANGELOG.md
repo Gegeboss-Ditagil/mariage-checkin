@@ -3,7 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
-## [1.48.9] — 2026-09-14
+## [1.49.0] — 2026-09-14
+
+Mise à jour ciblée de la liste d'invités depuis `guest-list_52.csv` (nouvel export With Joy, confirmé par Gersom synchronisé avec le plan seatplan.io — 3 photos + PDF `seating-chart-Mariage-Nelly---Gege-2026-09-14.pdf`, 42 tables). Comparaison nom-par-nom + numéro de téléphone (jamais un réimport complet, conformément à `docs/DATA_CHANGE_INSTRUCTIONS.md` section 6) entre les 274 invitations existantes et les 406 lignes du CSV. **Aucune migration** (aucun changement de schéma), écritures directes en production Supabase, vérifiées le jour même. Aucune arrivée enregistrée dans l'événement (`nombre_arrive = 0` partout, `event.status = 'test'`) au moment de ces écritures — aucun risque de déplacer quelqu'un déjà arrivé.
+
+### Données
+- **26 rafraîchissements de contact** (téléphone/email) sur des invitations déjà présentes, reconnues par correspondance exacte de nom.
+- **5 doublons découverts en recoupant par NUMÉRO DE TÉLÉPHONE** (pas seulement par nom) les 6 fiches "ajoutées sans table" en v1.47.0 avec le reste de la base — chacune avait en réalité déjà un homologue correct, placé ailleurs sous un nom légèrement différent :
+  - "Famille Nzuzi" (table 6, noms fabriqués "Seba Nzuzi, Lucia Nzuzi") et "Famille Domingos" (table 32, noms fabriqués "Lucie Domingos, Epoux Domingo") partageaient le même téléphone — même couple. Doublon supprimé, vrais noms "Lucie Nzuzi, Seba Domingos" appliqués sur la fiche conservée (déjà à la bonne table).
+  - "Nzuzi Laisana" (sans table) était une faute de frappe With Joy pour "Denzu Laisana", déjà présente (table 16).
+  - "Famille Ndani Ndoba" (sans table) était déjà présente sous "Famille Ndani" (table 9) avec un nom de famille tronqué ("Maurice Ndani" au lieu de "Maurice Ndani Ndoba") — corrigé sur la fiche conservée.
+  - "Famille Dos Goncalves" (sans table) était déjà présente sous "Famille Mbala Dos Goncalves" (table 2, même téléphone ET même email).
+  - "Famille Bembo" (sans table) était déjà présente sous "Famille suisee cousine" (table 36) avec un nom manifestement erroné ("Jenniffer suisee cousine" — une description prise pour un nom) ; doublon supprimé, vrais noms appliqués sur "Famille Bembo".
+- **3 fiches "ajoutées sans table" confirmées sans doublon** (aucune collision de téléphone ailleurs dans la base), complétées avec les vrais noms de membres : Famille Lusuena (Joana + Fifi Lusuena, désormais table 12), Famille Nzasi (Babel, Prince, Enfant Nzasi, table 29 confirmée par tag mais non assignée — voir non fait), Famille Menga (Jacquie, Lambert, Bana Menga ×2, table 41 confirmée par tag mais non assignée — voir non fait).
+- **2 nouvelles invitations** sans correspondance existante : Maria Irène Gomes (table 18 confirmée par tag, non assignée), Jean-Claude Nsenda (table 34 confirmée par tag, non assignée).
+
+### Non fait dans ce lot (signalé à Gersom, capacité ou ambiguïté à trancher avant d'écrire)
+- **5 tables en surcapacité** si les tags CSV52 sont appliqués tels quels par-dessus les occupants actuels de la base (1, 9, 18, 29, 34, plus 41 qui accumule Bembo/Menga/Michaud) — nécessite de déplacer certaines personnes déjà placées ailleurs, hors périmètre de ce lot ciblé.
+- **2 fiches dont les membres ont des tags de table CSV contradictoires entre eux** : "Famille Matondo" (Julianna/Francisco → T40, Huguette/Eude → T36) et "Famille Neves" (Andrea → T1, Ketsia → T11, cette dernière existant aussi en doublon comme invitation autonome non placée depuis v1.47.0).
+- **21 invitations déjà placées dont le tag CSV52 diffère de la table actuelle en base** (au-delà des 5 doublons corrigés ci-dessus) — nécessite une réorganisation réelle de places déjà occupées (ex. "Famille Matuba" table 37→18, discrépance déjà documentée en v1.47.0/v1.48.0 ; "Tia Nzuzi Culumbu" table 29→8 ; "Famille Lukau"/"Famille Neves"/"Teresa Ndani" table 11→1 ; "Pajos Mpapa"/"Nsimba Mambakasa"/"Famille Esamba" table 2→6 ; etc.) — non appliqué, présenté à Gersom pour confirmation.
+- **"Jade Magnus"** (fiche ajoutée sans table en v1.47.0) a disparu de guest-list_52.csv sans marque de refus explicite — ni renommage identifié ni suppression appliquée, signalé pour confirmation.
+- **Échange physique des tables 18 et 34** sur le plan de salle (confirmé par Gersom) — affecte uniquement `components/FloorPlan.tsx` (positions visuelles), aucune donnée d'invitation concernée ; pas encore appliqué.
+- **Rafraîchissement complet de `lib/floorPlanSeats.ts`** (`TABLE_SEAT_NAMES`) depuis le nouveau plan seatplan.io (42 tables, désormais confirmé synchronisé avec With Joy) — toujours purement informatif, pas encore retranscrit.
+
+
 
 Complète le dessin "vu sur le plan photographié" avec le sens inverse (siège → invitation/membre), sur les trois écrans qui l'affichent — aucune migration.
 
