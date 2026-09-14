@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.50.0] — 2026-09-14
+
+Suite directe de v1.49.0, sur demande explicite de Gersom : « tables en surcapacité corrected, jade magnus n'est plus invité, voici le dernier a jours de with joy » (`guest-list_53.csv` → `guest-list_54.csv` → `guest-list_55.csv`, ce dernier ajoutant Tio Godart et son épouse table 40, confirmé par une capture d'écran du plan seatplan.io de cette table). **Aucune migration** (aucun changement de schéma), écritures directes en production Supabase, vérifiées le jour même. `nombre_arrive = 0` confirmé sur les 29 invitations touchées avant toute écriture, `event.status = 'test'` inchangé.
+
+### Données
+- **Jade Magnus n'est plus invitée** (confirmé par Gersom) — sa fiche placeholder v1.47.0 (jamais matérialisée, sans table) est supprimée.
+- **7 données de test supprimées** : des fiches "Invité surprise approuvé" créées pendant les tests du parcours d'approbation (noms factices : "Gtfxfyh test", "Hsbsbshshs", "Gersom Test", "Lui Dos", "Tetsfffd", "X", "Testt"), occupant à tort des places aux tables 1, 41 et 42 et faussant les calculs de capacité depuis plusieurs versions — la table 41 (Houston) se retrouve entièrement vidée de ces artefacts.
+- **5 doublons supplémentaires découverts** (recoupement téléphone/party-id/absence des exports With Joy récents), sur le même modèle qu'en v1.49.0 :
+  - "Famille Neves" (table 11) regroupait à tort deux invitées distinctes reconnues séparément par `guest-list_55.csv` (tags F011/F001) — scindée en "Andrea Neves" (reste table 11) et "Ketsia Neves" (désormais table 1, sa propre fiche placeholder v1.47.0 déjà correcte par téléphone).
+  - "Famille Manuel" (sans table) était déjà "Famille non-nommé"/Sergio Manuel (table 29, même téléphone).
+  - "Famille Mvovi" (sans table, 2 personnes) était Costa Mvovi (déjà table 3) + son épouse, confirmé par le même party-id With Joy — fusionnée sur la fiche de Costa Mvovi.
+  - "Tia Nzuzi Culumbu" (standalone, table 29) était le même nom que le membre "Tia Nzuzi Culumbu" de la fiche placeholder "Famille Nzuzi Culumbu" (v1.47.0) — fusionnée, désormais table 8.
+  - "Daniel Victor" (table 3) a disparu de tous les exports With Joy depuis `guest-list_50` ; son téléphone est celui d'"Oredezo Blancky" (placeholder v1.47.0, même table 3) — même personne, nom corrigé.
+- **Table 40 : scission confirmée par une photo du plan seatplan.io** (transmise avec l'ajout de Tio Godart) recoupée avec les tags CSV : "Famille Matondo" scindée (Eude+Francisco restent table 40 ; Huguette+Julianna table 36, tag T036) et "Famille Lembe" scindée (Youyou Lembe seule désormais table 31, tag T031 ; Odon Tchiteya sans tag CSV ni présence sur la photo — fiche séparée, sans table, signalé à Gersom).
+- **Nouvelle invitation "Famille Godart"** (Tio Godart Culumbu + épouse, table 40) ajoutée par Gersom via `guest-list_55.csv`, confirmée par la photo du plan.
+- **Table 41 (Houston) débloquée** : une fois vidée des données de test, ses 10 places accueillent exactement Famille Bembo (3) + Famille Menga (4) + Luzolo Patrick Menga (1) = 8/10, résolvant le blocage de capacité signalé en v1.49.0 pour ces trois fiches.
+- **Maria Irène Gomes** placée table 18 (tag confirmé) : la table n'était en réalité pas pleine, "Famille Momene" (2 places) étant déjà marquée `ne_viendra_pas = true` depuis v1.47.0.
+- **1 rafraîchissement de contact** : téléphone de Zoya Inacio.
+- **1 nouvelle invitation sans table** : "Nelly Dos Goncalves" (`guest-list_55.csv`, aucun tag, aucune correspondance de téléphone avec Erika ou la Famille Mbala Dos Goncalves).
+
+### Signalé à Gersom, non résolu dans ce lot
+- **"Famille Michaud" reste sans table** : le tag CSV (T041) remplirait exactement les 2 dernières places de la table 41 aux côtés de Bembo/Menga/Luzolo, mais la photo du plan seatplan.io de la table 40 (même jour) montre "Michaud Culumbu"/"Femme Michaud" assis à la table 40 — conflit réel entre les deux sources, décision explicite nécessaire.
+- **Table 29 toujours bloquée** : il ne reste qu'une place libre après le nettoyage des doublons (Famille Vincent Nkouka, Rafael Opetum Isei, Rene Herrera, Weplo Culumbu, Ya Dany Culumbu déjà assis, aucun tag CSV trouvé pour "Famille Vincent Nkouka") alors que Famille Nzasi (3) et Laura Humba (1) veulent y entrer.
+- **Table 34 toujours pleine** (10/10, tous déjà tagués T034) : aucun doublon trouvé pour libérer une place pour Jean-Claude Nsenda.
+- **"Odon Tchiteya"** (scindé de "Famille Lembe") reste sans table et sans tag CSV — toujours invité ? nouvelle table ?
+- Les 21 invitations déjà placées dont le tag CSV diffère de la table actuelle (dont "Famille Matuba" 37→18, connue depuis v1.47.0) et les échanges physiques 18/34 restent hors périmètre, inchangés.
+
 ## [1.49.0] — 2026-09-14
 
 Mise à jour ciblée de la liste d'invités depuis `guest-list_52.csv` (nouvel export With Joy, confirmé par Gersom synchronisé avec le plan seatplan.io — 3 photos + PDF `seating-chart-Mariage-Nelly---Gege-2026-09-14.pdf`, 42 tables). Comparaison nom-par-nom + numéro de téléphone (jamais un réimport complet, conformément à `docs/DATA_CHANGE_INSTRUCTIONS.md` section 6) entre les 274 invitations existantes et les 406 lignes du CSV. **Aucune migration** (aucun changement de schéma), écritures directes en production Supabase, vérifiées le jour même. Aucune arrivée enregistrée dans l'événement (`nombre_arrive = 0` partout, `event.status = 'test'`) au moment de ces écritures — aucun risque de déplacer quelqu'un déjà arrivé.
