@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.9] — 2026-09-14
+
+Complète le dessin "vu sur le plan photographié" avec le sens inverse (siège → invitation/membre), sur les trois écrans qui l'affichent — aucune migration.
+
+### Ajouté
+- **`/plan-table`, `/tables/[tableId]`, `/table/[tableId]`** : toucher un siège sur le dessin retrouve désormais aussi, parmi les invitations déjà listées pour cette table, celle dont un membre correspond exactement (jamais approché) au nom lu sur ce siège — surlignage de sa ligne dans la liste + défilement vers elle. Complète le sens déjà existant (toucher un nom → surligner son siège).
+- **`GuestArrivalPanel` (`/checkin/[invitationId]`)** : même sens inverse — toucher un siège retrouve, parmi les membres de "Qui est arrivé ?", celui dont le nom correspond exactement, et surligne sa ligne.
+- **`lib/floorPlanSeats.ts`** : nouvel export `namesMatch(a, b)`, factorisant la comparaison exacte (accents/casse ignorés) déjà utilisée par `findSeatIndexByName`, pour ce nouveau sens de recherche.
+
+### Non fait dans ce lot (signalé à Gersom, pas silencieusement ignoré)
+- "Quand j'ajoute quelqu'un dans l'application, que ça l'ajoute aussi sur la table [dessin]" — incompatible avec la nature du dessin actuel, qui est une lecture OCR **statique** de deux photos figées (`TABLE_SEAT_NAMES`), jamais une structure vivante liée aux vrais sièges. Nécessiterait la table `sièges` à ID stable déjà mise en attente en v1.48.6 (import With Joy définitif).
+- Mise à jour complète (invitations + tables + sièges) depuis un futur CSV With Joy "final" : toujours bloquée sur l'absence d'identifiant stable par personne dans les exports reçus à ce jour (voir v1.48.6) et sur la décision en attente concernant le nœud Nzuzi/Domingos/Culumbu (tables 6/29/32) découvert en comparant `guest-list_51.csv` à la base actuelle.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (3 nouveaux/étendus), `tests/floor-plan-seats.test.ts` (1 mis à jour) : verrouillent le nouveau sens de recherche sur les trois écrans.
+
+## [1.48.8] — 2026-09-14
+
+Deux ajouts au dessin "vu sur le plan photographié" (4 photos, retour de Gersom), toujours purement informatif — aucune migration.
+
+### Ajouté
+- **`/plan-table`** : toucher une invitation dans la liste au-dessus du dessin surligne désormais aussi sa ligne dans cette liste (fond teinté + liseré accent), en plus du/des siège(s) déjà mis en évidence sur le dessin — "quand j'appuie sur Jonas, j'aimerais aussi que son nom en haut dans la fiche soit surligné". Nouvel état `selectedInvitationId`, réinitialisé partout où `highlightedSeats` l'est déjà (changement de table/zone, tap direct sur un siège de la roue).
+- **`/tables/[tableId]` et `/table/[tableId]`** (fiche d'une table, jusqu'ici sans aucun dessin) gagnent le même panneau "Vu sur le plan photographié" que `/plan-table` et `/checkin/[invitationId]`, affiché sous la liste des invitations — "en dessous des noms, on puisse aussi afficher la table... garder la même logique... savoir où est-ce que la personne est assise". Un bouton 📍 par invitation (uniquement quand une correspondance de nom existe, jamais approchée) surligne son ou ses siège(s) et fait défiler jusqu'au dessin ; n'entre pas en conflit avec le tap sur le nom, qui continue d'ouvrir le check-in comme avant. Même mécanisme que sur les deux autres écrans (`lib/floorPlanSeats.ts`, `components/TableSeatWheel.tsx`), aucune nouvelle logique : toujours purement informatif, jamais une source de placement (`invitations.table_id` inchangé).
+
+### Tests
+- `tests/table-seat-wheel.test.ts` : 3 nouveaux tests (surlignage de ligne sur `/plan-table`, panneau + bouton 📍 sur les deux routes de fiche de table).
+
 ## [1.48.7] — 2026-09-14
 
 Nettoyage interne de `components/BottomNav.tsx`, sans aucun changement de comportement — première passe de simplification demandée par Gersom ("une passe de nettoyage plutôt que d'empiler encore des patches") maintenant que la navigation par rôle (admin/directeur/placeur/agent_checkin/visibilite) est stabilisée depuis le 14/09/2026 (v1.46.0/v1.46.1).

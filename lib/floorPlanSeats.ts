@@ -95,3 +95,17 @@ export function findSeatIndexByName(tableNumber: number, name: string): number |
   const index = seats.findIndex((seat) => seat !== null && normalizeSeatName(seat) === target);
   return index === -1 ? null : index;
 }
+
+/**
+ * v1.48.9, retour de Gersom : "vice versa -- si j'appuie sur la chaise...
+ * ça me surligne directement... c'est qui" -- meme comparaison EXACTE
+ * (accents/casse ignores, jamais approchee) que `findSeatIndexByName`, mais
+ * exposee pour le sens inverse : partir d'un nom lu sur un siege et
+ * retrouver, parmi une liste d'invitations/membres DEJA CONNUE de
+ * l'appelant (jamais une recherche sur les 42 tables), celle qui correspond.
+ */
+export function namesMatch(a: string, b: string): boolean {
+  const left = normalizeSeatName(a);
+  const right = normalizeSeatName(b);
+  return left !== '' && left === right;
+}
