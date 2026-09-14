@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.2] — 2026-09-14
+
+Remplacement du panneau « Vu sur le plan photographié » de `/plan-table` : un vrai dessin de table (façon seatplan.io) au lieu d'une grille de boutons.
+
+### Changé
+- **`components/TableSeatWheel.tsx` (nouveau)** : dessin SVG circulaire d'une table — dix étiquettes de siège rayonnant autour d'un cercle central numéroté, dans le sens horaire depuis le haut, chacune tournée à son propre angle (même mécanisme `rotate()` que les libellés de `components/FloorPlan.tsx`), fidèle aux photos seatplan.io transmises par Gersom (y compris les étiquettes du bas, qui se retrouvent donc la tête en bas — aucune correction de lisibilité). Remplace l'ancienne grille de boutons (`grid grid-cols-2`) sur `/plan-table`.
+- **Sièges vides** rendus visuellement distincts (contour pointillé, libellé « Vide »).
+- **Mise en évidence d'un siège** : reprend l'état `highlightedSeat` existant (introduit en v1.48.0) — toucher un nom bascule sa surbrillance (couleurs accent), comme sur l'exemple de carte nominative numérique montré par Gersom.
+- `app/plan-table/page.tsx` : même conteneur `.card` et même texte informatif (complété d'« Touchez un nom pour mettre son siège en évidence. »), seul le contenu du panneau change — toujours purement informatif, `lib/floorPlanSeats.ts` inchangé et reste la seule source de ces noms (jamais `invitations.table_id`).
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (nouveau) : le composant exporte `TableSeatWheel`, rayonne via `rotate()` (pas de grille de boutons), distingue les sièges vides, met en évidence le siège sélectionné, ne fait aucun appel réseau/Supabase ; `/plan-table` rend bien `<TableSeatWheel>` avec les bonnes props.
+- `tests/floor-plan-seats.test.ts` : inchangé et toujours au vert (aucune donnée modifiée, seul le rendu change).
+
+### Migrations
+- Aucune (changement purement visuel côté client).
+
+Version: 1.48.1 → 1.48.2
+
 ## [1.48.1] — 2026-09-14
 
 Correctif de la refonte du plan de salle (v1.48.0) : les zones nord et sud étaient inversées.
