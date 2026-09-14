@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.47.0**
+**Version documentaire : 1.48.0**
 **Dernière mise à jour : 2026-09-14**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -14,7 +14,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 - Depuis le 28/08/2026 (v1.19.0), `placement_status` reflète la confiance **RSVP**, pas le placement : `confirmee` seulement si CHAQUE membre du groupe a répondu par un texte commençant par « Oui » (le texte With Joy réel est « Oui, embarquement confirmé »), sinon `provisoire` (réponse « Peut-être », absence de réponse, ou aucune donnée RSVP disponible pour cette invitation). Un tag `F0xx`/`T0xx` explicite choisit toujours la table, mais ne rend plus `confirmee` à lui seul. `provisoire_reserve` reste dans le type/la contrainte pour compatibilité mais n'est plus jamais produit par l'import — la valeur « en réserve » se lit directement via `table_id` + `tables.is_reserve`, indépendamment de `placement_status`.
 - Depuis le 14/09/2026 (v1.47.0) : les tables 1 à 41 sont normales et représentent 410 places officielles (la table 41, ex-réserve, a été renommée « Houston » et est devenue une table régulière — retour de Gersom, nouvelle configuration).
 - La table 42 (« Johannesburg ») est désormais l'unique table de réserve; la capacité absolue est donc 420 places.
-- Le schéma SVG interactif de `/plan-table` (ligne ci-dessus, `components/FloorPlan.tsx`) n'a pas encore de position définie pour la table 42 — elle reste pleinement fonctionnelle partout ailleurs (listes, jauges, assignation), seul ce plan visuel optionnel ne l'affiche pas encore ; une refonte complète des zones (nouvelle configuration nord/sud communiquée par Gersom) est prévue dans une prochaine version.
+- v1.48.0 (14/09/2026) : le schéma SVG interactif de `/plan-table` (`components/FloorPlan.tsx`) est entièrement reconstruit selon la nouvelle configuration nord/sud communiquée par Gersom (deux photos zoomées du plan de table), avec les 42 tables désormais toutes positionnées (y compris la nouvelle table 42 « Johannesburg »). Extraction par OCR des deux photos, croisée avec les tags `T0xx`/`F0xx` de `guest-list_48.csv` et avec l'arithmétique de couverture complète (42 tables sans doublon ni trou) pour éviter toute erreur de lecture silencieuse — reste une approximation au pixel près (jamais une trace exacte), mais l'ordre et le voisinage de chaque table avec ses voisines reproduit fidèlement chaque photo.
 - `cote`, `tags` et `placement_status` expliquent le placement et ne modifient jamais les totaux de check-in.
 - Toute réimportation doit suivre `docs/DATA_CHANGE_INSTRUCTIONS.md` et obtenir une autorisation explicite avant écriture en production.
 - Les tags `Needs_Table_Gege`/`Needs_Table_Nelly` (export With Joy) signifient que Gege ou Nelly n'a pas encore assigné de table à la main : même traitement que `notable` (jamais d'auto-assignation via le pool aléatoire), sans être du staff. Un tag de table explicite reste prioritaire. Cette liste de personnes en attente reste modifiable directement dans l'application via les étiquettes et le transfert/échange en lot (voir sections ci-dessous), sans attendre un réimport.

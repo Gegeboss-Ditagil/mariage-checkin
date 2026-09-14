@@ -24,13 +24,13 @@ function parsePositions(src: string): Map<number, [number, number]> {
   return positions;
 }
 
-test('le plan de salle couvre exactement les tables 1 a 41 (reserve incluse)', () => {
+test('le plan de salle couvre exactement les tables 1 a 42 (reserve incluse)', () => {
   const positions = parsePositions(source);
-  // Mise a jour du 23/08/2026 : la table 41 (reserve) a desormais une
-  // position confirmee par Gersom -- avant cette date elle etait
-  // volontairement absente (emplacement physique non defini).
-  assert.equal(positions.size, 41, 'doit y avoir exactement 41 tables positionnees sur le plan');
-  for (let n = 1; n <= 41; n++) {
+  // v1.48.0 (14/09/2026) : disposition reconstruite en deux zones nord/sud
+  // depuis les photos de Gersom -- la nouvelle table 42 ("Johannesburg",
+  // reserve) rejoint desormais le plan, aux cotes des 41 autres.
+  assert.equal(positions.size, 42, 'doit y avoir exactement 42 tables positionnees sur le plan');
+  for (let n = 1; n <= 42; n++) {
     assert.ok(positions.has(n), 'table ' + n + ' doit avoir une position sur le plan');
   }
 });

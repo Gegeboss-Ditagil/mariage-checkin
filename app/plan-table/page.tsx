@@ -20,6 +20,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
+import { TABLE_SEAT_NAMES } from '@/lib/floorPlanSeats';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
 import { applyRowDelta } from '@/lib/realtimeDelta';
@@ -96,6 +97,11 @@ export default function PlanTablePage() {
   // jour le meme etat, dans les deux sens.
   const [showFloorPlan, setShowFloorPlan] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  // Siege mis en surbrillance dans le panneau "vu sur le plan photographie"
+  // (v1.48.0) -- purement visuel/local, jamais envoye au serveur. Reinitialise
+  // a chaque changement de table selectionnee pour ne jamais rester colle sur
+  // un siege d'une table precedente.
+  const [highlightedSeat, setHighlightedSeat] = useState<number | null>(null);
   // Zone staff selectionnee (Bar, Cuisine, DJ et animation, Prestataires...)
   // -- mutuellement exclusive avec selectedTableId : selectionner l'une
   // efface l'autre, un seul panneau s'affiche sous le plan a la fois.
@@ -320,10 +326,9 @@ export default function PlanTablePage() {
   }, [invitations, filtre, coteFiltre]);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
-  // Tables presentes sur le plan interactif -- 1 a 41 (positions historiques,
-  // voir FLOOR_PLAN_TABLE_POSITIONS) ; la nouvelle table 42 "Johannesburg"
-  // (reserve depuis le 14/09/2026) n'a pas encore de position sur ce schema,
-  // voir le commentaire dans components/FloorPlan.tsx.
+  // Tables presentes sur le plan interactif -- les 42 tables (v1.48.0,
+  // disposition en deux zones nord/sud reconstruite depuis les photos de
+  // Gersom, voir FLOOR_PLAN_TABLE_POSITIONS dans components/FloorPlan.tsx).
   const tablesSurLePlan = new Set(Object.keys(FLOOR_PLAN_TABLE_POSITIONS).map(Number));
   const occupiedNumbers = new Set(
     tables.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
@@ -373,17 +378,20 @@ export default function PlanTablePage() {
     if (!table) return; // Defensif : ne devrait pas arriver, seules les tables du plan sont cliquables.
     setSelectedTableId(table.id);
     setSelectedZone(null);
+    setHighlightedSeat(null);
   }
 
   function selectZone(room: Room) {
     setSelectedZone(room);
     setSelectedTableId(null);
+    setHighlightedSeat(null);
   }
 
   function locateOnPlan(table: TableRow) {
     if (!tablesSurLePlan.has(table.number)) return; // Table hors plan (pas encore positionnee).
     setSelectedTableId(table.id);
     setSelectedZone(null);
+    setHighlightedSeat(null);
     setShowFloorPlan(true);
     scrollToFloorPlan();
   }
@@ -480,6 +488,38 @@ export default function PlanTablePage() {
                         coteFiltre={coteFiltre}
                         selected
                       />
+                    </div>
+                  )}
+
+                  {selectedTable && TABLE_SEAT_NAMES[selectedTable.number] && (
+                    <div className="card mt-3 p-4">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint">
+                        Vu sur le plan photographié · à titre indicatif
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+                        {TABLE_SEAT_NAMES[selectedTable.number].map((name, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setHighlightedSeat((current) => (current === idx ? null : idx))}
+                            disabled={!name}
+                            className={clsx(
+                              'rounded-lg border px-2 py-1.5 text-left text-[11px] leading-tight transition-colors',
+                              !name
+                                ? 'border-dashed border-hairline text-text-faint'
+                                : highlightedSeat === idx
+                                  ? 'border-status-complete bg-status-complete/20 font-semibold text-text'
+                                  : 'border-hairline bg-surface-2 text-text-muted hover:border-accent/50'
+                            )}
+                          >
+                            {name || `Siège ${idx + 1} (vide)`}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-[11px] text-text-faint">
+                        Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement informatif,
+                        ne reflète pas forcément la table actuelle de chaque invité en base.
+                      </p>
                     </div>
                   )}
 
