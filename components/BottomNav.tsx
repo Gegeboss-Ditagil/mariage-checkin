@@ -200,18 +200,29 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   // Agent001, verifie en base -- role reellement `placeur` : "je m'attends
   // plutot a voir un menu... un peu comme celui de Remy Landu", calque tout
   // le comportement contextuel ci-dessous, pas seulement la barre generique
-  // -- voir ITEMS.placeur et CENTRAL_HREF.placeur plus haut).
-  const isDirectorStyleNav = role === 'admin' || role === 'directeur' || role === 'placeur';
+  // -- voir ITEMS.placeur et CENTRAL_HREF.placeur plus haut). agent_checkin
+  // rejoint a son tour le meme jour (retour de Gersom sur Scotty Sanda :
+  // "quand on est dans le tableau de bord, je voudrais que le bouton dore
+  // en bas soit le bouton scan plutot") -- son bouton central (Bord,
+  // CENTRAL_HREF.agent_checkin) pointait vers /dashboard meme en y etant
+  // deja, un aller-retour inutile identique a celui deja corrige pour
+  // admin/directeur le 02/09/2026 ci-dessous. AGENT_CHECKIN_ITEMS n'a pas
+  // d'onglet Scan lateral (voir plus haut) : ce role reste sans capacite
+  // submitGuestApproval, donc jamais l'icone appareil photo (photoActionActive
+  // plus bas), seulement le viseur Scan, un simple raccourci vers sa page
+  // d'atterrissage.
+  const isDirectorStyleNav = role === 'admin' || role === 'directeur' || role === 'placeur' || role === 'agent_checkin';
 
-  // Navigation contextuelle admin/directeur(/placeur), affinee le 02/09/2026
-  // (retour de Remy en test : sur /scan, le bouton central redevenait
-  // Tableau de bord au lieu de rester l'appareil photo, et Approbations --
-  // deja un gros bouton dedie juste au-dessus de la jauge sur cette page,
-  // voir GuestApprovalsShortcut -- doublonnait inutilement la barre du bas.
-  // Depuis le dashboard, Scan reste le gros bouton central. Depuis le
-  // scanner, le centre reste l'appareil photo (jamais un aller-retour vers
-  // Bord) et Tableau de bord prend la place liberee par Approbations, qui
-  // reste accessible via le menu du compte (badge conserve).
+  // Navigation contextuelle admin/directeur/placeur/agent_checkin, affinee
+  // le 02/09/2026 (retour de Remy en test : sur /scan, le bouton central
+  // redevenait Tableau de bord au lieu de rester l'appareil photo, et
+  // Approbations -- deja un gros bouton dedie juste au-dessus de la jauge
+  // sur cette page, voir GuestApprovalsShortcut -- doublonnait inutilement
+  // la barre du bas. Depuis le dashboard, Scan reste le gros bouton
+  // central. Depuis le scanner, le centre reste l'appareil photo (jamais
+  // un aller-retour vers Bord) et Tableau de bord prend la place liberee
+  // par Approbations, qui reste accessible via le menu du compte (badge
+  // conserve).
   let central: NavItem;
   let left: NavItem[];
   let right: NavItem[];

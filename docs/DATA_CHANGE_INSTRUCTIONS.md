@@ -1,6 +1,6 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.46.0**
+**Version documentaire : 1.46.1**
 **Dernière mise à jour : 2026-09-14**
 
 ## 1. Principe général

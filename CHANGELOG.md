@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.46.1] — 2026-09-14
+
+Le bouton central d'agent_checkin devient Scan sur le tableau de bord, au lieu d'un aller-retour vers lui-même (retour de Gersom).
+
+### Corrigé
+- **Bouton doré = Scan, pas Bord, quand on est déjà sur `/dashboard`** : retour de Gersom sur Scotty Sanda (`agent_checkin`) : "quand on est dans le tableau de bord, je voudrais que le bouton doré en bas soit le bouton scan plutôt." Le bouton central d'`agent_checkin` (Bord, via `CENTRAL_HREF`) pointait vers `/dashboard` même en y étant déjà — un aller-retour inutile, exactement le même problème déjà corrigé pour admin/directeur le 02/09/2026. `agent_checkin` rejoint donc `isDirectorStyleNav` (`components/BottomNav.tsx`) : Scan au centre sur `/dashboard`/`/scan`/`/agenda` (jamais l'appareil photo, ce rôle n'a pas `submitGuestApproval`), Bord au centre partout ailleurs — barre générique (`AGENT_CHECKIN_ITEMS`) inchangée.
+
+### Tests
+- `tests/placeur-director-nav.test.ts` : nouvelle assertion pour agent_checkin.
+
+### Migrations
+- Aucune.
+
+Version: 1.46.0 → 1.46.1
+
 ## [1.46.0] — 2026-09-14
 
 La navigation du placeur calque désormais le comportement contextuel de directeur (retour de Gersom).

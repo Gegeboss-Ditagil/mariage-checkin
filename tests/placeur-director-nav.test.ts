@@ -22,7 +22,10 @@ import { canAccessPath, hasCapability } from '../lib/permissions.ts';
 const bottomNav = readFileSync(new URL('../components/BottomNav.tsx', import.meta.url), 'utf8');
 
 test('placeur gagne le meme comportement contextuel que directeur (isDirectorStyleNav) : Tableau de bord au centre hors /dashboard, /scan et /agenda', () => {
-  assert.match(bottomNav, /const isDirectorStyleNav = role === 'admin' \|\| role === 'directeur' \|\| role === 'placeur';/);
+  assert.match(
+    bottomNav,
+    /const isDirectorStyleNav = role === 'admin' \|\| role === 'directeur' \|\| role === 'placeur' \|\| role === 'agent_checkin';/
+  );
   assert.match(bottomNav, /CENTRAL_HREF: Record<string, string> = \{\s*\n\s*directeur: '\/dashboard',\s*\n\s*placeur: '\/dashboard',/);
 });
 
@@ -57,4 +60,22 @@ test('sur /scan, placeur voit le bouton photo (submitGuestApproval) comme direct
   // === '/scan' -- verifie ici que la condition reste role-agnostique.
   assert.match(bottomNav, /photoActionActive = !!onCentralAction && pathname\.startsWith\(['"]\/scan['"]\) && central\.href === ['"]\/scan['"]/);
   assert.equal(hasCapability('placeur', 'submitGuestApproval'), true);
+});
+
+// Meme jour, retour de Gersom sur Scotty Sanda (agent_checkin) : "quand on
+// est dans le tableau de bord, je voudrais que le bouton dore en bas soit
+// le bouton scan plutot" -- le bouton central (Bord, CENTRAL_HREF.
+// agent_checkin) pointait vers /dashboard meme en y etant deja, un
+// aller-retour inutile identique a celui deja corrige pour admin/directeur
+// le 02/09/2026. agent_checkin rejoint donc isDirectorStyleNav : Scan au
+// centre sur /dashboard/scan/agenda (jamais l'appareil photo, ce role n'a
+// pas submitGuestApproval), Bord au centre partout ailleurs (barre generique
+// AGENT_CHECKIN_ITEMS inchangee sinon).
+test("agent_checkin rejoint le meme comportement contextuel : Scan (pas l'appareil photo) au centre sur /dashboard/scan/agenda, au lieu d'un aller-retour vers Bord", () => {
+  assert.match(bottomNav, /isDirectorStyleNav = role === 'admin' \|\| role === 'directeur' \|\| role === 'placeur' \|\| role === 'agent_checkin'/);
+  assert.equal(hasCapability('agent_checkin', 'submitGuestApproval'), false);
+  // La barre generique (hors /dashboard/scan/agenda) reste inchangee.
+  const agentBlock = bottomNav.slice(bottomNav.indexOf('const AGENT_CHECKIN_ITEMS'), bottomNav.indexOf('const READ_ONLY_ITEMS'));
+  assert.match(agentBlock, /href: ['"]\/dashboard['"], label: ['"]Bord['"]/);
+  assert.match(agentBlock, /AGENDA_ITEM,\s*\n\s*APPROVALS_ITEM,\s*\n\];/);
 });
