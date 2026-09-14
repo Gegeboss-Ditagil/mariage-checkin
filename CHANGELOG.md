@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.8] — 2026-09-14
+
+Deux ajouts au dessin "vu sur le plan photographié" (4 photos, retour de Gersom), toujours purement informatif — aucune migration.
+
+### Ajouté
+- **`/plan-table`** : toucher une invitation dans la liste au-dessus du dessin surligne désormais aussi sa ligne dans cette liste (fond teinté + liseré accent), en plus du/des siège(s) déjà mis en évidence sur le dessin — "quand j'appuie sur Jonas, j'aimerais aussi que son nom en haut dans la fiche soit surligné". Nouvel état `selectedInvitationId`, réinitialisé partout où `highlightedSeats` l'est déjà (changement de table/zone, tap direct sur un siège de la roue).
+- **`/tables/[tableId]` et `/table/[tableId]`** (fiche d'une table, jusqu'ici sans aucun dessin) gagnent le même panneau "Vu sur le plan photographié" que `/plan-table` et `/checkin/[invitationId]`, affiché sous la liste des invitations — "en dessous des noms, on puisse aussi afficher la table... garder la même logique... savoir où est-ce que la personne est assise". Un bouton 📍 par invitation (uniquement quand une correspondance de nom existe, jamais approchée) surligne son ou ses siège(s) et fait défiler jusqu'au dessin ; n'entre pas en conflit avec le tap sur le nom, qui continue d'ouvrir le check-in comme avant. Même mécanisme que sur les deux autres écrans (`lib/floorPlanSeats.ts`, `components/TableSeatWheel.tsx`), aucune nouvelle logique : toujours purement informatif, jamais une source de placement (`invitations.table_id` inchangé).
+
+### Tests
+- `tests/table-seat-wheel.test.ts` : 3 nouveaux tests (surlignage de ligne sur `/plan-table`, panneau + bouton 📍 sur les deux routes de fiche de table).
+
 ## [1.48.7] — 2026-09-14
 
 Nettoyage interne de `components/BottomNav.tsx`, sans aucun changement de comportement — première passe de simplification demandée par Gersom ("une passe de nettoyage plutôt que d'empiler encore des patches") maintenant que la navigation par rôle (admin/directeur/placeur/agent_checkin/visibilite) est stabilisée depuis le 14/09/2026 (v1.46.0/v1.46.1).

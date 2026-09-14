@@ -49,7 +49,12 @@ test('/plan-table rend TableSeatWheel a la place de la grille de boutons pour la
   assert.match(pageSource, /<TableSeatWheel/);
   assert.match(pageSource, /seats=\{TABLE_SEAT_NAMES\[selectedTable\.number\]\}/);
   assert.match(pageSource, /highlightedIndices=\{highlightedSeats\}/);
-  assert.match(pageSource, /onSelectSeat=\{\(idx\) =>\s*\n\s*setHighlightedSeats/);
+  assert.match(pageSource, /onSelectSeat=\{\(idx\) => \{\s*\n\s*setHighlightedSeats/);
+  // v1.48.8 : un tap direct sur un siege (pas via un nom de la liste) doit
+  // desormais aussi effacer selectedInvitationId, sinon une ligne resterait
+  // surlignee dans la liste au-dessus alors qu'elle ne correspond plus au
+  // siege affiche en bas.
+  assert.match(pageSource, /setSelectedInvitationId\(null\);\s*\n\s*\}\}/);
 });
 
 // v1.48.5 : plusieurs sieges a la fois (toute une invitation surlignee
@@ -71,3 +76,47 @@ test('GuestArrivalPanel (fiche invite) rend aussi TableSeatWheel, retrouve par l
   assert.match(panelSource, /tableNumber: number \| null;/);
   assert.match(panelSource, /const seatIndex = tableNumber !== null \? findSeatIndexByName\(tableNumber, guest\.nom_affichage\) : null;/);
 });
+
+// v1.48.8, retour de Gersom : "quand j'appuie sur Jonas, j'aimerais aussi que
+// son nom en haut dans la fiche soit surligne" -- la liste au-dessus du
+// dessin ne montrait jusqu'ici aucun etat "selectionne" sur la ligne touchee,
+// seul le siege en bas changeait.
+test("/plan-table surligne aussi la ligne de l'invitation touchee dans la liste (pas seulement son siege)", () => {
+  assert.match(pageSource, /selectedInvitationId\?: string \| null;/);
+  assert.match(pageSource, /setSelectedInvitationId\(inv\.id\);/);
+  assert.match(pageSource, /inv\.id === selectedInvitationId \? '-mx-1\.5 bg-accent-tint px-1\.5 py-1 ring-1 ring-accent\/40' : ''/);
+  // Reinitialise partout ou highlightedSeats l'est deja (changement de table/
+  // zone/localisation), sinon une ligne resterait surlignee pour une autre table.
+  const resets = pageSource.match(/setHighlightedSeats\(\[\]\);/g) || [];
+  const idResets = pageSource.match(/setSelectedInvitationId\(null\);/g) || [];
+  assert.ok(idResets.length >= resets.length, 'selectedInvitationId doit etre reinitialise partout ou highlightedSeats l\'est');
+});
+
+// v1.48.8, retour de Gersom (photo "Table 1 — Maquela do Zombo") : la fiche
+// d'une table (contrairement a /plan-table et /checkin/[invitationId])
+// n'affichait encore aucun dessin de plan -- "en dessous des noms, on
+// puisse aussi afficher la table... garder la meme logique... savoir où est-
+// ce que la personne est assise". Meme mecanisme reutilise sur les deux
+// routes de fiche de table (nouvelle et historique), jamais une nouvelle
+// implementation : bouton 📍 par ligne (n'entre pas en conflit avec le tap
+// sur le nom qui ouvre deja le check-in), jamais une source de placement.
+for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]/page.tsx']) {
+  test(`${route} affiche aussi le dessin "vu sur le plan photographie" sous la liste, avec un bouton 📍 par invitation`, () => {
+    const tableDetailSource = readFileSync(new URL(route, import.meta.url), 'utf8');
+    assert.match(tableDetailSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName \} from '@\/lib\/floorPlanSeats'/);
+    assert.match(tableDetailSource, /import \{ TableSeatWheel \} from '@\/components\/TableSeatWheel'/);
+    assert.match(tableDetailSource, /<TableSeatWheel/);
+    assert.match(tableDetailSource, /table && TABLE_SEAT_NAMES\[table\.number\]/);
+    // Correspondance exacte uniquement (nom affiche + membres detailles),
+    // jamais approchee -- meme regle que /plan-table et GuestArrivalPanel.
+    assert.match(tableDetailSource, /\[inv\.nom_affichage, \.\.\.extractMembresComplet\(inv\.notes\)\]/);
+    assert.match(tableDetailSource, /findSeatIndexByName\(table!\.number, name\)/);
+    // Le bouton 📍 est un element separe du bouton/lien qui ouvre le check-in
+    // (jamais un remplacement de ce tap existant, contrairement a /plan-table
+    // ou onSelectInvitation remplace la navigation).
+    assert.match(tableDetailSource, />\s*\n\s*📍\s*\n/);
+    assert.match(tableDetailSource, /router\.push\('\/checkin\/' \+ inv\.id\)/);
+    // Reinitialise au changement de tableId, comme highlightedSeats.
+    assert.match(tableDetailSource, /setHighlightedSeats\(\[\]\);\s*\n\s*setSelectedInvitationId\(null\);/);
+  });
+}

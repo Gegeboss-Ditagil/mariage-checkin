@@ -1,14 +1,17 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { extractPrenoms } from '@/lib/membersNotes';
+import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
+import { TABLE_SEAT_NAMES, findSeatIndexByName } from '@/lib/floorPlanSeats';
+import { TableSeatWheel } from '@/components/TableSeatWheel';
 import {
   clearBulkMoveSelection,
   readBulkMoveSelection,
@@ -58,6 +61,15 @@ function TableDetailInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [swapSubmitting, setSwapSubmitting] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
+
+  // v1.48.8, retour de Gersom : "en dessous des noms, on puisse aussi
+  // afficher la table [dessin] et garder la même logique [que /plan-table
+  // et /checkin/[invitationId]]... on peut savoir où est-ce que la personne
+  // est assise" -- meme dessin "vu sur le plan photographie" que les deux
+  // autres ecrans, purement informatif (jamais une source de placement).
+  const [highlightedSeats, setHighlightedSeats] = useState<number[]>([]);
+  const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null);
+  const seatWheelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!echangeAvecTableId) return;
@@ -163,6 +175,8 @@ function TableDetailInner() {
     setInvitations([]);
     setOverflow([]);
     setOverflowNoms(new Map());
+    setHighlightedSeats([]);
+    setSelectedInvitationId(null);
 
     async function load() {
       const [{ data: t }, { data: invs }, { data: ov }] = await Promise.all([
@@ -316,6 +330,16 @@ function TableDetailInner() {
           {invitations.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
             const checked = selectedIds.has(inv.id);
+            const seats = table ? TABLE_SEAT_NAMES[table.number] : undefined;
+            // v1.48.8 : memes noms candidats que /plan-table (nom affiche +
+            // membres detailles des notes), correspondance exacte uniquement
+            // (jamais approchee -- deux personnes differentes peuvent avoir
+            // des noms tres proches, voir lib/floorPlanSeats.ts).
+            const seatMatches = seats
+              ? [inv.nom_affichage, ...extractMembresComplet(inv.notes)]
+                  .map((name) => findSeatIndexByName(table!.number, name))
+                  .filter((idx): idx is number => idx !== null)
+              : [];
             const body = (
               <>
                 <div className="min-w-0">
@@ -329,7 +353,13 @@ function TableDetailInner() {
               </>
             );
             return (
-              <li key={inv.id} className="flex items-center gap-1">
+              <li
+                key={inv.id}
+                className={clsx(
+                  'flex items-center gap-1 rounded-lg transition-colors',
+                  inv.id === selectedInvitationId && '-mx-1.5 bg-accent-tint px-1.5 ring-1 ring-accent/40'
+                )}
+              >
                 {selectMode ? (
                   <label className="flex min-w-0 flex-1 items-center gap-3 py-3">
                     <input
@@ -349,6 +379,22 @@ function TableDetailInner() {
                   </button>
                 ) : (
                   <div className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3">{body}</div>
+                )}
+                {!selectMode && seatMatches.length > 0 && (
+                  <button
+                    type="button"
+                    aria-label={'Voir où ' + inv.nom_affichage + ' est assis sur le plan photographié'}
+                    onClick={() => {
+                      setHighlightedSeats(seatMatches);
+                      setSelectedInvitationId(inv.id);
+                      requestAnimationFrame(() => {
+                        seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      });
+                    }}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline text-sm text-accent/80 active:scale-[0.95] transition-transform"
+                  >
+                    📍
+                  </button>
                 )}
                 {canMoveGuests && !selectMode && (
                   <button
@@ -387,6 +433,27 @@ function TableDetailInner() {
               </li>
             ))}
         </ul>
+
+        {table && TABLE_SEAT_NAMES[table.number] && (
+          <div ref={seatWheelRef} className="card mt-3 p-4">
+            <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
+              Vu sur le plan photographié · à titre indicatif
+            </p>
+            <TableSeatWheel
+              tableNumber={table.number}
+              seats={TABLE_SEAT_NAMES[table.number]}
+              highlightedIndices={highlightedSeats}
+              onSelectSeat={(idx) => {
+                setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]));
+                setSelectedInvitationId(null);
+              }}
+            />
+            <p className="mt-2 text-center text-[11px] text-text-faint">
+              Touchez 📍 à côté d'un nom ci-dessus pour mettre son siège en évidence. Purement informatif, ne reflète
+              pas forcément la table actuelle de chaque invité en base.
+            </p>
+          </div>
+        )}
       </div>
 
       {selectMode && selectedIds.size > 0 && (

@@ -106,6 +106,12 @@ export default function PlanTablePage() {
   // dessin (ex. "Famille Vemba") surligne tous ses membres retrouves d'un
   // coup, pas seulement un siege.
   const [highlightedSeats, setHighlightedSeats] = useState<number[]>([]);
+  // v1.48.8, retour de Gersom : "quand j'appuie sur Jonas, j'aimerais aussi
+  // que son nom en haut dans la fiche soit surligne" -- la liste au-dessus
+  // du dessin ne montrait aucun etat "selectionne" sur la ligne touchee,
+  // seul le siege en bas changeait. Suit l'id de l'invitation touchee en
+  // plus des indices de sieges, pour surligner sa ligne dans TableCard.
+  const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null);
   const seatWheelRef = useRef<HTMLDivElement>(null);
   // Zone staff selectionnee (Bar, Cuisine, DJ et animation, Prestataires...)
   // -- mutuellement exclusive avec selectedTableId : selectionner l'une
@@ -384,12 +390,14 @@ export default function PlanTablePage() {
     setSelectedTableId(table.id);
     setSelectedZone(null);
     setHighlightedSeats([]);
+    setSelectedInvitationId(null);
   }
 
   function selectZone(room: Room) {
     setSelectedZone(room);
     setSelectedTableId(null);
     setHighlightedSeats([]);
+    setSelectedInvitationId(null);
   }
 
   function locateOnPlan(table: TableRow) {
@@ -397,6 +405,7 @@ export default function PlanTablePage() {
     setSelectedTableId(table.id);
     setSelectedZone(null);
     setHighlightedSeats([]);
+    setSelectedInvitationId(null);
     setShowFloorPlan(true);
     scrollToFloorPlan();
   }
@@ -507,10 +516,12 @@ export default function PlanTablePage() {
                             .map((name) => findSeatIndexByName(selectedTable.number, name))
                             .filter((idx): idx is number => idx !== null);
                           setHighlightedSeats(matches);
+                          setSelectedInvitationId(inv.id);
                           requestAnimationFrame(() => {
                             seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                           });
                         }}
+                        selectedInvitationId={selectedInvitationId}
                       />
                     </div>
                   )}
@@ -524,9 +535,10 @@ export default function PlanTablePage() {
                         tableNumber={selectedTable.number}
                         seats={TABLE_SEAT_NAMES[selectedTable.number]}
                         highlightedIndices={highlightedSeats}
-                        onSelectSeat={(idx) =>
-                          setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]))
-                        }
+                        onSelectSeat={(idx) => {
+                          setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]));
+                          setSelectedInvitationId(null);
+                        }}
                       />
                       <p className="mt-2 text-center text-[11px] text-text-faint">
                         Touchez un nom, ou une invitation dans la liste au-dessus, pour mettre son siège en évidence.
@@ -769,6 +781,7 @@ function TableCard({
   selected,
   onLocate,
   onSelectInvitation,
+  selectedInvitationId,
 }: {
   table: TableRow;
   invitations: InvitationRow[];
@@ -791,6 +804,12 @@ function TableCard({
   // naviguer normalement) : quand absent, le <Link> englobe toujours toute
   // la carte comme avant, aucun changement de comportement.
   onSelectInvitation?: (invitation: InvitationRow) => void;
+  // v1.48.8, retour de Gersom : "quand j'appuie sur Jonas, j'aimerais aussi
+  // que son nom en haut dans la fiche soit surligne" -- id de l'invitation
+  // actuellement selectionnee (via onSelectInvitation), pour surligner sa
+  // ligne dans la liste ci-dessous en plus du siege deja mis en evidence
+  // sur le dessin. Sans effet quand onSelectInvitation est absent.
+  selectedInvitationId?: string | null;
 }) {
   const visibles = invitations.filter(
     (i) => (filtre === 'toutes' || i.placement_status === filtre) && (coteFiltre === 'toutes' || i.cote === coteFiltre)
@@ -842,7 +861,10 @@ function TableCard({
           <li key={inv.id}>
             <button
               type="button"
-              className="flex w-full flex-wrap items-center gap-1.5 text-left text-sm"
+              className={clsx(
+                'flex w-full flex-wrap items-center gap-1.5 rounded-lg text-left text-sm transition-colors',
+                inv.id === selectedInvitationId ? '-mx-1.5 bg-accent-tint px-1.5 py-1 ring-1 ring-accent/40' : ''
+              )}
               onClick={() => onSelectInvitation(inv)}
             >
               {content}
