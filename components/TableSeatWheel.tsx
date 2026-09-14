@@ -16,11 +16,21 @@ import clsx from 'clsx';
 // n'ecrit en base -- `onSelectSeat` ne fait que faire remonter un index a
 // surligner localement, comme sur l'exemple de carte nominative montre par
 // Gersom (on touche un nom, son siege se met en evidence sur le dessin).
+// v1.48.5 : `highlightedIndices` accepte plusieurs sieges a la fois (ex.
+// tous les membres d'une meme invitation surlignes ensemble depuis
+// /plan-table, ou l'unique siege d'une personne depuis
+// /checkin/[invitationId]) -- ce composant reste un simple afficheur, la
+// semantique (bascule ou remplacement) vit chez l'appelant.
 
 interface TableSeatWheelProps {
   tableNumber: number;
   seats: (string | null)[];
-  highlightedIndex: number | null;
+  // v1.48.5 : plusieurs sieges a la fois (ex. tous les membres d'une meme
+  // invitation tapee sur /plan-table) -- un tableau vide = aucun surligne.
+  // L'appelant decide de la semantique (bascule un seul siege sur un tap
+  // dans la roue elle-meme, remplace tout le tableau sur un tap venant
+  // d'une autre liste) ; ce composant se contente d'afficher l'ensemble.
+  highlightedIndices: number[];
   onSelectSeat: (index: number) => void;
 }
 
@@ -32,7 +42,7 @@ const SEAT_RADIUS = 118;
 const SEAT_WIDTH = 82;
 const SEAT_HEIGHT = 36;
 
-export function TableSeatWheel({ tableNumber, seats, highlightedIndex, onSelectSeat }: TableSeatWheelProps) {
+export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelectSeat }: TableSeatWheelProps) {
   const count = seats.length || 10;
 
   return (
@@ -44,7 +54,7 @@ export function TableSeatWheel({ tableNumber, seats, highlightedIndex, onSelectS
     >
       {seats.map((name, idx) => {
         const angle = (360 / count) * idx; // sens horaire depuis le haut, comme sur les photos.
-        const highlighted = highlightedIndex === idx;
+        const highlighted = highlightedIndices.includes(idx);
         // Coordonnees locales (avant rotation) : l'etiquette est placee
         // directement au-dessus du centre, comme le siege "0" a midi -- la
         // rotation du groupe entier l'amene ensuite a sa vraie position.

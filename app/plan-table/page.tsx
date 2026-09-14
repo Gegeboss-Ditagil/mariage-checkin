@@ -20,7 +20,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
-import { TABLE_SEAT_NAMES } from '@/lib/floorPlanSeats';
+import { TABLE_SEAT_NAMES, findSeatIndexByName } from '@/lib/floorPlanSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
@@ -98,11 +98,15 @@ export default function PlanTablePage() {
   // jour le meme etat, dans les deux sens.
   const [showFloorPlan, setShowFloorPlan] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-  // Siege mis en surbrillance dans le panneau "vu sur le plan photographie"
+  // Sieges mis en surbrillance dans le panneau "vu sur le plan photographie"
   // (v1.48.0) -- purement visuel/local, jamais envoye au serveur. Reinitialise
   // a chaque changement de table selectionnee pour ne jamais rester colle sur
-  // un siege d'une table precedente.
-  const [highlightedSeat, setHighlightedSeat] = useState<number | null>(null);
+  // un siege d'une table precedente. Tableau plutot qu'un seul index depuis
+  // v1.48.5 : toucher une invitation entiere dans la liste au-dessus du
+  // dessin (ex. "Famille Vemba") surligne tous ses membres retrouves d'un
+  // coup, pas seulement un siege.
+  const [highlightedSeats, setHighlightedSeats] = useState<number[]>([]);
+  const seatWheelRef = useRef<HTMLDivElement>(null);
   // Zone staff selectionnee (Bar, Cuisine, DJ et animation, Prestataires...)
   // -- mutuellement exclusive avec selectedTableId : selectionner l'une
   // efface l'autre, un seul panneau s'affiche sous le plan a la fois.
@@ -379,20 +383,20 @@ export default function PlanTablePage() {
     if (!table) return; // Defensif : ne devrait pas arriver, seules les tables du plan sont cliquables.
     setSelectedTableId(table.id);
     setSelectedZone(null);
-    setHighlightedSeat(null);
+    setHighlightedSeats([]);
   }
 
   function selectZone(room: Room) {
     setSelectedZone(room);
     setSelectedTableId(null);
-    setHighlightedSeat(null);
+    setHighlightedSeats([]);
   }
 
   function locateOnPlan(table: TableRow) {
     if (!tablesSurLePlan.has(table.number)) return; // Table hors plan (pas encore positionnee).
     setSelectedTableId(table.id);
     setSelectedZone(null);
-    setHighlightedSeat(null);
+    setHighlightedSeats([]);
     setShowFloorPlan(true);
     scrollToFloorPlan();
   }
@@ -488,25 +492,46 @@ export default function PlanTablePage() {
                         filtre={filtre}
                         coteFiltre={coteFiltre}
                         selected
+                        // v1.48.5, retour de Gersom : toucher une invitation
+                        // dans cette liste doit surligner ses membres sur le
+                        // dessin ci-dessous au lieu de naviguer -- toucher la
+                        // table elle-meme (en-tete/carte) continue de naviguer
+                        // vers /tables/[tableId], inchange (voir TableCard :
+                        // le <Link> ne recouvre plus la liste des invitations
+                        // quand onSelectInvitation est fourni).
+                        onSelectInvitation={(inv) => {
+                          const seats = TABLE_SEAT_NAMES[selectedTable.number];
+                          if (!seats) return;
+                          const candidateNames = [inv.nom_affichage, ...extractMembresComplet(inv.notes)];
+                          const matches = candidateNames
+                            .map((name) => findSeatIndexByName(selectedTable.number, name))
+                            .filter((idx): idx is number => idx !== null);
+                          setHighlightedSeats(matches);
+                          requestAnimationFrame(() => {
+                            seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                          });
+                        }}
                       />
                     </div>
                   )}
 
                   {selectedTable && TABLE_SEAT_NAMES[selectedTable.number] && (
-                    <div className="card mt-3 p-4">
+                    <div ref={seatWheelRef} className="card mt-3 p-4">
                       <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
                         Vu sur le plan photographié · à titre indicatif
                       </p>
                       <TableSeatWheel
                         tableNumber={selectedTable.number}
                         seats={TABLE_SEAT_NAMES[selectedTable.number]}
-                        highlightedIndex={highlightedSeat}
-                        onSelectSeat={(idx) => setHighlightedSeat((current) => (current === idx ? null : idx))}
+                        highlightedIndices={highlightedSeats}
+                        onSelectSeat={(idx) =>
+                          setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]))
+                        }
                       />
                       <p className="mt-2 text-center text-[11px] text-text-faint">
-                        Touchez un nom pour mettre son siège en évidence. Extrait par lecture du plan photo transmis
-                        par Gersom (14/09/2026) — purement informatif, ne reflète pas forcément la table actuelle de
-                        chaque invité en base.
+                        Touchez un nom, ou une invitation dans la liste au-dessus, pour mettre son siège en évidence.
+                        Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement informatif, ne
+                        reflète pas forcément la table actuelle de chaque invité en base.
                       </p>
                     </div>
                   )}
@@ -743,6 +768,7 @@ function TableCard({
   reserve,
   selected,
   onLocate,
+  onSelectInvitation,
 }: {
   table: TableRow;
   invitations: InvitationRow[];
@@ -755,6 +781,16 @@ function TableCard({
   // Absent quand la table n'a pas d'emplacement sur le plan (reserve, ou
   // futur ajout hors plan) : bouton "localiser" masque plutot que desactive.
   onLocate?: () => void;
+  // v1.48.5, retour de Gersom : sur la carte de la table SELECTIONNEE
+  // (celle affichee juste au-dessus du dessin "vu sur le plan photographie"),
+  // toucher une invitation doit surligner ses sieges sur ce dessin au lieu de
+  // naviguer vers /tables/[tableId] -- "j'appuie vraiment sur la table, ça
+  // m'amene dans la prochaine page... [mais] j'appuie sur le nom, ça
+  // descend en bas". Fourni uniquement par cet usage-la (jamais par les
+  // grilles de cartes plus bas sur la page, ou le clic doit continuer de
+  // naviguer normalement) : quand absent, le <Link> englobe toujours toute
+  // la carte comme avant, aucun changement de comportement.
+  onSelectInvitation?: (invitation: InvitationRow) => void;
 }) {
   const visibles = invitations.filter(
     (i) => (filtre === 'toutes' || i.placement_status === filtre) && (coteFiltre === 'toutes' || i.cote === coteFiltre)
@@ -765,6 +801,61 @@ function TableCard({
   const occ = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const arrives = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
   const vol = volCode(table.number);
+
+  const invitationsList = (
+    <ul className="mt-2.5 space-y-1.5">
+      {visibles.map((inv) => {
+        const prenoms = extractPrenoms(inv.notes);
+        const content = (
+          <>
+            <span
+              className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-surface-2')}
+              title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{inv.nom_affichage}</span>
+              {prenoms && <span className="block truncate text-xs font-medium text-accent">{prenoms}</span>}
+            </span>
+            {inv.category === 'Staff' && (
+              <span className="flex shrink-0 items-center gap-1 rounded bg-accent-tint px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                Staff
+                <span
+                  className={clsx('h-1.5 w-1.5 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-surface-2')}
+                />
+              </span>
+            )}
+            <span className="shrink-0 text-xs text-text-faint">×{inv.nombre_prevu}</span>
+            <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold', inv.statut === 'complet' ? 'bg-status-complete/15 text-status-complete' : inv.statut === 'partiel' ? 'bg-status-partial/15 text-status-partial' : inv.statut === 'excedent' ? 'bg-status-over/15 text-status-over' : 'bg-surface-2 text-text-faint')}>
+              {inv.statut === 'complet' ? 'Arrivé' : inv.statut === 'partiel' ? 'Partiel' : inv.statut === 'excedent' ? 'Excédent' : 'Non arrivé'}
+            </span>
+            <span
+              className={clsx(
+                'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                PLACEMENT_COLORS[inv.placement_status]
+              )}
+            >
+              {PLACEMENT_LABELS[inv.placement_status]}
+            </span>
+          </>
+        );
+        return onSelectInvitation ? (
+          <li key={inv.id}>
+            <button
+              type="button"
+              className="flex w-full flex-wrap items-center gap-1.5 text-left text-sm"
+              onClick={() => onSelectInvitation(inv)}
+            >
+              {content}
+            </button>
+          </li>
+        ) : (
+          <li key={inv.id} className="flex flex-wrap items-center gap-1.5 text-sm">
+            {content}
+          </li>
+        );
+      })}
+    </ul>
+  );
 
   return (
     <div
@@ -816,44 +907,9 @@ function TableCard({
           </p>
         )}
 
-        <ul className="mt-2.5 space-y-1.5">
-          {visibles.map((inv) => {
-            const prenoms = extractPrenoms(inv.notes);
-            return (
-            <li key={inv.id} className="flex flex-wrap items-center gap-1.5 text-sm">
-              <span
-                className={clsx('h-2 w-2 shrink-0 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-surface-2')}
-                title={inv.cote ? COTE_LABELS[inv.cote] : undefined}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">{inv.nom_affichage}</span>
-                {prenoms && <span className="block truncate text-xs font-medium text-accent">{prenoms}</span>}
-              </span>
-              {inv.category === 'Staff' && (
-                <span className="flex shrink-0 items-center gap-1 rounded bg-accent-tint px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
-                  Staff
-                  <span
-                    className={clsx('h-1.5 w-1.5 rounded-full', inv.cote ? COTE_DOT_COLORS[inv.cote] : 'bg-surface-2')}
-                  />
-                </span>
-              )}
-              <span className="shrink-0 text-xs text-text-faint">×{inv.nombre_prevu}</span>
-              <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold', inv.statut === 'complet' ? 'bg-status-complete/15 text-status-complete' : inv.statut === 'partiel' ? 'bg-status-partial/15 text-status-partial' : inv.statut === 'excedent' ? 'bg-status-over/15 text-status-over' : 'bg-surface-2 text-text-faint')}>
-                {inv.statut === 'complet' ? 'Arrivé' : inv.statut === 'partiel' ? 'Partiel' : inv.statut === 'excedent' ? 'Excédent' : 'Non arrivé'}
-              </span>
-              <span
-                className={clsx(
-                  'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold',
-                  PLACEMENT_COLORS[inv.placement_status]
-                )}
-              >
-                {PLACEMENT_LABELS[inv.placement_status]}
-              </span>
-            </li>
-            );
-          })}
-        </ul>
+        {!onSelectInvitation && invitationsList}
       </Link>
+      {onSelectInvitation && invitationsList}
     </div>
   );
 }

@@ -60,3 +60,38 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   41: ["Jackie Menga", "Lambert Menga", "Bana Menga", "Bana Menga", null, null, null, null, "Diego Ramos", "Jade Magnus"],
   42: [null, null, null, null, null, null, null, null, null, null],
 };
+
+// v1.48.5, demande de Gersom : afficher ce dessin sur la fiche d'un invité
+// (/checkin/[invitationId]) et permettre de surligner un siège depuis la
+// liste d'invitations d'une table sélectionnée (/plan-table) -- les deux
+// nécessitent de retrouver l'INDEX du siège d'une personne connue par son
+// nom, à l'intérieur d'une table donnée (jamais une recherche floue sur les
+// 42 tables : deux personnes différentes peuvent avoir des noms très proches,
+// ex. "Andrea Neves" et "André Neves", chacune sur une table différente --
+// une tolérance approchée risquerait de désigner le mauvais siège). La table
+// elle-même vient toujours de la vraie source de placement
+// (invitations.table_id), jamais devinée : ne compare qu'à l'intérieur de la
+// table déjà connue.
+function normalizeSeatName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Correspondance EXACTE (accents/casse ignorés) entre `name` et l'un des
+ * sièges lus sur la photo pour la table `tableNumber`. Retourne `null` si la
+ * table n'a pas de lecture, ou si aucun siège ne correspond exactement --
+ * jamais une supposition.
+ */
+export function findSeatIndexByName(tableNumber: number, name: string): number | null {
+  const seats = TABLE_SEAT_NAMES[tableNumber];
+  if (!seats) return null;
+  const target = normalizeSeatName(name);
+  if (!target) return null;
+  const index = seats.findIndex((seat) => seat !== null && normalizeSeatName(seat) === target);
+  return index === -1 ? null : index;
+}
