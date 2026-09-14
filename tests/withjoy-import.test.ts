@@ -163,3 +163,56 @@ test('route et migration gardent le remplacement réservé et atomique', () => {
   assert.match(migration, /digest\(/);
   assert.match(migration, /returning id into v_backup_id/);
 });
+
+// v1.48.6, demande de Gersom le 14/09/2026 : "assure-toi que chaque siege a
+// son id et fait match avec l'invite id" -- analyse de guest-list_50.csv :
+// la colonne "party" de With Joy (ex. "table-002-party-006") reste stable
+// pour la meme personne entre deux exports (verifie sur guest-list_48.csv et
+// guest-list_50.csv, Pajos Mpapa), contrairement au nom -- utile pour
+// retrouver la meme invitation lors d'un futur import. Le "table-XXX" qu'elle
+// contient parfois NE correspond PAS forcement a la vraie table (seulement
+// ~1/3 des groupes de guest-list_50.csv concordaient avec le vrai tag F0xx/
+// T0xx) : jamais une source de placement, uniquement un identifiant de
+// correspondance -- voir migration 0052 et le commentaire sur
+// ImportGroup.withjoyPartyId dans lib/withjoyImport.ts.
+test('la valeur brute de la colonne "party" With Joy est conservee comme identifiant stable (withjoyPartyId), jamais parsee comme un numero de table', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['table-002-party-006', 'Pajos', 'Mpapa', '', '', 'Oui', 'Côté_Gege,F006'],
+  ])));
+  assert.equal(plan.report.ok, true);
+  assert.equal(plan.tableAssignments[0].group.withjoyPartyId, 'table-002-party-006');
+  // La vraie table vient du tag F006, jamais du "table-002" du party.
+  assert.equal(plan.tableAssignments[0].tableNumber, 6);
+});
+
+test('un party vide (ligne SOLO synthetique) ne produit jamais un faux identifiant With Joy', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['', 'Alice', 'Martin', '', '', 'Oui', 'Côté_Gege'],
+  ])));
+  assert.equal(plan.tableAssignments.length + plan.sansTable.length, 1);
+  const group = plan.tableAssignments[0]?.group || plan.sansTable[0];
+  assert.equal(group.withjoyPartyId, null);
+});
+
+test('un meme party With Joy scinde en plusieurs invitations (staff + famille) garde le meme withjoyPartyId sur chacune', () => {
+  const plan = buildImportPlan(parseCsvText(csv([
+    ['fam-042', 'Alice', 'Martin', '', '', 'Oui', 'Côté_Gege,F005'],
+    ['fam-042', 'Bob', 'Martin', '', '', 'Oui', 'Côté_Gege,F005,SERVICES'],
+  ])));
+  const groups = [...plan.tableAssignments.map((item) => item.group), ...plan.sansTable];
+  assert.equal(groups.length, 2, 'staff et non-staff doivent rester deux invitations separees');
+  assert.ok(groups.every((group) => group.withjoyPartyId === 'fam-042'));
+});
+
+test("l'import complet (route + migration 0052) ecrit withjoy_party_id, sans jamais le deduire du numero de table", () => {
+  const route = readFileSync(new URL('../app/api/admin/import-withjoy/route.ts', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../supabase/migrations/0052_invitations_withjoy_party_id.sql', import.meta.url), 'utf8');
+  assert.match(route, /withjoy_party_id: group\.withjoyPartyId/);
+  assert.match(migration, /alter table invitations add column if not exists withjoy_party_id text;/);
+  assert.match(migration, /withjoy_party_id\s*\)/);
+  assert.match(migration, /nullif\(trim\(v_row->>'withjoy_party_id'\), ''\)/);
+  // Le garde-fou documente explicitement pourquoi ce champ n'est pas une
+  // source de placement -- verrouille pour qu'un futur agent ne le
+  // reintroduise pas silencieusement comme tel.
+  assert.match(migration, /jamais une source de placement/);
+});

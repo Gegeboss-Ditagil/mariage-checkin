@@ -63,6 +63,17 @@ export interface ImportGroup {
   // explicite ou par l'algorithme -- ce dernier signal reste disponible
   // (fixedTable !== null) mais ne pilote plus le badge.
   rsvpConfirmed: boolean;
+  // v1.48.6 : valeur brute de la colonne "party" du CSV With Joy (ex.
+  // "table-002-party-006"), verifiee stable pour la meme personne entre deux
+  // exports (guest-list_48.csv vs guest-list_50.csv). ATTENTION : le "table-
+  // XXX" qu'elle contient parfois ne correspond PAS forcement a la vraie
+  // table (verifie : seulement ~1/3 des groupes correspondent au tag F0xx/
+  // T0xx reel sur guest-list_50.csv) -- c'est un identifiant interne a
+  // l'outil de placement de With Joy, jamais une source de placement ici.
+  // Sert uniquement a retrouver la meme invitation lors d'un futur import
+  // (voir invitations.withjoy_party_id, migration 0052). `null` pour un
+  // groupe "SOLO-N" synthetique (aucune valeur de party dans la ligne).
+  withjoyPartyId: string | null;
 }
 
 export interface TableAssignment {
@@ -170,7 +181,7 @@ function displayName(row: Record<string, string>): string {
   return `${row['first name'] || ''} ${row['last name'] || ''}`.trim() || 'Accompagnant non-nommé';
 }
 
-function buildGroup(gid: string, members: Record<string, string>[], warnings: string[]): ImportGroup {
+function buildGroup(gid: string, members: Record<string, string>[], warnings: string[], withjoyPartyId: string | null): ImportGroup {
   const tags = Array.from(new Set(members.flatMap(tagsOf)));
   const tableNumbers = members.flatMap(tableTagsOf);
   const distinctTables = Array.from(new Set(tableNumbers));
@@ -236,6 +247,7 @@ function buildGroup(gid: string, members: Record<string, string>[], warnings: st
     noTable,
     category: isStaff(tags) ? 'Staff' : null,
     rsvpConfirmed,
+    withjoyPartyId,
   };
 }
 
@@ -257,6 +269,11 @@ function parseGroups(rows: Record<string, string>[], warnings: string[]): { grou
     });
     if (!members.length) continue;
 
+    // "SOLO-N" est un identifiant synthetique genere ci-dessus quand la
+    // colonne "party" du CSV est vide (voir plus haut) -- ne jamais le
+    // persister comme identifiant With Joy, il n'existe pas cote With Joy.
+    const withjoyPartyId = party.startsWith('SOLO-') ? null : party;
+
     const byTable = new Map<string, Record<string, string>[]>();
     for (const member of members) {
       const numbers = tableTagsOf(member);
@@ -270,8 +287,8 @@ function parseGroups(rows: Record<string, string>[], warnings: string[]): { grou
     for (const [tableKey, sameTableMembers] of byTable) {
       const staffMembers = sameTableMembers.filter((member) => isStaff(tagsOf(member)));
       const nonStaffMembers = sameTableMembers.filter((member) => !isStaff(tagsOf(member)));
-      staffMembers.forEach((member, index) => groups.push(buildGroup(`${party}-${tableKey}-STAFF-${index + 1}`, [member], warnings)));
-      if (nonStaffMembers.length) groups.push(buildGroup(`${party}-${tableKey}`, nonStaffMembers, warnings));
+      staffMembers.forEach((member, index) => groups.push(buildGroup(`${party}-${tableKey}-STAFF-${index + 1}`, [member], warnings, withjoyPartyId)));
+      if (nonStaffMembers.length) groups.push(buildGroup(`${party}-${tableKey}`, nonStaffMembers, warnings, withjoyPartyId));
     }
   }
   return { groups, declinedCount };
