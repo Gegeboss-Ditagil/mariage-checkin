@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.6] — 2026-09-14
+
+Préparation pour un futur import final With Joy : identifiant stable par invitation (`withjoy_party_id`), sans encore construire l'import lui-même.
+
+### Ajouté
+- **`invitations.withjoy_party_id`** (migration `0052_invitations_withjoy_party_id.sql`) : colonne texte nullable stockant la valeur brute de la colonne `party` de l'export With Joy (ex. `table-002-party-006`) — vérifiée stable pour la même personne/le même groupe entre deux exports différents (`guest-list_48.csv` vs `guest-list_50.csv`), contrairement au nom. Sert uniquement à retrouver une invitation existante lors d'un futur import.
+- `lib/withjoyImport.ts` : `ImportGroup` gagne `withjoyPartyId` (valeur brute de `party`, `null` pour un groupe `SOLO-N` synthétique). `admin_replace_invitations` (redéfinie dans la même migration) et `app/api/admin/import-withjoy/route.ts` écrivent ce champ lors d'un import complet.
+
+### Analysé (sans changement de comportement)
+- **Le numéro parfois présent dans `party` (`table-XXX`) ne correspond PAS à notre vraie table** — vérifié sur `guest-list_50.csv` : seulement ~1/3 des groupes concordent avec le vrai tag `F0xx`/`T0xx`. C'est un identifiant interne à une fonctionnalité de placement propre à With Joy, distincte des tags que notre import utilise déjà. Le placement continue exclusivement de venir du tag `F0xx`/`T0xx` de la colonne `tags`, inchangé — `withjoy_party_id` n'est et ne sera jamais une source de placement.
+
+### Non fait dans ce lot
+- Table de sièges avec ID stable par chaise, et l'import final lui-même — remis à plus tard, une fois le fichier With Joy définitif transmis (demande explicite de Gersom).
+
+### Tests
+- `tests/withjoy-import.test.ts` (4 nouveaux tests) : capture de `withjoyPartyId` depuis le CSV, comportement sur un party vide, stabilité à travers plusieurs invitations issues d'un même party, câblage route+migration.
+
+### Migrations
+- `0052_invitations_withjoy_party_id.sql` — exécutée et vérifiée en production Supabase le 14/09/2026 (colonne additive nullable + redéfinition de `admin_replace_invitations`, aucune donnée existante modifiée).
+
+Version: 1.48.5 → 1.48.6
+
 ## [1.48.5] — 2026-09-14
 
 Le dessin "vu sur le plan photographié" apparaît aussi sur la fiche d'un invité, et se surligne au toucher depuis les deux pages qui le montrent + le bouton "Invité surprise" devient une icône à côté du "+", avec un bouton "Terminé".

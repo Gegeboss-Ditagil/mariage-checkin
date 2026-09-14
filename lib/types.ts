@@ -57,6 +57,12 @@ export interface InvitationRow {
   cote: Cote | null;
   tags: string[];
   placement_status: PlacementStatus;
+  // v1.48.6 : valeur brute de la colonne "party" de l'export With Joy (ex.
+  // "table-002-party-006") -- stable entre deux exports pour la meme
+  // personne/le meme groupe, contrairement au nom. Sert uniquement a
+  // retrouver une invitation existante lors d'un futur import, jamais une
+  // source de placement (voir lib/withjoyImport.ts et la migration 0052).
+  withjoy_party_id: string | null;
   created_at: string;
   updated_at: string;
 }

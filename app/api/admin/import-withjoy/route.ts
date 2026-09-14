@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
       cote: group.cote,
       category: group.category,
       placement_status: placementStatus,
+      withjoy_party_id: group.withjoyPartyId,
     };
   });
   for (const group of plan.sansTable) {
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
       // Meme regle que les invitations avec table (v1.19.0) : la confiance
       // RSVP pilote ce statut, plus le fait d'etre sans table.
       placement_status: group.rsvpConfirmed ? 'confirmee' : 'provisoire',
+      withjoy_party_id: group.withjoyPartyId,
     });
   }
   if (missingTables.size) {

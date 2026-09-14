@@ -1,11 +1,13 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.48.5**
+**Version documentaire : 1.48.6**
 **Dernière mise à jour : 2026-09-14**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
 `/admin/import-withjoy` accepte uniquement un CSV With Joy et ne transmet son contenu qu'à la route serveur admin. L'aperçu n'écrit rien. La confirmation remplace les invitations dans une transaction, après une sauvegarde JSON privée incluant invitations, membres, check-ins, débordements, exceptions et audit. Elle remet volontairement les données opérationnelles à zéro et reste donc interdite en mode live/closed.
+
+**`invitations.withjoy_party_id`** (v1.48.6, migration `0052_invitations_withjoy_party_id.sql`) : valeur brute de la colonne `party` du CSV With Joy (ex. `table-002-party-006`), écrite par l'import complet (`lib/withjoyImport.ts` → `ImportGroup.withjoyPartyId`) — vérifiée stable pour la même personne/le même groupe entre deux exports différents (`guest-list_48.csv` vs `guest-list_50.csv`, transmis par Gersom le 14/09/2026), contrairement au nom. Sert uniquement à retrouver une invitation existante lors d'un futur import (au lieu de deviner par nom) — **jamais une source de placement** : le numéro qu'elle contient parfois (`table-XXX`) est un identifiant interne à l'outil de placement de With Joy, distinct de nos tables réelles (seulement ~1/3 des groupes analysés concordaient avec le vrai tag `F0xx`/`T0xx` sur `guest-list_50.csv`). Le placement continue de venir exclusivement du tag `F0xx`/`T0xx` de la colonne `tags`, inchangé.
 
 ## État de référence v1.47.0 (mis à jour depuis v1.15.3)
 
