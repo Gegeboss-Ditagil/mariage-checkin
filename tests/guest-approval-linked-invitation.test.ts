@@ -25,6 +25,7 @@ const addUnplannedRouteSource = readFileSync(
 const guestApprovalsRouteSource = readFileSync(new URL('../app/api/guest-approvals/route.ts', import.meta.url), 'utf8');
 const captureFlowSource = readFileSync(new URL('../components/GuestApprovalCaptureFlow.tsx', import.meta.url), 'utf8');
 const checkinPageSource = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
+const guestArrivalPanelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
 const typesSource = readFileSync(new URL('../lib/types.ts', import.meta.url), 'utf8');
 
 test("l'ajout d'un invité imprévu ('+ Non prévu') exige désormais submitGuestApproval, jamais checkin seul -- un excédent de personnes remonte toujours à un placeur/directeur/admin", () => {
@@ -87,11 +88,18 @@ test("l'aperçu photo de GuestApprovalCaptureFlow ne peut atteindre l'attribut s
 // dans le "+" de GuestArrivalPanel, voir tests/guest-arrival-panel.test.ts)
 // -- seul reste ici le parcours photo, pour les cas ou une approbation
 // visuelle stricte est voulue.
-test("/checkin/[invitationId] offre '📷 Invité surprise' pour submitGuestApproval, et un message sans bouton pour les autres rôles (jamais agent_checkin)", () => {
+// v1.48.5 : le bouton "📷 Invité surprise" a migré dans GuestArrivalPanel
+// (petite icône à côté du "+", au lieu d'un gros bouton séparé sur cette
+// page) -- retour de Gersom le 14/09/2026. checkinPageSource garde le
+// contrôle d'accès (canSubmitGuestApproval) et le message de repli pour les
+// autres rôles ; guestArrivalPanelSource garde le bouton lui-même.
+test("/checkin/[invitationId] offre '📷 Invité surprise' (dans GuestArrivalPanel) pour submitGuestApproval, et un message sans bouton pour les autres rôles (jamais agent_checkin)", () => {
   assert.match(checkinPageSource, /const canSubmitGuestApproval = hasCapability\(role, 'submitGuestApproval'\)/);
-  assert.match(checkinPageSource, /!canSubmitGuestApproval \? \(/);
+  assert.match(checkinPageSource, /hasMemberList && !canSubmitGuestApproval &&/);
   assert.match(checkinPageSource, /Une personne en plus \? Un placeur ou directeur peut l’ajouter\./);
-  assert.match(checkinPageSource, /📷 Invité surprise/);
+  assert.match(checkinPageSource, /canAdd=\{canSubmitGuestApproval\}/);
+  assert.match(guestArrivalPanelSource, /📷/);
+  assert.match(guestArrivalPanelSource, /canAdd && onOpenSurpriseGuest &&/);
 });
 
 // Corrige le 13/09/2026 (retour de Gersom : "ça quitte l'appareil photo, ça
@@ -104,7 +112,8 @@ test("le bouton '📷 Invité surprise' ouvre une caméra en direct dans l'appli
   assert.doesNotMatch(checkinPageSource, /capture="environment"/);
   assert.match(checkinPageSource, /import \{ PhotoCaptureCamera \} from '@\/components\/PhotoCaptureCamera'/);
   assert.match(checkinPageSource, /const \[showCamera, setShowCamera\] = useState\(false\)/);
-  assert.match(checkinPageSource, /onClick=\{\(\) => setShowCamera\(true\)\}/);
+  assert.match(checkinPageSource, /onOpenSurpriseGuest=\{\(\) => setShowCamera\(true\)\}/);
+  assert.match(guestArrivalPanelSource, /onClick=\{onOpenSurpriseGuest\}/);
   assert.match(checkinPageSource, /showCamera && \(/);
   assert.match(checkinPageSource, /<PhotoCaptureCamera/);
   assert.match(checkinPageSource, /onCapture=\{\(file\) => \{ setShowCamera\(false\); setSurprisePhoto\(file\); \}\}/);

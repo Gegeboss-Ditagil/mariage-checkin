@@ -48,6 +48,26 @@ test('le composant est purement local : aucun appel reseau, aucune ecriture Supa
 test('/plan-table rend TableSeatWheel a la place de la grille de boutons pour la table selectionnee', () => {
   assert.match(pageSource, /<TableSeatWheel/);
   assert.match(pageSource, /seats=\{TABLE_SEAT_NAMES\[selectedTable\.number\]\}/);
-  assert.match(pageSource, /highlightedIndex=\{highlightedSeat\}/);
-  assert.match(pageSource, /onSelectSeat=\{\(idx\) => setHighlightedSeat/);
+  assert.match(pageSource, /highlightedIndices=\{highlightedSeats\}/);
+  assert.match(pageSource, /onSelectSeat=\{\(idx\) =>\s*\n\s*setHighlightedSeats/);
+});
+
+// v1.48.5 : plusieurs sieges a la fois (toute une invitation surlignee
+// depuis /plan-table, ou un seul siege depuis /checkin/[invitationId]) --
+// voir lib/floorPlanSeats.ts (findSeatIndexByName) et
+// components/GuestArrivalPanel.tsx pour le deuxieme usage.
+test('TableSeatWheel accepte plusieurs sieges surlignes a la fois (highlightedIndices)', () => {
+  assert.match(source, /highlightedIndices: number\[\]/);
+  assert.match(source, /highlightedIndices\.includes\(idx\)/);
+  assert.doesNotMatch(source, /highlightedIndex: number \| null/);
+});
+
+test('GuestArrivalPanel (fiche invite) rend aussi TableSeatWheel, retrouve par le numero de table reel', () => {
+  const panelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
+  assert.match(panelSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName \} from '@\/lib\/floorPlanSeats'/);
+  assert.match(panelSource, /<TableSeatWheel/);
+  // La table vient de la vraie source de placement (prop tableNumber, issue
+  // de invitations.table_id -> tables.number), jamais devinee par nom.
+  assert.match(panelSource, /tableNumber: number \| null;/);
+  assert.match(panelSource, /const seatIndex = tableNumber !== null \? findSeatIndexByName\(tableNumber, guest\.nom_affichage\) : null;/);
 });

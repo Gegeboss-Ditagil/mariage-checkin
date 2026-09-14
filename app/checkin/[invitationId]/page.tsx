@@ -941,9 +941,12 @@ export default function CheckinPage() {
 
         <GuestArrivalPanel
           invitation={invitation}
+          tableNumber={invitationTable?.number ?? null}
           onInvitationUpdate={setInvitation}
           onVisibilityChange={setHasMemberList}
           onAfterAdd={handlePanelAdd}
+          onOpenSurpriseGuest={() => setShowCamera(true)}
+          onFinish={() => router.push('/scan')}
           canManage={canRename}
           canAdd={canSubmitGuestApproval}
           canMove={canMoveGuest}
@@ -995,50 +998,29 @@ export default function CheckinPage() {
           </button>
         )}
 
-        {hasMemberList ? (
-          // Groupe : chaque personne se coche individuellement dans
-          // GuestArrivalPanel ci-dessus (instantane, pas de bouton
-          // "Confirmer" a part). Le "+" de ce meme panneau couvre desormais
-          // aussi le cas d'un invite non prevu qui arrive avec le groupe
-          // (consolidation du 03/09/2026, retour de Gersom : "quand on
-          // ajoute la personne qui est avec Lys, ça veut dire que par
-          // définition on approuve la personne et il faut la placer sur
-          // une table ... [+Non prévu et Ajouter un invité] sont déjà pris
-          // en compte avec le plus") -- reste ici seulement le parcours
-          // photo, pour les cas ou une approbation visuelle stricte est
-          // voulue ("le bouton photo invité surprise peut être intéressant
-          // si on veut vraiment que la personne ... doit impérativement se
-          // faire approuver par photo").
-          !canSubmitGuestApproval ? (
-            // Ni l'ajout instantané (dans GuestArrivalPanel) ni le parcours
-            // photo ne sont accessibles à ce rôle (agent_checkin,
-            // visibilite) -- un excédent de personnes remonte toujours à un
-            // placeur/directeur/admin.
-            <p className="action-row-muted mb-3 cursor-default text-text-muted">
-              Une personne en plus ? Un placeur ou directeur peut l’ajouter.
-            </p>
-          ) : (
-            <>
-              {/* Invite surprise lie a ce groupe : nom + photo + approbation,
-                  avec cote/groupe deja preremplis (voir
-                  GuestApprovalCaptureFlow). Camera en direct dans
-                  l'application (PhotoCaptureCamera, meme mecanisme que
-                  QrScanner.captureFrame sur /scan) -- corrige le 13/09/2026 :
-                  un input fichier avec capture environnement ouvrait l'app
-                  Camera native et faisait quitter l'application (retour de Gersom :
-                  "ça quitte l'appareil photo... on aurait voulu un système
-                  vraiment un peu comme la page scanner directement"). */}
-              <button
-                type="button"
-                className="action-row mb-3"
-                disabled={submitting || !online}
-                onClick={() => setShowCamera(true)}
-              >
-                {!online ? 'HORS LIGNE' : '📷 Invité surprise'}
-              </button>
-            </>
-          )
-        ) : (
+        {/* Groupe : chaque personne se coche individuellement dans
+            GuestArrivalPanel ci-dessus (instantane, pas de bouton "Confirmer"
+            a part). Le "+" de ce meme panneau couvre desormais aussi le cas
+            d'un invite non prevu qui arrive avec le groupe (consolidation du
+            03/09/2026, retour de Gersom : "quand on ajoute la personne qui
+            est avec Lys, ça veut dire que par définition on approuve la
+            personne et il faut la placer sur une table ... [+Non prévu et
+            Ajouter un invité] sont déjà pris en compte avec le plus"). Le
+            parcours photo ("Invité surprise") vit desormais dans ce meme
+            panneau, en petite icone a cote du "+" plutot qu'un gros bouton
+            separe ici (retour de Gersom le 14/09/2026 : "le bouton invité
+            surprise... un simple icône de caméra à côté de l'icône +"). */}
+        {hasMemberList && !canSubmitGuestApproval && (
+          // Ni l'ajout instantané (dans GuestArrivalPanel) ni le parcours
+          // photo ne sont accessibles à ce rôle (agent_checkin, visibilite)
+          // -- un excédent de personnes remonte toujours à un
+          // placeur/directeur/admin.
+          <p className="action-row-muted mb-3 cursor-default text-text-muted">
+            Une personne en plus ? Un placeur ou directeur peut l’ajouter.
+          </p>
+        )}
+
+        {!hasMemberList && (
           <>
             <p className="mb-3 text-center font-semibold ">Personnes arrivées</p>
             <CounterStepper value={arriveValue} min={0} max={30} onChange={setArriveValue} />
@@ -1055,6 +1037,18 @@ export default function CheckinPage() {
                 ⚠️ {arriveValue - invitation.nombre_prevu} personne{arriveValue - invitation.nombre_prevu > 1 ? 's' : ''} de plus que prévu
               </p>
             )}
+
+            {/* v1.48.5 : meme raccourci "Terminé -> /scan" que dans
+                GuestArrivalPanel (qui ne s'affiche pas ici, invitation
+                encore non materialisee en lignes nominatives) -- "la flèche
+                retour n'est pas intuitive". */}
+            <button
+              type="button"
+              className="mt-3 w-full rounded-full bg-accent px-4 py-2 text-sm font-bold text-on-accent active:scale-95 transition-transform"
+              onClick={() => router.push('/scan')}
+            >
+              Terminé
+            </button>
           </>
         )}
 

@@ -3,6 +3,27 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.5] — 2026-09-14
+
+Le dessin "vu sur le plan photographié" apparaît aussi sur la fiche d'un invité, et se surligne au toucher depuis les deux pages qui le montrent + le bouton "Invité surprise" devient une icône à côté du "+", avec un bouton "Terminé".
+
+### Ajouté
+- **`GuestArrivalPanel` (fiche `/checkin/[invitationId]`) affiche désormais le dessin "vu sur le plan photographié"** de la table réelle de l'invitation (nouvelle prop `tableNumber`, issue de `invitations.table_id` → `tables.number`, jamais devinée par nom) — ne s'affiche que si cette table a une lecture photo. Un bouton 📍 apparaît à côté de chaque membre dont le nom correspond exactement (accents/casse ignorés) à un siège de sa table ; le toucher surligne ce siège et fait défiler jusqu'au dessin.
+- **`lib/floorPlanSeats.ts` : `findSeatIndexByName(tableNumber, name)`** — correspondance exacte uniquement, jamais une tolérance approchée (deux personnes différentes peuvent avoir des noms très proches sur des tables différentes).
+- **Sur `/plan-table`, toucher une invitation dans la liste au-dessus du dessin surligne tous ses membres retrouvés d'un coup**, au lieu de naviguer vers `/tables/[tableId]` — toucher la table elle-même (en-tête/carte) continue de naviguer, inchangé. Nouveau callback `onSelectInvitation` sur `TableCard`, actif uniquement sur la carte de la table sélectionnée.
+- **`components/TableSeatWheel.tsx` généralisé** : `highlightedIndex: number | null` devient `highlightedIndices: number[]` (plusieurs sièges à la fois), utilisé par `/plan-table` et le nouveau panneau de `GuestArrivalPanel`.
+- **Le bouton "📷 Invité surprise" devient une icône caméra à côté du "+"** dans `GuestArrivalPanel` (au lieu d'un gros bouton séparé plus bas sur la page), avec un nouveau bouton "Terminé" qui ramène à `/scan` — les deux fonctionnalités (ajout direct, parcours photo) restent strictement inchangées, seule leur présentation change.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (2 nouveaux tests) : `highlightedIndices` sur `TableSeatWheel`, rendu du dessin dans `GuestArrivalPanel`.
+- `tests/floor-plan-seats.test.ts` (1 nouveau test) : surlignage multi-sièges depuis la liste d'invitations de `/plan-table`.
+- `tests/guest-approval-linked-invitation.test.ts`, `tests/guest-arrival-panel.test.ts` : mis à jour pour la nouvelle disposition +/caméra/Terminé.
+
+### Migrations
+- Aucune (changements purement client, la vraie source de placement reste `invitations.table_id`).
+
+Version: 1.48.4 → 1.48.5
+
 ## [1.48.4] — 2026-09-14
 
 Badge numérique sur l'icône de l'app (écran d'accueil), avant même de l'ouvrir — demande de Gersom après avoir activé les notifications Push.

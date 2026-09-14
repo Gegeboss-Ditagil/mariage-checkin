@@ -46,13 +46,30 @@ test("/plan-table affiche ce panneau uniquement pour la table selectionnee, jama
   assert.match(pageSource, /TABLE_SEAT_NAMES\[selectedTable\.number\]/);
   assert.match(pageSource, /Vu sur le plan photographié/);
   // Purement local (surbrillance client, jamais une ecriture Supabase) :
-  // un simple useState, jamais passe a un appel fetch/API/RPC.
-  assert.match(pageSource, /const \[highlightedSeat, setHighlightedSeat\] = useState<number \| null>\(null\);/);
-  assert.match(pageSource, /setHighlightedSeat\(\(current\) => \(current === idx \? null : idx\)\)/);
+  // un simple useState, jamais passe a un appel fetch/API/RPC. Tableau
+  // depuis v1.48.5 (plusieurs sieges a la fois, ex. toute une invitation).
+  assert.match(pageSource, /const \[highlightedSeats, setHighlightedSeats\] = useState<number\[\]>\(\[\]\);/);
+  assert.match(
+    pageSource,
+    /setHighlightedSeats\(\(current\) => \(current\.length === 1 && current\[0\] === idx \? \[\] : \[idx\]\)\)/
+  );
 });
 
 test('reinitialise la surbrillance de siege a chaque changement de table (jamais collee sur une ancienne table)', () => {
   const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
-  const setSelectedCalls = pageSource.match(/setSelectedTableId\([^)]*\);\n\s*setSelectedZone\([^)]*\);\n\s*setHighlightedSeat\(null\);/g) || [];
-  assert.ok(setSelectedCalls.length >= 2, 'selectTableByNumber et locateOnPlan doivent tous deux reinitialiser highlightedSeat');
+  const setSelectedCalls = pageSource.match(/setSelectedTableId\([^)]*\);\n\s*setSelectedZone\([^)]*\);\n\s*setHighlightedSeats\(\[\]\);/g) || [];
+  assert.ok(setSelectedCalls.length >= 2, 'selectTableByNumber et locateOnPlan doivent tous deux reinitialiser highlightedSeats');
+});
+
+// v1.48.5, retour de Gersom : toucher une invitation dans la liste de la
+// table selectionnee (au-dessus du dessin) surligne tous ses membres
+// retrouves d'un coup, sans naviguer vers /tables/[tableId] -- "j'appuie
+// vraiment sur la table, ça m'amène dans la prochaine page... [mais]
+// j'appuie sur le nom, ça descend en bas".
+test('toucher une invitation dans la liste de la table selectionnee surligne ses sieges au lieu de naviguer', () => {
+  const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+  assert.match(pageSource, /onSelectInvitation=\{\(inv\) => \{/);
+  assert.match(pageSource, /const candidateNames = \[inv\.nom_affichage, \.\.\.extractMembresComplet\(inv\.notes\)\]/);
+  assert.match(pageSource, /findSeatIndexByName\(selectedTable\.number, name\)/);
+  assert.match(pageSource, /seatWheelRef\.current\?\.scrollIntoView/);
 });

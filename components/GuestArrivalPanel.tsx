@@ -7,6 +7,8 @@ import { GuestArrivalStatus, GuestRow, InvitationRow } from '@/lib/types';
 import { useOnline } from '@/hooks/useOnline';
 import { parseMembersFromNotes } from '@/lib/membersNotes';
 import { debounce } from '@/lib/debounce';
+import { TABLE_SEAT_NAMES, findSeatIndexByName } from '@/lib/floorPlanSeats';
+import { TableSeatWheel } from '@/components/TableSeatWheel';
 
 // Remplace l'ancien compteur agrege "Personnes arrivees" (0..nombre_prevu,
 // sans savoir QUI) par une case a cocher PAR PERSONNE, a trois etats.
@@ -19,14 +21,24 @@ import { debounce } from '@/lib/debounce';
 // set_guest_arrival_status (0029_guest_arrival_status.sql).
 export function GuestArrivalPanel({
   invitation,
+  tableNumber,
   onInvitationUpdate,
   onVisibilityChange,
   onAfterAdd,
+  onOpenSurpriseGuest,
+  onFinish,
   canManage,
   canAdd,
   canMove,
 }: {
   invitation: InvitationRow;
+  // v1.48.5, retour de Gersom : afficher directement sur cette fiche le
+  // dessin "vu sur le plan photographié" de la table de CE groupe (au lieu
+  // de forcer un aller-retour vers /plan-table) -- numéro de la vraie table
+  // assignée (invitations.table_id -> tables.number), jamais devinée par
+  // nom : `null` tant que l'invitation n'a pas encore de table, auquel cas
+  // ce panneau ne s'affiche simplement pas (voir plus bas).
+  tableNumber: number | null;
   onInvitationUpdate: (inv: InvitationRow) => void;
   // Signale au parent si ce panneau affiche reellement une liste de membres,
   // pour qu'il sache s'il doit se rabattre sur l'ancien compteur agrege
@@ -64,6 +76,20 @@ export function GuestArrivalPanel({
   // transfert de personnes d'une table à une autre parce que maintenant on
   // aura leurs noms".
   canMove?: boolean;
+  // v1.48.5 : lance le parcours photo + approbation à distance ("Invité
+  // surprise") -- fourni par le parent (app/checkin/[invitationId]/page.tsx
+  // possède déjà cette logique/l'état `showCamera`), simplement affiché ici
+  // en petite icône à côté du "+" plutôt qu'en gros bouton séparé plus bas
+  // sur la page (retour de Gersom : "le bouton invité surprise... un simple
+  // icône de caméra à côté de l'icône +"). Absent = icône masquée, comme
+  // avant l'ajout de ce prop.
+  onOpenSurpriseGuest?: () => void;
+  // v1.48.5 : bouton "Terminé" à côté du "+"/caméra -- "la flèche retour
+  // n'est pas intuitive... quand on clique Terminé ça nous retourne sur la
+  // page du scanner". Toujours affiché quand fourni, indépendamment de
+  // `canAdd` (utile à tous les rôles, pas seulement ceux qui peuvent ajouter
+  // un invité) -- la navigation elle-même reste décidée par le parent.
+  onFinish?: () => void;
 }) {
   const router = useRouter();
   const online = useOnline();
@@ -82,6 +108,14 @@ export function GuestArrivalPanel({
   const [newPrenom, setNewPrenom] = useState('');
   const [newNom, setNewNom] = useState('');
   const [addSubmitting, setAddSubmitting] = useState(false);
+
+  // v1.48.5 : sieges mis en evidence dans le dessin "vu sur le plan
+  // photographie" ci-dessous -- purement visuel/local, jamais envoye au
+  // serveur (voir lib/floorPlanSeats.ts). Reinitialise a chaque changement
+  // d'invitation par le meme effet que `members`/`loading` plus bas, pour
+  // ne jamais rester colle sur le siege d'une invitation precedente.
+  const [highlightedSeats, setHighlightedSeats] = useState<number[]>([]);
+  const seatWheelRef = useRef<HTMLDivElement>(null);
 
   // Ids des membres actuellement listes -- permet de filtrer LOCALEMENT les
   // evenements Realtime de la table globale `guests` (impossible de filtrer
@@ -129,6 +163,7 @@ export function GuestArrivalPanel({
     setLoading(true);
     setInitializing(false);
     setMembers([]);
+    setHighlightedSeats([]);
     onVisibilityChange?.(true);
     (async () => {
       let list = await load();
@@ -317,7 +352,12 @@ export function GuestArrivalPanel({
   if (!settled) return <div className="card mb-3 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;
 
+  // v1.48.5 : memes seuils que /plan-table (TABLE_SEAT_NAMES[number] absent
+  // = cette table n'a pas de lecture photo, le panneau ne s'affiche pas).
+  const seats = tableNumber !== null ? TABLE_SEAT_NAMES[tableNumber] : undefined;
+
   return (
+    <>
     <div className="card mb-3">
       <p className="mb-2 text-sm font-semibold">Qui est arrivé ?</p>
       <ul className="space-y-1.5">
@@ -356,6 +396,12 @@ export function GuestArrivalPanel({
             );
           }
 
+          // v1.48.5 : correspondance exacte (accents/casse ignores) entre ce
+          // membre et un siege lu sur la photo de SA table reelle -- jamais
+          // une recherche floue ni sur une autre table (voir
+          // lib/floorPlanSeats.ts). Icone masquee si aucune correspondance :
+          // rien a montrer plutot qu'un bouton mort.
+          const seatIndex = tableNumber !== null ? findSeatIndexByName(tableNumber, guest.nom_affichage) : null;
           return (
             <li
               key={guest.id}
@@ -376,6 +422,21 @@ export function GuestArrivalPanel({
                 <span className={'min-w-0 flex-1 truncate text-sm ' + (wontCome ? 'line-through' : '')}>
                   {guest.nom_affichage}
                 </span>
+              )}
+              {seatIndex !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHighlightedSeats((current) => (current.length === 1 && current[0] === seatIndex ? [] : [seatIndex]));
+                    requestAnimationFrame(() => {
+                      seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    });
+                  }}
+                  aria-label={'Voir le siège de ' + guest.nom_affichage + ' sur le plan photographié'}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-hairline text-sm text-text-faint active:scale-90 transition-transform"
+                >
+                  📍
+                </button>
               )}
               {canMove && (
                 <button
@@ -451,18 +512,69 @@ export function GuestArrivalPanel({
         )}
       </ul>
 
-      {canAdd && !adding && (
-        <button
-          type="button"
-          onClick={startAdd}
-          className="mt-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-hairline text-lg font-bold text-text-faint active:scale-90 transition-transform"
-          aria-label="Ajouter une personne arrivée avec le groupe"
-        >
-          +
-        </button>
+      {/* v1.48.5, retour de Gersom : le "+" (ajout direct, inchangé) et la
+          caméra (parcours photo + approbation, désormais une simple icône
+          au lieu d'un gros bouton séparé plus bas sur la page) côte à côte,
+          "Terminé" à droite -- "la flèche retour n'est pas intuitive...
+          quand on clique Terminé ça nous retourne sur la page du scanner".
+          Row affichée dès que l'un des trois boutons a une raison d'exister. */}
+      {!adding && (canAdd || onFinish) && (
+        <div className="mt-2 flex items-center gap-2">
+          {canAdd && (
+            <button
+              type="button"
+              onClick={startAdd}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-hairline text-lg font-bold text-text-faint active:scale-90 transition-transform"
+              aria-label="Ajouter une personne arrivée avec le groupe"
+            >
+              +
+            </button>
+          )}
+          {canAdd && onOpenSurpriseGuest && (
+            <button
+              type="button"
+              onClick={onOpenSurpriseGuest}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-hairline text-base active:scale-90 transition-transform"
+              aria-label="Invité surprise : ajouter avec photo et approbation à distance"
+            >
+              📷
+            </button>
+          )}
+          {onFinish && (
+            <button
+              type="button"
+              onClick={onFinish}
+              className="ml-auto rounded-full bg-accent px-4 py-2 text-sm font-bold text-on-accent active:scale-95 transition-transform"
+            >
+              Terminé
+            </button>
+          )}
+        </div>
       )}
 
       {error && <p className="mt-2 text-xs font-medium text-status-over">{error}</p>}
     </div>
+
+    {seats && (
+      <div ref={seatWheelRef} className="card mb-3 p-4">
+        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
+          Vu sur le plan photographié · à titre indicatif
+        </p>
+        <TableSeatWheel
+          tableNumber={tableNumber as number}
+          seats={seats}
+          highlightedIndices={highlightedSeats}
+          onSelectSeat={(idx) =>
+            setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]))
+          }
+        />
+        <p className="mt-2 text-center text-[11px] text-text-faint">
+          Touchez un nom, ou 📍 à côté d’un invité ci-dessus, pour mettre son siège en évidence. Extrait par lecture
+          du plan photo transmis par Gersom (14/09/2026) — purement informatif, ne reflète pas forcément la table
+          actuelle de chaque invité en base.
+        </p>
+      </div>
+    )}
+    </>
   );
 }

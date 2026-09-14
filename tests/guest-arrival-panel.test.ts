@@ -83,7 +83,7 @@ test('la visibilite du panneau/compteur repose sur hasMemberList (etat reel), ja
   // avec la personne exclue dedans : plus aucun moyen de l'annuler.
   assert.match(checkinSource, /const \[hasMemberList, setHasMemberList\] = useState\(true\);/);
   assert.match(checkinSource, /onVisibilityChange=\{setHasMemberList\}/);
-  assert.match(checkinSource, /hasMemberList \? \(/);
+  assert.match(checkinSource, /hasMemberList && !canSubmitGuestApproval &&/);
   assert.match(checkinSource, /!hasMemberList && \(/);
   // "nombre_prevu > 1" / "<= 1" ne doivent plus servir a decider quoi
   // afficher (seulement apparaitre, ailleurs, dans des messages d'excedent
@@ -183,7 +183,8 @@ test('bouton "+" pour ajouter une personne (deja arrivee) au groupe, reserve a s
   // ajout DEJA ARRIVE (canAdd/submitGuestApproval, add_unplanned_arrival) --
   // agent_checkin garde manageMembers (peut renommer) mais jamais
   // submitGuestApproval, donc ne doit plus voir ce bouton.
-  assert.match(panelSource, /canAdd && !adding/);
+  assert.match(panelSource, /!adding && \(canAdd \|\| onFinish\)/);
+  assert.match(panelSource, /\{canAdd && \(/);
   assert.match(panelSource, /members\/add-unplanned/);
   assert.doesNotMatch(panelSource, /hasCapability/); // capacite fournie par le parent (prop canAdd), pas re-decidee ici
   assert.match(checkinSource, /canAdd=\{canSubmitGuestApproval\}/);
