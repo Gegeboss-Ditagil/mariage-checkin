@@ -8,6 +8,7 @@ import { Role } from '@/lib/types';
 import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
 import { usePolling } from '@/hooks/usePolling';
+import { syncAppBadge } from '@/lib/appBadge';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
 
@@ -182,7 +183,9 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
     if (!response?.ok) return;
     const data = await response.json();
-    setPendingCount(data.pending_count || 0);
+    const nextCount = data.pending_count || 0;
+    setPendingCount(nextCount);
+    syncAppBadge(nextCount);
   }, []);
 
   const canPollApprovals = hasCapability(role, 'viewGuestApprovals');

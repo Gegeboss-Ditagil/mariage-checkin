@@ -10,6 +10,7 @@ import { usePolling } from '@/hooks/usePolling';
 import { hasCapability } from '@/lib/permissions';
 import { ROLE_LABELS } from '@/lib/types';
 import { clearGuestApprovalsCache } from '@/lib/guestApprovalClientCache';
+import { syncAppBadge, clearAppBadge } from '@/lib/appBadge';
 
 const THEME_CHOICES: { pref: ThemePref; label: string }[] = [
   { pref: 'dark', label: 'Sombre' },
@@ -64,6 +65,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
     }
     previousPendingRef.current = nextCount;
     setPendingApprovals(nextCount);
+    syncAppBadge(nextCount);
   }, []);
 
   const canPollApprovals = hasCapability(role, 'viewGuestApprovals');
@@ -84,6 +86,10 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
     catch { /* La redirection reste possible même si le réseau vient de tomber. */ }
     finally {
       clearGuestApprovalsCache();
+      // Le badge sur l'icône de l'app est partagé par tout appareil, pas par
+      // compte -- l'effacer à la déconnexion évite qu'il reste figé pour un
+      // compte suivant sur un appareil partagé.
+      clearAppBadge();
       router.replace('/login');
       router.refresh();
     }

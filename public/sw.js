@@ -90,14 +90,30 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
-  event.waitUntil(self.registration.showNotification(data.title || 'Approbation en attente', {
+  const showNotification = self.registration.showNotification(data.title || 'Approbation en attente', {
     body: data.body || 'Une nouvelle demande attend votre décision.',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: data.tag || 'guest-approval',
     renotify: true,
     data: { url: data.url || '/approbations' },
-  }));
+  });
+  // v1.48.4, demande de Gersom : "le petit 1 indicateur sur l'icône avant de
+  // l'ouvrir" -- badge numérique sur l'icône de l'app (Badging API,
+  // `navigator.setAppBadge`/`clearAppBadge`), distinct du `badge` ci-dessus
+  // (une simple icône monochrome pour Android, jamais un nombre). Supportée
+  // par les PWA installées sur l'écran d'accueil depuis iOS 16.4 -- absente
+  // ailleurs, donc vérifiée avant tout appel. `badgeCount` vient du serveur
+  // (lib/webPush.ts, même compte que le badge affiché à l'intérieur de
+  // l'app) ; se met à jour ici même si l'app n'est pas ouverte, contrairement
+  // au badge interne qui n'attend qu'un sondage au premier plan (voir
+  // lib/appBadge.ts pour ce chemin-là). Best-effort : jamais une erreur qui
+  // bloquerait l'affichage de la notification elle-même.
+  const badgeUpdate =
+    typeof data.badgeCount === 'number' && 'setAppBadge' in navigator
+      ? (data.badgeCount > 0 ? navigator.setAppBadge(data.badgeCount) : navigator.clearAppBadge()).catch(() => {})
+      : Promise.resolve();
+  event.waitUntil(Promise.all([showNotification, badgeUpdate]));
 });
 
 self.addEventListener('notificationclick', (event) => {
