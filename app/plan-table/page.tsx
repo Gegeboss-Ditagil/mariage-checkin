@@ -20,7 +20,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
-import { TABLE_SEAT_NAMES, findSeatIndexByName } from '@/lib/floorPlanSeats';
+import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
@@ -113,6 +113,7 @@ export default function PlanTablePage() {
   // plus des indices de sieges, pour surligner sa ligne dans TableCard.
   const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null);
   const seatWheelRef = useRef<HTMLDivElement>(null);
+  const selectedTableCardRef = useRef<HTMLDivElement>(null);
   // Zone staff selectionnee (Bar, Cuisine, DJ et animation, Prestataires...)
   // -- mutuellement exclusive avec selectedTableId : selectionner l'une
   // efface l'autre, un seul panneau s'affiche sous le plan a la fois.
@@ -494,7 +495,7 @@ export default function PlanTablePage() {
                   </div>
 
                   {selectedTable && (
-                    <div className="mt-3">
+                    <div ref={selectedTableCardRef} className="mt-3">
                       <TableCard
                         table={selectedTable}
                         invitations={invitationsByTable.get(selectedTable.id) || []}
@@ -536,14 +537,38 @@ export default function PlanTablePage() {
                         seats={TABLE_SEAT_NAMES[selectedTable.number]}
                         highlightedIndices={highlightedSeats}
                         onSelectSeat={(idx) => {
-                          setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]));
-                          setSelectedInvitationId(null);
+                          const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === idx;
+                          setHighlightedSeats(isDeselect ? [] : [idx]);
+                          if (isDeselect) {
+                            setSelectedInvitationId(null);
+                            return;
+                          }
+                          // v1.48.9, retour de Gersom : "vice versa" -- toucher
+                          // un siege retrouve, parmi les invitations DEJA
+                          // LISTEES pour cette table, celle dont un membre
+                          // correspond exactement (jamais approche) au nom lu
+                          // sur ce siege.
+                          const seatName = TABLE_SEAT_NAMES[selectedTable.number]?.[idx];
+                          const invitationsHere = invitationsByTable.get(selectedTable.id) || [];
+                          const match = seatName
+                            ? invitationsHere.find(
+                                (inv) =>
+                                  namesMatch(inv.nom_affichage, seatName) ||
+                                  extractMembresComplet(inv.notes).some((m) => namesMatch(m, seatName))
+                              )
+                            : undefined;
+                          setSelectedInvitationId(match ? match.id : null);
+                          if (match) {
+                            requestAnimationFrame(() => {
+                              selectedTableCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            });
+                          }
                         }}
                       />
                       <p className="mt-2 text-center text-[11px] text-text-faint">
-                        Touchez un nom, ou une invitation dans la liste au-dessus, pour mettre son siège en évidence.
-                        Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement informatif, ne
-                        reflète pas forcément la table actuelle de chaque invité en base.
+                        Touchez un nom, ou une invitation dans la liste au-dessus, pour mettre son siège en évidence,
+                        et vice versa. Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement
+                        informatif, ne reflète pas forcément la table actuelle de chaque invité en base.
                       </p>
                     </div>
                   )}

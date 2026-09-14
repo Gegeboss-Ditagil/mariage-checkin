@@ -49,12 +49,17 @@ test('/plan-table rend TableSeatWheel a la place de la grille de boutons pour la
   assert.match(pageSource, /<TableSeatWheel/);
   assert.match(pageSource, /seats=\{TABLE_SEAT_NAMES\[selectedTable\.number\]\}/);
   assert.match(pageSource, /highlightedIndices=\{highlightedSeats\}/);
-  assert.match(pageSource, /onSelectSeat=\{\(idx\) => \{\s*\n\s*setHighlightedSeats/);
+  assert.match(pageSource, /onSelectSeat=\{\(idx\) => \{\s*\n\s*const isDeselect = /);
   // v1.48.8 : un tap direct sur un siege (pas via un nom de la liste) doit
-  // desormais aussi effacer selectedInvitationId, sinon une ligne resterait
-  // surlignee dans la liste au-dessus alors qu'elle ne correspond plus au
+  // desormais aussi effacer selectedInvitationId quand on deselectionne,
+  // sinon une ligne resterait surlignee alors qu'elle ne correspond plus au
   // siege affiche en bas.
-  assert.match(pageSource, /setSelectedInvitationId\(null\);\s*\n\s*\}\}/);
+  assert.match(pageSource, /if \(isDeselect\) \{\s*\n\s*setSelectedInvitationId\(null\);\s*\n\s*return;\s*\n\s*\}/);
+  // v1.48.9, retour de Gersom : "vice versa" -- un tap sur un siege NON
+  // deselectionne retrouve desormais aussi l'invitation correspondante
+  // (jamais approchee) parmi celles deja listees pour cette table.
+  assert.match(pageSource, /namesMatch\(inv\.nom_affichage, seatName\)/);
+  assert.match(pageSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
 });
 
 // v1.48.5 : plusieurs sieges a la fois (toute une invitation surlignee
@@ -69,12 +74,26 @@ test('TableSeatWheel accepte plusieurs sieges surlignes a la fois (highlightedIn
 
 test('GuestArrivalPanel (fiche invite) rend aussi TableSeatWheel, retrouve par le numero de table reel', () => {
   const panelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
-  assert.match(panelSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName \} from '@\/lib\/floorPlanSeats'/);
+  assert.match(panelSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch \} from '@\/lib\/floorPlanSeats'/);
   assert.match(panelSource, /<TableSeatWheel/);
   // La table vient de la vraie source de placement (prop tableNumber, issue
   // de invitations.table_id -> tables.number), jamais devinee par nom.
   assert.match(panelSource, /tableNumber: number \| null;/);
   assert.match(panelSource, /const seatIndex = tableNumber !== null \? findSeatIndexByName\(tableNumber, guest\.nom_affichage\) : null;/);
+});
+
+// v1.48.9, retour de Gersom : "vice versa -- si j'appuie sur la chaise de la
+// personne en dessous, ça me surligne directement dans cette page parmi les
+// invités... c'est qui" -- reverse du 📍 (nom -> siege) deja existant.
+test('GuestArrivalPanel surligne aussi la ligne du membre retrouve quand on touche un siege (vice versa)', () => {
+  const panelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
+  assert.match(panelSource, /const \[highlightedGuestId, setHighlightedGuestId\] = useState<string \| null>\(null\);/);
+  assert.match(panelSource, /guest\.id === highlightedGuestId/);
+  assert.match(panelSource, /const match = seatName \? members\.find\(\(guest\) => namesMatch\(guest\.nom_affichage, seatName\)\) : undefined;/);
+  assert.match(panelSource, /setHighlightedGuestId\(match \? match\.id : null\);/);
+  // Reinitialise partout ou highlightedSeats l'est deja (changement
+  // d'invitation), sinon une ligne resterait surlignee pour un autre groupe.
+  assert.match(panelSource, /setHighlightedSeats\(\[\]\);\s*\n\s*setHighlightedGuestId\(null\);/);
 });
 
 // v1.48.8, retour de Gersom : "quand j'appuie sur Jonas, j'aimerais aussi que
@@ -103,7 +122,7 @@ test("/plan-table surligne aussi la ligne de l'invitation touchee dans la liste 
 for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]/page.tsx']) {
   test(`${route} affiche aussi le dessin "vu sur le plan photographie" sous la liste, avec un bouton 📍 par invitation`, () => {
     const tableDetailSource = readFileSync(new URL(route, import.meta.url), 'utf8');
-    assert.match(tableDetailSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName \} from '@\/lib\/floorPlanSeats'/);
+    assert.match(tableDetailSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch \} from '@\/lib\/floorPlanSeats'/);
     assert.match(tableDetailSource, /import \{ TableSeatWheel \} from '@\/components\/TableSeatWheel'/);
     assert.match(tableDetailSource, /<TableSeatWheel/);
     assert.match(tableDetailSource, /table && TABLE_SEAT_NAMES\[table\.number\]/);
@@ -118,5 +137,10 @@ for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]
     assert.match(tableDetailSource, /router\.push\('\/checkin\/' \+ inv\.id\)/);
     // Reinitialise au changement de tableId, comme highlightedSeats.
     assert.match(tableDetailSource, /setHighlightedSeats\(\[\]\);\s*\n\s*setSelectedInvitationId\(null\);/);
+    // v1.48.9, retour de Gersom : "vice versa" -- toucher un siege sur le
+    // dessin retrouve aussi l'invitation correspondante parmi celles de
+    // cette table (jamais une recherche approchee).
+    assert.match(tableDetailSource, /namesMatch\(inv\.nom_affichage, seatName\)/);
+    assert.match(tableDetailSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
   });
 }

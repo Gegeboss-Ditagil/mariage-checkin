@@ -49,10 +49,8 @@ test("/plan-table affiche ce panneau uniquement pour la table selectionnee, jama
   // un simple useState, jamais passe a un appel fetch/API/RPC. Tableau
   // depuis v1.48.5 (plusieurs sieges a la fois, ex. toute une invitation).
   assert.match(pageSource, /const \[highlightedSeats, setHighlightedSeats\] = useState<number\[\]>\(\[\]\);/);
-  assert.match(
-    pageSource,
-    /setHighlightedSeats\(\(current\) => \(current\.length === 1 && current\[0\] === idx \? \[\] : \[idx\]\)\)/
-  );
+  assert.match(pageSource, /const isDeselect = highlightedSeats\.length === 1 && highlightedSeats\[0\] === idx;/);
+  assert.match(pageSource, /setHighlightedSeats\(isDeselect \? \[\] : \[idx\]\);/);
 });
 
 test('reinitialise la surbrillance de siege a chaque changement de table (jamais collee sur une ancienne table)', () => {

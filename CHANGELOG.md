@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.9] — 2026-09-14
+
+Complète le dessin "vu sur le plan photographié" avec le sens inverse (siège → invitation/membre), sur les trois écrans qui l'affichent — aucune migration.
+
+### Ajouté
+- **`/plan-table`, `/tables/[tableId]`, `/table/[tableId]`** : toucher un siège sur le dessin retrouve désormais aussi, parmi les invitations déjà listées pour cette table, celle dont un membre correspond exactement (jamais approché) au nom lu sur ce siège — surlignage de sa ligne dans la liste + défilement vers elle. Complète le sens déjà existant (toucher un nom → surligner son siège).
+- **`GuestArrivalPanel` (`/checkin/[invitationId]`)** : même sens inverse — toucher un siège retrouve, parmi les membres de "Qui est arrivé ?", celui dont le nom correspond exactement, et surligne sa ligne.
+- **`lib/floorPlanSeats.ts`** : nouvel export `namesMatch(a, b)`, factorisant la comparaison exacte (accents/casse ignorés) déjà utilisée par `findSeatIndexByName`, pour ce nouveau sens de recherche.
+
+### Non fait dans ce lot (signalé à Gersom, pas silencieusement ignoré)
+- "Quand j'ajoute quelqu'un dans l'application, que ça l'ajoute aussi sur la table [dessin]" — incompatible avec la nature du dessin actuel, qui est une lecture OCR **statique** de deux photos figées (`TABLE_SEAT_NAMES`), jamais une structure vivante liée aux vrais sièges. Nécessiterait la table `sièges` à ID stable déjà mise en attente en v1.48.6 (import With Joy définitif).
+- Mise à jour complète (invitations + tables + sièges) depuis un futur CSV With Joy "final" : toujours bloquée sur l'absence d'identifiant stable par personne dans les exports reçus à ce jour (voir v1.48.6) et sur la décision en attente concernant le nœud Nzuzi/Domingos/Culumbu (tables 6/29/32) découvert en comparant `guest-list_51.csv` à la base actuelle.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (3 nouveaux/étendus), `tests/floor-plan-seats.test.ts` (1 mis à jour) : verrouillent le nouveau sens de recherche sur les trois écrans.
+
 ## [1.48.8] — 2026-09-14
 
 Deux ajouts au dessin "vu sur le plan photographié" (4 photos, retour de Gersom), toujours purement informatif — aucune migration.

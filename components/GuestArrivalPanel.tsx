@@ -7,7 +7,7 @@ import { GuestArrivalStatus, GuestRow, InvitationRow } from '@/lib/types';
 import { useOnline } from '@/hooks/useOnline';
 import { parseMembersFromNotes } from '@/lib/membersNotes';
 import { debounce } from '@/lib/debounce';
-import { TABLE_SEAT_NAMES, findSeatIndexByName } from '@/lib/floorPlanSeats';
+import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 
 // Remplace l'ancien compteur agrege "Personnes arrivees" (0..nombre_prevu,
@@ -115,7 +115,15 @@ export function GuestArrivalPanel({
   // d'invitation par le meme effet que `members`/`loading` plus bas, pour
   // ne jamais rester colle sur le siege d'une invitation precedente.
   const [highlightedSeats, setHighlightedSeats] = useState<number[]>([]);
+  // v1.48.9, retour de Gersom : "vice versa -- si j'appuie sur la chaise de
+  // la personne en dessous, ça me surligne directement dans cette page
+  // parmi les invités... c'est qui" -- meme etat que highlightedSeats, mais
+  // pour la ligne du membre correspondant (jamais l'inverse d'une recherche
+  // approchee : uniquement quand namesMatch trouve une correspondance
+  // exacte). Reinitialise partout ou highlightedSeats l'est deja.
+  const [highlightedGuestId, setHighlightedGuestId] = useState<string | null>(null);
   const seatWheelRef = useRef<HTMLDivElement>(null);
+  const membersListRef = useRef<HTMLUListElement>(null);
 
   // Ids des membres actuellement listes -- permet de filtrer LOCALEMENT les
   // evenements Realtime de la table globale `guests` (impossible de filtrer
@@ -164,6 +172,7 @@ export function GuestArrivalPanel({
     setInitializing(false);
     setMembers([]);
     setHighlightedSeats([]);
+    setHighlightedGuestId(null);
     onVisibilityChange?.(true);
     (async () => {
       let list = await load();
@@ -360,7 +369,7 @@ export function GuestArrivalPanel({
     <>
     <div className="card mb-3">
       <p className="mb-2 text-sm font-semibold">Qui est arrivé ?</p>
-      <ul className="space-y-1.5">
+      <ul ref={membersListRef} className="space-y-1.5">
         {members.map((guest) => {
           const busy = pending.has(guest.id) || initializing;
           const arrived = guest.arrival_status === 'arrive';
@@ -406,7 +415,9 @@ export function GuestArrivalPanel({
             <li
               key={guest.id}
               className={
-                'flex items-center gap-2 rounded-xl px-1.5 py-1.5 ' + (wontCome ? 'opacity-45' : '')
+                'flex items-center gap-2 rounded-xl px-1.5 py-1.5 transition-colors ' +
+                (wontCome ? 'opacity-45 ' : '') +
+                (guest.id === highlightedGuestId ? 'bg-accent-tint ring-1 ring-accent/40' : '')
               }
             >
               {canManage ? (
@@ -427,7 +438,9 @@ export function GuestArrivalPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    setHighlightedSeats((current) => (current.length === 1 && current[0] === seatIndex ? [] : [seatIndex]));
+                    const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === seatIndex;
+                    setHighlightedSeats(isDeselect ? [] : [seatIndex]);
+                    setHighlightedGuestId(isDeselect ? null : guest.id);
                     requestAnimationFrame(() => {
                       seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     });
@@ -564,14 +577,30 @@ export function GuestArrivalPanel({
           tableNumber={tableNumber as number}
           seats={seats}
           highlightedIndices={highlightedSeats}
-          onSelectSeat={(idx) =>
-            setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]))
-          }
+          onSelectSeat={(idx) => {
+            const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === idx;
+            setHighlightedSeats(isDeselect ? [] : [idx]);
+            if (isDeselect) {
+              setHighlightedGuestId(null);
+              return;
+            }
+            // v1.48.9 : "vice versa" -- toucher un siege retrouve, parmi les
+            // membres DEJA LISTES ici, celui dont le nom correspond
+            // exactement (jamais approche) au nom lu sur ce siege.
+            const seatName = seats[idx];
+            const match = seatName ? members.find((guest) => namesMatch(guest.nom_affichage, seatName)) : undefined;
+            setHighlightedGuestId(match ? match.id : null);
+            if (match) {
+              requestAnimationFrame(() => {
+                membersListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              });
+            }
+          }}
         />
         <p className="mt-2 text-center text-[11px] text-text-faint">
-          Touchez un nom, ou 📍 à côté d’un invité ci-dessus, pour mettre son siège en évidence. Extrait par lecture
-          du plan photo transmis par Gersom (14/09/2026) — purement informatif, ne reflète pas forcément la table
-          actuelle de chaque invité en base.
+          Touchez un nom, ou 📍 à côté d’un invité ci-dessus, pour mettre son siège en évidence, et vice versa.
+          Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement informatif, ne reflète pas
+          forcément la table actuelle de chaque invité en base.
         </p>
       </div>
     )}

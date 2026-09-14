@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
-import { TABLE_SEAT_NAMES, findSeatIndexByName } from '@/lib/floorPlanSeats';
+import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import {
   clearBulkMoveSelection,
@@ -70,6 +70,7 @@ function TableDetailInner() {
   const [highlightedSeats, setHighlightedSeats] = useState<number[]>([]);
   const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null);
   const seatWheelRef = useRef<HTMLDivElement>(null);
+  const invitationsListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (!echangeAvecTableId) return;
@@ -326,7 +327,7 @@ function TableDetailInner() {
           </p>
         )}
 
-        <ul className="divide-y divide-hairline">
+        <ul ref={invitationsListRef} className="divide-y divide-hairline">
           {invitations.map((inv) => {
             const prenoms = extractPrenoms(inv.notes);
             const checked = selectedIds.has(inv.id);
@@ -444,13 +445,35 @@ function TableDetailInner() {
               seats={TABLE_SEAT_NAMES[table.number]}
               highlightedIndices={highlightedSeats}
               onSelectSeat={(idx) => {
-                setHighlightedSeats((current) => (current.length === 1 && current[0] === idx ? [] : [idx]));
-                setSelectedInvitationId(null);
+                const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === idx;
+                setHighlightedSeats(isDeselect ? [] : [idx]);
+                if (isDeselect) {
+                  setSelectedInvitationId(null);
+                  return;
+                }
+                // v1.48.9, retour de Gersom : "vice versa" -- toucher un
+                // siege retrouve, parmi les invitations de CETTE table,
+                // celle dont un membre correspond exactement (jamais
+                // approche) au nom lu sur ce siege.
+                const seatName = table ? TABLE_SEAT_NAMES[table.number]?.[idx] : undefined;
+                const match = seatName
+                  ? invitations.find(
+                      (inv) =>
+                        namesMatch(inv.nom_affichage, seatName) ||
+                        extractMembresComplet(inv.notes).some((m) => namesMatch(m, seatName))
+                    )
+                  : undefined;
+                setSelectedInvitationId(match ? match.id : null);
+                if (match) {
+                  requestAnimationFrame(() => {
+                    invitationsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  });
+                }
               }}
             />
             <p className="mt-2 text-center text-[11px] text-text-faint">
-              Touchez 📍 à côté d'un nom ci-dessus pour mettre son siège en évidence. Purement informatif, ne reflète
-              pas forcément la table actuelle de chaque invité en base.
+              Touchez 📍 à côté d'un nom ci-dessus pour mettre son siège en évidence, et vice versa. Purement
+              informatif, ne reflète pas forcément la table actuelle de chaque invité en base.
             </p>
           </div>
         )}
