@@ -181,19 +181,26 @@ async function finalizeDecision(
   }
 
   const reserveRemaining = await getReserveRemaining(supabase, updated.event_id);
-  try {
-    await notifyApproverDecision(updated, decision, reserveRemaining);
-  } catch {
-    // Le SMS/WhatsApp de confirmation est un bonus, pas une condition de
-    // succès de la décision elle-même -- déjà actée en base au-dessus.
-  }
-  if (decision === 'approuve') {
-    try {
-      await notifyGuestApprovalPlaceurs(supabase, updated, tableNumber);
-    } catch {
-      // La notification push est best-effort; la décision reste valide.
-    }
-  }
+  // v1.48.3, retour de Gersom : "les trois petits points restent là très
+  // longtemps" en approuvant/reconsidérant -- ces deux envois sont chacun
+  // best-effort et indépendants l'un de l'autre (SMS/WhatsApp de
+  // confirmation à l'approbateur, Push aux placeurs), mais étaient attendus
+  // en séquence (l'un après l'autre) au lieu d'en parallèle, doublant le
+  // temps d'attente pour rien. Lancés ensemble désormais -- toujours
+  // rattrapés individuellement (voir `.catch` ci-dessous), jamais une
+  // condition de succès de la décision elle-même, déjà actée en base
+  // au-dessus. Bornés en plus à 8s chacun (lib/twilio.ts, lib/webPush.ts).
+  await Promise.allSettled([
+    notifyApproverDecision(updated, decision, reserveRemaining).catch(() => {
+      // Le SMS/WhatsApp de confirmation est un bonus, pas une condition de
+      // succès de la décision elle-même -- déjà actée en base au-dessus.
+    }),
+    decision === 'approuve'
+      ? notifyGuestApprovalPlaceurs(supabase, updated, tableNumber).catch(() => {
+          // La notification push est best-effort; la décision reste valide.
+        })
+      : Promise.resolve(),
+  ]);
 
   return { ok: true, request: updated };
 }

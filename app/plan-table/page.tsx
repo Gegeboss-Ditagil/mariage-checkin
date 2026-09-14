@@ -21,6 +21,7 @@ import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
 import { TABLE_SEAT_NAMES } from '@/lib/floorPlanSeats';
+import { TableSeatWheel } from '@/components/TableSeatWheel';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
 import { applyRowDelta } from '@/lib/realtimeDelta';
@@ -493,32 +494,19 @@ export default function PlanTablePage() {
 
                   {selectedTable && TABLE_SEAT_NAMES[selectedTable.number] && (
                     <div className="card mt-3 p-4">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint">
+                      <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
                         Vu sur le plan photographié · à titre indicatif
                       </p>
-                      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-                        {TABLE_SEAT_NAMES[selectedTable.number].map((name, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setHighlightedSeat((current) => (current === idx ? null : idx))}
-                            disabled={!name}
-                            className={clsx(
-                              'rounded-lg border px-2 py-1.5 text-left text-[11px] leading-tight transition-colors',
-                              !name
-                                ? 'border-dashed border-hairline text-text-faint'
-                                : highlightedSeat === idx
-                                  ? 'border-status-complete bg-status-complete/20 font-semibold text-text'
-                                  : 'border-hairline bg-surface-2 text-text-muted hover:border-accent/50'
-                            )}
-                          >
-                            {name || `Siège ${idx + 1} (vide)`}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="mt-2 text-[11px] text-text-faint">
-                        Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement informatif,
-                        ne reflète pas forcément la table actuelle de chaque invité en base.
+                      <TableSeatWheel
+                        tableNumber={selectedTable.number}
+                        seats={TABLE_SEAT_NAMES[selectedTable.number]}
+                        highlightedIndex={highlightedSeat}
+                        onSelectSeat={(idx) => setHighlightedSeat((current) => (current === idx ? null : idx))}
+                      />
+                      <p className="mt-2 text-center text-[11px] text-text-faint">
+                        Touchez un nom pour mettre son siège en évidence. Extrait par lecture du plan photo transmis
+                        par Gersom (14/09/2026) — purement informatif, ne reflète pas forcément la table actuelle de
+                        chaque invité en base.
                       </p>
                     </div>
                   )}

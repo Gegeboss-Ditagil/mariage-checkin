@@ -3,6 +3,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { hasCapability } from '@/lib/permissions';
 import type { Role } from '@/lib/types';
 
+// v1.48.3 : même correctif que lib/twilio.ts (TWILIO_REQUEST_TIMEOUT_MS) --
+// ces envois Push sont best-effort (voir lib/guestApprovalDecide.ts et les
+// routes d'approbation/assignation qui les appellent, toujours dans un
+// `catch` ignoré), mais `webpush.sendNotification` sans option `timeout`
+// pouvait rester bloqué sans limite en cas de endpoint push lent/injoignable
+// -- retour de Gersom : "les trois petits points restent là très longtemps"
+// en approuvant. Borné à 8s comme pour Twilio.
+const PUSH_REQUEST_TIMEOUT_MS = 8000;
+
 function configure(): boolean {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -37,7 +46,11 @@ export async function notifyGuestApprovalReviewers(
   });
   await Promise.allSettled(subscriptions.filter((item) => allowed.has(item.user_id)).map(async (item) => {
     try {
-      await webpush.sendNotification({ endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } }, payload);
+      await webpush.sendNotification(
+        { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } },
+        payload,
+        { timeout: PUSH_REQUEST_TIMEOUT_MS }
+      );
     } catch (error) {
       const statusCode = (error as { statusCode?: number }).statusCode;
       if (statusCode === 404 || statusCode === 410) await supabase.from('push_subscriptions').delete().eq('id', item.id);
@@ -69,7 +82,11 @@ export async function notifyGuestApprovalPlaceurs(
   });
   await Promise.allSettled(subscriptions.filter((item) => placeurs.has(item.user_id)).map(async (item) => {
     try {
-      await webpush.sendNotification({ endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } }, payload);
+      await webpush.sendNotification(
+        { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } },
+        payload,
+        { timeout: PUSH_REQUEST_TIMEOUT_MS }
+      );
     } catch (error) {
       const statusCode = (error as { statusCode?: number }).statusCode;
       if (statusCode === 404 || statusCode === 410) await supabase.from('push_subscriptions').delete().eq('id', item.id);

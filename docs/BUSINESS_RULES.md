@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.48.0**
+**Version documentaire : 1.48.3**
 **Dernière mise à jour : 2026-09-14**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -86,6 +86,8 @@ Depuis v1.30.1, `manageTags` est limité à `admin` et `directeur`; placeur et a
 - **`agent_checkin` rejoint à son tour ce même comportement contextuel**, même jour (retour de Gersom sur Scotty Sanda : le bouton doré du bas doit être Scan, pas un aller-retour vers Bord, une fois déjà sur `/dashboard`) : Scan (jamais l'appareil photo, ce rôle n'a pas `submitGuestApproval`) au centre sur `/dashboard`/`/scan`/`/agenda`, Bord au centre partout ailleurs — barre générique inchangée sinon.
 
 Depuis le 30/08/2026, un placeur, un directeur de festin ou l'admin peut gérer un invité non prévu directement depuis `/scan`, avec une approbation à distance **avant** de le laisser entrer — capacité dédiée `guestApproval` (jamais agent scan ni visibilité : « si le scanner voit des personnes en plus, il ne fait rien, il va voir le placeur directement », demande explicite de Gersom).
+
+**v1.48.3 : Twilio (SMS + WhatsApp ci-dessous) est désactivé par un interrupteur explicite, `TWILIO_ENABLED` (`lib/twilio.ts`), volontairement à `false` pour l'instant** — retour de Gersom le 14/09/2026 : « c'est toggle off... on activera plus tard ». Tant que ce toggle reste désactivé, aucune requête réseau Twilio n'est même tentée (ni SMS ni WhatsApp, dans un sens comme dans l'autre) : la demande d'invité surprise, la décision (approuver/refuser/reconsidérer) et l'assignation de table restent entièrement fonctionnelles dans l'application elle-même (créées et décidées uniquement depuis `/scan`/`/approbations`, jamais par SMS/WhatsApp/lien public tant que le toggle est désactivé) — seule la notification externe à l'approbateur et le rapport au directeur de festin ne partent pas. Réactiver ne nécessite qu'une seule variable d'environnement (`TWILIO_ENABLED=true`, en plus des identifiants `TWILIO_*`), sans changement de code — voir `DEPLOIEMENT.md`.
 
 - **Photo** (une seule prise, appareil photo natif) → **côté** (Nelly/Gégé) → **nom + nombre d'invités** → la demande est enregistrée et un SMS **et** un message WhatsApp partent en parallèle vers l'approbateur configuré pour ce côté (`guest_approvers` : « Mon Papa » pour le côté Gégé, « Papa David » pour le côté Nelly — table de configuration, pas des numéros codés en dur, modifiable depuis Supabase sans redéploiement). Le double canal existe « au cas où [l'approbateur] n'a pas de réseau [cellulaire] et est connecté au wifi » (WhatsApp passe par data/wifi) — chacun est best-effort, l'échec de l'un (WhatsApp tant que son Content Template n'est pas encore approuvé côté Twilio/Meta) ne bloque jamais l'autre.
 - Ni le SMS ni le WhatsApp ne contiennent **jamais la photo elle-même** (un numéro Twilio français ne supporte pas les MMS ; un message WhatsApp initié par l'app doit rester dans son Content Template pré-approuvé, pas de média possible) — uniquement un lien vers `/approve/[token]`, une page **publique** (sans connexion) qui l'affiche à l'ouverture.

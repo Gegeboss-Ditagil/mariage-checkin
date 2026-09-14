@@ -113,10 +113,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'insert_failed' }, { status: 500 });
   }
 
-  // Le SMS peut échouer (Twilio non configuré, numéro invalide, solde...)
-  // sans faire perdre la demande déjà enregistrée (photo + infos) : l'agent
-  // est prévenu explicitement dans la réponse pour contacter l'approbateur
-  // autrement le temps de résoudre le problème.
+  // Le SMS peut échouer (Twilio désactivé par le toggle TWILIO_ENABLED,
+  // non configuré, numéro invalide, solde...) sans faire perdre la demande
+  // déjà enregistrée (photo + infos) : l'agent est prévenu explicitement
+  // dans la réponse pour contacter l'approbateur autrement le temps de
+  // résoudre le problème (ou tant que le toggle reste volontairement
+  // désactivé -- voir lib/twilio.ts).
   let smsSent = true;
   let smsError: string | null = null;
   try {
@@ -125,7 +127,7 @@ export async function POST(req: NextRequest) {
     smsSent = false;
     smsError =
       err instanceof TwilioConfigError
-        ? 'Twilio non configuré (variables d\'environnement manquantes)'
+        ? 'Twilio désactivé ou non configuré (SMS non envoyé) — prévenez l\'approbateur autrement'
         : err instanceof TwilioSendError
           ? "Twilio a refusé l'envoi (numéro invalide ?)"
           : 'Erreur inconnue';

@@ -3,6 +3,58 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.3] — 2026-09-14
+
+Bug signalé par Gersom : le bouton reste sur « … » très longtemps en approuvant/reconsidérant/assignant une table + désactivation intentionnelle de Twilio via un interrupteur explicite.
+
+### Corrigé
+- **Approuver/reconsidérer/assigner une table restait bloqué sur « … » très longtemps** — root cause (suivi `docs/QE_QA_PROCESS.md`) : `finalizeDecision` (`lib/guestApprovalDecide.ts`, partagée par la décision normale, `/approve/[token]`, WhatsApp entrant et la reconsidération) et `app/api/guest-approvals/[id]/assign-table/route.ts` attendaient chacun deux envois indépendants documentés « best-effort » (SMS/WhatsApp de confirmation, Push aux placeurs, rapport SMS aux directeurs de festin) en séquence et sans aucune limite de temps avant de répondre à l'agent. Corrigé une seule fois pour tous les appelants : `lib/twilio.ts` borne chaque requête HTTP Twilio à 8s (`AbortSignal.timeout`), `lib/webPush.ts` borne chaque envoi Push à 8s (option `timeout` native de `web-push`), et les deux envois indépendants de chaque route tournent désormais en parallèle (`Promise.allSettled`) plutôt qu'en séquence.
+
+### Ajouté
+- **`TWILIO_ENABLED`** (`lib/twilio.ts`, `isTwilioEnabled()`) : interrupteur explicite pour Twilio (SMS + WhatsApp), désactivé par défaut — demande de Gersom : Twilio reste volontairement « toggle off » pour l'instant, activation prévue plus tard. Centralisé dans `getTwilioConfig`/`getWhatsAppConfig` : `sendSms`/`sendWhatsApp` et tous leurs appelants (`lib/guestApprovalNotify.ts`) s'adaptent automatiquement à l'état du toggle sans aucun changement de code ailleurs. Réactiver plus tard ne demande qu'une seule variable d'environnement (`TWILIO_ENABLED=true`, en plus des identifiants `TWILIO_*`), voir `DEPLOIEMENT.md`. Tant que désactivé, aucune requête réseau Twilio n'est même tentée — la création/décision/assignation d'un invité surprise reste entièrement fonctionnelle depuis l'application, seule la notification externe (approbateur, directeur de festin) ne part pas.
+
+### Tests
+- `tests/guest-approvals.test.ts` (5 nouveaux tests) : timeouts Twilio/Push bornés à quelques secondes, envois indépendants lancés en parallèle (`finalizeDecision`, `assign-table`), et comportement du toggle `TWILIO_ENABLED` vérifié par test comportemental (aucune requête réseau tentée quand désactivé, réactivation sans changement d'appel une fois `TWILIO_ENABLED=true` posé).
+
+### Migrations
+- Aucune (changements de code + une nouvelle variable d'environnement optionnelle, désactivée par défaut).
+
+Version: 1.48.2 → 1.48.3
+
+## [1.48.2] — 2026-09-14
+
+Remplacement du panneau « Vu sur le plan photographié » de `/plan-table` : un vrai dessin de table (façon seatplan.io) au lieu d'une grille de boutons.
+
+### Changé
+- **`components/TableSeatWheel.tsx` (nouveau)** : dessin SVG circulaire d'une table — dix étiquettes de siège rayonnant autour d'un cercle central numéroté, dans le sens horaire depuis le haut, chacune tournée à son propre angle (même mécanisme `rotate()` que les libellés de `components/FloorPlan.tsx`), fidèle aux photos seatplan.io transmises par Gersom (y compris les étiquettes du bas, qui se retrouvent donc la tête en bas — aucune correction de lisibilité). Remplace l'ancienne grille de boutons (`grid grid-cols-2`) sur `/plan-table`.
+- **Sièges vides** rendus visuellement distincts (contour pointillé, libellé « Vide »).
+- **Mise en évidence d'un siège** : reprend l'état `highlightedSeat` existant (introduit en v1.48.0) — toucher un nom bascule sa surbrillance (couleurs accent), comme sur l'exemple de carte nominative numérique montré par Gersom.
+- `app/plan-table/page.tsx` : même conteneur `.card` et même texte informatif (complété d'« Touchez un nom pour mettre son siège en évidence. »), seul le contenu du panneau change — toujours purement informatif, `lib/floorPlanSeats.ts` inchangé et reste la seule source de ces noms (jamais `invitations.table_id`).
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (nouveau) : le composant exporte `TableSeatWheel`, rayonne via `rotate()` (pas de grille de boutons), distingue les sièges vides, met en évidence le siège sélectionné, ne fait aucun appel réseau/Supabase ; `/plan-table` rend bien `<TableSeatWheel>` avec les bonnes props.
+- `tests/floor-plan-seats.test.ts` : inchangé et toujours au vert (aucune donnée modifiée, seul le rendu change).
+
+### Migrations
+- Aucune (changement purement visuel côté client).
+
+Version: 1.48.1 → 1.48.2
+
+## [1.48.1] — 2026-09-14
+
+Correctif de la refonte du plan de salle (v1.48.0) : les zones nord et sud étaient inversées.
+
+### Corrigé
+- **Zones nord/sud inversées sur `/plan-table`** : retour de Gersom (capture d'écran de l'app) — la zone à 22 tables (celle contenant la paire 22/23) doit être au **nord** (en haut), pas au sud, et la grille 5×4 « propre » (20 tables) doit être au **sud** (en bas). Corrigé dans `components/FloorPlan.tsx` en permutant uniquement la bande de rangées Y de chaque bloc (mêmes colonnes X qu'avant pour chaque table, donc même alignement et mêmes voisins) — aucune position n'a été redevinée, seul le bloc entier change de bande verticale. La paire 22/23 (première colonne du bloc nord, rangées 1-2) se retrouve ainsi bien au nord-ouest, comme demandé. Les en-têtes de zone (`FLOOR_PLAN_ZONE_LABELS`) n'ont pas eu besoin de changer : leur position dépendait déjà de la bande Y (haut/bas), pas des tables qui s'y trouvent.
+
+### Tests
+- `tests/floor-plan.test.ts`, `tests/floor-plan-seats.test.ts` : inchangés et toujours au vert (la couverture/le nombre de tables ne changent pas, seule leur position bascule).
+
+### Migrations
+- Aucune (changement purement visuel côté client).
+
+Version: 1.48.0 → 1.48.1
+
 ## [1.48.0] — 2026-09-14
 
 Refonte du plan de salle interactif selon la nouvelle configuration de zones (photos transmises par Gersom), + surbrillance optionnelle des sièges par table.
