@@ -31,37 +31,46 @@ import clsx from 'clsx';
 // physiquement dans le meme bloc que 41/42) -- seul l'agencement relatif
 // vu sur les photos est repris ici, pas une interpretation de boussole.
 //
-// Zone nord (haut, 5 colonnes x 4 rangees) :
-//   Rangee 1 : 4, 5, 13, 12, 20
-//   Rangee 2 : 2, 3, 6, 14, 19
-//   Rangee 3 : 11, 25, 32, 15, 27
-//   Rangee 4 : 1, 10, 16, 17, 9
-// Zone sud (bas, 6 colonnes x 4 rangees ; les 2 cases vides en bas a gauche
-// correspondent a la zone "Piste et File Attente" visible sur la photo,
-// deja representee par la salle "Piste de danse" existante -- aucune table
-// n'y est dessinee) :
+// Correctif du 14/09/2026 (retour de Gersom sur capture d'ecran de l'app) :
+// les deux zones etaient inversees -- la zone a 22 tables (avec la paire
+// 22/23) doit etre au NORD (en haut), pas au sud, et la grille 5x4 "propre"
+// doit etre au SUD (en bas). Corrige en permutant uniquement la bande de
+// rangees Y de chaque bloc (memes colonnes X qu'avant, donc meme alignement
+// et memes tables cote a cote) : aucune position n'est "devinee", seul le
+// bloc entier change de bande verticale.
+//
+// Zone nord (haut, 6 colonnes x 4 rangees ; les 2 cases vides en bas a
+// gauche correspondent a la zone "Piste et File Attente" visible sur la
+// photo, deja representee par la salle "Piste de danse" existante -- aucune
+// table n'y est dessinee) :
 //   Rangee 1 : 22, 18, 24, 31, 41, 42
 //   Rangee 2 : 23, 30, 29, 7, 36, 40
 //   Rangee 3 : (vide), 8, 28, 26, 37, 39
 //   Rangee 4 : (vide), 33, 38, 21, 34, 35
-// Tables 41 ("Houston", reguliere depuis v1.47.0) et 42 ("Johannesburg",
-// reserve) : positionnees exactement comme sur la photo, en bout de la
-// premiere rangee de la zone sud, jamais isolees ni devinees.
+// La paire 22/23 (premiere colonne, rangees 1-2) se retrouve ainsi bien au
+// nord-ouest, comme demande. Tables 41 ("Houston", reguliere depuis v1.47.0)
+// et 42 ("Johannesburg", reserve) : positionnees exactement comme sur la
+// photo, en bout de la premiere rangee, jamais isolees ni devinees.
+// Zone sud (bas, 5 colonnes x 4 rangees) :
+//   Rangee 1 : 4, 5, 13, 12, 20
+//   Rangee 2 : 2, 3, 6, 14, 19
+//   Rangee 3 : 11, 25, 32, 15, 27
+//   Rangee 4 : 1, 10, 16, 17, 9
 export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
-  // Zone nord (colonnes alignees sur celles de la zone sud pour une grille
-  // visuellement cohesive : 644-996, memes bornes que la zone sud ci-dessous).
-  4: [644, 118], 5: [732, 118], 13: [820, 118], 12: [908, 118], 20: [996, 118],
-  2: [644, 210], 3: [732, 210], 6: [820, 210], 14: [908, 210], 19: [996, 210],
-  11: [644, 302], 25: [732, 302], 32: [820, 302], 15: [908, 302], 27: [996, 302],
-  1: [644, 394], 9: [732, 394], 10: [820, 394], 16: [908, 394], 17: [996, 394],
-  // Zone sud (6 colonnes ; colonne x=644 vide sur les rangees 3-4 -- la cible
-  // tactile de chaque table, rayon 34, doit degager la salle "Piste de
+  // Zone nord (6 colonnes ; colonne x=644 vide sur les rangees 3-4 -- la
+  // cible tactile de chaque table, rayon 34, doit degager la salle "Piste de
   // danse"/"Stage band" a gauche (x<=610) et le "Couloir Est" a droite
   // (x>=1030) : colonnes bornees a 644-996 pour degager les deux.
-  22: [644, 610], 18: [714, 610], 24: [785, 610], 31: [855, 610], 41: [926, 610], 42: [996, 610],
-  23: [644, 690], 30: [714, 690], 29: [785, 690], 7: [855, 690], 36: [926, 690], 40: [996, 690],
-  8: [714, 770], 28: [785, 770], 26: [855, 770], 37: [926, 770], 39: [996, 770],
-  33: [714, 850], 38: [785, 850], 21: [855, 850], 34: [926, 850], 35: [996, 850],
+  22: [644, 118], 18: [714, 118], 24: [785, 118], 31: [855, 118], 41: [926, 118], 42: [996, 118],
+  23: [644, 210], 30: [714, 210], 29: [785, 210], 7: [855, 210], 36: [926, 210], 40: [996, 210],
+  8: [714, 302], 28: [785, 302], 26: [855, 302], 37: [926, 302], 39: [996, 302],
+  33: [714, 394], 38: [785, 394], 21: [855, 394], 34: [926, 394], 35: [996, 394],
+  // Zone sud (colonnes alignees sur celles de la zone nord pour une grille
+  // visuellement cohesive : 644-996, memes bornes que la zone nord ci-dessus).
+  4: [644, 610], 5: [732, 610], 13: [820, 610], 12: [908, 610], 20: [996, 610],
+  2: [644, 690], 3: [732, 690], 6: [820, 690], 14: [908, 690], 19: [996, 690],
+  11: [644, 770], 25: [732, 770], 32: [820, 770], 15: [908, 770], 27: [996, 770],
+  1: [644, 850], 9: [732, 850], 10: [820, 850], 16: [908, 850], 17: [996, 850],
 };
 
 // En-tetes de zone purement decoratifs (pas de tag staff, pas de clic) --

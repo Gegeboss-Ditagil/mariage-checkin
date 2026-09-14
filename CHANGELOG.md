@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.1] — 2026-09-14
+
+Correctif de la refonte du plan de salle (v1.48.0) : les zones nord et sud étaient inversées.
+
+### Corrigé
+- **Zones nord/sud inversées sur `/plan-table`** : retour de Gersom (capture d'écran de l'app) — la zone à 22 tables (celle contenant la paire 22/23) doit être au **nord** (en haut), pas au sud, et la grille 5×4 « propre » (20 tables) doit être au **sud** (en bas). Corrigé dans `components/FloorPlan.tsx` en permutant uniquement la bande de rangées Y de chaque bloc (mêmes colonnes X qu'avant pour chaque table, donc même alignement et mêmes voisins) — aucune position n'a été redevinée, seul le bloc entier change de bande verticale. La paire 22/23 (première colonne du bloc nord, rangées 1-2) se retrouve ainsi bien au nord-ouest, comme demandé. Les en-têtes de zone (`FLOOR_PLAN_ZONE_LABELS`) n'ont pas eu besoin de changer : leur position dépendait déjà de la bande Y (haut/bas), pas des tables qui s'y trouvent.
+
+### Tests
+- `tests/floor-plan.test.ts`, `tests/floor-plan-seats.test.ts` : inchangés et toujours au vert (la couverture/le nombre de tables ne changent pas, seule leur position bascule).
+
+### Migrations
+- Aucune (changement purement visuel côté client).
+
+Version: 1.48.0 → 1.48.1
+
 ## [1.48.0] — 2026-09-14
 
 Refonte du plan de salle interactif selon la nouvelle configuration de zones (photos transmises par Gersom), + surbrillance optionnelle des sièges par table.
