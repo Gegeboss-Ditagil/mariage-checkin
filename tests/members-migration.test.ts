@@ -28,3 +28,23 @@ test('la route d initialisation utilise la capacite centrale manageMembers', () 
   assert.match(initializeRoute, /hasCapability\(user\.role, 'manageMembers'\)/);
   assert.doesNotMatch(initializeRoute, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
 });
+
+const renameMigration = readFileSync(
+  new URL('../supabase/migrations/0053_rename_member_syncs_solo_display_name.sql', import.meta.url),
+  'utf8'
+);
+const renameRoute = readFileSync(new URL('../app/api/members/rename/route.ts', import.meta.url), 'utf8');
+
+test('renommer un membre fait suivre le nom du haut UNIQUEMENT pour une invitation solo (14/09/2026)', () => {
+  // Retour de Gersom (capture d'ecran) : "le nom de l'invitation aussi en
+  // haut doit suivre la correction". Un groupe garde son libelle propre
+  // ("Famille X") -- jamais ecrase par le nom d'un seul de ses membres.
+  assert.match(renameMigration, /select count\(\*\) into v_member_count from invitation_guests where invitation_id = v_invitation_id;/);
+  assert.match(renameMigration, /if v_member_count = 1 then/);
+  assert.match(renameMigration, /update invitations set nom_affichage = v_guest\.nom_affichage where id = v_invitation_id;/);
+});
+
+test('la route de renommage d un membre reste reservee a manageMembers (agent_checkin exclu depuis le 14\\/09\\/2026)', () => {
+  assert.match(renameRoute, /hasCapability\(user\.role, 'manageMembers'\)/);
+  assert.doesNotMatch(renameRoute, /agent_checkin/);
+});
