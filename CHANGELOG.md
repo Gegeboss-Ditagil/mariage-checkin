@@ -3,6 +3,31 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.0] — 2026-09-14
+
+Refonte du plan de salle interactif selon la nouvelle configuration de zones (photos transmises par Gersom), + surbrillance optionnelle des sièges par table.
+
+### Ajouté
+- **`components/FloorPlan.tsx` redessiné en deux zones (nord/sud)** reproduisant fidèlement l'ordre et le voisinage des tables sur les deux photos zoomées transmises par Gersom : zone nord (5 colonnes × 4 rangées) et zone sud (6 colonnes × 4 rangées, avec la zone "Piste et File Attente" de la photo laissée vide — déjà représentée par la salle "Piste de danse" existante). Les 42 tables sont désormais toutes positionnées sur le plan, y compris la nouvelle table 42 (« Johannesburg »). Extraction par OCR (crops zoomés de chaque table) croisée avec deux sources indépendantes pour éviter toute erreur silencieuse (`docs/DATA_CHANGE_INSTRUCTIONS.md` section 6) : les tags `T0xx`/`F0xx` de `guest-list_48.csv` et l'arithmétique de couverture complète (42 tables sans doublon ni trou). Deux en-têtes de zone purement décoratifs ajoutés (`FLOOR_PLAN_ZONE_LABELS`).
+- **`lib/floorPlanSeats.ts`** : noms de sièges lus par OCR sur les deux photos (ordre horaire depuis midi, tel que sur chaque photo), **purement informatif** — jamais une source de placement (qui reste `invitations.table_id`). Recoupé avec la base : ~87 % des noms nommés retrouvent une invitation existante (même table, table différente si réorganisée depuis, ou parmi les 19 invitations ajoutées sans table en v1.47.0) — cette validation croisée a d'ailleurs permis de retrouver l'orthographe exacte de plusieurs noms mal lus par l'OCR initial (ex. « Jean-Ciben Ca ous » → « Jean-Clivens Le Caous », confirmé en base).
+- **`/plan-table` : panneau « Vu sur le plan photographié »** sous la fiche de la table sélectionnée — liste ses 10 sièges (vides ou nommés), chacun togglable en surbrillance (état local uniquement, jamais envoyé au serveur, réinitialisé à chaque changement de table).
+
+### Corrigé
+- **Bug réel trouvé en recroisant l'OCR avec les positions déjà commitées** : la rangée 4 de la zone nord assignait par erreur les tables 10/16/17/9 aux mauvaises colonnes (`1, 10, 16, 17, 9` au lieu de `1, 9, 10, 16, 17`) — corrigé après re-vérification photo par photo.
+
+### Non fait dans ce lot
+- Le plan reste une reconstruction approximative au pixel près (redessinée à la main, jamais une trace exacte) — seul l'ordre/voisinage relatif de chaque photo est repris fidèlement.
+- Aucune réassignation de `invitations.table_id` déduite de ce travail : les 15 écarts entre le plan photographié et la base actuelle (ex. « Furty Matuba » photographiée table 18, actuellement table 37 en base) sont volontairement **non appliqués** — hors périmètre de ce lot, à traiter séparément si Gersom le demande.
+
+### Tests
+- `tests/floor-plan.test.ts` : 42 tables (au lieu de 41).
+- `tests/floor-plan-seats.test.ts` (nouveau) : couverture des 42 tables, table 42 vide, pas de source de placement, panneau `/plan-table`, réinitialisation de la surbrillance.
+
+### Migrations
+- Aucune (changement purement visuel/informatif, aucune écriture Supabase).
+
+Version: 1.47.0 → 1.48.0
+
 ## [1.47.0] — 2026-09-14
 
 Mise à jour ciblée du fichier d'invités (`guest-list_48.csv`, export With Joy le plus récent transmis par Gersom, "tu as tous les droits... on ne change pas toute la base, juste quelques changements") + nouvelle table 42 excédentaire.

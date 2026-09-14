@@ -11,38 +11,77 @@ import clsx from 'clsx';
 // Systeme de coordonnees SVG propre a ce composant, en unites arbitraires
 // (viewBox 0 0 1400 1080), sans rapport avec les coordonnees Supabase.
 //
-// La table 41 (reserve) a desormais une position definie ici (mise a jour
-// du 23/08/2026, confirmee par Gersom) -- avant cette date elle n'apparaissait
-// pas sur le plan, son emplacement physique n'etant pas encore fixe.
+// v1.48.0 (14/09/2026) : disposition entierement reconstruite a partir des
+// deux photos zoomees ("zone nord"/"zone sud") transmises par Gersom apres
+// la reorganisation familiale ("les tables sont un peu melangees comparees
+// a avant"). Extraction par OCR (crops zoomes de chaque table, lus un par
+// un), CROISEE avec deux sources independantes pour eviter toute erreur de
+// lecture silencieuse (regle docs/DATA_CHANGE_INSTRUCTIONS.md section 6) :
+// (1) les tags de table T0xx/F0xx du CSV With Joy le plus recent
+// (guest-list_48.csv) matchent exactement les memes numeros aux memes noms
+// pour plusieurs tables (ex: table 8 = "Luzolo P. Menga"/"Tia Nzuzi
+// Culumbu", tag F008 en CSV) ; (2) l'arithmetique ferme (les deux photos
+// couvrent ensemble exactement les 42 tables sans doublon ni trou, chaque
+// zone formant une grille complete) confirme qu'aucun numero n'est manquant
+// ou en double. Reste approximatif au pixel pres (redessine a la main,
+// jamais une trace exacte), mais l'ORDRE et le VOISINAGE de chaque table
+// avec ses voisines reproduit fidelement la grille de chaque photo. La
+// numerotation elle-meme n'a pas de sens geographique cardinal fixe (malgre
+// les etiquettes "nord"/"sud" de Gersom, les tables 22/23 apparaissent
+// physiquement dans le meme bloc que 41/42) -- seul l'agencement relatif
+// vu sur les photos est repris ici, pas une interpretation de boussole.
 //
-// v1.47.0 (14/09/2026) : la table 41 est devenue une table reguliere
-// ("Houston") et la nouvelle table 42 ("Johannesburg") reprend son role de
-// reserve -- ce schema garde encore l'ancienne disposition (redessinee a la
-// main a partir des photos du 23/08/2026) et n'inclut pas encore la table 42
-// ni la nouvelle configuration de zones (20 tables sud + 22 tables nord,
-// retour de Gersom du 14/09/2026) : un plan photographie plus recent existe
-// mais son OCR n'est pas encore assez fiable pour redessiner ce schema en
-// confiance -- a refaire dans une prochaine version plutot que de deviner
-// des coordonnees. En attendant, la table 42 reste pleinement fonctionnelle
-// partout ailleurs (listes, jauges de capacite, assignation) ; seul ce plan
-// SVG optionnel ne l'affiche pas encore.
+// Zone nord (haut, 5 colonnes x 4 rangees) :
+//   Rangee 1 : 4, 5, 13, 12, 20
+//   Rangee 2 : 2, 3, 6, 14, 19
+//   Rangee 3 : 11, 25, 32, 15, 27
+//   Rangee 4 : 1, 10, 16, 17, 9
+// Zone sud (bas, 6 colonnes x 4 rangees ; les 2 cases vides en bas a gauche
+// correspondent a la zone "Piste et File Attente" visible sur la photo,
+// deja representee par la salle "Piste de danse" existante -- aucune table
+// n'y est dessinee) :
+//   Rangee 1 : 22, 18, 24, 31, 41, 42
+//   Rangee 2 : 23, 30, 29, 7, 36, 40
+//   Rangee 3 : (vide), 8, 28, 26, 37, 39
+//   Rangee 4 : (vide), 33, 38, 21, 34, 35
+// Tables 41 ("Houston", reguliere depuis v1.47.0) et 42 ("Johannesburg",
+// reserve) : positionnees exactement comme sur la photo, en bout de la
+// premiere rangee de la zone sud, jamais isolees ni devinees.
 export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
-  // Bloc "Tables amis" (22-41), reconstruit a partir de la photo annotee du
-  // 23/08/2026 : une 6e colonne a ete ajoutee a gauche pour la table 41 :
-  // approximation raisonnable a partir d'une photo annotee a la main, pas
-  // une trace pixel par pixel -- a corriger si l'emplacement reel differe.
-  22: [650, 118], 24: [718, 118], 29: [786, 118], 30: [855, 118], 37: [923, 118], 41: [991, 118],
-  23: [650, 210], 25: [718, 210], 28: [786, 210], 31: [855, 210], 36: [923, 210], 40: [991, 210],
-  26: [718, 302], 27: [786, 302], 32: [855, 302], 35: [923, 302], 39: [991, 302],
-  33: [855, 394], 34: [923, 394], 38: [991, 394],
-  // Bloc "familles" (1-21), inchange -- 5 rangees x 5 colonnes (premiere et
-  // derniere rangee incompletes).
-  6: [769, 610], 13: [843, 610], 14: [917, 610], 21: [991, 610],
-  5: [695, 690], 7: [769, 690], 12: [843, 690], 15: [917, 690], 20: [991, 690],
-  4: [695, 770], 8: [769, 770], 11: [843, 770], 16: [917, 770], 19: [991, 770],
-  3: [695, 850], 9: [769, 850], 10: [843, 850], 17: [917, 850], 18: [991, 850],
-  1: [695, 930], 2: [769, 930],
+  // Zone nord (colonnes alignees sur celles de la zone sud pour une grille
+  // visuellement cohesive : 644-996, memes bornes que la zone sud ci-dessous).
+  4: [644, 118], 5: [732, 118], 13: [820, 118], 12: [908, 118], 20: [996, 118],
+  2: [644, 210], 3: [732, 210], 6: [820, 210], 14: [908, 210], 19: [996, 210],
+  11: [644, 302], 25: [732, 302], 32: [820, 302], 15: [908, 302], 27: [996, 302],
+  1: [644, 394], 9: [732, 394], 10: [820, 394], 16: [908, 394], 17: [996, 394],
+  // Zone sud (6 colonnes ; colonne x=644 vide sur les rangees 3-4 -- la cible
+  // tactile de chaque table, rayon 34, doit degager la salle "Piste de
+  // danse"/"Stage band" a gauche (x<=610) et le "Couloir Est" a droite
+  // (x>=1030) : colonnes bornees a 644-996 pour degager les deux.
+  22: [644, 610], 18: [714, 610], 24: [785, 610], 31: [855, 610], 41: [926, 610], 42: [996, 610],
+  23: [644, 690], 30: [714, 690], 29: [785, 690], 7: [855, 690], 36: [926, 690], 40: [996, 690],
+  8: [714, 770], 28: [785, 770], 26: [855, 770], 37: [926, 770], 39: [996, 770],
+  33: [714, 850], 38: [785, 850], 21: [855, 850], 34: [926, 850], 35: [996, 850],
 };
+
+// En-tetes de zone purement decoratifs (pas de tag staff, pas de clic) --
+// distincts de ROOMS pour ne jamais etre confondus avec une zone
+// selectionnable de personnel.
+export interface ZoneLabel {
+  x: number;
+  y: number;
+  label: string;
+}
+
+export const FLOOR_PLAN_ZONE_LABELS: ZoneLabel[] = [
+  // A gauche du bloc nord (espace libre entre les salles WC/Bar et les
+  // tables, x:420-630/y:80-425) -- au-dessus des tables elles-memes, il n'y
+  // a que 4px entre le bas du Couloir Nord et le haut des cibles tactiles.
+  { x: 520, y: 256, label: 'Zone nord' },
+  // Entre l'allee centrale (finit y=515) et la premiere rangee sud (cible
+  // tactile a partir de y=576).
+  { x: 815, y: 548, label: 'Zone sud' },
+];
 
 export interface Room {
   x: number;
@@ -213,6 +252,19 @@ export function FloorPlan({
           </g>
         );
       })}
+
+      {FLOOR_PLAN_ZONE_LABELS.map((zone, idx) => (
+        <text
+          key={idx}
+          x={zone.x}
+          y={zone.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-text-faint text-[13px] font-semibold uppercase tracking-wide"
+        >
+          {zone.label}
+        </text>
+      ))}
 
       {Object.entries(FLOOR_PLAN_TABLE_POSITIONS).map(([numStr, [x, y]]) => {
         const number = Number(numStr);
