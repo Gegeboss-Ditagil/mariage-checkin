@@ -181,14 +181,15 @@ test('la page montre les statuts et exige une destination suffisante avant de co
   assert.match(assignPageSource, /!relocationReady/);
 });
 
-test('le choix rapide ne montre que les tables réellement libres et priorise la table du groupe arrivé-avec, puis la table 41', () => {
+test('le choix rapide ne montre que les tables réellement libres et priorise la table du groupe arrivé-avec, puis la table 42', () => {
   assert.match(assignPageSource, /Tables disponibles/);
   assert.match(assignPageSource, /libresEstimees >= needed/);
   // Priorité 0 ajoutée le 13/09/2026 : la table du groupe avec qui l'invité
-  // est arrivé (linked_invitation_table_id) passe devant la table 41 --
-  // voir tests/approbations-ux-improvements.test.ts pour la présélection
+  // est arrivé (linked_invitation_table_id) passe devant la table 42 (41
+  // avant le 14/09/2026, v1.47.0) -- voir
+  // tests/approbations-ux-improvements.test.ts pour la présélection
   // automatique associée.
-  assert.match(assignPageSource, /usage\.table\.number === 41 \? 1/);
+  assert.match(assignPageSource, /usage\.table\.number === 42 \? 1/);
   // Texte raccourci le 13/09/2026 (retour de Gersom : "le texte est
   // long... plus intuitif") -- voir tests/approbations-ux-improvements.test.ts.
   assert.match(assignPageSource, /Touchez une autre table pour changer\./);

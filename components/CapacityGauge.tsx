@@ -8,7 +8,7 @@ export function CapacityGauge({
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   /** Position (0-100) d'un seuil d'alerte à marquer sur la jauge, ex: la
-   * limite des 400 places officielles dans une jauge graduée sur 410
+   * limite des 410 places officielles dans une jauge graduée sur 420
    * (officielles + réserve). Au-delà de ce seuil, la barre passe en rouge
    * même si `percent` n'a pas encore atteint 95 -- pour que "on est dans la
    * réserve, ce n'est plus la capacité normale" soit visible d'un coup d'œil. */

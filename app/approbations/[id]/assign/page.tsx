@@ -93,12 +93,13 @@ export default function AssignGuestApprovalTablePage() {
         // (quand elle a de la place) -- même logique que le placement
         // automatique à l'approbation (auto_assign_table_for_guest_approval,
         // 0045/0046), reprise ici pour l'assignation manuelle. Ensuite,
-        // même ordre qu'avant : table 41 (excédentaire) en priorité, puis
-        // réserve, puis les tables normales.
+        // même ordre qu'avant : table 42 (excédentaire, "Johannesburg" depuis
+        // le 14/09/2026 -- avant cette date, c'était la table 41) en
+        // priorité, puis réserve, puis les tables normales.
         const priority = (usage: TableCapacity) => {
           if (usage.libresEstimees < needed) return 4;
           if (linkedTableId && usage.table.id === linkedTableId) return 0;
-          return usage.table.number === 41 ? 1 : usage.table.is_reserve ? 2 : 3;
+          return usage.table.number === 42 ? 1 : usage.table.is_reserve ? 2 : 3;
         };
         return priority(a) - priority(b) || a.table.number - b.table.number;
       });

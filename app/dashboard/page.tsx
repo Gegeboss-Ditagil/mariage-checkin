@@ -110,8 +110,8 @@ export default function DashboardPage() {
   const capaciteOfficielle = tables.filter((t) => !t.is_reserve).reduce((s, t) => s + t.capacity, 0);
   const capaciteTotale = tables.reduce((s, t) => s + t.capacity, 0);
   const remplissageSalle = capaciteTotale > 0 ? (stats.arrives / capaciteTotale) * 100 : 0;
-  // Marque sur la jauge la limite des places officielles (400) dans une
-  // jauge graduee sur la capacite totale (400 + reserve) : au-dela de cette
+  // Marque sur la jauge la limite des places officielles (410) dans une
+  // jauge graduee sur la capacite totale (410 + reserve) : au-dela de cette
   // marque, on est dans la reserve, pas dans la capacite normale de la salle.
   const seuilOfficielPct = capaciteTotale > 0 ? (capaciteOfficielle / capaciteTotale) * 100 : undefined;
 

@@ -85,7 +85,7 @@ test('la fiche detaillee de /approbations est resserree (photo 26dvh, marges red
   assert.doesNotMatch(approbationsPage, /max-h-\[42dvh\] w-full rounded-2xl bg-black/);
 });
 
-test('/approbations/[id]/assign presectionne automatiquement la meilleure table (priorite a celle du groupe arrive-avec, avant la table 41) sans empecher un choix manuel', () => {
+test('/approbations/[id]/assign presectionne automatiquement la meilleure table (priorite a celle du groupe arrive-avec, avant la table 42) sans empecher un choix manuel', () => {
   assert.match(assignPage, /const linkedTableId = request\?\.linked_invitation_table_id \|\| null;/);
   assert.match(assignPage, /if \(linkedTableId && usage\.table\.id === linkedTableId\) return 0;/);
   assert.match(assignPage, /if \(chosenTableId \|\| loading \|\| recommendations\.length === 0\) return;/);

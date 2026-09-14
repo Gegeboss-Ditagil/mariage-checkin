@@ -3,6 +3,37 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.47.0] — 2026-09-14
+
+Mise à jour ciblée du fichier d'invités (`guest-list_48.csv`, export With Joy le plus récent transmis par Gersom, "tu as tous les droits... on ne change pas toute la base, juste quelques changements") + nouvelle table 42 excédentaire.
+
+### Ajouté
+- **Table 42 « Johannesburg »** : nouvelle et unique table de réserve (capacité 10, identique aux autres) — la table 41 (« Houston ») devient une table régulière. Nouvelle structure : 42 tables au total, 410 places officielles, 420 places absolues avec réserve (`supabase/migrations/0051_table_42_johannesburg_reserve.sql`, appliquée et vérifiée en production le 14/09/2026).
+- **19 nouvelles invitations** identifiées dans `guest-list_48.csv` sans correspondance en base (recherche par nom, exacte puis approchée, conformément à `docs/DATA_CHANGE_INSTRUCTIONS.md` section 6) : ajoutées avec leurs coordonnées de contact, **sans table assignée**. Le plan de table photographié transmis par Gersom (nouvelle configuration, tables reflétées par ses photos) montre des occupants différents de ceux actuellement en base pour plusieurs tables cibles (ex. table 29) — une réorganisation complète des places existantes n'était pas dans le périmètre de cette demande ("on ne change pas toute la base") ; la table déduite de la photo est conservée dans les notes de chaque invitation pour référence future, jamais devinée silencieusement pour un placement effectif.
+- **Tantine Angèle Lukau** ajoutée avec `ne_viendra_pas = true` d'emblée (RSVP décliné dans le CSV), pour un rappel possible plus tard ("on va juste les envoyer après, probable" — retour de Gersom), plutôt que simplement omise.
+
+### Modifié
+- **Rafraîchissement des coordonnées de contact** (téléphone/email) pour 201 invitations déjà présentes en base, dont le nom correspond exactement à une ligne du CSV — aucune autre colonne touchée (nombre prévu/arrivé, table, statut, historique).
+- **Ralph Momene et Bergine Momene marqués `ne_viendra_pas = true`** (déjà réunis dans l'invitation "Famille Momene" en base) : confirmé explicitement non-venants par Gersom.
+- Capacité officielle 400 → 410, capacité absolue 410 → 420 partout dans le code (`lib/withjoyImport.ts`, `app/plan-table/page.tsx`, `app/admin/import-withjoy/page.tsx`, `app/dashboard/page.tsx`, `components/CapacityGauge.tsx`) et la documentation (`docs/BUSINESS_RULES.md`, `docs/DATA_AND_FORMS.md`, `docs/DATA_CHANGE_INSTRUCTIONS.md`, `docs/QA_SCENARIOS.md`, `docs/VERSIONING.md`, `CLAUDE.md`, `README.md`, `DEPLOIEMENT.md`, `ASSIGNATION_TABLES.md`).
+
+### Corrigé
+- **Bug réel trouvé pendant cette revue** : `app/approbations/[id]/assign/page.tsx` donnait la priorité de placement à la table portant le numéro `41` en dur (`usage.table.number === 41`), qui était jusqu'ici la seule table de réserve — désormais que la 41 est une table régulière (« Houston ») et que la réserve est la 42 (« Johannesburg »), ce code aurait fait passer Houston avant la vraie réserve dans la liste de placement rapide. Corrigé en `=== 42`.
+
+### Non fait dans ce lot (hors périmètre explicite de la demande)
+- Redessiner le plan de salle interactif (`components/FloorPlan.tsx`) selon la nouvelle configuration de zones communiquée par Gersom (20 tables sud, 22 tables nord en 5 rangées de 4 + 2 tables ouest) : le plan photographié transmis est plus fiable que l'ancien PDF basse résolution, mais son OCR n'est pas encore assez sûr pour redessiner ce schéma en confiance sans risque d'erreur sur de vrais noms — la table 42 n'apparaît donc pas encore sur ce plan visuel (elle reste pleinement fonctionnelle partout ailleurs).
+- Surbrillance des chaises par personne (explicitement laissée à la discrétion de l'agent par Gersom) : pas encore implémentée, pour la même raison de fiabilité OCR.
+- Réassignation des invitations déjà en base vers leur nouvelle table (si elle diffère) selon le plan photographié : explicitement hors périmètre ("on ne change pas toute la base, juste quelques changements").
+
+### Tests
+- `tests/withjoy-import.test.ts` : capacité totale mise à jour (420 au lieu de 410).
+- `tests/guest-approvals.test.ts`, `tests/approbations-ux-improvements.test.ts` : assertions/titres alignés sur la table 42.
+
+### Migrations
+- `0051_table_42_johannesburg_reserve.sql` (déjà appliquée et vérifiée en production le 14/09/2026).
+
+Version: 1.46.1 → 1.47.0
+
 ## [1.46.1] — 2026-09-14
 
 Le bouton central d'agent_checkin devient Scan sur le tableau de bord, au lieu d'un aller-retour vers lui-même (retour de Gersom).
