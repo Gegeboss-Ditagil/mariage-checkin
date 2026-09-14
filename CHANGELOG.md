@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.3] — 2026-09-14
+
+Bug signalé par Gersom : le bouton reste sur « … » très longtemps en approuvant/reconsidérant/assignant une table + désactivation intentionnelle de Twilio via un interrupteur explicite.
+
+### Corrigé
+- **Approuver/reconsidérer/assigner une table restait bloqué sur « … » très longtemps** — root cause (suivi `docs/QE_QA_PROCESS.md`) : `finalizeDecision` (`lib/guestApprovalDecide.ts`, partagée par la décision normale, `/approve/[token]`, WhatsApp entrant et la reconsidération) et `app/api/guest-approvals/[id]/assign-table/route.ts` attendaient chacun deux envois indépendants documentés « best-effort » (SMS/WhatsApp de confirmation, Push aux placeurs, rapport SMS aux directeurs de festin) en séquence et sans aucune limite de temps avant de répondre à l'agent. Corrigé une seule fois pour tous les appelants : `lib/twilio.ts` borne chaque requête HTTP Twilio à 8s (`AbortSignal.timeout`), `lib/webPush.ts` borne chaque envoi Push à 8s (option `timeout` native de `web-push`), et les deux envois indépendants de chaque route tournent désormais en parallèle (`Promise.allSettled`) plutôt qu'en séquence.
+
+### Ajouté
+- **`TWILIO_ENABLED`** (`lib/twilio.ts`, `isTwilioEnabled()`) : interrupteur explicite pour Twilio (SMS + WhatsApp), désactivé par défaut — demande de Gersom : Twilio reste volontairement « toggle off » pour l'instant, activation prévue plus tard. Centralisé dans `getTwilioConfig`/`getWhatsAppConfig` : `sendSms`/`sendWhatsApp` et tous leurs appelants (`lib/guestApprovalNotify.ts`) s'adaptent automatiquement à l'état du toggle sans aucun changement de code ailleurs. Réactiver plus tard ne demande qu'une seule variable d'environnement (`TWILIO_ENABLED=true`, en plus des identifiants `TWILIO_*`), voir `DEPLOIEMENT.md`. Tant que désactivé, aucune requête réseau Twilio n'est même tentée — la création/décision/assignation d'un invité surprise reste entièrement fonctionnelle depuis l'application, seule la notification externe (approbateur, directeur de festin) ne part pas.
+
+### Tests
+- `tests/guest-approvals.test.ts` (5 nouveaux tests) : timeouts Twilio/Push bornés à quelques secondes, envois indépendants lancés en parallèle (`finalizeDecision`, `assign-table`), et comportement du toggle `TWILIO_ENABLED` vérifié par test comportemental (aucune requête réseau tentée quand désactivé, réactivation sans changement d'appel une fois `TWILIO_ENABLED=true` posé).
+
+### Migrations
+- Aucune (changements de code + une nouvelle variable d'environnement optionnelle, désactivée par défaut).
+
+Version: 1.48.2 → 1.48.3
+
 ## [1.48.2] — 2026-09-14
 
 Remplacement du panneau « Vu sur le plan photographié » de `/plan-table` : un vrai dessin de table (façon seatplan.io) au lieu d'une grille de boutons.

@@ -35,7 +35,29 @@ export class TwilioSendError extends Error {
   }
 }
 
+// v1.48.3, demande de Gersom : Twilio (SMS + WhatsApp de l'approbation
+// d'invités surprise) reste désactivé intentionnellement pour l'instant --
+// "c'est toggle off... on activera plus tard" -- indépendamment du fait que
+// TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN/TWILIO_PHONE_NUMBER soient déjà
+// renseignés ou non sur Vercel. Un seul interrupteur explicite plutôt que de
+// deviner l'intention depuis la présence/absence des identifiants :
+// réactiver plus tard se fait en changeant uniquement cette variable sur
+// Vercel (`TWILIO_ENABLED=true`), sans toucher au code ni redéployer une
+// version différente. Par défaut (variable absente ou différente de
+// 'true') : désactivé. Centralisé ici, dans getTwilioConfig/getWhatsAppConfig
+// -- sendSms/sendWhatsApp et donc tous leurs appelants (guestApprovalNotify)
+// s'adaptent automatiquement à l'état du toggle sans aucun changement de
+// leur côté.
+export function isTwilioEnabled(): boolean {
+  return process.env.TWILIO_ENABLED === 'true';
+}
+
 function getTwilioConfig() {
+  if (!isTwilioEnabled()) {
+    throw new TwilioConfigError(
+      "Twilio est désactivé (TWILIO_ENABLED différent de 'true') — fonctionnalité SMS en attente d'activation."
+    );
+  }
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_PHONE_NUMBER;
@@ -51,14 +73,30 @@ function getTwilioConfig() {
 // le SMS, mais pas obligatoirement -- sandbox ou sender WhatsApp Business
 // dédié) et son Content Template approuvé : deux variables séparées de
 // TWILIO_PHONE_NUMBER, absentes = canal WhatsApp desactivé silencieusement
-// (voir sendWhatsApp), jamais une erreur qui bloquerait le SMS.
+// (voir sendWhatsApp), jamais une erreur qui bloquerait le SMS. Soumis au
+// même toggle TWILIO_ENABLED que le SMS -- WhatsApp étant déjà conçu pour se
+// désactiver silencieusement plutôt que lever une erreur (canal optionnel),
+// le toggle réutilise ce même chemin plutôt que d'en ajouter un nouveau.
 function getWhatsAppConfig() {
+  if (!isTwilioEnabled()) return null;
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_WHATSAPP_NUMBER;
   if (!accountSid || !authToken || !from) return null;
   return { accountSid, authToken, from };
 }
+
+// v1.48.3, retour de Gersom : "les trois petits points restent là très
+// longtemps" en approuvant/reconsidérant/assignant une table -- ces envois
+// SMS/WhatsApp sont documentés "best-effort" (l'échec ne bloque jamais la
+// décision déjà actée en base, voir lib/guestApprovalDecide.ts) mais
+// restaient malgré tout attendus sans aucune limite avant de répondre à
+// l'agent : un `fetch` sans `signal` peut rester bloqué bien au-delà du
+// temps de réponse normal de Twilio en cas de souci réseau, gardant le
+// bouton sur "…" tout ce temps. Borné désormais à 8s (jamais un blocage
+// indéfini), toujours rattrapé par les `catch` déjà en place partout où ces
+// fonctions sont appelées en "best-effort".
+const TWILIO_REQUEST_TIMEOUT_MS = 8000;
 
 async function postMessage(
   accountSid: string,
@@ -72,6 +110,7 @@ async function postMessage(
       Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
     },
     body: new URLSearchParams(params).toString(),
+    signal: AbortSignal.timeout(TWILIO_REQUEST_TIMEOUT_MS),
   });
 
   if (!res.ok) {
