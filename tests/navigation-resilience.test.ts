@@ -119,10 +119,13 @@ test("admin et directeur gardent l'appareil photo au centre sur /scan, avec Tabl
   // Approbations -- deja un gros bouton dedie sur cette page, voir
   // GuestApprovalsShortcut -- doublonnait inutilement la barre du bas.
   assert.match(bottomNav, /href: ['"]\/agenda['"], label: ['"]Agenda['"]/);
-  assert.match(bottomNav, /admin:[\s\S]*href: ['"]\/scan['"], label: ['"]Scan['"]/);
-  const directeurBlock = bottomNav.slice(bottomNav.indexOf('directeur: ['), bottomNav.indexOf('placeur:'));
-  assert.match(directeurBlock, /href: ['"]\/scan['"], label: ['"]Scan['"]/);
-  assert.doesNotMatch(directeurBlock, /href: ['"]\/staff['"]/);
+  // admin/directeur partagent desormais DIRECTOR_STYLE_ITEMS (deduplique le
+  // 14/09/2026), qui inclut bien SCAN_ITEM et jamais un onglet Staff.
+  assert.match(bottomNav, /admin: DIRECTOR_STYLE_ITEMS,/);
+  assert.match(bottomNav, /directeur: DIRECTOR_STYLE_ITEMS,/);
+  const sharedBlock = bottomNav.slice(bottomNav.indexOf('const DIRECTOR_STYLE_ITEMS'), bottomNav.indexOf('const ITEMS'));
+  assert.match(sharedBlock, /SCAN_ITEM/);
+  assert.doesNotMatch(sharedBlock, /href: ['"]\/staff['"]/);
 
   const scanBranch = bottomNav.slice(
     bottomNav.indexOf("pathname.startsWith('/scan')"),

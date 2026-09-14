@@ -30,10 +30,13 @@ test("migration 0037 (deja dans le depot) autorise bien 'app' dans decided_via -
 });
 
 test("bottom nav generique admin/directeur affiche Approbations (pas Agenda) en derniere position, Agenda restant sur /dashboard, /scan et /agenda", () => {
-  const adminBlock = bottomNav.slice(bottomNav.indexOf('admin: ['), bottomNav.indexOf('};', bottomNav.indexOf('admin: [')));
-  assert.match(adminBlock, /APPROVALS_ITEM,\s*\n\s*\],/);
-  const directeurBlock = bottomNav.slice(bottomNav.indexOf('directeur: ['), bottomNav.indexOf('placeur:'));
-  assert.match(directeurBlock, /APPROVALS_ITEM,\s*\n\s*\],/);
+  // admin/directeur/placeur partagent desormais un seul litteral
+  // (DIRECTOR_STYLE_ITEMS, deduplique le 14/09/2026) -- verifie qu'il se
+  // termine bien par APPROVALS_ITEM et que les trois roles le referencent.
+  const sharedBlock = bottomNav.slice(bottomNav.indexOf('const DIRECTOR_STYLE_ITEMS'), bottomNav.indexOf('const ITEMS'));
+  assert.match(sharedBlock, /APPROVALS_ITEM\]/);
+  assert.match(bottomNav, /admin: DIRECTOR_STYLE_ITEMS,/);
+  assert.match(bottomNav, /directeur: DIRECTOR_STYLE_ITEMS,/);
   // Les branches isAdminDirector explicites (dashboard/scan/agenda) gardent
   // toutes AGENDA_ITEM -- seule la barre generique (autres pages) change.
   const dashboardBranch = bottomNav.slice(

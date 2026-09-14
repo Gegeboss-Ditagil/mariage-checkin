@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.48.7] — 2026-09-14
+
+Nettoyage interne de `components/BottomNav.tsx`, sans aucun changement de comportement — première passe de simplification demandée par Gersom ("une passe de nettoyage plutôt que d'empiler encore des patches") maintenant que la navigation par rôle (admin/directeur/placeur/agent_checkin/visibilite) est stabilisée depuis le 14/09/2026 (v1.46.0/v1.46.1).
+
+### Modifié
+- `ITEMS.admin`, `ITEMS.directeur` et `ITEMS.placeur` étaient trois littéraux (quasi-)identiques (seul l'ordre interne d'`admin` différait, sans effet réel : la répartition gauche/centre/droite se base toujours sur `SIDE_ORDER`/`CENTRAL_HREF`, jamais sur cet ordre). Remplacés par une constante partagée unique `DIRECTOR_STYLE_ITEMS`, réutilisant les items déjà nommés (`SEARCH_ITEM`, `PLAN_ITEM`, `DASHBOARD_ITEM`, `SCAN_ITEM`, `APPROVALS_ITEM`) au lieu de ré-écrire des objets `{ href, label, icon }` en dur.
+- Les trois branches contextuelles `/dashboard`, `/agenda`, `/scan` (`isDirectorStyleNav`) n'ont volontairement pas été fusionnées malgré leur ressemblance : `/agenda` et `/scan` sont identiques mais `/dashboard` diffère (badge d'approbations vs Bord), et une dizaine de tests existants (`tests/navigation-resilience.test.ts`, `tests/approbations-ux-improvements.test.ts`) épinglent précisément la structure source de ces trois branches séparées — fusionner aurait exigé une réécriture de tests disproportionnée au gain (quelques lignes).
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts`, `tests/navigation-resilience.test.ts`, `tests/placeur-director-nav.test.ts` : les assertions qui lisaient les anciens littéraux `admin: [...]`/`directeur: [...]`/`placeur: [...]` vérifient désormais `DIRECTOR_STYLE_ITEMS` et son partage littéral entre les trois rôles (`placeur: DIRECTOR_STYLE_ITEMS` etc.) — même garantie qu'avant (Scan présent, jamais Staff, Approbations en dernier), en plus stricte (le partage du même tableau garantit l'identité, pas seulement une comparaison de contenu).
+
 ## [1.48.6] — 2026-09-14
 
 Préparation pour un futur import final With Joy : identifiant stable par invitation (`withjoy_party_id`), sans encore construire l'import lui-même.
