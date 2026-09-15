@@ -220,9 +220,9 @@ test('admin conserve tous les droits sensibles', () => {
   assert.equal(hasCapability('admin', 'adminPanel'), true);
   assert.equal(hasCapability('admin', 'exportData'), true);
   assert.equal(canAccessPath('admin', '/admin/users'), true);
-  assert.equal(canAccessPath('admin', '/admin/diffusion'), true);
+  assert.equal(canAccessPath('admin', '/admin/import-withjoy'), true);
   for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
-    assert.equal(canAccessPath(role, '/admin/diffusion'), false);
+    assert.equal(canAccessPath(role, '/admin/import-withjoy'), false);
   }
 });
 

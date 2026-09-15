@@ -77,10 +77,7 @@ export default function AdminHome() {
           <nav className="grid grid-cols-2 gap-3">
             <AdminLink href="/admin/wizard" label="Assistant de préparation" icon="✓" />
             <AdminLink href="/admin/tables" label="Gérer les tables" icon="▦" />
-            <AdminLink href="/admin/import" label="Importer les invités" icon="⇩" />
             <AdminLink href="/admin/import-withjoy" label="Importer depuis With Joy" icon="⟳" />
-            <AdminLink href="/admin/diffusion" label="Diffuser les invitations" icon="✉" />
-            <AdminLink href="/admin/qr" label="Associer les QR codes" icon="▣" />
             <AdminLink href="/admin/users" label="Comptes de l'équipe" icon="◎" />
             <AdminLink href="/dashboard" label="Tableau de bord" icon="◔" />
             <AdminLink href="/history" label="Historique" icon="≡" />

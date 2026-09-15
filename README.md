@@ -1,7 +1,7 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.46.1**
-**Dernière mise à jour documentaire : 2026-09-13**
+**Version actuelle : 1.53.0**
+**Dernière mise à jour documentaire : 2026-09-15**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
@@ -52,7 +52,6 @@ Cette version ajoute le **forçage d'assignation d'un invité surprise sur une t
 ### Chargements différés
 - **`/search`** : le dataset complet n'est plus fetché au simple montage de la page — seulement quand l'agent bascule en mode « parcourir toutes les invitations » (mode nom sans saisie), avec des colonnes réduites à ce que la liste affiche.
 - **`/tables/move-multiple`** : une seule requête `Promise.all` (invitations + tables + affectations excédentaires) au lieu de deux fetches séquentiels — la sélection n'est qu'un sous-ensemble du dataset complet dont `computeTableCapacities` a besoin.
-- **`xlsx` (~450 Ko) en import dynamique** sur `/admin/import` et `/admin/diffusion` : la bibliothèque n'est chargée que lorsqu'un fichier est réellement ouvert, plus dans le bundle initial de ces pages.
 - **`poweredByHeader: false`** dans `next.config.js` (hygiène, en-tête retiré des réponses).
 
 ### Version visible
@@ -111,7 +110,6 @@ Cette version ajoute le **forçage d'assignation d'un invité surprise sur une t
 - **Arrivée par personne** sur les fiches de groupe : un bouton ✓/✕ par personne nommée (jamais un simple compteur global), toujours réversible, place libérée sans jamais supprimer la personne.
 - **Barre de navigation à 5 icônes** adaptée au rôle : l'admin garde Scan directement, le directeur remplace Staff par Agenda et conserve Tableau de bord au centre ; sur `/scan`, le grand bouton central devient la prise de photo. En portrait la pilule et ses cibles sont plus hautes ; en paysage elle devient une bande verticale au bord droit.
 - **42 tables au total** (depuis le 14/09/2026, v1.47.0).
-- **Diffusion privée des invitations** : l'admin peut importer un Excel local, préparer les liens Canva et les messages WhatsApp/email, puis réexporter le suivi sans enregistrer les coordonnées sur le serveur.
 - **Tables 1 à 41 : normales** (la 41, ex-réserve, renommée « Houston »).
 - **Table 42 (« Johannesburg ») : seule table de réserve**.
 - **Capacité officielle : 410 places**.

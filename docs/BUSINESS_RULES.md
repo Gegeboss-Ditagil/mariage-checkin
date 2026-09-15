@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.52.0**
+**Version documentaire : 1.53.0**
 **Dernière mise à jour : 2026-09-15**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -166,16 +166,6 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 
 ## Principes
 
-### Diffusion des invitations
-
-- `/admin/diffusion` est réservé à l'admin par le middleware, comme tous les écrans `/admin`.
-- Le fichier Excel/CSV est lu uniquement dans le navigateur : aucune ligne, coordonnée ou progression d'envoi n'est transmise à Supabase ou à une API de l'application.
-- Le code d'invitation doit être explicite et suivre `T010`/`F004`; l'application ne déduit jamais ce code du numéro de table. Le lien produit suit `https://libalz.my.canva.site/vol-{code en minuscules}`.
-- WhatsApp et email sont des raccourcis manuels avec message prérempli. Aucun envoi automatique ou en masse n'est effectué par l'application.
-- Un nom ou un code Canva invalide bloque les raccourcis d'envoi afin d'éviter la transmission d'un mauvais lien. Les coordonnées invalides sont signalées avant envoi.
-- Le suivi reste en mémoire jusqu'à sa réexportation Excel. Fermer ou recharger la page sans exporter perd la progression, volontairement, afin de ne pas conserver les contacts dans le navigateur.
-- Aucun PIN, jeton de session ou identifiant interne ne doit apparaître dans le fichier importé ou exporté.
-
 - Voir une invitation, effectuer son check-in et la déplacer sont trois permissions distinctes.
 - Masquer un bouton ne suffit jamais : chaque route API vérifie aussi le rôle côté serveur.
 - Le rôle visibilité est strictement en lecture seule et ne doit jamais afficher une caméra.
@@ -183,7 +173,7 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 - Une invitation représente un foyer ou groupe; les membres détaillés restent optionnels.
 - Les opérations concurrentes doivent être atomiques, historisées et synchronisées en temps réel.
 - Une table affichée complète exige une confirmation explicite avant affectation exceptionnelle.
-- Les exports, imports, comptes, QR et configuration sont administratifs.
+- Les exports, imports et comptes sont administratifs. La lecture des QR (scan) reste ouverte aux rôles scannants; leur association à une table se fait désormais directement en base, l'admin n'ayant plus d'écran dédié pour cela.
 - Une session applicative expire au plus tard après 12 h.
 - Une session appartenant à un ancien déploiement est invalide et doit retourner au login.
 

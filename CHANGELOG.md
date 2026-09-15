@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.0] — 2026-09-15
+
+Retour de Gersom : revirement en cours de message sur une demande d'alignement des colonnes de `/admin/import` avec le format CSV With Joy — décision finale de retirer trois écrans admin plutôt que d'en ajouter un quatrième, pour simplifier l'app à un seul chemin d'import.
+
+### Supprimé
+- **`/admin/import`** (import CSV/XLSX générique par association manuelle de colonnes) et sa route `app/api/admin/import/route.ts`. `/admin/import-withjoy` (RPC `admin_replace_invitations`) reste l'unique chemin d'import d'invitations, inchangé.
+- **`/admin/diffusion`** ("Diffuser les invitations", lecture Excel/CSV entièrement locale au navigateur, jamais d'écriture serveur) et `lib/invitationDiffusion.ts`. `tests/invitation-diffusion.test.ts` et le script `npm run test:diffusion` retirés avec.
+- **`/admin/qr`** ("Associer les QR codes") et sa route `app/api/admin/qr/route.ts` — écran de gestion uniquement : la table `qr_codes` et sa lecture par le scan réel (`app/scan/page.tsx`, `app/placement/page.tsx`) restent intactes et fonctionnelles ; toute nouvelle association `code`/table se fera directement en base.
+
+### Modifié
+- `app/admin/page.tsx` : les trois liens correspondants retirés du menu ; "Gérer les tables" et "Importer depuis With Joy" inchangés.
+- `app/admin/wizard/page.tsx` : les étapes « Importer les invités » et « Associer chaque invitation à une table » pointent désormais vers `/admin/import-withjoy` ; l'étape « Associer un QR code à chaque table » est retirée (l'assistant passe de 10 à 9 étapes). `app/api/admin/wizard-status/route.ts` ne calcule plus `qrTotal`/`qrManquants`.
+- `tests/permissions.test.ts` : l'assertion d'accès admin-seul portant sur `/admin/diffusion` est remplacée par une assertion équivalente sur `/admin/import-withjoy`.
+
+### Documentation mise à jour
+`README.md`, `CHANGELOG.md`, `CLAUDE.md`, `docs/BUSINESS_RULES.md`, `docs/DATA_AND_FORMS.md`, `docs/DATA_CHANGE_INSTRUCTIONS.md`, `docs/QA_SCENARIOS.md`, `docs/VERSIONING.md`, `DEPLOIEMENT.md`, `ASSIGNATION_TABLES.md`.
+
+Aucune migration : uniquement des écrans/routes retirés et des liens internes recâblés, aucune donnée touchée.
+
 ## [1.52.0] — 2026-09-15
 
 Retour de Gersom : tentative d'import complet depuis `/admin/import-withjoy` avec `guest-list_56.csv` ("le CSV final... écrase ce qui est dans l'app"), bloquée par une erreur "Échec atomique de l'import". Root-cause diagnostiquée par reproduction directe (contrainte FK), corrigée, puis le remplacement complet demandé a été exécuté en production après vérification.
