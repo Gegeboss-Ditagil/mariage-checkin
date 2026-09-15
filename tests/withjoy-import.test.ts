@@ -18,6 +18,23 @@ test('CSV BOM, guillemets et tags F/T sont lus sans perte', () => {
   assert.equal(plan.tableAssignments[0].placementStatus, 'confirmee');
 });
 
+// Bug reel trouve le 15/09/2026 (guest-list_56.csv, echec d'import With Joy
+// signale par Gersom) : With Joy (ou un tableur intermediaire) prefixe
+// parfois la colonne "phone number" d'une apostrophe (convention de
+// tableur pour forcer le format texte sur une valeur qui ressemble a un
+// nombre), jamais un caractere du vrai numero -- doit etre retiree.
+test('une apostrophe de tableur devant le numero de telephone est retiree (jamais un caractere du vrai numero)', () => {
+  const rows = parseCsvText(csv([['p1', 'Ana', 'Dos', "'+41799150386", '', 'Oui', 'Côté_Nelly,F004']]));
+  const plan = buildImportPlan(rows);
+  assert.equal(plan.tableAssignments[0].group.phone, '+41799150386');
+});
+
+test('un numero de telephone sans apostrophe reste inchange', () => {
+  const rows = parseCsvText(csv([['p1', 'Ana', 'Dos', '+41799150386', '', 'Oui', 'Côté_Nelly,F004']]));
+  const plan = buildImportPlan(rows);
+  assert.equal(plan.tableAssignments[0].group.phone, '+41799150386');
+});
+
 test('RSVP décliné est exclu et le foyer restant est conservé', () => {
   const plan = buildImportPlan(parseCsvText(csv([
     ['p1', 'Ana', 'Dos', '', '', 'Non, nous allons manquer le vol', 'Côté_Nelly'],

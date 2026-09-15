@@ -59,8 +59,15 @@ def is_staff_member(r):
 def phone_of(members):
     # Le telephone With Joy est rempli par personne, pas par foyer : pour une
     # invitation groupee, on prend le premier telephone non vide rencontre.
+    # Bug reel trouve le 15/09/2026 (guest-list_56.csv) : With Joy (ou un
+    # tableur intermediaire) prefixe parfois cette colonne d'une apostrophe
+    # (ex. "'+41799150386", convention de tableur pour forcer le format
+    # texte) -- jamais un caractere du vrai numero, doit etre retiree (voir
+    # aussi lib/withjoyImport.ts::cleanPhone, garde synchronisee).
     for m in members:
         ph = (m.get('phone number') or '').strip()
+        if ph.startswith("'"):
+            ph = ph[1:].strip()
         if ph:
             return ph
     return None

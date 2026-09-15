@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.52.0] — 2026-09-15
+
+Retour de Gersom : tentative d'import complet depuis `/admin/import-withjoy` avec `guest-list_56.csv` ("le CSV final... écrase ce qui est dans l'app"), bloquée par une erreur "Échec atomique de l'import". Root-cause diagnostiquée par reproduction directe (contrainte FK), corrigée, puis le remplacement complet demandé a été exécuté en production après vérification.
+
+### Corrigé
+- **Bug réel — le remplacement complet des invitations échouait systématiquement dès qu'une demande d'invité surprise avait un lien "arrivé avec"** (`guest_approval_requests.linked_invitation_id`, migration `0046` du 02/09/2026) : cette contrainte de clé étrangère n'avait jamais reçu de clause `ON DELETE` (contrairement à `audit_logs`/`exceptions`, qui font bien `SET NULL`) — un oubli de l'époque, jamais déclenché avant faute d'un vrai remplacement complet tenté depuis. Migration `0054_guest_approval_linked_invitation_on_delete_set_null.sql` : `ON DELETE SET NULL`, même comportement que les autres références à `invitations` — la demande d'approbation (historique) survit toujours, seul son lien est effacé si l'invitation liée disparaît.
+- **Bug réel — numéro de téléphone corrompu par une apostrophe de tableur** : `guest-list_56.csv` (comme plusieurs exports précédents) préfixe parfois la colonne "phone number" d'une apostrophe (ex. `'+41799150386`, convention de tableur pour forcer le format texte), jamais un caractère du vrai numéro. `lib/withjoyImport.ts` (`cleanPhone`) et `scripts/build_plan_from_csv.py` (gardés synchronisés) la retirent désormais. `tests/withjoy-import.test.ts` (2 nouveaux tests).
+
+### Données
+- **Remplacement complet des invitations** (263 → 259), exécuté via `admin_replace_invitations` avec le CSV final transmis par Gersom — décision explicite d'écraser plutôt que de continuer la synchronisation ciblée des versions précédentes (v1.47.0-v1.51.0), puisque plusieurs éléments en base ne correspondaient plus au CSV à jour. Sauvegarde automatique (`import_backups`, comme à chaque remplacement complet) avant écriture.
+- **0 table en surcapacité après ce remplacement** (vérifié directement) — confirme que "les tables en surcapacité" signalées par Gersom sont bien résolues par ce CSV à jour, contrairement aux tentatives précédentes de recoupement manuel qui restaient bloquées sur des occupants déjà en base.
+- `nombre_arrive = 0` confirmé partout avant l'exécution (aucune arrivée réelle à perdre, `event.status = 'test'`).
+
+### Documentation mise à jour
+`CHANGELOG.md`, `CLAUDE.md`, `docs/DATA_CHANGE_INSTRUCTIONS.md`
+
+### Tests exécutés
+`npx tsc --noEmit`, `node --test tests/*.test.ts`, `npm run build`, `git diff --check`
+
+### Migrations
+`0054_guest_approval_linked_invitation_on_delete_set_null.sql` — appliquée et vérifiée en production Supabase le jour même.
+
 ## [1.51.0] — 2026-09-14
 
 Retour de Gersom (2 photos : un agent scan renommant un invité, la fiche de la table 1). Migration `0053_rename_member_syncs_solo_display_name.sql` appliquée et vérifiée en production Supabase le jour même.
