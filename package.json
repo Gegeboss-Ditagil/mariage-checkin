@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.52.0",
+  "version": "1.53.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,7 +11,6 @@
     "test:withjoy": "node --test tests/withjoy-import.test.ts",
     "test:members": "node --test tests/members-migration.test.ts",
     "test:floorplan": "node --test tests/floor-plan.test.ts",
-    "test:diffusion": "node --test tests/invitation-diffusion.test.ts",
     "test:navigation": "node --test tests/navigation-resilience.test.ts",
     "test:realtime": "node --test tests/realtime-debounce.test.ts",
     "test:searchnames": "node --test tests/search-member-names.test.ts",

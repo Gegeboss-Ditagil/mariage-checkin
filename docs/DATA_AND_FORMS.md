@@ -1,6 +1,6 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.52.0**
+**Version documentaire : 1.53.0**
 **Dernière mise à jour : 2026-09-15**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
@@ -34,8 +34,7 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 | Renommer invitation | invitations, audit | Admin, directeur, placeur, agent scan |
 | Fusionner deux invitations | invitations, checkins, overflow_assignments, invitation_guests, exceptions, audit | Admin uniquement |
 | Ajouter/retirer une étiquette | invitations, audit | Admin uniquement |
-| Import/administration | tables, invitations, users, événement | Admin uniquement |
-| Diffusion des invitations | Excel/CSV local en mémoire, aucune écriture serveur | Admin uniquement |
+| Import (depuis With Joy uniquement)/administration | tables, invitations, users, événement | Admin uniquement |
 | Invité surprise (capture live + demande d'approbation) | guest_approval_requests, Storage (bucket privé), audit | Admin, directeur, placeur |
 | Voir les demandes d'approbation | guest_approval_requests | Admin, directeur, placeur, visibilité |
 | Décider dans l'application | guest_approval_requests, audit | Admin, directeur, visibilité |

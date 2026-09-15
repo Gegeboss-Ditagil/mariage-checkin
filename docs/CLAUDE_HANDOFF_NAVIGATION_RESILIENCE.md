@@ -37,7 +37,6 @@ npx tsc --noEmit
 npm run test:roles
 npm run test:floorplan
 npm run test:members
-npm run test:diffusion
 npm run test:withjoy
 npm run test:navigation
 npm run build

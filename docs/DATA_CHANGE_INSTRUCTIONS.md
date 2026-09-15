@@ -1,6 +1,6 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.52.0**
+**Version documentaire : 1.53.0**
 **Dernière mise à jour : 2026-09-15**
 
 ## 1. Principe général
@@ -62,6 +62,8 @@ L'import complet `/admin/import-withjoy` constitue l'exception explicitement des
 Un import ne doit jamais par défaut effacer les invitations absentes, remettre `nombre_arrive` à zéro, supprimer les membres, annuler les débordements, changer les UUID, supprimer l'audit ou écraser les modifications du jour J.
 
 **15/09/2026 : premier remplacement complet réellement exécuté en production** (`guest-list_56.csv`, sur autorisation explicite de Gersom — « le CSV final... écrase ce qui est dans l'app »), a révélé deux bugs jamais déclenchés avant faute d'un vrai essai : `guest_approval_requests.linked_invitation_id` bloquait le `delete from invitations` (FK sans `ON DELETE`, corrigé par la migration `0054`) et `lib/withjoyImport.ts` ne retirait pas une apostrophe de tableur parfois présente devant le numéro de téléphone (corrigé, `cleanPhone`). Voir CHANGELOG v1.52.0.
+
+**15/09/2026 (v1.53.0) : `/admin/import` (import CSV/XLSX générique par association manuelle de colonnes) supprimé** sur demande explicite de Gersom (« on va seulement garder les imports à partir du CSV de Witjoy pour simplifier les éléments »). `/admin/import-withjoy` (RPC `admin_replace_invitations`, section 6 ci-dessus) reste donc l'unique chemin d'import d'invitations dans l'application — aucun changement à ce chemin ni à ses garanties (aperçu, double confirmation, sauvegarde, transaction atomique).
 
 ## 7. Formulaires
 

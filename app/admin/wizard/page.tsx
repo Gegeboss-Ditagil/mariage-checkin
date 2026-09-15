@@ -14,8 +14,6 @@ interface WizardStats {
   invitationsTotal: number;
   invitationsSansTable: number;
   prevuTotal: number;
-  qrTotal: number;
-  qrManquants: number;
   agents: number;
   placeurs: number;
   admins: number;
@@ -75,14 +73,13 @@ export default function WizardPage() {
   const step4Done = stats.tablesTotal > 0 && stats.tablesSansCapacite === 0;
   const step5Done = stats.invitationsTotal > 0;
   const step6Done = stats.invitationsTotal > 0 && stats.invitationsSansTable === 0;
-  const step7Done = stats.tablesTotal > 0 && stats.qrManquants === 0;
-  const step8Done = stats.agents >= 1 && stats.placeurs >= 1;
-  const step9Done = stats.tablesTotal > 0 && stats.capaciteTotale >= stats.prevuTotal;
-  const step10Done = event.status === 'live' || event.status === 'closed';
+  const step7Done = stats.agents >= 1 && stats.placeurs >= 1;
+  const step8Done = stats.tablesTotal > 0 && stats.capaciteTotale >= stats.prevuTotal;
+  const step9Done = event.status === 'live' || event.status === 'closed';
 
   const steps = [
     step1Done, step2Done, step3Done, step4Done, step5Done,
-    step6Done, step7Done, step8Done, step9Done, step10Done,
+    step6Done, step7Done, step8Done, step9Done,
   ];
   const doneCount = steps.filter(Boolean).length;
 
@@ -93,9 +90,9 @@ export default function WizardPage() {
       <div className="flex-1 space-y-4 px-4 py-4">
         <div className="card">
           <p className="text-sm font-semibold text-text-faint">Avancement</p>
-          <p className="mt-1 text-2xl font-bold">{doneCount} / 10 étapes</p>
+          <p className="mt-1 text-2xl font-bold">{doneCount} / 9 étapes</p>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(doneCount / 10) * 100}%` }} />
+            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(doneCount / 9) * 100}%` }} />
           </div>
           {message && <p className="mt-2 text-sm text-status-over">{message}</p>}
         </div>
@@ -166,8 +163,8 @@ export default function WizardPage() {
         </Step>
 
         <Step n={5} title="Importer les invités" done={step5Done} detail={`${stats.invitationsTotal} invitation(s) importée(s)`}>
-          <Link href="/admin/import" className="btn-secondary block w-full text-center">
-            Importer un CSV / XLSX
+          <Link href="/admin/import-withjoy" className="btn-secondary block w-full text-center">
+            Importer depuis With Joy
           </Link>
         </Step>
 
@@ -181,26 +178,15 @@ export default function WizardPage() {
               : 'Toutes les invitations ont une table'
           }
         >
-          <Link href="/admin/import" className="btn-secondary block w-full text-center">
-            Corriger via l'import
+          <Link href="/admin/import-withjoy" className="btn-secondary block w-full text-center">
+            Corriger via With Joy
           </Link>
         </Step>
 
         <Step
           n={7}
-          title="Associer un QR code à chaque table"
-          done={step7Done}
-          detail={`${stats.qrTotal} QR associé(s)${stats.qrManquants > 0 ? ` — ${stats.qrManquants} table(s) sans QR` : ''}`}
-        >
-          <Link href="/admin/qr" className="btn-secondary block w-full text-center">
-            Associer les QR codes
-          </Link>
-        </Step>
-
-        <Step
-          n={8}
           title="Créer les comptes agents et placeurs"
-          done={step8Done}
+          done={step7Done}
           detail={`${stats.admins} admin(s), ${stats.agents} agent(s), ${stats.placeurs} placeur(s)`}
         >
           <Link href="/admin/users" className="btn-secondary block w-full text-center">
@@ -209,12 +195,12 @@ export default function WizardPage() {
         </Step>
 
         <Step
-          n={9}
+          n={8}
           title="Vérifier la capacité totale vs invités prévus"
-          done={step9Done}
+          done={step8Done}
           detail={`Capacité totale : ${stats.capaciteTotale} — invités prévus : ${stats.prevuTotal}`}
         >
-          {!step9Done && (
+          {!step8Done && (
             <p className="text-sm text-status-over">
               La capacité totale des tables est inférieure au nombre d'invités prévus. Ajustez les capacités ou ajoutez des
               tables.
@@ -223,9 +209,9 @@ export default function WizardPage() {
         </Step>
 
         <Step
-          n={10}
+          n={9}
           title="Tester un scan, puis passer en Mode Test / Jour J"
-          done={step10Done}
+          done={step9Done}
           detail={`Statut actuel : ${event.status}`}
         >
           <div className="grid grid-cols-2 gap-2">
