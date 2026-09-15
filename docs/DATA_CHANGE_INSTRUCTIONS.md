@@ -1,7 +1,7 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.50.0**
-**Dernière mise à jour : 2026-09-14**
+**Version documentaire : 1.52.0**
+**Dernière mise à jour : 2026-09-15**
 
 ## 1. Principe général
 
@@ -60,6 +60,8 @@ L'import complet `/admin/import-withjoy` constitue l'exception explicitement des
 **Depuis le 25/08/2026 (atelier famille) : With Joy n'est plus la source de vérité des tables/placements.** La famille corrige directement un tableur (Google Sheet, dérivé de l'export `/plan-table` : table, invitation, nombre de personnes, noms, côté) lors d'ateliers de réorganisation ; ce tableur devient la source de vérité pour l'affectation des tables et le regroupement des invitations. With Joy reste la source de vérité pour les coordonnées de contact (téléphone, email) uniquement — un CSV au format With Joy est régénéré depuis Supabase pour resynchroniser ces contacts après chaque correction, mais son contenu de placement n'est plus réimporté automatiquement : la correspondance entre le tableur et l'état précédent se fait par nom (individu par individu quand un groupe est réorganisé), avec recherche exacte puis approchée, et tout nom sans correspondance ou tout doublon de nom entre deux tables doit être signalé explicitement plutôt que deviné silencieusement.
 
 Un import ne doit jamais par défaut effacer les invitations absentes, remettre `nombre_arrive` à zéro, supprimer les membres, annuler les débordements, changer les UUID, supprimer l'audit ou écraser les modifications du jour J.
+
+**15/09/2026 : premier remplacement complet réellement exécuté en production** (`guest-list_56.csv`, sur autorisation explicite de Gersom — « le CSV final... écrase ce qui est dans l'app »), a révélé deux bugs jamais déclenchés avant faute d'un vrai essai : `guest_approval_requests.linked_invitation_id` bloquait le `delete from invitations` (FK sans `ON DELETE`, corrigé par la migration `0054`) et `lib/withjoyImport.ts` ne retirait pas une apostrophe de tableur parfois présente devant le numéro de téléphone (corrigé, `cleanPhone`). Voir CHANGELOG v1.52.0.
 
 ## 7. Formulaires
 

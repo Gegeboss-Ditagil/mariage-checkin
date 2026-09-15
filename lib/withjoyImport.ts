@@ -181,6 +181,18 @@ function displayName(row: Record<string, string>): string {
   return `${row['first name'] || ''} ${row['last name'] || ''}`.trim() || 'Accompagnant non-nommé';
 }
 
+// Bug reel trouve le 15/09/2026 (guest-list_56.csv, echec d'import With Joy
+// signale par Gersom) : With Joy (ou un tableur intermediaire) prefixe
+// parfois la colonne "phone number" d'une apostrophe (ex. "'+41799150386")
+// -- convention classique de tableur pour forcer le format texte sur une
+// valeur qui ressemble a un nombre, jamais un caractere du vrai numero.
+// Sans ce nettoyage, le numero importe est corrompu (apostrophe collee au
+// "+"), casse les liens tel:/SMS/WhatsApp et la recherche par telephone.
+function cleanPhone(value: string | undefined): string {
+  const trimmed = (value || '').trim();
+  return trimmed.startsWith("'") ? trimmed.slice(1).trim() : trimmed;
+}
+
 function buildGroup(gid: string, members: Record<string, string>[], warnings: string[], withjoyPartyId: string | null): ImportGroup {
   const tags = Array.from(new Set(members.flatMap(tagsOf)));
   const tableNumbers = members.flatMap(tableTagsOf);
@@ -239,7 +251,7 @@ function buildGroup(gid: string, members: Record<string, string>[], warnings: st
     tags,
     size: members.length,
     label,
-    phone: members.find((member) => (member['phone number'] || '').trim())?.['phone number'] || '',
+    phone: cleanPhone(members.find((member) => (member['phone number'] || '').trim())?.['phone number']),
     email: members.find((member) => (member.email || '').trim())?.email || '',
     notes: noteParts.join(' | '),
     cote: coteOf(tags),

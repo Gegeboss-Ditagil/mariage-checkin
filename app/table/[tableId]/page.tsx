@@ -12,6 +12,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
 import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
+import { FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import {
   clearBulkMoveSelection,
@@ -249,6 +250,10 @@ export default function TablePage() {
   const prevu = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
   const arrive = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
   const overflowTotal = overflow.reduce((s, o) => s + o.nombre_personnes, 0);
+  // v1.51.0 : bouton 📍 par invitation -> /plan-table?table=N (localiser
+  // cette table dans la salle) -- meme condition que le bouton "localiser"
+  // deja present sur /plan-table (tablesSurLePlan).
+  const tableHasPlanPosition = !!table && table.number in FLOOR_PLAN_TABLE_POSITIONS;
 
   const titre = table
     ? 'Table ' +
@@ -366,6 +371,16 @@ export default function TablePage() {
               ) : (
                 <div className="flex min-w-0 flex-1 items-center justify-between gap-3 py-4">{body}</div>
               )}
+              {!selectMode && tableHasPlanPosition && (
+                <button
+                  type="button"
+                  aria-label={'Localiser la table ' + table!.number + ' sur le plan de la salle'}
+                  onClick={() => router.push('/plan-table?table=' + table!.number)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline text-sm text-accent/80 active:scale-[0.95] transition-transform"
+                >
+                  📍
+                </button>
+              )}
               {!selectMode && seatMatches.length > 0 && (
                 <button
                   type="button"
@@ -379,7 +394,17 @@ export default function TablePage() {
                   }}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline text-sm text-accent/80 active:scale-[0.95] transition-transform"
                 >
-                  📍
+                  🪑
+                </button>
+              )}
+              {!selectMode && canCheckin && (
+                <button
+                  type="button"
+                  aria-label={'Ouvrir la fiche de ' + inv.nom_affichage}
+                  onClick={() => router.push('/checkin/' + inv.id)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline text-sm text-accent/80 active:scale-[0.95] transition-transform"
+                >
+                  ✅
                 </button>
               )}
               {canMoveGuests && !selectMode && (
@@ -457,7 +482,7 @@ export default function TablePage() {
               }}
             />
             <p className="mt-2 text-center text-[11px] text-text-faint">
-              Touchez 📍 à côté d'un nom ci-dessus pour mettre son siège en évidence, et vice versa. Purement
+              Touchez 🪑 à côté d'un nom ci-dessus pour mettre son siège en évidence, et vice versa. Purement
               informatif, ne reflète pas forcément la table actuelle de chaque invité en base.
             </p>
           </div>

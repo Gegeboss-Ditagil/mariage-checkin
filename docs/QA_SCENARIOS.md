@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.50.0**
-**Dernière mise à jour : 2026-09-14**
+**Version documentaire : 1.52.0**
+**Dernière mise à jour : 2026-09-15**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -189,7 +189,7 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Ouvrir `/tables`, entrer sur une table pleine de monde, puis toucher une autre table depuis le lien de retour/recherche sans repasser par un écran de chargement intermédiaire : la fiche de la première table ne doit plus rester affichée pendant que la seconde se charge — attendre soit « Chargement… », soit directement la bonne table, jamais l'ancienne. Refaire le même test via `/table/[tableId]` (scan QR d'une table puis d'une autre) et entre deux fiches `/checkin/[invitationId]` (ouvrir l'invité A depuis une liste, revenir, ouvrir l'invité B).
 - Sur `/checkin/[invitationId]` (fiche d'un groupe, ex. « Lys Landu ») : la fiche ne montre plus qu'un seul bouton « + » dans « Qui est arrivé ? » pour ajouter un accompagnant de dernière minute — plus de bouton « + Non prévu » séparé, plus de lien « Gérer les membres du groupe ».
 - Rôle avec `submitGuestApproval` (placeur/directeur/admin) : toucher le « + » de « Qui est arrivé ? », saisir un nom, valider → la personne apparaît immédiatement dans la liste avec la coche ✓ déjà cochée (arrivée), le total « Actuellement enregistrées » augmente, et si le total dépasse `nombre_prevu`, l'écran de gestion de l'excédent s'ouvre automatiquement (comme avant avec « + Non prévu »).
-- Rôle `agent_checkin` : le « + » de « Qui est arrivé ? » n'apparaît pas (seul le renommage par tap reste disponible s'il a `manageMembers`) ; un appel direct à `POST /api/members/add-unplanned` avec sa session → rejeté (401).
+- Rôle `agent_checkin` : le « + » de « Qui est arrivé ? » n'apparaît pas, et depuis le 14/09/2026 le renommage par tap n'est plus disponible non plus (`manageMembers` retirée) ; un appel direct à `POST /api/members/add-unplanned` avec sa session → rejeté (401).
 - Après cet ajout, ouvrir `/plan-table` (ou y être déjà, avec l'abonnement temps réel actif) : le nombre d'arrivés à la table de ce groupe augmente sans recharger la page.
 - « 📷 Invité surprise » reste disponible et inchangé (photo → approbation), séparé du « + » ci-dessus.
 - La route `/checkin/[invitationId]/members` reste accessible par URL directe (retrait/renommage en liste) même si plus aucun bouton n'y mène depuis la fiche de check-in.
@@ -203,6 +203,21 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Connexion en tant que placeur : `/dashboard` affiche désormais la carte "Staff & réserve" (comme pour le directeur) ; l'ouvrir mène à `/staff`, qui continue de n'afficher que le personnel sans table (pas d'onglets "Avec table"), inchangé par rapport à avant.
 - Ouvrir l'application sans être connecté (`/`, splash avant `/login`) : un petit texte blanc discret en bas à droite affiche la version courante (ex. "v1.40.0"), identique à `package.json`.
 - Sur `/checkin/[invitationId]` (invitation simple, un seul invité, pas d'étiquette) : la fiche tient sur un iPhone standard sans avoir à défiler pour voir les boutons du bas.
+
+## Renommage réservé + nom du haut synchronisé — v1.51.0
+
+- Connexion en tant qu'agent_checkin (Scotty Sanda ou similaire) : sur `/checkin/[invitationId]`, le titre en haut (nom de l'invitation) n'est plus cliquable pour renommer, et dans « Qui est arrivé ? », taper un nom n'ouvre plus les champs prénom/nom en édition — la liste reste consultable. Un appel direct à `POST /api/invitations/rename` ou `POST /api/members/rename` avec sa session → rejeté (401).
+- Connexion en tant que placeur, directeur ou admin : le renommage (titre du haut et par personne) reste disponible normalement, inchangé.
+- Invitation **solo** (un seul invité, ex. "Jonas Mpindi") : renommer cette personne depuis « Qui est arrivé ? » (Enregistrer) → le titre en haut de la fiche (TopBar) se met aussi à jour avec le nouveau nom, immédiatement.
+- Invitation de **groupe** (ex. "Famille Neves", plusieurs membres) : renommer UN membre depuis « Qui est arrivé ? » → seul le nom de ce membre change dans la liste ; le titre en haut (« Famille Neves ») ne change jamais.
+- Renommer une personne pendant qu'un autre agent a la même fiche ouverte sur un autre appareil : le nouveau nom apparaît chez l'autre agent sans recharger la page (temps réel déjà en place sur la table `guests`).
+
+## Trois icônes par invitation sur la fiche d'une table — v1.51.0
+
+- Sur `/tables/[tableId]` et `/table/[tableId]` (fiche d'une table), chaque invité a jusqu'à trois icônes séparées à droite de son nom : 📍 (localiser la table dans la salle), 🪑 (mettre son siège en évidence sur le dessin « vu sur le plan photographié » plus bas), ✅ (ouvrir sa fiche `/checkin/[invitationId]`) — en plus du tap sur le nom lui-même, qui continue d'ouvrir la même fiche (inchangé, jamais remplacé).
+- Toucher 📍 → navigue vers `/plan-table`, qui s'ouvre directement avec le plan visuel déplié et cette table localisée/mise en évidence, sans avoir à la rechercher soi-même. 📍 n'apparaît pas pour une table qui n'a pas encore de position sur le plan visuel (cas théorique, les 42 tables en ont une depuis la v1.48.0).
+- Toucher 🪑 → identique à l'ancien comportement du bouton unique 📍 (v1.48.8/v1.48.9) : met en évidence le/les siège(s) de cet invité sur le dessin en bas de la même page et y fait défiler. N'apparaît que si son nom correspond exactement à un siège connu de cette table.
+- Toucher ✅ → ouvre directement `/checkin/[invitationId]`, identique au tap sur le nom.
 
 ## Contrôle de version avant merge
 

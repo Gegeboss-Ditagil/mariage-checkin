@@ -181,8 +181,9 @@ test('bouton "+" pour ajouter une personne (deja arrivee) au groupe, reserve a s
   // Consolidation du 03/09/2026 : ce "+" faisait un ajout a la liste prevue
   // (canManage/manageMembers, add_invitation_member) ; il fait desormais un
   // ajout DEJA ARRIVE (canAdd/submitGuestApproval, add_unplanned_arrival) --
-  // agent_checkin garde manageMembers (peut renommer) mais jamais
-  // submitGuestApproval, donc ne doit plus voir ce bouton.
+  // agent_checkin n'a plus manageMembers depuis le 14/09/2026 (ne peut plus
+  // renommer non plus) et n'a jamais eu submitGuestApproval, donc ne doit
+  // voir ni ce bouton ni le renommage.
   assert.match(panelSource, /!adding && \(canAdd \|\| onFinish\)/);
   assert.match(panelSource, /\{canAdd && \(/);
   assert.match(panelSource, /members\/add-unplanned/);

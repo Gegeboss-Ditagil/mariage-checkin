@@ -60,9 +60,10 @@ export function GuestArrivalPanel({
   // Ajouter quelqu'un qui arrive avec le groupe a la derniere minute : le
   // "+" appelle desormais add_unplanned_arrival (marque arrive tout de
   // suite, declenche l'excedent), pas add_invitation_member -- reserve a
-  // submitGuestApproval, PAS a manageMembers (agent_checkin peut renommer
-  // mais ne doit jamais faire apparaitre quelqu'un de deja arrive sans
-  // passer par un placeur). Consolidation du 03/09/2026 (retour de Gersom :
+  // submitGuestApproval, PAS a manageMembers (le 14/09/2026, agent_checkin a
+  // justement perdu manageMembers -- ce role ne doit jamais renommer ni
+  // faire apparaitre quelqu'un de deja arrive sans passer par un placeur).
+  // Consolidation du 03/09/2026 (retour de Gersom :
   // "quand on ajoute la personne qui est avec Lys, ça veut dire que par
   // définition on approuve la personne et il faut la placer sur une table
   // ... [le bouton +Non prévu et le bouton Ajouter un invité] sont déjà

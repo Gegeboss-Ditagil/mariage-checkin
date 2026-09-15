@@ -117,23 +117,38 @@ test("/plan-table surligne aussi la ligne de l'invitation touchee dans la liste 
 // puisse aussi afficher la table... garder la meme logique... savoir où est-
 // ce que la personne est assise". Meme mecanisme reutilise sur les deux
 // routes de fiche de table (nouvelle et historique), jamais une nouvelle
-// implementation : bouton 📍 par ligne (n'entre pas en conflit avec le tap
-// sur le nom qui ouvre deja le check-in), jamais une source de placement.
+// implementation.
+// v1.51.0, retour de Gersom : le seul bouton 📍 par ligne (v1.48.8) devient
+// TROIS icones distinctes -- "tu as trois icones : la pin, c'est pour aller
+// voir où est-ce que la table est dans la salle... chaise, c'est pour que la
+// table apparaisse en bas avec les chaises... check-in, ça passe à la
+// prochaine page" : 📍 localise la table sur /plan-table (nouveau), 🪑
+// reprend exactement l'ancien comportement de 📍 (surligner le siege), ✅
+// ouvre explicitement /checkin/[invitationId] (en plus du tap sur le nom,
+// deja existant, jamais remplace).
 for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]/page.tsx']) {
-  test(`${route} affiche aussi le dessin "vu sur le plan photographie" sous la liste, avec un bouton 📍 par invitation`, () => {
+  test(`${route} affiche aussi le dessin "vu sur le plan photographie" sous la liste, avec trois icones (📍/🪑/✅) par invitation`, () => {
     const tableDetailSource = readFileSync(new URL(route, import.meta.url), 'utf8');
     assert.match(tableDetailSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch \} from '@\/lib\/floorPlanSeats'/);
     assert.match(tableDetailSource, /import \{ TableSeatWheel \} from '@\/components\/TableSeatWheel'/);
+    assert.match(tableDetailSource, /import \{ FLOOR_PLAN_TABLE_POSITIONS \} from '@\/components\/FloorPlan'/);
     assert.match(tableDetailSource, /<TableSeatWheel/);
     assert.match(tableDetailSource, /table && TABLE_SEAT_NAMES\[table\.number\]/);
     // Correspondance exacte uniquement (nom affiche + membres detailles),
     // jamais approchee -- meme regle que /plan-table et GuestArrivalPanel.
     assert.match(tableDetailSource, /\[inv\.nom_affichage, \.\.\.extractMembresComplet\(inv\.notes\)\]/);
     assert.match(tableDetailSource, /findSeatIndexByName\(table!\.number, name\)/);
-    // Le bouton 📍 est un element separe du bouton/lien qui ouvre le check-in
-    // (jamais un remplacement de ce tap existant, contrairement a /plan-table
-    // ou onSelectInvitation remplace la navigation).
+    // 📍 : localise la table sur /plan-table (nouveau comportement), gate
+    // sur la meme condition que le bouton "localiser" de /plan-table.
+    assert.match(tableDetailSource, /const tableHasPlanPosition = !!table && table\.number in FLOOR_PLAN_TABLE_POSITIONS;/);
+    assert.match(tableDetailSource, /router\.push\('\/plan-table\?table=' \+ table!\.number\)/);
     assert.match(tableDetailSource, />\s*\n\s*📍\s*\n/);
+    // 🪑 : reprend l'ancien comportement du seul bouton 📍 (surligner le
+    // siege + defiler), element separe du tap sur le nom (check-in).
+    assert.match(tableDetailSource, />\s*\n\s*🪑\s*\n/);
+    // ✅ : navigation explicite vers le check-in, en plus du tap existant
+    // sur le nom (jamais un remplacement).
+    assert.match(tableDetailSource, />\s*\n\s*✅\s*\n/);
     assert.match(tableDetailSource, /router\.push\('\/checkin\/' \+ inv\.id\)/);
     // Reinitialise au changement de tableId, comme highlightedSeats.
     assert.match(tableDetailSource, /setHighlightedSeats\(\[\]\);\s*\n\s*setSelectedInvitationId\(null\);/);
@@ -144,3 +159,15 @@ for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]
     assert.match(tableDetailSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
   });
 }
+
+test('/plan-table lit ?table=<numero> pour localiser une table venant de /tables/[tableId] ou /table/[tableId]', () => {
+  const planTableSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+  assert.match(planTableSource, /import \{ useSearchParams \} from 'next\/navigation'/);
+  assert.match(planTableSource, /const searchParams = useSearchParams\(\);/);
+  assert.match(planTableSource, /searchParams\.get\('table'\)/);
+  assert.match(planTableSource, /locateOnPlan\(table\)/);
+  // useSearchParams exige un boundary Suspense (comme les autres pages
+  // dynamiques de l'app, ex. /tables/[tableId]).
+  assert.match(planTableSource, /import \{ Suspense,/);
+  assert.match(planTableSource, /<Suspense fallback=\{null\}>\s*\n\s*<PlanTablePageInner \/>/);
+});

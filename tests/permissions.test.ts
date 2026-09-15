@@ -103,18 +103,19 @@ test('agent scan ne peut pas transferer ou echanger en lot', () => {
   assert.equal(canAccessPath('agent_checkin', '/api/swap-invitations'), false);
 });
 
-test('agent scan ne peut pas fusionner deux invitations (mais peut renommer)', () => {
+test('agent scan ne peut ni fusionner ni renommer une invitation ou un membre', () => {
   assert.equal(canAccessPath('agent_checkin', '/api/invitations/merge'), false);
-  // Renommer une invitation reste au meme niveau que gerer les membres :
-  // pas de nouveau blocage pour ce role sur /api/invitations/rename.
-  assert.equal(canAccessPath('agent_checkin', '/api/invitations/rename'), true);
+  // manageMembers retiree le 14/09/2026 (retour de Gersom) : ni le
+  // renommage de l'invitation entiere, ni celui d'un membre individuel.
+  assert.equal(canAccessPath('agent_checkin', '/api/invitations/rename'), false);
+  assert.equal(canAccessPath('agent_checkin', '/api/members/rename'), false);
 });
 
 test('les operations sensibles restent centralisees; le directeur peut gerer les etiquettes', () => {
   // Retire le 23/08/2026 sur demande explicite de Gersom : ce role est la
   // pour scanner/checker, pas pour reclassifier les invites (cote, roles
   // staff, notable...). manageMembers (renommer, gerer les membres du
-  // groupe) reste inchange pour ce role.
+  // groupe) egalement retiree pour ce role le 14/09/2026 (voir plus bas).
   assert.equal(hasCapability('admin', 'mergeInvitations'), true);
   for (const role of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
     assert.equal(hasCapability(role, 'mergeInvitations'), false, role + ' ne doit pas avoir mergeInvitations');
@@ -130,7 +131,14 @@ test('les operations sensibles restent centralisees; le directeur peut gerer les
   assert.equal(hasCapability('admin', 'manageTags'), true);
   assert.equal(hasCapability('directeur', 'manageTags'), true);
   for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) assert.equal(hasCapability(role, 'manageTags'), false);
-  assert.equal(hasCapability('agent_checkin', 'manageMembers'), true);
+  // manageMembers (renommer une invitation/un membre) retiree a agent_checkin
+  // le 14/09/2026 (retour de Gersom, capture d'ecran) : "l'agent qui scanne
+  // ne doit pas pouvoir cliquer sur le nom et modifier... seul placeur,
+  // directeur de festin ou admin peut faire ca".
+  assert.equal(hasCapability('agent_checkin', 'manageMembers'), false);
+  for (const role of ['admin', 'directeur', 'placeur'] as const) {
+    assert.equal(hasCapability(role, 'manageMembers'), true, role + ' doit garder manageMembers');
+  }
   assert.equal(hasCapability('directeur', 'moveGuests'), true);
   assert.equal(hasCapability('placeur', 'moveGuests'), true);
 

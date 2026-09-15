@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
   COTE_DOT_COLORS,
@@ -74,6 +75,20 @@ const PULL_THRESHOLD = 70;
 const CAPACITE_OFFICIELLE = 410;
 
 export default function PlanTablePage() {
+  return (
+    <Suspense fallback={null}>
+      <PlanTablePageInner />
+    </Suspense>
+  );
+}
+
+function PlanTablePageInner() {
+  // v1.51.0, retour de Gersom : depuis /tables/[tableId] et /table/[tableId],
+  // un bouton 📍 par invitation renvoie ici avec ?table=<numero> pour
+  // localiser physiquement la table dans la salle -- reprend exactement le
+  // comportement de locateOnPlan ci-dessous, une fois les tables chargees.
+  const searchParams = useSearchParams();
+  const locateRequestedRef = useRef(false);
   const role = useSessionRole();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
@@ -410,6 +425,23 @@ export default function PlanTablePage() {
     setShowFloorPlan(true);
     scrollToFloorPlan();
   }
+
+  // v1.51.0 : arrivee depuis le bouton 📍 (localiser) d'une invitation sur
+  // /tables/[tableId] ou /table/[tableId] (?table=<numero>) -- une seule
+  // fois les tables chargees, localise directement cette table sur le plan,
+  // sans que l'utilisateur ait a la rechercher/toucher elle-meme. Un seul
+  // essai (locateRequestedRef) : si la table n'est pas encore sur le plan
+  // (tablesSurLePlan), on n'insiste pas a chaque re-render.
+  useEffect(() => {
+    if (locateRequestedRef.current) return;
+    if (tables.length === 0) return;
+    const raw = searchParams.get('table');
+    if (!raw) return;
+    locateRequestedRef.current = true;
+    const number = Number(raw);
+    const table = tables.find((t) => t.number === number);
+    if (table) locateOnPlan(table);
+  }, [tables, searchParams]);
 
   // Comme sur /staff : tout le monde qui peut voir cet ecran voit le
   // personnel d'une zone, seuls ceux qui ont "checkin" peuvent toucher une

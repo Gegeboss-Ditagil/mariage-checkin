@@ -79,26 +79,30 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval', 'viewAgenda'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
-  // Conserve manageMembers (renommer, gerer les membres du groupe) : seule
-  // la gestion des etiquettes a ete retiree, sur demande explicite de
-  // Gersom le 23/08/2026 -- ce role est la pour scanner/checker, pas pour
-  // reclassifier les invites. viewAgenda ajoute le 03/09/2026 (retour de
-  // Gersom sur Agent001 : "il devrait voir agenda a la place de staff" en
-  // bas a droite) -- lecture seule (jamais manageAgenda, reserve a
-  // admin/directeur) : ce role peut desormais consulter le chronogramme du
-  // jour J, sans le modifier ; affiche sur /scan via NextAgendaActivity
-  // (deja gate sur cette meme capacite), pas besoin d'onglet dedie pour ça.
-  // viewGuestApprovals ajoute le 13/09/2026 (retour de Gersom : "en bas a
-  // droite... ca devrait etre approbation") -- lecture seule ici aussi :
-  // jamais reviewGuestApproval ni assignGuestApproval, ce role continue de
-  // renvoyer vers un placeur pour decider/assigner (regle du 02/09/2026,
-  // voir app/api/members/add-unplanned/route.ts), il peut seulement suivre
+  // **manageMembers retiree le 14/09/2026** (retour de Gersom, capture
+  // d'ecran d'un agent scan renommant un invite depuis "Qui est arrive ?") :
+  // "l'agent qui scanne ne doit pas pouvoir cliquer sur le nom et modifier...
+  // seul placeur, directeur de festin ou admin peut faire ca". Ce role
+  // avait conserve manageMembers depuis le 23/08/2026 (seule la gestion des
+  // etiquettes avait ete retiree a l'epoque) -- decision inversee ici :
+  // scanner/checker seulement, jamais renommer/reclassifier un invite.
+  // viewAgenda ajoute le 03/09/2026 (retour de Gersom sur Agent001 : "il
+  // devrait voir agenda a la place de staff" en bas a droite) -- lecture
+  // seule (jamais manageAgenda, reserve a admin/directeur) : ce role peut
+  // desormais consulter le chronogramme du jour J, sans le modifier ;
+  // affiche sur /scan via NextAgendaActivity (deja gate sur cette meme
+  // capacite), pas besoin d'onglet dedie pour ça. viewGuestApprovals ajoute
+  // le 13/09/2026 (retour de Gersom : "en bas a droite... ca devrait etre
+  // approbation") -- lecture seule ici aussi : jamais reviewGuestApproval ni
+  // assignGuestApproval, ce role continue de renvoyer vers un placeur pour
+  // decider/assigner (regle du 02/09/2026, voir
+  // app/api/members/add-unplanned/route.ts), il peut seulement suivre
   // l'etat des demandes en cours. viewStaff reste inchangee (le badge QR
   // "STAFF" depuis /scan reste fonctionnel) -- seul le raccourci permanent
   // de la barre du bas change, voir components/BottomNav.tsx.
   agent_checkin: [
     'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'checkin',
-    'assignOverflow', 'manageMembers', 'markNoShow',
+    'assignOverflow', 'markNoShow',
     'resolveExceptions', 'viewAgenda', 'viewGuestApprovals',
   ],
   visibilite: [
@@ -174,7 +178,7 @@ export function canAccessPath(role: Role, pathname: string): boolean {
       '/tables/move', '/tables/move-multiple', '/tables/overflow', '/tables/add',
       '/api/move-invitation', '/api/move-invitations', '/api/swap-invitations',
       '/api/overflow/move', '/api/overflow/unassign', '/api/invitations/add',
-      '/api/invitations/merge',
+      '/api/invitations/merge', '/api/invitations/rename', '/api/members/rename',
     ].some((prefix) => matchesPrefix(pathname, prefix));
   }
 
