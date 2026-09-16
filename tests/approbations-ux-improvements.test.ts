@@ -199,7 +199,6 @@ test('swipe pour supprimer une demande deja decidee, reserve a admin -- API DELE
   assert.match(approbationsPage, /enabled=\{role === 'admin' && r\.statut !== 'en_attente'\}/);
   assert.match(approbationsPage, /onDelete=\{\(\) => handleDelete\(r\.id\)\}/);
   assert.match(swipeableDeleteCard, /if \(!enabled\) return <>\{children\}<\/>;/);
-  assert.match(swipeableDeleteCard, /DELETE_THRESHOLD = 120/);
   assert.match(deleteRoute, /export async function DELETE/);
   assert.match(deleteRoute, /hasCapability\(user\.role, 'adminPanel'\)/);
   assert.match(deleteRoute, /if \(existing\.statut === 'en_attente'\)/);
@@ -209,33 +208,25 @@ test('swipe pour supprimer une demande deja decidee, reserve a admin -- API DELE
 
 // v1.53.2, bug reel signale par Gersom (16/09/2026, role admin confirme en
 // base) : "je n'ai toujours pas la possibilite de swipe" -- premiere
-// tentative (verrouillage d'axe : ne capturer le pointeur qu'une fois le
-// geste tranche horizontal/vertical), confirmee INSUFFISANTE par un second
-// test reel de Gersom (aucune reaction du tout au glissement, meme
-// partielle). v1.53.4 corrige avec l'approche inverse, conforme a la
-// specification touch-action/Pointer Events : capturer le pointeur
-// IMMEDIATEMENT a onPointerDown (sans quoi WebKit/iOS ne delivre jamais de
-// pointermove horizontal exploitable, le moteur natif tranchant seul et
-// systematiquement pour un defilement vertical avec touch-action: pan-y) ;
-// le defilement vertical natif reste possible malgre la capture (touch-action
-// pan-y), et WebKit annule alors proprement la sequence (pointercancel),
-// deja gere par onPointerCancel={onPointerUp}.
-test('le pointeur est capture des onPointerDown (indispensable sur iOS pour recevoir des pointermove horizontaux exploitables), touch-action: pan-y et onPointerCancel laissent le defilement vertical natif fonctionner', () => {
-  const onPointerDownBody = swipeableDeleteCard.slice(
-    swipeableDeleteCard.indexOf('function onPointerDown'),
-    swipeableDeleteCard.indexOf('function onPointerMove')
-  );
-  assert.match(onPointerDownBody, /\.setPointerCapture\(e\.pointerId\)/);
-  assert.match(swipeableDeleteCard, /VERTICAL_INTENT_THRESHOLD = 10/);
-  // Un mouvement a dominante verticale n'annule pas la capture (impossible a
-  // "rendre" proprement au navigateur cote JS) : il arrete simplement de
-  // suivre le geste en X, en comptant sur pointercancel pour reinitialiser
-  // l'etat des que WebKit prend le relais du defilement natif.
-  assert.match(swipeableDeleteCard, /if \(verticalIntent\.current\) return;/);
-  assert.match(swipeableDeleteCard, /onPointerCancel=\{onPointerUp\}/);
-  // Seul un geste sans intention verticale peut declencher la suppression au
-  // relachement -- un simple tap ou un defilement vertical ne le peut plus.
-  assert.match(swipeableDeleteCard, /!wasVerticalIntent && -dragX >= DELETE_THRESHOLD/);
+// tentative (verrouillage d'axe), confirmee INSUFFISANTE par un second test
+// reel (aucune reaction du tout au glissement, meme partielle). v1.53.4,
+// deuxieme tentative (capture immediate du pointeur, Pointer Events),
+// confirmee elle aussi INSUFFISANTE par un troisieme test reel. v1.53.7 :
+// deux echecs consecutifs de Pointer Events sur le meme appareil pointent
+// vers l'approche elle-meme plutot qu'un detail d'implementation -- retour de
+// Gersom avec une capture d'ecran de Messages iOS ("on slide et on voit le
+// bouton trash... comme sur l'iPhone") : abandon complet des Pointer Events
+// au profit d'un vrai defilement horizontal natif (`overflow-x-auto` +
+// scroll-snap), le navigateur gerant seul le geste, l'inertie et la
+// cohabitation avec le defilement vertical de la liste -- plus aucune ligne
+// de JS de detection de geste a deboguer a l'aveugle.
+test("le glissement s'appuie sur un vrai defilement horizontal natif (scroll-snap), plus aucun Pointer Event/detection de geste custom, pour survivre aux echecs repetes sur l'appareil reel de Gersom", () => {
+  assert.doesNotMatch(swipeableDeleteCard, /onPointerDown|onPointerMove|onPointerUp|onPointerCancel|setPointerCapture/);
+  assert.match(swipeableDeleteCard, /className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto/);
+  assert.match(swipeableDeleteCard, /className="min-w-full shrink-0 snap-start"/);
+  assert.match(swipeableDeleteCard, /snap-end/);
+  assert.match(swipeableDeleteCard, /aria-label="Supprimer définitivement"/);
+  assert.match(swipeableDeleteCard, /onClick=\{handleDeleteClick\}/);
 });
 
 test('GuestArrivalPanel : la branche "ensure" (backfill generique) marque aussi initializing=true avant son fetch, comme la branche "initialize" -- sinon settled devenait brievement vrai avec visible=false', () => {
