@@ -3,6 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.11] — 2026-09-16
+
+Retour de Gersom (5 captures d'écran seatplan.io en bien meilleure résolution, couvrant quasiment les 42 tables) : « Voici une meilleure résolution avec tous les noms pour pouvoir t'aider encore mieux. Analyse, extrait bien les données et les datas pour pouvoir refaire la même chose. »
+
+### Méthode
+Plutôt qu'une nouvelle passe d'OCR pure (déjà faite en v1.48.0/v1.53.3), les 272 invitations réellement en base (requête SQL groupée par `table.number`) servent désormais de « menu » fermé de noms exacts pour chaque table : au lieu de deviner l'orthographe depuis la photo, on retrouve quelle personne connue de CETTE table occupe quelle position — la photo, en bien meilleure résolution, ne sert plus qu'à confirmer l'ORDRE des sièges, jamais l'orthographe. `lib/floorPlanSeats.ts` reste PUREMENT INFORMATIF (`invitations.table_id` reste l'unique source de placement).
+
+### Corrigé
+Ce recoupement a révélé de vraies erreurs de **contamination croisée entre tables voisines**, pas de simples reformulations :
+- **Tables 1/11** : « Teresa Ndani »/« Ketsia Neves » (aucune réservation table 11) étaient attribuées à tort à la table 11 alors qu'elles sont réellement table 1 (qui, elle, avait ces deux sièges à tort vides).
+- **Table 41** : « Diego Ramos » (réellement table 11) et « Jade Magnus » (n'est plus invitée depuis v1.50.0) occupaient à tort les deux derniers sièges — remplacés par « Luzolo Patrick Menga »/« Jennifer Bembo »/« Joël Bembo »/« Jessiline Mateus », les vrais membres visibles sur la nouvelle photo. **Revient sur une décision documentée en v1.53.3** (« écart connu entre photo et réorganisation v1.50.0, laissé volontairement tel quel ») : ce n'était pas un écart de réorganisation mais bien une erreur d'attribution de table depuis le départ.
+- **Table 36** : « Femme Michaud »/« Michaud Cujumbu » (en réalité des membres de la table 41) remplacés par les vrais occupants (« Huguette Matondo »/« Julianna Matondo »).
+- **Table 40** : même contamination croisée avec les tables 36/41, corrigée pour ne garder que les 7 membres réels de « Tio Godart Culumbu »/« Famille Matondo »/« Famille Lumbu ».
+- **Table 2** : « Deusdedit Dos Goncalves » (aucune invitation de ce nom) corrigé en « DeMbala Dos Goncalves ».
+- **Table 8** : « Luzolo P. Menga » (en réalité table 41) corrigé en « Epoux Nzuzi Culumbu ».
+- **Table 3** : placeholder générique « Invité n.n. (338) » résolu en « Epouse Mvovi ».
+- **Table 14** : coquille « Garile Bulaki » corrigée en « Gaelle Bulaki ».
+- **Table 4** : les deux cas ambigus signalés en v1.53.3 tranchés avec certitude : « Henri/Henriela Onatshungu Momba » (jamais « Henricia ») et « Staicy Mbiyavanga Mavinga » (jamais « Stacky »).
+
+Toutes les autres tables vérifiées correspondent déjà exactement à la base, aucun changement. Les rares noms encore non retrouvés sont des accompagnants jamais nommés individuellement en base, hors de portée de toute méthode de recoupement par nom.
+
+### Tests
+- `tests/floor-plan-seats.test.ts` : le test v1.53.3 qui documentait l'ancien (mauvais) contenu des tables 40/41 comme un écart volontaire est remplacé par deux nouveaux tests verrouillant les corrections de contamination croisée (tables 1/11/41 et 36/40).
+
 ## [1.53.10] — 2026-09-16
 
 Retour de Gersom (photo seatplan.io transmise en référence) : « la manière comment tu affiches les noms, ce n'est pas facile, ce n'est pas évident, et en plus tu fais des erreurs... s'ils sont plutôt affichés en perpendiculaire et que c'est justement juste le côté court du rectangle qui touche la tangente du cercle, ça serait plus efficace... utilise le même modèle... aussi la logique de comment il raccourcit les noms ».

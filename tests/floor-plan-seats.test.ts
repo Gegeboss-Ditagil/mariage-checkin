@@ -77,10 +77,7 @@ test('toucher une invitation dans la liste de la table selectionnee surligne ses
 // chaises... vu que tu sais déjà sur quelle table, ça va être facile de
 // faire un match". Recoupement systématique (table par table) des 393
 // sièges nommés avec les invitations réellement en base -- 75 corrections
-// de lecture OCR confiantes appliquées (spot-check ci-dessous), le reste
-// (13 cas ambigus, 5 sans candidat) volontairement laissé tel quel plutôt
-// que deviné -- voir CHANGELOG v1.53.3 et le commentaire en tête de
-// lib/floorPlanSeats.ts.
+// de lecture OCR confiantes appliquées (spot-check ci-dessous).
 test('v1.53.3 : corrige plusieurs lectures OCR confirmées par recoupement avec la base (ex. "Fixon Zola" -> "Fiston Zola")', () => {
   assert.equal(TABLE_SEAT_NAMES[4][9], 'Fiston Zola');
   assert.equal(TABLE_SEAT_NAMES[1][1], 'Jean-Clivens Le Caous');
@@ -92,11 +89,30 @@ test('v1.53.3 : corrige plusieurs lectures OCR confirmées par recoupement avec 
   assert.ok(!flat.includes('Jean-Ciben Ca ous'));
 });
 
-test('v1.53.3 : les écarts déjà connus entre la photo et une réorganisation ultérieure (v1.50.0) restent volontairement inchangés', () => {
-  // Ni des erreurs OCR ni une source de placement -- la photo reste un
-  // instantané fidèle au moment où elle a été prise (v1.50.0 a depuis
-  // déplacé ces personnes vers d'autres tables en base, documenté au
-  // CHANGELOG, jamais répercuté ici).
-  assert.equal(TABLE_SEAT_NAMES[40][1], 'Jennifer Bembo');
-  assert.equal(TABLE_SEAT_NAMES[41][9], 'Jade Magnus');
+// v1.53.11, retour de Gersom (captures d'écran seatplan.io en bien meilleure
+// résolution) : "analyse, extrait bien les données... pour pouvoir refaire
+// la même chose" -- la base (272 invitations, requête groupée par table)
+// sert désormais de "menu" fermé de noms exacts par table, la photo ne
+// donnant plus que l'ORDRE des sièges. Corrige de vraies erreurs de
+// contamination croisée entre tables voisines (36/40/41, 1/11), jamais de
+// simples reformulations -- voir le commentaire en tête de
+// lib/floorPlanSeats.ts et CHANGELOG v1.53.11 pour le détail complet.
+test("v1.53.11 : corrige la contamination croisée entre tables 1/11 (Diego Ramos/Jade Magnus n'étaient jamais réellement à la table 41)", () => {
+  assert.equal(TABLE_SEAT_NAMES[1][3], 'Ketsia Neves');
+  assert.equal(TABLE_SEAT_NAMES[1][7], 'Teresa Ndani');
+  assert.equal(TABLE_SEAT_NAMES[11][0], 'Diego Ramos');
+  assert.equal(TABLE_SEAT_NAMES[41][6], 'Luzolo Patrick Menga');
+  const flat = Object.values(TABLE_SEAT_NAMES).flat();
+  assert.ok(!flat.includes('Jade Magnus'), "Jade Magnus n'est plus invitée depuis v1.50.0");
+  assert.ok(!flat.includes('Deusdedit Dos Goncalves'));
+  assert.ok(!flat.includes('Femme Michaud'));
+  assert.ok(!flat.includes('Michaud Cujumbu'));
+  assert.ok(!flat.includes('Invité n.n. (338)'));
+});
+
+test('v1.53.11 : table 36 et table 40 retrouvent leurs vrais occupants respectifs (les deux avaient des noms de tables voisines mélangés)', () => {
+  assert.equal(TABLE_SEAT_NAMES[36][7], 'Huguette Matondo');
+  assert.equal(TABLE_SEAT_NAMES[36][8], 'Julianna Matondo');
+  assert.equal(TABLE_SEAT_NAMES[40][0], 'Tio Godart Culumbu');
+  assert.equal(TABLE_SEAT_NAMES[40][1], 'Epouse Godart');
 });
