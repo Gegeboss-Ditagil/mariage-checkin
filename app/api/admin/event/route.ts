@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest) {
   const user = getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
-  const { status, name, event_date, reserve_table_capacity } = await req.json().catch(() => ({}));
+  const { status, name, event_date, reserve_table_capacity, twilio_enabled } = await req.json().catch(() => ({}));
 
   const patch: Record<string, unknown> = {};
   if (status !== undefined) {
@@ -36,6 +36,9 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'capacité de réserve invalide' }, { status: 400 });
     }
     patch.reserve_table_capacity = cap;
+  }
+  if (twilio_enabled !== undefined) {
+    patch.twilio_enabled = Boolean(twilio_enabled);
   }
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'aucune modification fournie' }, { status: 400 });

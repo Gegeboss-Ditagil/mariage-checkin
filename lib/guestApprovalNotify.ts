@@ -51,7 +51,13 @@ function placesLabel(n: number): string {
  * app/api/public/twilio/whatsapp-inbound/route.ts -- pas besoin de cliquer
  * le lien pour décider, seulement pour voir la photo.
  */
-export async function notifyApprover(request: GuestApprovalRequestRow, approveUrl: string): Promise<void> {
+export async function notifyApprover(
+  request: GuestApprovalRequestRow,
+  approveUrl: string,
+  // Lu depuis `events.twilio_enabled` (migration 0055) par l'appelant --
+  // voir lib/twilio.ts pour l'historique du toggle.
+  twilioEnabled: boolean
+): Promise<void> {
   const coteLabel = request.cote === 'Gege' ? 'Gégé' : 'Nelly';
   const smsBody =
     'Mariage Nelly & Gersom : ' +
@@ -64,13 +70,18 @@ export async function notifyApprover(request: GuestApprovalRequestRow, approveUr
     approveUrl;
 
   const results = await Promise.allSettled([
-    sendSms(request.approver_phone, smsBody),
-    sendWhatsApp(request.approver_phone, process.env.TWILIO_WHATSAPP_CONTENT_SID_REQUEST, {
-      '1': request.nom_invite,
-      '2': String(request.nombre_invites),
-      '3': coteLabel,
-      '4': approveUrl,
-    }),
+    sendSms(request.approver_phone, smsBody, twilioEnabled),
+    sendWhatsApp(
+      request.approver_phone,
+      process.env.TWILIO_WHATSAPP_CONTENT_SID_REQUEST,
+      {
+        '1': request.nom_invite,
+        '2': String(request.nombre_invites),
+        '3': coteLabel,
+        '4': approveUrl,
+      },
+      twilioEnabled
+    ),
   ]);
 
   // Le SMS reste le canal de référence (celui documenté/testé) : si LUI a
@@ -90,7 +101,8 @@ export async function notifyApprover(request: GuestApprovalRequestRow, approveUr
 export async function notifyApproverDecision(
   request: GuestApprovalRequestRow,
   decision: 'approuve' | 'refuse',
-  reserveRemaining: number
+  reserveRemaining: number,
+  twilioEnabled: boolean
 ): Promise<void> {
   const body =
     decision === 'approuve'
@@ -100,7 +112,7 @@ export async function notifyApproverDecision(
         placesLabel(reserveRemaining) +
         ' en réserve.'
       : 'Bien reçu : la demande pour ' + request.nom_invite + " n'a pas été approuvée.";
-  await sendSms(request.approver_phone, body);
+  await sendSms(request.approver_phone, body, twilioEnabled);
 }
 
 /**
@@ -115,7 +127,8 @@ export async function notifyFestinDirectors(
   supabase: SupabaseClient,
   request: GuestApprovalRequestRow,
   tableNumber: number,
-  reserveRemaining: number
+  reserveRemaining: number,
+  twilioEnabled: boolean
 ): Promise<{ sent: number; failed: number }> {
   const { data: directors } = await supabase.from('festin_directors').select('*');
   const list = directors || [];
@@ -138,7 +151,7 @@ export async function notifyFestinDirectors(
   let failed = 0;
   for (const director of list) {
     try {
-      await sendSms(director.telephone, body);
+      await sendSms(director.telephone, body, twilioEnabled);
       sent++;
     } catch (err) {
       // Un directeur injoignable ne doit jamais faire échouer l'assignation

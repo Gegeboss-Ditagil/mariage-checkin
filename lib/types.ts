@@ -21,6 +21,10 @@ export interface EventRow {
   event_date: string | null;
   status: 'setup' | 'test' | 'live' | 'closed';
   reserve_table_capacity: number;
+  // Active/desactive l'envoi reel de SMS/WhatsApp Twilio pour les
+  // approbations d'invite surprise -- voir lib/twilio.ts et la migration
+  // 0055_events_twilio_enabled.sql. Faux par defaut.
+  twilio_enabled: boolean;
   created_at: string;
 }
 

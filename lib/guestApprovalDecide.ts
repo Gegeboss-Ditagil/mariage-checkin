@@ -181,6 +181,14 @@ async function finalizeDecision(
   }
 
   const reserveRemaining = await getReserveRemaining(supabase, updated.event_id);
+  // v1.53.2 : `events.twilio_enabled` (migration 0055) remplace l'ancienne
+  // variable d'environnement TWILIO_ENABLED -- voir lib/twilio.ts.
+  const { data: eventRow } = await supabase
+    .from('events')
+    .select('twilio_enabled')
+    .eq('id', updated.event_id)
+    .maybeSingle();
+  const twilioEnabled = eventRow?.twilio_enabled ?? false;
   // v1.48.3, retour de Gersom : "les trois petits points restent là très
   // longtemps" en approuvant/reconsidérant -- ces deux envois sont chacun
   // best-effort et indépendants l'un de l'autre (SMS/WhatsApp de
@@ -191,7 +199,7 @@ async function finalizeDecision(
   // condition de succès de la décision elle-même, déjà actée en base
   // au-dessus. Bornés en plus à 8s chacun (lib/twilio.ts, lib/webPush.ts).
   await Promise.allSettled([
-    notifyApproverDecision(updated, decision, reserveRemaining).catch(() => {
+    notifyApproverDecision(updated, decision, reserveRemaining, twilioEnabled).catch(() => {
       // Le SMS/WhatsApp de confirmation est un bonus, pas une condition de
       // succès de la décision elle-même -- déjà actée en base au-dessus.
     }),

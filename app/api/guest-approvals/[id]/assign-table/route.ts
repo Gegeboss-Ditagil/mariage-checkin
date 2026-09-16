@@ -76,6 +76,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   let directorReport: { sent: number; failed: number } | null = null;
   if (request && table) {
     const reserveRemaining = await getReserveRemaining(supabase, request.event_id);
+    // v1.53.2 : `events.twilio_enabled` (migration 0055) remplace l'ancienne
+    // variable d'environnement TWILIO_ENABLED -- voir lib/twilio.ts.
+    const { data: eventRow } = await supabase
+      .from('events')
+      .select('twilio_enabled')
+      .eq('id', request.event_id)
+      .maybeSingle();
+    const twilioEnabled = eventRow?.twilio_enabled ?? false;
     // v1.48.3, retour de Gersom : "les trois petits points restent là très
     // longtemps" -- ces deux envois sont chacun best-effort et indépendants
     // (rapport SMS aux directeurs de festin, Push aux placeurs), mais
@@ -84,7 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // (lib/guestApprovalDecide.ts), bornés en plus à 8s chacun (lib/twilio.ts,
     // lib/webPush.ts).
     const [directorResult] = await Promise.allSettled([
-      notifyFestinDirectors(supabase, request, table.number, reserveRemaining),
+      notifyFestinDirectors(supabase, request, table.number, reserveRemaining, twilioEnabled),
       notifyGuestApprovalPlaceurs(supabase, request, table.number).catch(() => {
         // Best-effort : l'assignation atomique est déjà terminée.
       }),

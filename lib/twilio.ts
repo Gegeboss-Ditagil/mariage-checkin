@@ -39,23 +39,19 @@ export class TwilioSendError extends Error {
 // d'invités surprise) reste désactivé intentionnellement pour l'instant --
 // "c'est toggle off... on activera plus tard" -- indépendamment du fait que
 // TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN/TWILIO_PHONE_NUMBER soient déjà
-// renseignés ou non sur Vercel. Un seul interrupteur explicite plutôt que de
-// deviner l'intention depuis la présence/absence des identifiants :
-// réactiver plus tard se fait en changeant uniquement cette variable sur
-// Vercel (`TWILIO_ENABLED=true`), sans toucher au code ni redéployer une
-// version différente. Par défaut (variable absente ou différente de
-// 'true') : désactivé. Centralisé ici, dans getTwilioConfig/getWhatsAppConfig
-// -- sendSms/sendWhatsApp et donc tous leurs appelants (guestApprovalNotify)
-// s'adaptent automatiquement à l'état du toggle sans aucun changement de
-// leur côté.
-export function isTwilioEnabled(): boolean {
-  return process.env.TWILIO_ENABLED === 'true';
-}
-
-function getTwilioConfig() {
-  if (!isTwilioEnabled()) {
+// renseignés ou non sur Vercel. v1.53.2 (retour de Gersom, 16/09/2026) :
+// l'interrupteur n'est plus une variable d'environnement (TWILIO_ENABLED,
+// nécessitait un accès Vercel) mais la colonne persistée `events.twilio_enabled`
+// (migration 0055), modifiable directement depuis /admin -- "mets un bouton
+// dans le paramètre de la page admin pour activer/désactiver cette
+// fonctionnalité". getTwilioConfig/getWhatsAppConfig reçoivent désormais cet
+// état en paramètre plutôt que de le lire eux-mêmes ; tous les appelants
+// (lib/guestApprovalNotify.ts) le passent explicitement, lu depuis la ligne
+// `events` de l'événement concerné. Faux par défaut.
+function getTwilioConfig(enabled: boolean) {
+  if (!enabled) {
     throw new TwilioConfigError(
-      "Twilio est désactivé (TWILIO_ENABLED différent de 'true') — fonctionnalité SMS en attente d'activation."
+      "Twilio est désactivé pour cet événement (activez-le depuis /admin) — fonctionnalité SMS en attente d'activation."
     );
   }
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -74,11 +70,12 @@ function getTwilioConfig() {
 // dédié) et son Content Template approuvé : deux variables séparées de
 // TWILIO_PHONE_NUMBER, absentes = canal WhatsApp desactivé silencieusement
 // (voir sendWhatsApp), jamais une erreur qui bloquerait le SMS. Soumis au
-// même toggle TWILIO_ENABLED que le SMS -- WhatsApp étant déjà conçu pour se
-// désactiver silencieusement plutôt que lever une erreur (canal optionnel),
-// le toggle réutilise ce même chemin plutôt que d'en ajouter un nouveau.
-function getWhatsAppConfig() {
-  if (!isTwilioEnabled()) return null;
+// même interrupteur `events.twilio_enabled` que le SMS -- WhatsApp étant déjà
+// conçu pour se désactiver silencieusement plutôt que lever une erreur
+// (canal optionnel), le toggle réutilise ce même chemin plutôt que d'en
+// ajouter un nouveau.
+function getWhatsAppConfig(enabled: boolean) {
+  if (!enabled) return null;
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_WHATSAPP_NUMBER;
@@ -121,15 +118,16 @@ async function postMessage(
 
 /**
  * Envoie un SMS texte seul (jamais de MMS, voir note en tête de fichier).
- * Lève TwilioConfigError si les variables d'environnement sont absentes,
- * TwilioSendError si Twilio refuse l'envoi (numéro invalide, solde
- * insuffisant, etc.) -- l'appelant décide s'il doit bloquer l'action
- * globale ou juste avertir l'agent que le SMS n'est pas parti (voir
- * app/api/guest-approvals/route.ts : la demande est créée même si le SMS
- * échoue, pour ne jamais perdre la photo/les infos déjà saisies).
+ * Lève TwilioConfigError si `enabled` est faux ou si les variables
+ * d'environnement des identifiants sont absentes, TwilioSendError si Twilio
+ * refuse l'envoi (numéro invalide, solde insuffisant, etc.) -- l'appelant
+ * décide s'il doit bloquer l'action globale ou juste avertir l'agent que le
+ * SMS n'est pas parti (voir app/api/guest-approvals/route.ts : la demande
+ * est créée même si le SMS échoue, pour ne jamais perdre la photo/les infos
+ * déjà saisies). `enabled` vient de `events.twilio_enabled` (migration 0055).
  */
-export async function sendSms(to: string, body: string): Promise<void> {
-  const { accountSid, authToken, from } = getTwilioConfig();
+export async function sendSms(to: string, body: string, enabled: boolean): Promise<void> {
+  const { accountSid, authToken, from } = getTwilioConfig(enabled);
   await postMessage(accountSid, authToken, { To: to, From: from, Body: body });
 }
 
@@ -140,16 +138,18 @@ export async function sendSms(to: string, body: string): Promise<void> {
  * "..." }` correspondant aux variables `{{1}}`/`{{2}}`/... définies dans le
  * template côté console Twilio.
  *
- * Retourne SANS RIEN FAIRE (pas d'exception) si TWILIO_WHATSAPP_NUMBER ou
- * `contentSid` sont absents : le canal WhatsApp est un complément au SMS,
- * jamais une condition bloquante -- voir lib/guestApprovalNotify.ts.
+ * Retourne SANS RIEN FAIRE (pas d'exception) si `enabled` est faux, ou si
+ * TWILIO_WHATSAPP_NUMBER ou `contentSid` sont absents : le canal WhatsApp est
+ * un complément au SMS, jamais une condition bloquante -- voir
+ * lib/guestApprovalNotify.ts.
  */
 export async function sendWhatsApp(
   to: string,
   contentSid: string | undefined,
-  contentVariables?: Record<string, string>
+  contentVariables: Record<string, string> | undefined,
+  enabled: boolean
 ): Promise<void> {
-  const config = getWhatsAppConfig();
+  const config = getWhatsAppConfig(enabled);
   if (!config || !contentSid) return;
 
   const params: Record<string, string> = {

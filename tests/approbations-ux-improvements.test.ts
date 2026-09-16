@@ -207,6 +207,29 @@ test('swipe pour supprimer une demande deja decidee, reserve a admin -- API DELE
   assert.match(deleteRoute, /guest_approval_deleted/);
 });
 
+// v1.53.2, bug reel signale par Gersom (16/09/2026, role admin confirme en
+// base) : "je n'ai toujours pas la possibilite de swipe" -- capturer le
+// pointeur des onPointerDown, avant de savoir si le geste est horizontal ou
+// vertical, empechait la detection du swipe sur iOS (WebKit annule la
+// sequence de pointeur des qu'il detecte la moindre composante verticale).
+// Corrige en ne verrouillant l'axe (et en ne capturant le pointeur) qu'une
+// fois le mouvement assez net pour trancher.
+test('le pointeur n\'est capture qu\'apres avoir reconnu un geste horizontal, jamais des onPointerDown (sinon le navigateur peut annuler le swipe sur iOS)', () => {
+  const onPointerDownBody = swipeableDeleteCard.slice(
+    swipeableDeleteCard.indexOf('function onPointerDown'),
+    swipeableDeleteCard.indexOf('function onPointerMove')
+  );
+  assert.doesNotMatch(onPointerDownBody, /\.setPointerCapture\(/);
+  assert.match(swipeableDeleteCard, /function onPointerMove[\s\S]*?setPointerCapture\(e\.pointerId\)/);
+  assert.match(swipeableDeleteCard, /AXIS_LOCK_THRESHOLD = 8/);
+  // Un mouvement a dominante verticale relache entierement la main au
+  // defilement natif de la liste plutot que de continuer a suivre le geste.
+  assert.match(swipeableDeleteCard, /axis\.current = 'vertical';\s*\n\s*dragging\.current = false;/);
+  // Seul un axe verrouille horizontal peut declencher la suppression au
+  // relachement -- un simple tap ou un defilement vertical ne le peut plus.
+  assert.match(swipeableDeleteCard, /wasHorizontalSwipe && -dragX >= DELETE_THRESHOLD/);
+});
+
 test('GuestArrivalPanel : la branche "ensure" (backfill generique) marque aussi initializing=true avant son fetch, comme la branche "initialize" -- sinon settled devenait brievement vrai avec visible=false', () => {
   const ensureBlock = guestArrivalPanel.slice(
     guestArrivalPanel.indexOf('const expectedRows = Math.max'),

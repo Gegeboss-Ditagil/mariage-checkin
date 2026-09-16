@@ -29,13 +29,12 @@ Variables nécessaires :
 | `VAPID_PUBLIC_KEY` | clé publique Web Push, renvoyée aux appareils autorisés |
 | `VAPID_PRIVATE_KEY` | clé privée Web Push, serveur uniquement |
 | `VAPID_SUBJECT` | contact du propriétaire Push, ex. `mailto:adresse@example.com` |
-| `TWILIO_ENABLED` | **interrupteur explicite** (v1.48.3) du SMS/WhatsApp d'approbation d'invité surprise -- doit valoir exactement `true` pour envoyer quoi que ce soit ; absente ou toute autre valeur = désactivé, quels que soient les identifiants ci-dessous (voir `lib/twilio.ts`). **Désactivé par défaut, intentionnellement, retour de Gersom le 14/09/2026 : "c'est toggle off... on activera plus tard".** |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_PHONE_NUMBER` | identifiants Twilio pour le SMS -- ignorés tant que `TWILIO_ENABLED` n'est pas `true` |
-| `TWILIO_WHATSAPP_NUMBER` / `TWILIO_WHATSAPP_CONTENT_SID_REQUEST` | canal WhatsApp optionnel, complément au SMS -- ignoré tant que `TWILIO_ENABLED` n'est pas `true` (et silencieusement no-op même une fois activé si ces deux variables manquent, canal optionnel) |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_PHONE_NUMBER` | identifiants Twilio pour le SMS -- ignorés tant que le SMS/WhatsApp est désactivé (voir ci-dessous) |
+| `TWILIO_WHATSAPP_NUMBER` / `TWILIO_WHATSAPP_CONTENT_SID_REQUEST` | canal WhatsApp optionnel, complément au SMS -- ignoré tant que désactivé (et silencieusement no-op même une fois activé si ces deux variables manquent, canal optionnel) |
 
 Pour générer une paire VAPID une seule fois : `npx web-push generate-vapid-keys`. Copier les deux valeurs dans Vercel (Production), ajouter `VAPID_SUBJECT`, puis redéployer. Ne jamais committer la clé privée. Sans ces variables, les badges et alertes à l'intérieur de l'application continuent de fonctionner, mais iOS ne peut pas réveiller une PWA fermée. Cette configuration Vercel ne nécessite aucun SQL supplémentaire si la migration `0037_guest_approval_app_push.sql` est déjà appliquée.
 
-Pour (ré)activer Twilio plus tard : renseigner les identifiants `TWILIO_*` ci-dessus puis ajouter `TWILIO_ENABLED=true` sur Vercel et redéployer -- aucun changement de code nécessaire, `lib/twilio.ts` centralise ce toggle pour tous les appelants (`lib/guestApprovalNotify.ts`).
+**Activer/désactiver le SMS/WhatsApp d'approbation d'invité surprise** : depuis `/admin` (bouton bascule « SMS/WhatsApp (Twilio) »), sans redéploiement ni accès Vercel. v1.48.3 introduisait un interrupteur par variable d'environnement (`TWILIO_ENABLED`) ; v1.53.2 (16/09/2026) le remplace par la colonne `events.twilio_enabled` (migration `0055_events_twilio_enabled.sql`), modifiable en un clic depuis l'application. Les identifiants `TWILIO_*` ci-dessus restent nécessaires sur Vercel (ce toggle ne les remplace pas) — sans eux, activer le bouton produit une erreur de configuration explicite plutôt qu'un envoi silencieux.
 
 Vercel fournit également des identifiants de déploiement/commit. La v1.1.0 les utilise pour distinguer une session créée sur une ancienne version d'une session créée sur le déploiement courant.
 
