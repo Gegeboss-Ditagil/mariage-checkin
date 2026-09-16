@@ -71,3 +71,32 @@ test('toucher une invitation dans la liste de la table selectionnee surligne ses
   assert.match(pageSource, /findSeatIndexByName\(selectedTable\.number, name\)/);
   assert.match(pageSource, /seatWheelRef\.current\?\.scrollIntoView/);
 });
+
+// v1.53.3, retour de Gersom (16/09/2026, capture d'écran table 4) : "Fiston,
+// c'est écrit Fixton [Fixon]... fais un dernier assessment sur toutes les
+// chaises... vu que tu sais déjà sur quelle table, ça va être facile de
+// faire un match". Recoupement systématique (table par table) des 393
+// sièges nommés avec les invitations réellement en base -- 75 corrections
+// de lecture OCR confiantes appliquées (spot-check ci-dessous), le reste
+// (13 cas ambigus, 5 sans candidat) volontairement laissé tel quel plutôt
+// que deviné -- voir CHANGELOG v1.53.3 et le commentaire en tête de
+// lib/floorPlanSeats.ts.
+test('v1.53.3 : corrige plusieurs lectures OCR confirmées par recoupement avec la base (ex. "Fixon Zola" -> "Fiston Zola")', () => {
+  assert.equal(TABLE_SEAT_NAMES[4][9], 'Fiston Zola');
+  assert.equal(TABLE_SEAT_NAMES[1][1], 'Jean-Clivens Le Caous');
+  assert.equal(TABLE_SEAT_NAMES[3][9], 'Edo Tukula');
+  assert.equal(TABLE_SEAT_NAMES[41][0], 'Jacquie Menga');
+  // Les anciennes lectures fautives ne doivent plus apparaître nulle part.
+  const flat = Object.values(TABLE_SEAT_NAMES).flat();
+  assert.ok(!flat.includes('Fixon Zola'));
+  assert.ok(!flat.includes('Jean-Ciben Ca ous'));
+});
+
+test('v1.53.3 : les écarts déjà connus entre la photo et une réorganisation ultérieure (v1.50.0) restent volontairement inchangés', () => {
+  // Ni des erreurs OCR ni une source de placement -- la photo reste un
+  // instantané fidèle au moment où elle a été prise (v1.50.0 a depuis
+  // déplacé ces personnes vers d'autres tables en base, documenté au
+  // CHANGELOG, jamais répercuté ici).
+  assert.equal(TABLE_SEAT_NAMES[40][1], 'Jennifer Bembo');
+  assert.equal(TABLE_SEAT_NAMES[41][9], 'Jade Magnus');
+});

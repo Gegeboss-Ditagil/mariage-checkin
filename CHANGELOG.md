@@ -3,6 +3,46 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.3] — 2026-09-16
+
+Retour de Gersom (2 captures d'écran, `/tables/[tableId]` table 1 et `Famille Mbiyavanga Mavinga`/table 4) : (1) le badge "Non arrivé" prend trop de place sur la ligne ; (2) toucher un nom devrait mettre en évidence son siège ; (3) dernier assessment demandé sur toutes les lectures OCR du plan photographié ("Fiston" lu "Fixton/Fixon").
+
+### Ajouté
+- **`StatusBadge` gagne une variante `compact`** (point coloré de 10px, sans texte — libellé toujours disponible via `title`/`aria-label`) utilisée sur `/tables/[tableId]` et `/table/[tableId]` uniquement, où la ligne cumule déjà nom + compteur "X/Y" + jusqu'à quatre icônes rondes. `/search`, `/staff` et `/dashboard/liste` gardent le badge texte complet (chacun a sa propre ligne pour le nom, aucun problème d'espace signalé sur ces écrans).
+
+### Modifié
+- **Toucher une ligne d'invitation sur `/tables/[tableId]`/`/table/[tableId]` met désormais en évidence son siège** sur le panneau "Vu sur le plan photographié" (au lieu de naviguer vers `/checkin/[invitationId]`, devenu redondant depuis l'ajout du bouton ✅ dédié en v1.51.0) — quand une correspondance de siège existe ; sans correspondance, la ligne continue de naviguer comme avant. Le bouton 🪑 réutilise désormais la même fonction (`highlightSeats`), sans duplication.
+
+### Corrigé
+- **Dernier assessment des 393 sièges nommés de `lib/floorPlanSeats.ts`** (`TABLE_SEAT_NAMES`), recoupés table par table (jamais entre deux tables différentes) avec les 250 invitations actuellement en base : **75 corrections de lecture OCR appliquées**, chacune la seule candidate plausible sur sa table avec une marge de confiance nette (ex. « Fixon Zola » → « Fiston Zola », table 4 ; « Jean-Ciben Ca ous » → « Jean-Clivens Le Caous », table 1, déjà identifiée en v1.48.0 mais jamais reportée dans le fichier ; « Edo Tukwa » → « Edo Tukula », table 3 ; liste complète dans le commentaire en tête de `lib/floorPlanSeats.ts`). **13 cas restent ambigus** (plusieurs candidats trop proches sur la même table — signalés ci-dessous, décision de Gersom nécessaire) et **5 sans aucun candidat** — volontairement PAS devinés.
+
+### Signalé à Gersom (décision nécessaire, rien appliqué automatiquement)
+- **Table 4** : « Henri O. Momba »/« Henricia O. Momba » face à « Henri Onatshungu Momba »/« Henriela Onatshungu Momba » en base (lequel est lequel ?) ; « Stacky M. Mavinga » et « Jessy B. M. Mavinga » ont chacun deux candidats Mbiyavanga Mavinga très proches.
+- **Table 2** : « Deusdedit Dos Goncalves » — trois candidats Dos Goncalves également proches.
+- **Table 8** : « Luzolo P. Menga » — aucun candidat proche sur cette table (la personne correspondante, « Luzolo Patrick Menga », est en base à la table 41 depuis la réorganisation v1.50.0).
+- **Table 11** : « Teresa Ndani » et « Ketsia Neves » — candidats trop proches d'autres membres de la même table.
+- **Tables 14, 21, 28, 40** : autres cas à deux candidats proches (détail dans `tests/floor-plan-seats.test.ts`/le commentaire du fichier).
+- **Tables 40/41 (Bembo/Mateus, Diego Ramos/Jade Magnus)** : divergences déjà connues et documentées (v1.50.0) entre la photo et une réorganisation ultérieure — pas des erreurs de lecture, volontairement laissées telles quelles (la photo reste un instantané fidèle au moment où elle a été prise, jamais mise à jour a posteriori pour suivre un déplacement réel).
+
+### Tests
+- `tests/floor-plan-seats.test.ts` (2 nouveaux tests, spot-check des corrections).
+- `tests/table-seat-wheel.test.ts` (2 nouveaux tests : badge compact, tap-pour-surligner).
+
+### Documentation mise à jour
+`CHANGELOG.md`, `CLAUDE.md`
+
+### Version
+`Version: 1.53.2 → 1.53.3`
+
+### Tests exécutés
+- `npx tsc --noEmit` — OK
+- `node --test tests/*.test.ts` — 302/302 OK
+- `npm run build` — OK
+- `git diff --check` — OK
+
+### Migrations
+Aucune (changements purement client/informatifs, `invitations.table_id` reste l'unique source de placement).
+
 ## [1.53.2] — 2026-09-16
 
 Retour de Gersom (2 captures d'écran) : (1) message d'erreur Twilio affiché à tort alors que la fonctionnalité est volontairement désactivée ; (2) le swipe pour supprimer une demande décidée sur `/approbations` ne fonctionne toujours pas (rôle admin confirmé directement en base avant d'aller plus loin, voir `docs/QE_QA_PROCESS.md`).

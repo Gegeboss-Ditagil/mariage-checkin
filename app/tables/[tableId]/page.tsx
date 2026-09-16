@@ -347,6 +347,20 @@ function TableDetailInner() {
                   .map((name) => findSeatIndexByName(table!.number, name))
                   .filter((idx): idx is number => idx !== null)
               : [];
+            // v1.53.3, retour de Gersom : "quand je clique sur [le nom],
+            // ça devrait faire highlight [le siège]" -- toucher la ligne
+            // met désormais en évidence le siège sur "vu sur le plan
+            // photographié" (au lieu de naviguer vers /checkin/[invitationId],
+            // devenu redondant depuis l'ajout du bouton ✅ dédié en v1.51.0).
+            // Sans correspondance de siège, la ligne continue de naviguer
+            // (rien d'autre à faire en tapant dessus dans ce cas).
+            function highlightSeats() {
+              setHighlightedSeats(seatMatches);
+              setSelectedInvitationId(inv.id);
+              requestAnimationFrame(() => {
+                seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              });
+            }
             const body = (
               <>
                 <div className="min-w-0">
@@ -355,7 +369,7 @@ function TableDetailInner() {
                 </div>
                 <span className="flex shrink-0 items-center gap-2 text-sm">
                   {inv.nombre_arrive}/{inv.nombre_prevu}
-                  <StatusBadge statut={inv.statut} />
+                  <StatusBadge statut={inv.statut} compact />
                 </span>
               </>
             );
@@ -380,7 +394,7 @@ function TableDetailInner() {
                 ) : canCheckin ? (
                   <button
                     className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 text-left"
-                    onClick={() => router.push('/checkin/' + inv.id)}
+                    onClick={() => (seatMatches.length > 0 ? highlightSeats() : router.push('/checkin/' + inv.id))}
                   >
                     {body}
                   </button>
@@ -401,13 +415,7 @@ function TableDetailInner() {
                   <button
                     type="button"
                     aria-label={'Voir où ' + inv.nom_affichage + ' est assis sur le plan photographié'}
-                    onClick={() => {
-                      setHighlightedSeats(seatMatches);
-                      setSelectedInvitationId(inv.id);
-                      requestAnimationFrame(() => {
-                        seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                      });
-                    }}
+                    onClick={highlightSeats}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline text-sm text-accent/80 active:scale-[0.95] transition-transform"
                   >
                     🪑

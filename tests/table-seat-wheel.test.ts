@@ -160,6 +160,41 @@ for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]
   });
 }
 
+// v1.53.3, retour de Gersom (capture d'écran "Table 1") : "le bouton où c'est
+// écrit non arrivé... ça prend trop d'espace sur la ligne" -- StatusBadge
+// gagne une variante `compact` (point coloré, sans texte) utilisée
+// uniquement ici (où la ligne cumule déjà nom + compteur + jusqu'à quatre
+// icônes), inchangée ailleurs (/search, /staff, /dashboard/liste, qui ont
+// chacun leur propre ligne, aucun problème d'espace signalé). "Quand je
+// clique sur [le nom], ça devrait faire highlight [le siège]" -- toucher la
+// ligne met désormais en évidence le siège au lieu de naviguer, devenu
+// redondant depuis le bouton ✅ dédié (v1.51.0) ; sans correspondance de
+// siège, la ligne continue de naviguer comme avant.
+for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]/page.tsx']) {
+  test(`${route} : badge de statut compact (point coloré, sans texte) et tap sur la ligne met en évidence le siège au lieu de naviguer`, () => {
+    const tableDetailSource = readFileSync(new URL(route, import.meta.url), 'utf8');
+    assert.match(tableDetailSource, /<StatusBadge statut=\{inv\.statut\} compact \/>/);
+    assert.match(tableDetailSource, /function highlightSeats\(\)/);
+    assert.match(
+      tableDetailSource,
+      /onClick=\{\(\) => \(seatMatches\.length > 0 \? highlightSeats\(\) : router\.push\('\/checkin\/' \+ inv\.id\)\)\}/
+    );
+    // Le bouton 🪑 réutilise désormais la même fonction, plus de duplication.
+    assert.match(tableDetailSource, /onClick=\{highlightSeats\}/);
+  });
+}
+
+test('components/StatusBadge.tsx : la variante compact garde le libellé accessible (title/aria-label) sans jamais l\'afficher a l\'ecran', () => {
+  const badgeSource = readFileSync(new URL('../components/StatusBadge.tsx', import.meta.url), 'utf8');
+  assert.match(badgeSource, /compact\?: boolean;/);
+  assert.match(badgeSource, /aria-label=\{STATUS_LABELS\[statut\]\}/);
+  assert.match(badgeSource, /title=\{STATUS_LABELS\[statut\]\}/);
+  // Le texte du statut ne doit jamais apparaitre dans le rendu compact --
+  // seule la couleur (point) le distingue, c'est tout le point de la demande.
+  const compactBlock = badgeSource.slice(badgeSource.indexOf('if (compact)'), badgeSource.indexOf('return (', badgeSource.indexOf('if (compact)') + 1));
+  assert.doesNotMatch(compactBlock, /\{STATUS_LABELS\[statut\]\}<\/span>/);
+});
+
 test('/plan-table lit ?table=<numero> pour localiser une table venant de /tables/[tableId] ou /table/[tableId]', () => {
   const planTableSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
   assert.match(planTableSource, /import \{ useSearchParams \} from 'next\/navigation'/);
