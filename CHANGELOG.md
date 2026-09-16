@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.9] — 2026-09-16
+
+Retour de Gersom : « quand je navigue entre les différentes pages de l'application, j'ai toujours un petit flash d'une page blanche... surtout au début, après ça améliore ». Demande explicite de parcourir systématiquement les écrans depuis le tableau de bord pour reproduire et corriger, plutôt qu'un correctif isolé.
+
+### Root cause
+Parcours systématique des 11 écrans principaux accessibles depuis `BottomNav` (tableau de bord et toutes ses destinations : `/scan`, `/plan-table`, `/search`, `/staff`, `/agenda`, `/approbations`, `/exceptions`, `/history`, `/placement`, `/admin`), comparé aux écrans de détail (`/tables/[tableId]`, `/checkin/[invitationId]`...) qui n'ont jamais ce symptôme. Différence trouvée : ces 11 écrans (et eux seuls) utilisent `position: fixed` (`fixed inset-0`, introduit en v1.45.0 pour ancrer chaque page au viewport réel) **sans jamais poser de `background-color` directement sur ce conteneur** — ils comptaient uniquement sur `body { @apply bg-bg }` pour être opaques. Un élément `fixed` obtient sa propre couche de composition côté navigateur (particulièrement WebKit/iOS en PWA installée en mode standalone) ; sans couleur de fond posée SUR cette couche précise, le navigateur peut la peindre en blanc le temps d'un ou deux frames pendant une transition de route, même quand `body` est bien opaque en dessous. « Ça s'améliore avec le temps » correspond exactement au moteur qui finit par mettre en cache la couche de composition de chaque route déjà visitée dans la session.
+
+### Corrigé
+- **`bg-bg` ajouté directement sur le conteneur `fixed inset-0`** des 11 écrans principaux (`app/dashboard`, `/scan`, `/plan-table`, `/search`, `/staff`, `/agenda`, `/approbations`, `/exceptions`, `/history`, `/placement`, `/admin`) — la couche de composition WebKit de chaque écran porte désormais sa propre couleur opaque, jamais seulement héritée du body.
+- **`app/globals.css` : `background-color: var(--bg)` posé explicitement en CSS** sur la règle `html, body` (en plus de la classe Tailwind `bg-bg` déjà présente sur `body`) — filet redondant à coût nul qui ne dépend d'aucun ordre de calcul de classes, recommandé pour ce type de quirk WebKit.
+- Vérifié que toutes les autres surfaces `fixed inset-0` de l'app (caméra plein écran, fiche "Invité surprise", `ResponsablePicker`, `SplashScreen`, modale d'installation) avaient déjà un fond explicite — seuls les 11 écrans principaux en manquaient.
+
+### Tests
+- `tests/scroll-fixed-shell.test.ts` (classe mise à jour pour inclure `bg-bg`, nouveau test verrouillant `background-color` explicite sur `html, body`).
+- `tests/navigation-resilience.test.ts` (regex mise à jour pour la nouvelle classe).
+
 ## [1.53.8] — 2026-09-16
 
 Retour de Gersom (confirme le swipe fonctionnel sur son iPhone) : « au lieu que ce soit un carré rouge... avec le cercle, le trash, je veux qu'il soit dans un icône circulaire » (référence Messages iOS) ; « il y a aussi un problème avec reconsidérer la table en vert, qui est un problème de sizing... on peut peut-être raccourcir le texte ».

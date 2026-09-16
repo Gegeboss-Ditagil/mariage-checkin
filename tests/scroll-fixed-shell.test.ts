@@ -75,10 +75,38 @@ test("chaque ecran principal est ancre au viewport reel (position fixed + inset-
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
     assert.match(
       source,
-      /className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-\[env\(safe-area-inset-bottom\)\]"/,
+      /className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-\[env\(safe-area-inset-bottom\)\]"/,
       relPath
     );
   }
+});
+
+// v1.53.9, retour de Gersom : "quand je navigue entre les differentes pages
+// de l'application, j'ai toujours un petit flash d'une page blanche...
+// surtout au debut, apres ca ameliore" -- parcours systematique des 11
+// ecrans principaux (tableau de bord et toutes ses destinations
+// BottomNav), en comparant avec les ecrans de detail (tables/[tableId],
+// checkin/[invitationId]...) qui n'ont jamais ce symptome. Difference
+// trouvee : ces 11 ecrans (et eux seuls) utilisent `position: fixed`
+// (v1.45.0 ci-dessus) sans jamais poser de `background-color` directement
+// sur ce conteneur -- ils comptaient uniquement sur `body { @apply bg-bg }`
+// pour etre opaques. Un element `fixed` obtient sa propre couche de
+// composition cote navigateur (particulierement WebKit/iOS en PWA
+// standalone) ; sans couleur de fond posee SUR cette couche precise, le
+// navigateur peut la peindre en blanc le temps d'un ou deux frames pendant
+// une transition, meme si `body` est bien opaque en dessous -- "s'ameliore
+// avec le temps" correspond au moteur qui finit par mettre en cache la
+// couche de chaque route deja visitee. Corrige a deux niveaux : `bg-bg`
+// directement sur le conteneur `fixed inset-0` de chacun des 11 ecrans
+// (verrouille ci-dessus, remplace l'ancienne classe sans fond), et
+// `background-color: var(--bg)` pose explicitement en CSS sur `html`/`body`
+// (app/globals.css), pas seulement via la classe Tailwind `bg-bg` sur
+// `body` -- filet redondant, low-cost, qui ne depend d'aucun ordre de
+// calcul de classes.
+test("html et body posent explicitement background-color (pas seulement via la classe Tailwind bg-bg), pour combler le trou de couche de composition WebKit sur les ecrans fixed", () => {
+  const globalsCss = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+  const htmlBodyBlock = globalsCss.slice(globalsCss.indexOf('html, body {'), globalsCss.indexOf('\n}', globalsCss.indexOf('html, body {')));
+  assert.match(htmlBodyBlock, /background-color: var\(--bg\);/);
 });
 
 // Retour de Gersom le 13/09/2026 (deuxième signalement, /plan-table tourné
