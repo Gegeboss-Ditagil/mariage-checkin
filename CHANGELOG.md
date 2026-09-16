@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.5] — 2026-09-16
+
+Retour de Gersom (capture d'écran de la fiche détaillée d'une demande d'approbation "Test") : « il y a un problème avec les deux flèches, corrige » — la flèche précédente recouvrait partiellement le badge "Côté Gégé/Nelly" juste en dessous de la photo.
+
+### Corrigé
+- **`app/approbations/page.tsx` : les flèches précédente/suivante de la fiche détaillée d'une demande étaient positionnées à un pourcentage fixe de la hauteur du viewport** (`fixed left-3/right-3 top-[46%]`), une estimation censée les aligner sur la photo mais qui ne correspondait pas à sa position réelle une fois la hauteur variable de l'en-tête prise en compte — elles atterrissaient alors par-dessus le badge "Côté Gégé/Nelly" juste en dessous, le recouvrant partiellement (texte illisible, comme dans la capture transmise). Corrigé en ancrant les deux boutons directement au conteneur de la photo (nouveau wrapper `relative`), qui a toujours une position et une hauteur connues : les flèches restent désormais systématiquement centrées sur la photo elle-même, jamais sur le contenu en dessous, quelle que soit la taille de l'écran ou la longueur du titre de la demande.
+
+### Tests
+- `tests/guest-approvals.test.ts` (1 nouveau test verrouillant l'ancrage au conteneur de la photo ; 1 test existant ajusté pour les tailles de flèche désormais responsives — 44px sur mobile, 56px à partir de `sm:`).
+
 ## [1.53.4] — 2026-09-16
 
 Retour de Gersom (capture d'écran `/approbations` + message vocal) : (1) après avoir réellement autorisé les notifications et reçu une vraie alerte push sur son iPhone, le bouton restait bloqué sur « notifications à configurer » ; (2) « je ne peux pas swipe left or right » — le swipe pour supprimer (v1.53.2) ne fonctionnait toujours pas du tout, malgré le correctif précédent.
