@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 
 /**
  * Agrege l'etat d'avancement de la preparation de l'evenement pour piloter
- * l'assistant en 10 etapes (/admin/wizard). Lecture seule, aucune ecriture.
+ * l'assistant en 9 etapes (/admin/wizard). Lecture seule, aucune ecriture.
  */
 export async function GET() {
   const user = getSessionUser();
@@ -18,7 +18,6 @@ export async function GET() {
     { data: tables },
     { count: invitationsCount },
     { count: invitationsSansTable },
-    { count: qrCount },
     { data: users },
     { data: invitationsPrevu },
   ] = await Promise.all([
@@ -30,7 +29,6 @@ export async function GET() {
       .select('id', { count: 'exact', head: true })
       .eq('event_id', eventId)
       .is('table_id', null),
-    supabase.from('qr_codes').select('id', { count: 'exact', head: true }).eq('event_id', eventId),
     supabase.from('users').select('id, role, active').eq('event_id', eventId),
     supabase.from('invitations').select('nombre_prevu').eq('event_id', eventId),
   ]);
@@ -48,8 +46,6 @@ export async function GET() {
   const visibilite = (users || []).filter((u) => u.role === 'visibilite' && u.active).length;
   const admins = (users || []).filter((u) => u.role === 'admin' && u.active).length;
 
-  const qrManquants = Math.max((tables || []).length - (qrCount || 0), 0);
-
   return NextResponse.json({
     event,
     stats: {
@@ -61,8 +57,6 @@ export async function GET() {
       invitationsTotal: invitationsCount || 0,
       invitationsSansTable: invitationsSansTable || 0,
       prevuTotal,
-      qrTotal: qrCount || 0,
-      qrManquants,
       agents,
       placeurs,
       directeurs,

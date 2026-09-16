@@ -127,7 +127,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
           // verticale de droite -- son bord droit s'arrete desormais avant
           // elle (largeur de la bande, landscape:w-20, plus sa marge de
           // securite).
-          className="fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-accent/25 bg-surface px-4 py-3 text-sm shadow-elev-2 landscape:left-[calc(1rem+env(safe-area-inset-left))] landscape:right-[calc(5rem+env(safe-area-inset-right)+0.75rem)]"
+          className="fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 glass-toast text-sm landscape:left-[calc(1rem+env(safe-area-inset-left))] landscape:right-[calc(5rem+env(safe-area-inset-right)+0.75rem)]"
         >
           <span><strong>Nouvelle approbation</strong><span className="block truncate text-text-muted">{approvalAlert.name}</span></span>
           <span className="font-semibold text-accent">Ouvrir</span>
