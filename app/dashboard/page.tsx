@@ -73,9 +73,20 @@ export default function DashboardPage() {
   // revenir sur cet écran, relance un refetch rapide.
   const { pulling, pullDistance, refreshing, pullThreshold } = usePullToRefresh(load, scrollRef);
 
+  // Retour de Gersom le 16/09/2026 (capture d'écran du tableau de bord,
+  // "409" incluant des invitations sans table comme "Auguste") : "les
+  // invités qui n'ont pas de table, enlève-les du calcul... on veut
+  // seulement voir le nombre d'invités". Une invitation sans table_id
+  // (ex. les 19 ajoutées sans table en v1.47.0) n'a pas encore de place
+  // dans la salle -- ce tableau de bord suit le remplissage de la salle,
+  // donc toute la carte (attendus/arrivés/restants/taux + les quatre
+  // mini-tuiles en dessous) exclut désormais ces invitations, pour rester
+  // cohérente avec elle-même.
+  const invitationsAvecTable = useMemo(() => invitations.filter((i) => i.table_id !== null), [invitations]);
+
   const stats = useMemo(() => {
-    const attendus = invitations.reduce((s, i) => s + i.nombre_prevu, 0);
-    const arrives = invitations.reduce((s, i) => s + i.nombre_arrive, 0);
+    const attendus = invitationsAvecTable.reduce((s, i) => s + i.nombre_prevu, 0);
+    const arrives = invitationsAvecTable.reduce((s, i) => s + i.nombre_arrive, 0);
     const restants = Math.max(0, attendus - arrives);
     const taux = attendus > 0 ? (arrives / attendus) * 100 : 0;
 
@@ -84,12 +95,12 @@ export default function DashboardPage() {
       arrives,
       restants,
       taux,
-      tablesCompletes: invitations.filter((i) => i.statut === 'complet').length,
-      tablesPartielles: invitations.filter((i) => i.statut === 'partiel').length,
-      nonArrives: invitations.filter((i) => i.statut === 'non_arrive').length,
-      supplementaires: invitations.reduce((s, i) => s + Math.max(0, i.nombre_arrive - i.nombre_prevu), 0),
+      tablesCompletes: invitationsAvecTable.filter((i) => i.statut === 'complet').length,
+      tablesPartielles: invitationsAvecTable.filter((i) => i.statut === 'partiel').length,
+      nonArrives: invitationsAvecTable.filter((i) => i.statut === 'non_arrive').length,
+      supplementaires: invitationsAvecTable.reduce((s, i) => s + Math.max(0, i.nombre_arrive - i.nombre_prevu), 0),
     };
-  }, [invitations]);
+  }, [invitationsAvecTable]);
 
   const staffInvitations = invitations.filter((i) => i.category === 'Staff');
   const staffPrevu = staffInvitations.reduce((s, i) => s + i.nombre_prevu, 0);

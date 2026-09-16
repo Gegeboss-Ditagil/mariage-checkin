@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.13] — 2026-09-16
+
+Retour de Gersom (capture d'écran du tableau de bord, « Invités attendus » à 409) : « Les invités qui n'ont pas de table, enlève-les du calcul. Exemple, Auguste. Non, on veut seulement voir le nombre d'invités. »
+
+### Root cause
+`app/dashboard/page.tsx` calculait « Invités attendus »/« Arrivés »/« Restants »/« Taux d'arrivée » et les quatre mini-tuiles (Complètes/Partielles/Non arrivées/Supplémentaires) à partir de **toutes** les invitations, y compris celles sans `table_id` (ex. les 19 invitations ajoutées sans table en v1.47.0, comme « Auguste ») — ces personnes n'ont pas encore de place dans la salle, alors que ce tableau de bord suit précisément le remplissage de la salle.
+
+### Corrigé
+- `app/dashboard/page.tsx` : nouvelle valeur mémoïsée `invitationsAvecTable` (`invitations.filter((i) => i.table_id !== null)`), utilisée comme base de tout le calcul `stats` (attendus, arrivés, restants, taux, complètes, partielles, non arrivées, supplémentaires) — au lieu de la liste brute `invitations`.
+- `app/dashboard/liste/page.tsx` : `filtreInvitation` exclut désormais aussi `table_id === null`, pour que le détail derrière chaque tuile (« Tous les invités », « Invités arrivés », etc.) reste cohérent avec le chiffre affiché dessus.
+- `/search` et `/plan-table` restent inchangés (ces écrans ont justement besoin de retrouver une invitation sans table pour lui en assigner une).
+
+### Tests
+- `tests/dashboard-exclude-untabled.test.ts` (nouveau) : verrouille l'exclusion des invitations sans table dans `stats` et dans `filtreInvitation`.
+
 ## [1.53.12] — 2026-09-16
 
 Retour de Gersom (capture d'écran d'une demande "Test" + capture de la fiche "Bernard Kadina" sur `/checkin/[invitationId]`).

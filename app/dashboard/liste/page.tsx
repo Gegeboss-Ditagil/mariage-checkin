@@ -24,7 +24,13 @@ const TITRES: Record<string, string> = {
   supplementaire: 'Invitations en excédent',
 };
 
+// v1.53.13, retour de Gersom : une invitation sans table_id (ex. "Auguste",
+// ajoutée sans table) n'a pas encore de place dans la salle -- exclue des
+// mêmes tuiles du tableau de bord (voir app/dashboard/page.tsx), donc
+// exclue ici aussi pour que le détail corresponde toujours au chiffre de
+// la tuile cliquée.
 function filtreInvitation(type: string, inv: InvitationRow): boolean {
+  if (inv.table_id === null) return false;
   if (type === 'arrives') return inv.nombre_arrive > 0;
   if (type === 'restants') return inv.nombre_arrive < inv.nombre_prevu;
   if (type === 'complet') return inv.statut === 'complet';
