@@ -3,6 +3,29 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.1] — 2026-09-16
+
+Bug réel signalé par Gersom (capture d'écran `/scan`, thème Maison) : le titre de la page ("Scanner un QR code" / "Présentez le QR de l'invité devant la caméra") apparaissait superposé et illisible avec la bannière transitoire "Nouvelle approbation" (`components/AccountMenu.tsx`), les deux textes se lisant l'un à travers l'autre.
+
+### Corrigé
+- **Root cause** : la bannière utilisait `bg-surface` nu + `shadow-elev-2`, sans le `backdrop-filter` (flou + saturation) que toutes les autres surfaces "verre liquide" de l'app (`.card`, `.action-row`, `.btn-secondary`, `.glass-icon-button`…) appliquent systématiquement avec cette même couleur. `--surface` vaut une quasi-transparence en thème Maison (`rgba(242, 239, 233, 0.045)`, alpha 4.5%) — pensée pour être vue à travers un flou, jamais seule à plat. Sans ce flou, la bannière (positionnée en `fixed` par-dessus le contenu) laissait transparaître intégralement le contenu de la page en dessous, d'où la superposition visible sur `/scan` (le seul écran dont le titre commence immédiatement sous la bannière, sans barre de navigation opaque entre les deux).
+- Nouvelle classe `.glass-toast` dans `app/globals.css` (même recette `box-shadow: var(--elev-2)` + `backdrop-filter: blur(20px) saturate(160%)` que `.card`), appliquée à la bannière dans `components/AccountMenu.tsx` à la place de `bg-surface`/`shadow-elev-2` bruts. Comportement et positionnement (paysage compris) inchangés — seul le rendu visuel de la bannière elle-même devient un vrai panneau de verre opaque au flou, comme partout ailleurs dans l'app.
+
+### Documentation mise à jour
+`CHANGELOG.md`, `CLAUDE.md`
+
+### Version
+`Version: 1.53.0 → 1.53.1`
+
+### Tests exécutés
+- `npx tsc --noEmit` — OK
+- `node --test tests/*.test.ts` — 293/293 OK
+- `npm run build` — OK
+- `git diff --check` — OK
+
+### Migrations
+Aucune.
+
 ## [1.53.0] — 2026-09-15
 
 Retour de Gersom : revirement en cours de message sur une demande d'alignement des colonnes de `/admin/import` avec le format CSV With Joy — décision finale de retirer trois écrans admin plutôt que d'en ajouter un quatrième, pour simplifier l'app à un seul chemin d'import.

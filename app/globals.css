@@ -179,6 +179,24 @@ body {
   backdrop-filter: blur(16px) saturate(160%);
 }
 
+/* Bannière transitoire "Nouvelle approbation" (AccountMenu, fixed au-dessus
+   du contenu) -- bug réel signalé par Gersom le 16/09/2026 (capture
+   d'écran /scan, thème Maison) : elle utilisait `bg-surface` nu (+
+   `shadow-elev-2`) sans le `backdrop-filter` qui accompagne partout ailleurs
+   cette même couleur -- `--surface` vaut une quasi-transparence en Maison
+   (alpha 0.045, pensée pour être vue à travers un flou, jamais seule), donc
+   le titre de la page en dessous ("Scanner un QR code") transparaissait à
+   travers la bannière, superposé et illisible avec son propre texte. Même
+   recette que `.card`/`.action-row` : le flou+saturation est ce qui rend
+   `bg-surface` lisible, l'ombre seule ne suffit pas. */
+.glass-toast {
+  @apply bg-surface rounded-2xl border px-4 py-3;
+  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
 /* Boutons "verre teinte" pour Approuver/Refuser -- couleur de statut en
    filtre translucide plutot qu'en aplat plein, comme les bascules du
    Centre de controle iOS : la couleur reste lisible (texte + bordure
