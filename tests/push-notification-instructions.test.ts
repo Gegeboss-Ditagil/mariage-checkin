@@ -34,3 +34,20 @@ test("les tests existants restent verts (label et logique inchangee, seule une a
   assert.match(pushButtonSource, /display-mode: standalone/);
   assert.match(pushButtonSource, /Notifications activées/);
 });
+
+// v1.53.4, bug reel signale par Gersom (16/09/2026) : apres avoir reellement
+// autorise les notifications et recu une vraie alerte push sur son iPhone,
+// le bouton restait bloque sur "notifications a configurer" -- le composant
+// ne verifiait jamais l'etat reel (permission + abonnement) au chargement,
+// seulement en reaction a un clic dans la session en cours. Corrige par un
+// useEffect de reconciliation au montage.
+test("un useEffect reconcilie le statut affiche avec la permission et l'abonnement reels des le montage, pour que le message ne mente jamais une fois l'activation effective", () => {
+  assert.match(pushButtonSource, /useEffect\(\(\) => \{/);
+  const effectBlock = pushButtonSource.slice(pushButtonSource.indexOf('useEffect(() => {'), pushButtonSource.indexOf('async function enable()'));
+  assert.match(effectBlock, /Notification\.permission === 'denied'/);
+  assert.match(effectBlock, /Notification\.permission === 'granted'/);
+  assert.match(effectBlock, /registration\.pushManager\.getSubscription\(\)/);
+  assert.match(effectBlock, /setStatus\(existing \? 'enabled' : 'idle'\)/);
+  assert.match(effectBlock, /let cancelled = false;/);
+  assert.match(effectBlock, /return function cleanupReconcile\(\) \{\s*cancelled = true;\s*\};/);
+});

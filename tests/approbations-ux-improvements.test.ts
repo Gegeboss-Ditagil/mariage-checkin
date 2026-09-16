@@ -208,26 +208,34 @@ test('swipe pour supprimer une demande deja decidee, reserve a admin -- API DELE
 });
 
 // v1.53.2, bug reel signale par Gersom (16/09/2026, role admin confirme en
-// base) : "je n'ai toujours pas la possibilite de swipe" -- capturer le
-// pointeur des onPointerDown, avant de savoir si le geste est horizontal ou
-// vertical, empechait la detection du swipe sur iOS (WebKit annule la
-// sequence de pointeur des qu'il detecte la moindre composante verticale).
-// Corrige en ne verrouillant l'axe (et en ne capturant le pointeur) qu'une
-// fois le mouvement assez net pour trancher.
-test('le pointeur n\'est capture qu\'apres avoir reconnu un geste horizontal, jamais des onPointerDown (sinon le navigateur peut annuler le swipe sur iOS)', () => {
+// base) : "je n'ai toujours pas la possibilite de swipe" -- premiere
+// tentative (verrouillage d'axe : ne capturer le pointeur qu'une fois le
+// geste tranche horizontal/vertical), confirmee INSUFFISANTE par un second
+// test reel de Gersom (aucune reaction du tout au glissement, meme
+// partielle). v1.53.4 corrige avec l'approche inverse, conforme a la
+// specification touch-action/Pointer Events : capturer le pointeur
+// IMMEDIATEMENT a onPointerDown (sans quoi WebKit/iOS ne delivre jamais de
+// pointermove horizontal exploitable, le moteur natif tranchant seul et
+// systematiquement pour un defilement vertical avec touch-action: pan-y) ;
+// le defilement vertical natif reste possible malgre la capture (touch-action
+// pan-y), et WebKit annule alors proprement la sequence (pointercancel),
+// deja gere par onPointerCancel={onPointerUp}.
+test('le pointeur est capture des onPointerDown (indispensable sur iOS pour recevoir des pointermove horizontaux exploitables), touch-action: pan-y et onPointerCancel laissent le defilement vertical natif fonctionner', () => {
   const onPointerDownBody = swipeableDeleteCard.slice(
     swipeableDeleteCard.indexOf('function onPointerDown'),
     swipeableDeleteCard.indexOf('function onPointerMove')
   );
-  assert.doesNotMatch(onPointerDownBody, /\.setPointerCapture\(/);
-  assert.match(swipeableDeleteCard, /function onPointerMove[\s\S]*?setPointerCapture\(e\.pointerId\)/);
-  assert.match(swipeableDeleteCard, /AXIS_LOCK_THRESHOLD = 8/);
-  // Un mouvement a dominante verticale relache entierement la main au
-  // defilement natif de la liste plutot que de continuer a suivre le geste.
-  assert.match(swipeableDeleteCard, /axis\.current = 'vertical';\s*\n\s*dragging\.current = false;/);
-  // Seul un axe verrouille horizontal peut declencher la suppression au
+  assert.match(onPointerDownBody, /\.setPointerCapture\(e\.pointerId\)/);
+  assert.match(swipeableDeleteCard, /VERTICAL_INTENT_THRESHOLD = 10/);
+  // Un mouvement a dominante verticale n'annule pas la capture (impossible a
+  // "rendre" proprement au navigateur cote JS) : il arrete simplement de
+  // suivre le geste en X, en comptant sur pointercancel pour reinitialiser
+  // l'etat des que WebKit prend le relais du defilement natif.
+  assert.match(swipeableDeleteCard, /if \(verticalIntent\.current\) return;/);
+  assert.match(swipeableDeleteCard, /onPointerCancel=\{onPointerUp\}/);
+  // Seul un geste sans intention verticale peut declencher la suppression au
   // relachement -- un simple tap ou un defilement vertical ne le peut plus.
-  assert.match(swipeableDeleteCard, /wasHorizontalSwipe && -dragX >= DELETE_THRESHOLD/);
+  assert.match(swipeableDeleteCard, /!wasVerticalIntent && -dragX >= DELETE_THRESHOLD/);
 });
 
 test('GuestArrivalPanel : la branche "ensure" (backfill generique) marque aussi initializing=true avant son fetch, comme la branche "initialize" -- sinon settled devenait brievement vrai avec visible=false', () => {

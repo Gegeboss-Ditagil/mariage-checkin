@@ -3,45 +3,36 @@
 import { useRef, useState } from 'react';
 import { TrashIcon } from '@/components/icons';
 
-// Swipe pour supprimer, réservé à l'admin -- demande de Gersom le
-// 13/09/2026 : "il y a beaucoup de refusé maintenant, la liste va
-// s'étendre. Les administrateurs ont le droit de faire un swipe pour les
-// effacer... quand tu tires, il y a la petite poubelle qui va apparaître
-// avec le champ rouge... et quand tu continues à tirer, ça les efface
-// vraiment." Implémenté en Pointer Events (pas de librairie externe),
-// même approche que ZoomableFloorPlan.tsx : un fond rouge + icône poubelle
-// apparaît derrière la carte au fur et à mesure du glissement vers la
-// gauche, et un glissement complet (au-delà de DELETE_THRESHOLD) déclenche
-// la suppression au relâchement.
+// v1.53.2 : premiere tentative (verrouillage d'axe -- ne capturer le
+// pointeur qu'une fois le geste tranche horizontal/vertical) pour un bug
+// signale par Gersom sur iOS ("je ne peux pas swipe left or right"). Confirme
+// insuffisant par un second test reel : aucune reaction au glissement, meme
+// partielle -- le defilement vertical natif fonctionnait, mais aucun
+// pointermove horizontal exploitable n'atteignait jamais React.
 //
-// v1.53.2, bug réel signalé par Gersom (16/09/2026) : "je n'ai toujours pas
-// la possibilité de swipe" (rôle admin confirmé en base avant de chercher
-// plus loin, voir docs/QE_QA_PROCESS.md). Root cause probable : le pointeur
-// était capturé (`setPointerCapture`) DÈS `onPointerDown`, avant même de
-// savoir si le geste allait être horizontal ou vertical -- sur WebKit/iOS,
-// capturer un pointeur tactile aussi tôt, combiné à `touch-action: pan-y`
-// (qui autorise le défilement vertical natif), peut faire annuler la
-// séquence de pointeur presque immédiatement (le navigateur "gagne" le
-// geste pour son propre défilement dès qu'il détecte la moindre composante
-// verticale, même infime) -- l'utilisateur ne voit alors jamais rien se
-// passer, quelle que soit l'intention de son geste. Corrigé en ne
-// choisissant l'axe (et en ne capturant le pointeur) qu'une fois le
-// mouvement assez net pour trancher : sous AXIS_LOCK_THRESHOLD, on attend ;
-// au-delà, seul l'axe dominant gagne -- horizontal verrouille le geste
-// (poubelle), vertical le relâche entièrement (défilement natif de la
-// liste, jamais de conflit).
+// v1.53.4 : cause probable identifiee -- sur iOS Safari, NE PAS capturer le
+// pointeur des pointerdown laisse le moteur natif trancher seul le sens du
+// geste avant que le JS ait pu observer assez de mouvement pour justifier
+// une capture tardive ; avec `touch-action: pan-y`, WebKit tranche alors
+// presque systematiquement pour un defilement vertical natif, et plus aucun
+// pointermove utile n'est jamais delivre au gestionnaire React. Nouvelle
+// approche conforme a la specification touch-action/Pointer Events (utilisee
+// par la plupart des bibliotheques de glissement) : capturer le pointeur
+// IMMEDIATEMENT a pointerdown, laisser pointermove suivre tout deplacement
+// horizontal, et compter sur le navigateur pour annuler la sequence
+// (pointercancel) des qu'il detecte lui-meme un defilement vertical
+// dominant -- `touch-action: pan-y` garantit que ce defilement natif reste
+// possible meme apres capture, et `onPointerCancel` reinitialise proprement
+// l'etat de glissement des que cela arrive.
 const DELETE_THRESHOLD = 120;
 const MAX_DRAG = 220;
-const AXIS_LOCK_THRESHOLD = 8;
+const VERTICAL_INTENT_THRESHOLD = 10;
 
 export function SwipeableDeleteCard({
   enabled,
   onDelete,
   children,
 }: {
-  // Désactivé (non-admin, ou demande encore en_attente) : rend `children`
-  // tel quel, sans aucune superposition ni gestionnaire de pointeur --
-  // jamais de zone morte accidentelle pour les autres rôles.
   enabled: boolean;
   onDelete: () => void | Promise<void>;
   children: React.ReactNode;
@@ -51,12 +42,7 @@ export function SwipeableDeleteCard({
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
   const dragging = useRef(false);
-  // null tant que le mouvement est trop petit pour trancher ; 'horizontal'
-  // une fois le geste reconnu comme un swipe (pointeur capturé, poubelle
-  // active) ; 'vertical' si le doigt part plutôt haut/bas (on relâche alors
-  // entièrement la main au défilement natif de la liste, sans jamais entrer
-  // en conflit avec lui -- voir la note en tête de fichier).
-  const axis = useRef<'horizontal' | 'vertical' | null>(null);
+  const verticalIntent = useRef(false);
 
   if (!enabled) return <>{children}</>;
 
@@ -65,12 +51,8 @@ export function SwipeableDeleteCard({
     startX.current = e.clientX;
     startY.current = e.clientY;
     dragging.current = true;
-    axis.current = null;
-    // Pas de setPointerCapture ici : tant que le geste n'est pas reconnu
-    // comme horizontal (voir onPointerMove), le navigateur reste libre de
-    // faire défiler la liste normalement si le doigt part plutôt à la
-    // verticale -- capturer le pointeur trop tôt empêchait toute détection
-    // du swipe sur iOS (voir la note en tête de fichier).
+    verticalIntent.current = false;
+    e.currentTarget.setPointerCapture(e.pointerId);
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -78,33 +60,21 @@ export function SwipeableDeleteCard({
     const deltaX = e.clientX - startX.current;
     const deltaY = e.clientY - startY.current;
 
-    if (axis.current === 'vertical') return; // défilement natif en cours, on ignore le reste du geste
-
-    if (axis.current === null) {
-      if (Math.abs(deltaX) < AXIS_LOCK_THRESHOLD && Math.abs(deltaY) < AXIS_LOCK_THRESHOLD) return;
-      if (Math.abs(deltaY) > Math.abs(deltaX)) {
-        axis.current = 'vertical';
-        dragging.current = false;
-        return;
-      }
-      axis.current = 'horizontal';
-      // Le pointeur n'est capturé qu'une fois le geste reconnu comme un
-      // swipe horizontal -- jamais avant (voir onPointerDown).
-      e.currentTarget.setPointerCapture(e.pointerId);
+    if (!verticalIntent.current && Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > VERTICAL_INTENT_THRESHOLD) {
+      verticalIntent.current = true;
     }
+    if (verticalIntent.current) return;
 
-    // Seul le glissement vers la gauche revele la poubelle -- vers la
-    // droite, rien ne se passe (pas de sens a une suppression "inverse").
     setDragX(Math.max(-MAX_DRAG, Math.min(0, deltaX)));
   }
 
   function onPointerUp() {
-    const wasHorizontalSwipe = axis.current === 'horizontal';
+    const wasVerticalIntent = verticalIntent.current;
     dragging.current = false;
     startX.current = null;
     startY.current = null;
-    axis.current = null;
-    if (wasHorizontalSwipe && -dragX >= DELETE_THRESHOLD) {
+    verticalIntent.current = false;
+    if (!wasVerticalIntent && -dragX >= DELETE_THRESHOLD) {
       setDeleting(true);
       setDragX(-MAX_DRAG);
       void Promise.resolve(onDelete());
