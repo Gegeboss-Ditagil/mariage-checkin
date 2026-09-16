@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.7] — 2026-09-16
+
+Retour de Gersom (capture d'écran de Messages iOS + message explicite) : « No, I really want the swipe... just like an iPhone » — le bouton de suppression explicite ajouté en v1.53.6 n'était qu'un filet de sécurité, pas ce qu'il demandait ; il veut le vrai geste de glissement qui révèle un bouton, comme le balayage natif de Messages/Mail sur iOS.
+
+### Corrigé
+- **`components/SwipeableDeleteCard.tsx` entièrement reconstruit, abandon complet des Pointer Events** — après deux échecs consécutifs et confirmés sur l'appareil réel de Gersom (v1.53.2 : verrouillage d'axe ; v1.53.4 : capture immédiate du pointeur), aucune réaction au glissement dans les deux cas malgré des approches opposées, ce qui pointait vers le choix d'approche lui-même plutôt qu'un détail d'implémentation à corriger une troisième fois à l'aveugle. Nouvelle implémentation basée sur un **vrai défilement horizontal natif** (`overflow-x-auto` + `scroll-snap-type: x mandatory`, deux panneaux : le contenu de la carte, puis un bouton "Supprimer" plein largeur) — le navigateur gère seul le geste, l'inertie et la cohabitation avec le défilement vertical de la liste (deux axes orthogonaux, jamais en conflit par construction, sans aucune ligne de JS de détection de geste). C'est exactement le mécanisme qui alimente le glissement natif de Messages iOS (capture d'écran transmise par Gersom en référence). Nouvelle classe utilitaire `.no-scrollbar` (`app/globals.css`) masque la barre de défilement du conteneur. Le bouton de suppression explicite ajouté en v1.53.6 (icône poubelle à côté du badge de statut) reste en place en parallèle, comme filet de sécurité si ce troisième mécanisme se heurtait lui aussi à une particularité non anticipée de son appareil — diagnostic à nouveau fait par lecture du code/de la spécification, aucun appareil iOS réel disponible dans cet environnement.
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts` (le test épinglant l'ancienne implémentation Pointer Events est remplacé par un test verrouillant l'absence de tout gestionnaire de pointeur et la présence du défilement natif scroll-snap).
+
+## [1.53.6] — 2026-09-16
+
+Retour de Gersom (2 captures d'écran, `/approbations` sur iPhone + écran d'accueil) : « le problème de la notification, ça fonctionne, c'est bon » (v1.53.4 confirmé) — mais « swipe to delete, ça ne fonctionne pas... comment les delete vraiment, les enlever du système ? ».
+
+### Ajouté
+- **Bouton de suppression explicite (icône poubelle) sur chaque carte de `/approbations`**, admin uniquement, réservé aux demandes déjà décidées — en plus du geste de glissement (`SwipeableDeleteCard`). Après deux approches différentes de gestion du geste tactile (v1.53.2 : verrouillage d'axe ; v1.53.4 : capture immédiate du pointeur) confirmées toutes deux totalement silencieuses sur l'iPhone réel de Gersom, et sans aucun appareil iOS disponible dans cet environnement pour déboguer une troisième fois à l'aveugle, ce bouton garantit une suppression possible indépendamment de tout comportement tactile propre à la plateforme. Une confirmation (`window.confirm`) protège contre un appui accidentel, l'action étant irréversible. Le geste de glissement reste en place au cas où il finit par fonctionner sur d'autres appareils ; la garde serveur (`DELETE /api/guest-approvals/[id]` refuse toute demande encore `en_attente`) est inchangée et protège les deux chemins.
+
+### Tests
+- `tests/guest-approvals.test.ts` (1 nouveau test verrouillant le bouton et son garde-fou de confirmation).
+
 ## [1.53.5] — 2026-09-16
 
 Retour de Gersom (capture d'écran de la fiche détaillée d'une demande d'approbation "Test") : « il y a un problème avec les deux flèches, corrige » — la flèche précédente recouvrait partiellement le badge "Côté Gégé/Nelly" juste en dessous de la photo.

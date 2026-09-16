@@ -7,7 +7,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { PushNotificationButton } from '@/components/PushNotificationButton';
-import { ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, TrashIcon } from '@/components/icons';
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 import { usePolling } from '@/hooks/usePolling';
 import { SwipeableDeleteCard } from '@/components/SwipeableDeleteCard';
@@ -251,9 +251,36 @@ export default function ApprobationsPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate font-semibold">{r.nom_invite}</p>
-                  <span className={'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ' + STATUS_BADGE[r.statut]}>
-                    {STATUS_LABEL[r.statut]}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + STATUS_BADGE[r.statut]}>
+                      {STATUS_LABEL[r.statut]}
+                    </span>
+                    {/* v1.53.6, retour de Gersom : le swipe pour supprimer
+                        (v1.53.2 puis v1.53.4) reste totalement silencieux sur
+                        son iPhone malgré deux approches différentes -- aucun
+                        appareil iOS réel disponible dans cet environnement
+                        pour reproduire/déboguer davantage. Plutôt qu'une
+                        troisième tentative à l'aveugle sur le geste, bouton
+                        explicite toujours cliquable (garanti indépendant de
+                        tout comportement tactile propre à la plateforme) en
+                        plus du swipe, qui reste en place au cas où il finit
+                        par fonctionner sur d'autres appareils. */}
+                    {role === 'admin' && r.statut !== 'en_attente' && (
+                      <button
+                        type="button"
+                        aria-label={'Supprimer définitivement la demande de ' + r.nom_invite}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (window.confirm('Supprimer définitivement la demande de ' + r.nom_invite + ' ? Cette action est irréversible.')) {
+                            void handleDelete(r.id);
+                          }
+                        }}
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-status-over transition-transform active:scale-90"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-text-faint">
                   {r.nombre_invites} invité{r.nombre_invites > 1 ? 's' : ''} · Côté {r.cote === 'Gege' ? 'Gégé' : 'Nelly'}

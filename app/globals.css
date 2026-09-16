@@ -197,6 +197,17 @@ body {
   backdrop-filter: blur(20px) saturate(160%);
 }
 
+/* v1.53.7 : `components/SwipeableDeleteCard.tsx` masque la scrollbar de son
+   conteneur de defilement horizontal natif (voir ce fichier pour le pourquoi
+   du choix d'un vrai defilement plutot que des Pointer Events). */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Boutons "verre teinte" pour Approuver/Refuser -- couleur de statut en
    filtre translucide plutot qu'en aplat plein, comme les bascules du
    Centre de controle iOS : la couleur reste lisible (texte + bordure
