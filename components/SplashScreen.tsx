@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
 const SPLASH_DURATION_MS = 3000;

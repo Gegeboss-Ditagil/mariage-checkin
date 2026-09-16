@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
 import { GuestArrivalStatus, GuestRow, InvitationRow } from '@/lib/types';
 import { useOnline } from '@/hooks/useOnline';

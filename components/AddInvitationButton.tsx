@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { hasCapability } from '@/lib/permissions';
 import type { Role } from '@/lib/types';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { useCallback, useEffect, useState } from 'react';
 import { StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';

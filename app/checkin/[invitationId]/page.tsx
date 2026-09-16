@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow, PLACEMENT_LABELS } from '@/lib/types';
 import { CounterStepper } from '@/components/CounterStepper';

@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { GoldSeal } from '@/components/BrandMotif';
 import { landingPathForRole } from '@/lib/permissions';
 import { Role } from '@/lib/types';
@@ -11,7 +12,7 @@ const THEME_CHOSEN_KEY = 'checkin-theme-chosen';
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-dvh bg-bg" />}>
       <LoginForm />
     </Suspense>
   );

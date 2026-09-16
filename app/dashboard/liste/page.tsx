@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
 import { Cote, InvitationRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
@@ -49,7 +50,7 @@ function comptePersonnes(type: string, inv: InvitationRow): number {
 
 export default function DashboardListePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-dvh bg-bg" />}>
       <ListeContent />
     </Suspense>
   );

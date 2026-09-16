@@ -247,7 +247,7 @@ test('/plan-table lit ?table=<numero> pour localiser une table venant de /tables
   // useSearchParams exige un boundary Suspense (comme les autres pages
   // dynamiques de l'app, ex. /tables/[tableId]).
   assert.match(planTableSource, /import \{ Suspense,/);
-  assert.match(planTableSource, /<Suspense fallback=\{null\}>\s*\n\s*<PlanTablePageInner \/>/);
+  assert.match(planTableSource, /<Suspense fallback=\{<div className="fixed inset-0 bg-bg" \/>\}>\s*\n\s*<PlanTablePageInner \/>/);
 });
 
 // v1.53.15, retour de Gersom : "retire ce texte" (les deux variantes du

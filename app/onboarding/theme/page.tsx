@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { Suspense } from 'react';
 import { useTheme, ThemePref } from '@/hooks/useTheme';
 import { useSessionRole } from '@/hooks/useSessionRole';
@@ -20,7 +21,7 @@ const CHOICES: { pref: ThemePref; title: string; subtitle: string }[] = [
 
 export default function ThemeOnboardingPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-dvh bg-bg" />}>
       <ThemeOnboardingForm />
     </Suspense>
   );

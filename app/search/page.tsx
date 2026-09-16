@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
 import { COTE_DOT_COLORS, COTE_LABELS, InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -26,7 +27,7 @@ function volCode(number: number): string | null {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="fixed inset-0 bg-bg" />}>
       <SearchInner />
     </Suspense>
   );

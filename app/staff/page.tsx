@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { InvitationRow, TableRow } from '@/lib/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TopBar } from '@/components/TopBar';

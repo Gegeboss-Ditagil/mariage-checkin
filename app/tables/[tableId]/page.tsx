@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
@@ -30,7 +31,7 @@ function volCode(number: number): string | null {
 
 export default function TableDetailPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-dvh bg-bg" />}>
       <TableDetailInner />
     </Suspense>
   );

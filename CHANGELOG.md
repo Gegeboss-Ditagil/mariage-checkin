@@ -3,6 +3,31 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.16] — 2026-09-16
+
+Retour de Gersom (capture d'écran de l'app Musique d'Apple, en référence) : « il y a beaucoup de flash, surtout quand je navigue entre les onglets recherche et plan... vous pouvez faire des recherches des repos disponibles pour donner un effet iOS... travaille en général sur l'aspect iOS de l'application, le slide, la navigation, l'expérience utilisateur... base-toi vraiment sur leur style, leur guide... c'est surtout au niveau de la navigation, comment est-ce que les éléments se déplacent. »
+
+### Root cause du flash (bug réel, distinct de v1.53.9)
+`app/search/page.tsx`, `app/plan-table/page.tsx`, `app/tables/[tableId]/page.tsx`, `app/dashboard/liste/page.tsx`, `app/onboarding/theme/page.tsx` et `app/login/page.tsx` enveloppent tous leur contenu dans `<Suspense fallback={null}>` (requis par `useSearchParams()`) — pendant la brève fenêtre où React suspend ce composant lors d'un changement de route, `fallback={null}` ne peint RIEN, pas même le fond de page. Seules deux de ces six pages sont des onglets de `BottomNav` (`/search` et `/plan-table`) — correspond exactement au symptôme précis signalé (« surtout entre recherche et plan »), alors que les autres onglets (dashboard, scan, staff, agenda, approbations, exceptions, history, placement, admin) n'utilisent pas `useSearchParams()` à leur racine et n'ont donc jamais ce trou.
+
+### Corrigé
+- Les six `fallback={null}` remplacés par un fond peint (`<div className="fixed inset-0 bg-bg" />` pour les deux écrans à coquille `fixed`, `<div className="min-h-dvh bg-bg" />` pour les quatre autres) — plus aucun trou de peinture pendant le changement de route.
+
+### Ajouté — recherche + adoption d'une solution open-source pour un fondu natif iOS entre les pages
+Recherche effectuée comme demandé : la librairie **`next-view-transitions`** (Shu Ding, compatible Next.js 14 App Router, activement maintenue) enveloppe la [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) du navigateur — capture un instantané de l'ancienne page et fond doucement vers la nouvelle au lieu du remplacement brut du DOM par défaut, exactement le mécanisme qui masquerait tout résidu de flash de peinture, et se rapproche du fondu d'un `UITabBarController` natif. Dégrade proprement (navigation normale, sans erreur) sur les navigateurs sans support de `document.startViewTransition`.
+
+- `app/layout.tsx` enveloppé avec `<ViewTransitions>` (autour de `<html>`, comme documenté par la librairie).
+- Les 11 fichiers qui utilisaient `<Link>` de `next/link` et les 22 qui utilisaient `useRouter` de `next/navigation` passent désormais par `next-view-transitions` (`Link`, `useTransitionRouter as useRouter`) — changement d'import uniquement, aucune logique modifiée, tous les appels `.push()`/`.replace()` existants restent inchangés.
+- `app/globals.css` : fondu réglé à 180ms (`::view-transition-old(root)`/`::view-transition-new(root)`) ; `.bottom-nav-glass` reçoit un `view-transition-name` stable et son animation est explicitement désactivée, pour que la barre de navigation (recréée à l'identique par chaque page) ne clignote/double jamais pendant le fondu — exactement comme la barre d'onglets d'une app iOS native, qui ne bouge jamais pendant un changement d'onglet. Respecte `prefers-reduced-motion`.
+- `components/BottomNav.tsx` : les onglets (`SideLink`) gagnent un retour tactile au toucher (`active:opacity-60`, dim instantané façon `UIControl` natif) — jusqu'ici seul le bouton central avait un retour tactile propre (`active:scale-[0.96]`).
+
+### Non fait dans ce lot (périmètre du prochain tour si demandé)
+Transitions de type « sheet » (glissement depuis le bas) pour les panneaux modaux (fiche d'approbation, caméra, fusion de groupe...) — cette passe couvre la navigation entre pages/onglets, pas encore les présentations modales.
+
+### Tests
+- `tests/ios-navigation-transitions.test.ts` (nouveau) : verrouille l'intégration `next-view-transitions` (dépendance, `ViewTransitions`, CSS de transition, retour tactile), l'absence de tout import résiduel de `next/link`/`useRouter` de `next/navigation`, et les six correctifs de fallback.
+- `tests/table-seat-wheel.test.ts` : assertion mise à jour pour le nouveau fallback de `/plan-table`.
+
 ## [1.53.15] — 2026-09-16
 
 Retour de Gersom (capture d'écran de `/plan-table`, table 3, + message vocal) — trois demandes liées au dessin « Vu sur le plan photographié ».

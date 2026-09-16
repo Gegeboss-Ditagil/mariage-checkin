@@ -389,3 +389,43 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* v1.53.16 : View Transitions API (next-view-transitions, voir app/layout.tsx)
+   -- fondu court entre deux pages plutot que le remplacement brut du DOM par
+   defaut du navigateur, qui pouvait laisser voir un residu de peinture blanc
+   le temps d'une frame ("beaucoup de flash... surtout entre recherche et
+   plan"). Duree/courbe proches d'un changement d'onglet natif iOS (rapide,
+   pas de rebond) plutot que le fondu generique du navigateur (~90ms lineaire).
+   Ne remplace jamais les transitions `transition-transform`/`active:scale-*`
+   deja utilisees pour le retour tactile des boutons (BottomNav, TopBar...) --
+   uniquement le changement de PAGE entiere. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: ease-out;
+}
+
+/* La barre de navigation du bas est recreee a l'identique par chaque page
+   (meme position, memes classes) -- lui donner un nom stable evite qu'elle
+   ne clignote/se double brievement pendant le fondu de la page, exactement
+   comme un UITabBarController natif dont la barre d'onglets ne bouge jamais
+   pendant un changement d'onglet. */
+.bottom-nav-glass {
+  view-transition-name: bottom-nav;
+}
+::view-transition-group(bottom-nav) {
+  animation: none;
+}
+::view-transition-old(bottom-nav),
+::view-transition-new(bottom-nav) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

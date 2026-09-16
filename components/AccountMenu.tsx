@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link } from 'next-view-transitions';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSessionName } from '@/hooks/useSessionName';
 import { useSessionRole } from '@/hooks/useSessionRole';

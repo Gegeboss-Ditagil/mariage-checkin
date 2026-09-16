@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
