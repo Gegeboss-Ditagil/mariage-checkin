@@ -144,6 +144,25 @@ test('les fleches precedente/suivante sont ancrees au conteneur de la photo (jam
   assert.match(photoBlockCode, /aria-label="Demande suivante"[\s\S]*?className="absolute right-1 top-1\/2/);
 });
 
+// v1.53.6, retour de Gersom : le swipe pour supprimer (SwipeableDeleteCard,
+// v1.53.2 puis v1.53.4) reste totalement silencieux sur son iPhone reel
+// malgre deux approches differentes de gestion du geste tactile -- aucun
+// appareil iOS reel disponible dans cet environnement pour deboguer une
+// troisieme fois a l'aveugle. Bouton de suppression explicite (icone
+// poubelle, admin uniquement, seulement pour une demande deja decidee)
+// ajoute sur chaque carte de la liste, garanti independant de tout
+// comportement tactile propre a la plateforme -- coexiste avec le swipe
+// (toujours en place au cas ou il fonctionne sur d'autres appareils),
+// jamais un remplacement de la garde serveur (DELETE /api/guest-approvals/[id]
+// refuse toujours une demande encore en_attente, teste plus haut).
+test("v1.53.6 : bouton de suppression explicite (icone poubelle) sur chaque carte, en plus du swipe, garanti cliquable independamment du geste tactile", () => {
+  assert.match(approbationsPageSource, /import \{ ChevronLeftIcon, ChevronRightIcon, CloseIcon, TrashIcon \} from '@\/components\/icons'/);
+  assert.match(approbationsPageSource, /role === 'admin' && r\.statut !== 'en_attente' && \(/);
+  assert.match(approbationsPageSource, /window\.confirm\('Supprimer définitivement la demande de ' \+ r\.nom_invite \+ ' \? Cette action est irréversible\.'\)/);
+  assert.match(approbationsPageSource, /void handleDelete\(r\.id\);/);
+  assert.match(approbationsPageSource, /<TrashIcon className="h-4 w-4" \/>/);
+});
+
 test('la fiche approbation est remontee, structure ses informations et utilise des fleches iOS en verre', () => {
   assert.match(approbationsPageSource, /items-center justify-center overflow-y-auto/);
   assert.match(approbationsPageSource, /max-h-\[calc\(100dvh-2rem\)\]/);

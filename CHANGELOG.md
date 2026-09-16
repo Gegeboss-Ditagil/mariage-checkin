@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.6] — 2026-09-16
+
+Retour de Gersom (2 captures d'écran, `/approbations` sur iPhone + écran d'accueil) : « le problème de la notification, ça fonctionne, c'est bon » (v1.53.4 confirmé) — mais « swipe to delete, ça ne fonctionne pas... comment les delete vraiment, les enlever du système ? ».
+
+### Ajouté
+- **Bouton de suppression explicite (icône poubelle) sur chaque carte de `/approbations`**, admin uniquement, réservé aux demandes déjà décidées — en plus du geste de glissement (`SwipeableDeleteCard`). Après deux approches différentes de gestion du geste tactile (v1.53.2 : verrouillage d'axe ; v1.53.4 : capture immédiate du pointeur) confirmées toutes deux totalement silencieuses sur l'iPhone réel de Gersom, et sans aucun appareil iOS disponible dans cet environnement pour déboguer une troisième fois à l'aveugle, ce bouton garantit une suppression possible indépendamment de tout comportement tactile propre à la plateforme. Une confirmation (`window.confirm`) protège contre un appui accidentel, l'action étant irréversible. Le geste de glissement reste en place au cas où il finit par fonctionner sur d'autres appareils ; la garde serveur (`DELETE /api/guest-approvals/[id]` refuse toute demande encore `en_attente`) est inchangée et protège les deux chemins.
+
+### Tests
+- `tests/guest-approvals.test.ts` (1 nouveau test verrouillant le bouton et son garde-fou de confirmation).
+
 ## [1.53.5] — 2026-09-16
 
 Retour de Gersom (capture d'écran de la fiche détaillée d'une demande d'approbation "Test") : « il y a un problème avec les deux flèches, corrige » — la flèche précédente recouvrait partiellement le badge "Côté Gégé/Nelly" juste en dessous de la photo.
