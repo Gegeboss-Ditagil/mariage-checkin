@@ -3,6 +3,57 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.15] — 2026-09-16
+
+Retour de Gersom (capture d'écran de `/plan-table`, table 3, + message vocal) — trois demandes liées au dessin « Vu sur le plan photographié ».
+
+### Retiré
+- Le paragraphe d'instructions sous le dessin (« Touchez un nom... », « Touchez 🪑... ») a disparu de `/plan-table`, `/tables/[tableId]` et `/table/[tableId]` (« retire ce texte »). `GuestArrivalPanel` l'avait déjà perdu en v1.53.11/v1.53.12 pour une raison différente.
+
+### Modifié — navigation depuis la carte de la table sélectionnée sur `/plan-table`
+« Je suis coincé dans un mode select guest to see where is seated... comment entrer dans son invitation par la suite ? [...] je dois redescendre dans la page et aller jusqu'à la table cliquée et ensuite aller dans la page avec les invitations de toute la table [...] seulement quand j'appuie sur les chaises en bas que ça souligne le nom en haut. Et une fois qu'on va cliquer sur le nom en haut, ça va nous amener dans la page [qui montre] toutes les invitations de cette table et la table en bas. »
+
+- v1.48.5 faisait toucher un nom dans la liste de la table sélectionnée surligner son siège au lieu de naviguer, sans issue directe ensuite vers `/tables/[tableId]`. Revient sur ce choix : `TableCard` (composant interne de `app/plan-table/page.tsx`) perd son prop `onSelectInvitation` — la carte entière (en-tête + liste) redevient un seul `<Link>` vers `/tables/[tableId]`, comme les grilles non sélectionnées plus bas sur la page. Seul le sens siège → nom (toucher une chaise sur le dessin surligne la ligne correspondante) reste actif.
+
+### Ajouté — deux flèches d'orientation sur le dessin
+« Quand on voit la table, on devrait comprendre où est le nord, est, sud... on va tout simplement mettre une flèche en direction de deux éléments. La piste de danse et les mariés. Et la ligne centrale. Comme ça, on comprend rapidement où est la table. Deux flèches. »
+
+- `components/FloorPlan.tsx` exporte deux repères (`DANCE_FLOOR_LANDMARK`, `CENTRAL_AISLE_LANDMARK`), calculés depuis les mêmes salles déjà dessinées sur le plan (« Piste de danse » + « Les mariés » combinées en un seul repère, « Allée centrale » pour le second) — jamais une seconde source de coordonnées.
+- `lib/floorPlanOrientation.ts` (nouveau) : `getTableOrientation(tableNumber)` calcule, depuis la vraie position de la table sur le plan, l'angle (sens horaire depuis le haut, même convention que les sièges) vers chacun des deux repères.
+- `components/TableSeatWheel.tsx` dessine deux petites flèches (💃 piste de danse/mariés, 🚶 allée centrale) juste au-delà des étiquettes de sièges, avec un viewBox élargi d'autant ; libellés non tournés (placés par trigonométrie) pour rester lisibles quel que soit l'angle. Purement un repère visuel — jamais une donnée écrite en base.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` : test mis à jour (navigation au lieu de surlignage sur tap-nom) + nouveau test verrouillant la disparition des paragraphes d'instructions.
+- `tests/floor-plan-seats.test.ts` : test mis à jour pour le sens siège → nom uniquement.
+- `tests/table-orientation-arrows.test.ts` (nouveau) : verrouille les repères, la formule d'angle (avec contrôle numérique indépendant), le rendu SVG et le câblage sur les quatre écrans concernés.
+
+## [1.53.14] — 2026-09-16
+
+Retour de Gersom (capture d'écran de « Tous les invités », qui affichait encore les invitations sans table comme « Assistant photographe 2/3 ») : « Il faudra avoir un petit bouton pour dire non, sans table, tout simplement. Il faudra le mettre pour ceux qui sont sans table. »
+
+### Ajouté
+- **Pastille « Sans table »** (`app/dashboard/liste/page.tsx`) ajoutée à la rangée de filtres existante (Toutes/Côté Nelly/Côté Gégé/Staff) : isole exactement l'inverse de l'exclusion par défaut de v1.53.13 — uniquement les invitations sans `table_id` — pour qu'un placeur puisse encore les retrouver et leur assigner une table, maintenant qu'elles n'apparaissent plus dans les autres vues.
+- Le calcul du filtre est restructuré en une seule fonction (`filtres = invitations.filter((inv) => { ... })`) plutôt que deux conditions chaînées, pour que l'exclusion par défaut et son inverse (« Sans table ») restent lisibles côte à côte.
+
+### Tests
+- `tests/dashboard-exclude-untabled.test.ts` : nouveau test verrouillant la pastille « Sans table » et sa logique inverse.
+- `tests/dashboard-liste-cote-filter.test.ts` : mis à jour pour le type `ListeFiltre` élargi.
+
+## [1.53.13] — 2026-09-16
+
+Retour de Gersom (capture d'écran du tableau de bord, « Invités attendus » à 409) : « Les invités qui n'ont pas de table, enlève-les du calcul. Exemple, Auguste. Non, on veut seulement voir le nombre d'invités. »
+
+### Root cause
+`app/dashboard/page.tsx` calculait « Invités attendus »/« Arrivés »/« Restants »/« Taux d'arrivée » et les quatre mini-tuiles (Complètes/Partielles/Non arrivées/Supplémentaires) à partir de **toutes** les invitations, y compris celles sans `table_id` (ex. les 19 invitations ajoutées sans table en v1.47.0, comme « Auguste ») — ces personnes n'ont pas encore de place dans la salle, alors que ce tableau de bord suit précisément le remplissage de la salle.
+
+### Corrigé
+- `app/dashboard/page.tsx` : nouvelle valeur mémoïsée `invitationsAvecTable` (`invitations.filter((i) => i.table_id !== null)`), utilisée comme base de tout le calcul `stats` (attendus, arrivés, restants, taux, complètes, partielles, non arrivées, supplémentaires) — au lieu de la liste brute `invitations`.
+- `app/dashboard/liste/page.tsx` : `filtreInvitation` exclut désormais aussi `table_id === null`, pour que le détail derrière chaque tuile (« Tous les invités », « Invités arrivés », etc.) reste cohérent avec le chiffre affiché dessus.
+- `/search` et `/plan-table` restent inchangés (ces écrans ont justement besoin de retrouver une invitation sans table pour lui en assigner une).
+
+### Tests
+- `tests/dashboard-exclude-untabled.test.ts` (nouveau) : verrouille l'exclusion des invitations sans table dans `stats` et dans `filtreInvitation`.
+
 ## [1.53.12] — 2026-09-16
 
 Retour de Gersom (capture d'écran d'une demande "Test" + capture de la fiche "Bernard Kadina" sur `/checkin/[invitationId]`).

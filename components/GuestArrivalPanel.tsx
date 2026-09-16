@@ -9,6 +9,7 @@ import { parseMembersFromNotes } from '@/lib/membersNotes';
 import { debounce } from '@/lib/debounce';
 import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
+import { getTableOrientation } from '@/lib/floorPlanOrientation';
 
 // Remplace l'ancien compteur agrege "Personnes arrivees" (0..nombre_prevu,
 // sans savoir QUI) par une case a cocher PAR PERSONNE, a trois etats.
@@ -629,6 +630,7 @@ export function GuestArrivalPanel({
         <TableSeatWheel
           tableNumber={tableNumber as number}
           seats={seats}
+          orientation={getTableOrientation(tableNumber as number)}
           highlightedIndices={highlightedSeats}
           onSelectSeat={(idx) => {
             const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === idx;

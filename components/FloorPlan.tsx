@@ -152,6 +152,27 @@ const ROOMS: Room[] = [
   { x: 1055, y: 600, w: 335, h: 340, label: "Vin d'honneur" },
 ];
 
+function centerOf(room: Room): [number, number] {
+  return [room.x + room.w / 2, room.y + room.h / 2];
+}
+
+// v1.53.15, retour de Gersom (repère d'orientation sur le dessin "vu sur le
+// plan photographié") : "on va tout simplement mettre une flèche en
+// direction de deux éléments. La piste de danse et les mariés. Et la ligne
+// centrale." -- reperes exportes pour lib/floorPlanOrientation.ts, calcules
+// depuis les memes salles que celles dessinees ici (jamais une seconde
+// source de coordonnees qui pourrait diverger si le plan est retouche).
+// "Piste de danse" et "Les mariés" sont traitees comme UN seul repere
+// combine (moyenne des deux centres, les deux salles etant adjacentes) --
+// Gersom ne demande qu'une seule fleche pour les deux ensemble.
+const pisteDeDanseRoom = ROOMS.find((r) => r.label === 'Piste de danse')!;
+const lesMariesRoom = ROOMS.find((r) => r.label === 'Les mariés')!;
+const alleeCentraleRoom = ROOMS.find((r) => r.label === 'Allée centrale')!;
+const [pisteX, pisteY] = centerOf(pisteDeDanseRoom);
+const [mariesX, mariesY] = centerOf(lesMariesRoom);
+export const DANCE_FLOOR_LANDMARK: [number, number] = [(pisteX + mariesX) / 2, (pisteY + mariesY) / 2];
+export const CENTRAL_AISLE_LANDMARK: [number, number] = centerOf(alleeCentraleRoom);
+
 // Repartition cote Nelly/Gege d'une table, en nombre de personnes prevues.
 export interface TableCoteCounts {
   nelly: number;

@@ -14,6 +14,7 @@ import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
 import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
 import { FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
+import { getTableOrientation } from '@/lib/floorPlanOrientation';
 import {
   clearBulkMoveSelection,
   readBulkMoveSelection,
@@ -459,6 +460,7 @@ export default function TablePage() {
             <TableSeatWheel
               tableNumber={table.number}
               seats={TABLE_SEAT_NAMES[table.number]}
+              orientation={getTableOrientation(table.number)}
               highlightedIndices={highlightedSeats}
               onSelectSeat={(idx) => {
                 const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === idx;
@@ -487,10 +489,6 @@ export default function TablePage() {
                 }
               }}
             />
-            <p className="mt-2 text-center text-[11px] text-text-faint">
-              Touchez 🪑 à côté d'un nom ci-dessus pour mettre son siège en évidence, et vice versa. Purement
-              informatif, ne reflète pas forcément la table actuelle de chaque invité en base.
-            </p>
           </div>
         )}
       </div>

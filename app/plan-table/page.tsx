@@ -21,8 +21,9 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
-import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
+import { TABLE_SEAT_NAMES, namesMatch } from '@/lib/floorPlanSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
+import { getTableOrientation } from '@/lib/floorPlanOrientation';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
 import { debounce } from '@/lib/debounce';
 import { applyRowDelta } from '@/lib/realtimeDelta';
@@ -534,26 +535,24 @@ function PlanTablePageInner() {
                         filtre={filtre}
                         coteFiltre={coteFiltre}
                         selected
-                        // v1.48.5, retour de Gersom : toucher une invitation
-                        // dans cette liste doit surligner ses membres sur le
-                        // dessin ci-dessous au lieu de naviguer -- toucher la
-                        // table elle-meme (en-tete/carte) continue de naviguer
-                        // vers /tables/[tableId], inchange (voir TableCard :
-                        // le <Link> ne recouvre plus la liste des invitations
-                        // quand onSelectInvitation est fourni).
-                        onSelectInvitation={(inv) => {
-                          const seats = TABLE_SEAT_NAMES[selectedTable.number];
-                          if (!seats) return;
-                          const candidateNames = [inv.nom_affichage, ...extractMembresComplet(inv.notes)];
-                          const matches = candidateNames
-                            .map((name) => findSeatIndexByName(selectedTable.number, name))
-                            .filter((idx): idx is number => idx !== null);
-                          setHighlightedSeats(matches);
-                          setSelectedInvitationId(inv.id);
-                          requestAnimationFrame(() => {
-                            seatWheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                          });
-                        }}
+                        // v1.53.15, retour de Gersom : "je suis coincé dans
+                        // un mode select guest to see where is seated...
+                        // comment entrer dans son invitation par la suite ?"
+                        // -- v1.48.5 faisait toucher un nom surligner son
+                        // siège au lieu de naviguer, mais laissait alors
+                        // l'agent sans issue directe vers /tables/[tableId]
+                        // (redescendre, retoucher la table sur le plan).
+                        // Revient sur ce choix : toucher un nom navigue de
+                        // nouveau normalement (la carte entière redevient un
+                        // seul <Link>, comme les grilles non sélectionnées
+                        // plus bas) -- "seulement quand j'appuie sur les
+                        // chaises en bas que ça souligne le nom en haut. Et
+                        // une fois qu'on va cliquer sur le nom en haut, ça va
+                        // nous amener dans la page [qui montre] toutes les
+                        // invitations de cette table et la table en bas."
+                        // selectedInvitationId (mis à jour par onSelectSeat
+                        // ci-dessous) continue de surligner visuellement la
+                        // ligne correspondante, sans intercepter le clic.
                         selectedInvitationId={selectedInvitationId}
                       />
                     </div>
@@ -567,6 +566,7 @@ function PlanTablePageInner() {
                       <TableSeatWheel
                         tableNumber={selectedTable.number}
                         seats={TABLE_SEAT_NAMES[selectedTable.number]}
+                        orientation={getTableOrientation(selectedTable.number)}
                         highlightedIndices={highlightedSeats}
                         onSelectSeat={(idx) => {
                           const isDeselect = highlightedSeats.length === 1 && highlightedSeats[0] === idx;
@@ -597,11 +597,6 @@ function PlanTablePageInner() {
                           }
                         }}
                       />
-                      <p className="mt-2 text-center text-[11px] text-text-faint">
-                        Touchez un nom, ou une invitation dans la liste au-dessus, pour mettre son siège en évidence,
-                        et vice versa. Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement
-                        informatif, ne reflète pas forcément la table actuelle de chaque invité en base.
-                      </p>
                     </div>
                   )}
 
@@ -837,7 +832,6 @@ function TableCard({
   reserve,
   selected,
   onLocate,
-  onSelectInvitation,
   selectedInvitationId,
 }: {
   table: TableRow;
@@ -851,21 +845,22 @@ function TableCard({
   // Absent quand la table n'a pas d'emplacement sur le plan (reserve, ou
   // futur ajout hors plan) : bouton "localiser" masque plutot que desactive.
   onLocate?: () => void;
-  // v1.48.5, retour de Gersom : sur la carte de la table SELECTIONNEE
-  // (celle affichee juste au-dessus du dessin "vu sur le plan photographie"),
-  // toucher une invitation doit surligner ses sieges sur ce dessin au lieu de
-  // naviguer vers /tables/[tableId] -- "j'appuie vraiment sur la table, ça
-  // m'amene dans la prochaine page... [mais] j'appuie sur le nom, ça
-  // descend en bas". Fourni uniquement par cet usage-la (jamais par les
-  // grilles de cartes plus bas sur la page, ou le clic doit continuer de
-  // naviguer normalement) : quand absent, le <Link> englobe toujours toute
-  // la carte comme avant, aucun changement de comportement.
-  onSelectInvitation?: (invitation: InvitationRow) => void;
   // v1.48.8, retour de Gersom : "quand j'appuie sur Jonas, j'aimerais aussi
   // que son nom en haut dans la fiche soit surligne" -- id de l'invitation
-  // actuellement selectionnee (via onSelectInvitation), pour surligner sa
-  // ligne dans la liste ci-dessous en plus du siege deja mis en evidence
-  // sur le dessin. Sans effet quand onSelectInvitation est absent.
+  // dont le siege vient d'etre touche sur le dessin "vu sur le plan
+  // photographie" (mis a jour par onSelectSeat), pour surligner sa ligne ici
+  // en plus du siege deja mis en evidence sur le dessin. Purement visuel :
+  // n'intercepte jamais le clic, voir la note v1.53.15 ci-dessous.
+  //
+  // v1.48.5 faisait toucher une invitation dans cette liste surligner ses
+  // sieges au lieu de naviguer -- v1.53.15, retour de Gersom, revient sur ce
+  // choix ("je suis coincé dans un mode select guest... comment entrer dans
+  // son invitation par la suite ?") : toucher un nom navigue de nouveau
+  // normalement vers /tables/[tableId] (qui montre desormais toutes les
+  // invitations de la table ET le meme dessin, v1.48.8), la carte entiere
+  // (en-tete + liste) redevient un seul <Link>, comme les grilles non
+  // selectionnees plus bas sur la page. Seul le sens siege -> nom
+  // (onSelectSeat, plus bas sur la page) surligne encore une ligne.
   selectedInvitationId?: string | null;
 }) {
   const visibles = invitations.filter(
@@ -914,21 +909,14 @@ function TableCard({
             </span>
           </>
         );
-        return onSelectInvitation ? (
-          <li key={inv.id}>
-            <button
-              type="button"
-              className={clsx(
-                'flex w-full flex-wrap items-center gap-1.5 rounded-lg text-left text-sm transition-colors',
-                inv.id === selectedInvitationId ? '-mx-1.5 bg-accent-tint px-1.5 py-1 ring-1 ring-accent/40' : ''
-              )}
-              onClick={() => onSelectInvitation(inv)}
-            >
-              {content}
-            </button>
-          </li>
-        ) : (
-          <li key={inv.id} className="flex flex-wrap items-center gap-1.5 text-sm">
+        return (
+          <li
+            key={inv.id}
+            className={clsx(
+              'flex flex-wrap items-center gap-1.5 rounded-lg text-sm transition-colors',
+              inv.id === selectedInvitationId ? '-mx-1.5 bg-accent-tint px-1.5 py-1 ring-1 ring-accent/40' : ''
+            )}
+          >
             {content}
           </li>
         );
@@ -986,9 +974,8 @@ function TableCard({
           </p>
         )}
 
-        {!onSelectInvitation && invitationsList}
+        {invitationsList}
       </Link>
-      {onSelectInvitation && invitationsList}
     </div>
   );
 }

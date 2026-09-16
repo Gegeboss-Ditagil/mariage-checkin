@@ -60,16 +60,17 @@ test('reinitialise la surbrillance de siege a chaque changement de table (jamais
 });
 
 // v1.48.5, retour de Gersom : toucher une invitation dans la liste de la
-// table selectionnee (au-dessus du dessin) surligne tous ses membres
+// table selectionnee (au-dessus du dessin) surlignait tous ses membres
 // retrouves d'un coup, sans naviguer vers /tables/[tableId] -- "j'appuie
 // vraiment sur la table, ça m'amène dans la prochaine page... [mais]
-// j'appuie sur le nom, ça descend en bas".
-test('toucher une invitation dans la liste de la table selectionnee surligne ses sieges au lieu de naviguer', () => {
+// j'appuie sur le nom, ça descend en bas". v1.53.15 revient sur ce choix
+// (voir tests/table-seat-wheel.test.ts) : ce comportement n'existe plus,
+// toucher un nom navigue de nouveau normalement.
+test("toucher un siege sur le dessin de la table selectionnee surligne l'invitation correspondante (sens siege -> nom, seul restant)", () => {
   const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
-  assert.match(pageSource, /onSelectInvitation=\{\(inv\) => \{/);
-  assert.match(pageSource, /const candidateNames = \[inv\.nom_affichage, \.\.\.extractMembresComplet\(inv\.notes\)\]/);
-  assert.match(pageSource, /findSeatIndexByName\(selectedTable\.number, name\)/);
-  assert.match(pageSource, /seatWheelRef\.current\?\.scrollIntoView/);
+  assert.doesNotMatch(pageSource, /onSelectInvitation/);
+  assert.match(pageSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
+  assert.match(pageSource, /selectedTableCardRef\.current\?\.scrollIntoView/);
 });
 
 // v1.53.3, retour de Gersom (16/09/2026, capture d'écran table 4) : "Fiston,
