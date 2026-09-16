@@ -3,6 +3,34 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.18] — 2026-09-16
+
+Retour de Gersom : « transitions des panneaux modaux (fiche d'approbation, caméra...), fais absolument tout. Corrige, fluidifie. Teste tous les edge cases, assure-toi qu'il n'y a jamais de flash partout. »
+
+### Ajouté — transitions "sheet" pour tous les panneaux modaux
+Suite directe du « Non fait dans ce lot » de v1.53.16. Jusqu'ici, les six panneaux modaux de l'application apparaissaient/disparaissaient d'un coup (montage/démontage React instantané, aucune animation). `hooks/useDismiss.ts` (nouveau) centralise le cycle "jouer l'animation de sortie PUIS démonter réellement" : `dismiss()` déclenche la classe `-closing`, puis appelle le vrai `onClose` après la durée de l'animation (200ms, 0ms si `prefers-reduced-motion: reduce`) — le composant ne se démonte jamais net au milieu d'un tap.
+
+`app/globals.css` : deux familles de classes, réutilisées partout via `useDismiss` :
+- `.sheet-panel`/`.sheet-panel-closing` — glissement depuis/vers le bas (`translateY`), pour les panneaux plein écran qui n'ont pas de fond assombri séparé (ils couvrent déjà tout l'écran) : caméra, "Invité surprise", sélecteur de responsables.
+- `.sheet-card`/`.sheet-card-closing` + `.sheet-backdrop`/`.sheet-backdrop-closing` — un léger "pop" (translation + agrandissement) pour la carte, un fondu pour le fond assombri, pour les boîtes de dialogue centrées : fiche d'approbation, les deux modales d'agenda (nouvelle activité/modifier), aide d'installation.
+
+Courbe `cubic-bezier(0.32, 0.72, 0, 1)` à l'entrée (la même courbe "decelerate" qu'iOS/Material pour une présentation modale, jamais de rebond), sortie plus courte en `ease-in`. Respecte `prefers-reduced-motion` (aucune animation).
+
+Six surfaces mises à jour :
+- `components/GuestApprovalCaptureFlow.tsx`, `components/PhotoCaptureCamera.tsx`, `components/ResponsablePicker.tsx` — panneau plein écran (`.sheet-panel`).
+- `components/InstallAppButton.tsx` (aide d'installation) et `app/agenda/page.tsx` (modales "Nouvelle activité"/"Modifier l'activité") — carte + fond (`.sheet-card` + `.sheet-backdrop`).
+- `app/approbations/page.tsx` (fiche détaillée d'une demande) — carte + fond, y compris la fermeture par Échap, par le X, par le fond assombri, et par "Non — laisser le placeur l'assigner", qui passent tous désormais par `dismiss()`.
+
+### Audit "jamais de flash" (edge cases)
+Passage systématique demandé par Gersom sur l'ensemble de l'application, au-delà des seuls panneaux modaux :
+- Confirmé qu'aucun `fixed inset-0` de l'application (écrans principaux, six `Suspense fallback`, panneaux modaux) n'est sans fond peint explicite — recherche exhaustive, zéro résultat orphelin.
+- Confirmé que `html`/`body` gardent leur `background-color: var(--bg)` explicite (v1.53.9) et que les six correctifs de `Suspense fallback={null}` de v1.53.16 sont bien en place.
+- `app/error.tsx`/`app/global-error.tsx` : pas de risque de flash (ni l'un ni l'autre n'utilise `position: fixed`, donc pas de couche de composition séparée — la cause racine de v1.53.9 ne s'applique pas ici).
+
+### Tests
+- `tests/sheet-transitions.test.ts` (nouveau) : verrouille `hooks/useDismiss.ts` (état `closing`, délai, garde reduced-motion), les classes/keyframes CSS (entrée, sortie, garde reduced-motion), et le câblage `useDismiss`/`dismiss()` sur les six surfaces — y compris l'absence de tout appel `onClick={onClose}` direct qui contournerait l'animation de sortie.
+- `tests/agenda-form.test.ts` : assertions mises à jour pour `onClose={dismissInsert}`/`onClose={dismissEdit}` (remplace les anciens callbacks inline).
+
 ## [1.53.17] — 2026-09-16
 
 Retour de Gersom (capture d'écran de `/tables/[tableId]`, table 2) : « le bouton sélectionner plusieurs invités n'aurait jamais été comme ça dans un iPhone. »

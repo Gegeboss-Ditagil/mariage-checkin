@@ -11,6 +11,7 @@ import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, TrashIcon } from '@/compo
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 import { usePolling } from '@/hooks/usePolling';
 import { SwipeableDeleteCard } from '@/components/SwipeableDeleteCard';
+import { useDismiss } from '@/hooks/useDismiss';
 
 interface ApprovalListItem {
   id: string;
@@ -81,6 +82,7 @@ export default function ApprobationsPage() {
 
   const selectedRequest = requests.find((request) => request.id === selectedId) || null;
   const selectedIndex = selectedRequest ? requests.findIndex((request) => request.id === selectedRequest.id) : -1;
+  const { closing: detailClosing, dismiss: dismissDetail } = useDismiss(() => setSelectedId(null));
 
   function moveSelection(delta: number) {
     if (requests.length < 2 || selectedIndex < 0) return;
@@ -189,7 +191,7 @@ export default function ApprobationsPage() {
   useEffect(() => {
     if (!selectedId) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedId(null);
+      if (event.key === 'Escape') dismissDetail();
       if (event.key === 'ArrowLeft') moveSelection(-1);
       if (event.key === 'ArrowRight') moveSelection(1);
     };
@@ -359,16 +361,16 @@ export default function ApprobationsPage() {
 
       {selectedRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm"
+          className={'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm ' + (detailClosing ? 'sheet-backdrop-closing' : 'sheet-backdrop')}
           role="presentation"
-          onClick={() => setSelectedId(null)}
+          onClick={dismissDetail}
         >
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="approval-detail-title"
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-surface/95 p-4 shadow-elev-2 backdrop-blur-2xl"
+            className={'relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-surface/95 p-4 shadow-elev-2 backdrop-blur-2xl ' + (detailClosing ? 'sheet-card-closing' : 'sheet-card')}
           >
             <div className="mb-2 flex items-start justify-between gap-3">
               <div>
@@ -378,7 +380,7 @@ export default function ApprobationsPage() {
               <button
                 type="button"
                 aria-label="Fermer la demande"
-                onClick={() => setSelectedId(null)}
+                onClick={dismissDetail}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/30 bg-surface/75 text-text shadow-sm backdrop-blur-xl transition-transform active:scale-90"
               >
                 <CloseIcon className="h-6 w-6" />
@@ -519,7 +521,7 @@ export default function ApprobationsPage() {
                   Oui — voir les recommandations
                 </Link>
                 {role !== 'placeur' && (
-                  <button type="button" onClick={() => setSelectedId(null)} className="btn-secondary w-full">
+                  <button type="button" onClick={dismissDetail} className="btn-secondary w-full">
                     Non — laisser le placeur l'assigner
                   </button>
                 )}

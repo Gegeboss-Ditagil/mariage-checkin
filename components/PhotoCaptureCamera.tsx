@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useDismiss } from '@/hooks/useDismiss';
 
 type CameraErrorKind = 'denied' | 'not_found' | 'in_use' | 'unknown';
 
@@ -40,6 +41,7 @@ const ERROR_MESSAGES: Record<CameraErrorKind, string> = {
 export function PhotoCaptureCamera({ onCapture, onClose }: { onCapture: (file: File) => void; onClose: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const { closing, dismiss } = useDismiss(onClose);
   const [error, setError] = useState<CameraErrorKind | null>(null);
   const [ready, setReady] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -111,10 +113,10 @@ export function PhotoCaptureCamera({ onCapture, onClose }: { onCapture: (file: F
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black safe-top safe-bottom">
+    <div className={'fixed inset-0 z-50 flex flex-col bg-black safe-top safe-bottom ' + (closing ? 'sheet-panel-closing' : 'sheet-panel')}>
       <div className="flex items-center justify-between px-4 py-3">
         <p className="font-display text-lg text-white">Prendre la photo</p>
-        <button type="button" onClick={onClose} className="rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white">
+        <button type="button" onClick={dismiss} className="rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white">
           Annuler
         </button>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useOnline } from '@/hooks/useOnline';
+import { useDismiss } from '@/hooks/useDismiss';
 import type { Cote } from '@/lib/types';
 
 type Step = 'cote' | 'form' | 'submitting' | 'done';
@@ -25,6 +26,7 @@ export function GuestApprovalCaptureFlow({
   linkedLabel?: string;
 }) {
   const online = useOnline();
+  const { closing, dismiss } = useDismiss(onClose);
   const [step, setStep] = useState<Step>(initialCote ? 'form' : 'cote');
   const [cote, setCote] = useState<Cote | null>(initialCote ?? null);
   const [nomInvite, setNomInvite] = useState('');
@@ -85,13 +87,13 @@ export function GuestApprovalCaptureFlow({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-bg/95 backdrop-blur-xl safe-top safe-bottom">
+    <div className={'fixed inset-0 z-50 flex flex-col bg-bg/95 backdrop-blur-xl safe-top safe-bottom ' + (closing ? 'sheet-panel-closing' : 'sheet-panel')}>
       <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <div>
           <p className="eyebrow">Invité surprise</p>
           <h2 className="font-display text-xl">Demande d’approbation</h2>
         </div>
-        <button type="button" onClick={onClose} className="rounded-full border border-hairline px-4 py-2 text-sm font-semibold">
+        <button type="button" onClick={dismiss} className="rounded-full border border-hairline px-4 py-2 text-sm font-semibold">
           Fermer
         </button>
       </div>
@@ -155,7 +157,7 @@ export function GuestApprovalCaptureFlow({
             {!confirmation.smsSent && !confirmation.smsSkipped && (
               <p className="text-sm font-medium text-status-over">Le message Twilio n’est pas parti ({confirmation.smsError}). La demande reste disponible dans l’application.</p>
             )}
-            <button type="button" className="btn-primary w-full" onClick={onClose}>Retour au scanner</button>
+            <button type="button" className="btn-primary w-full" onClick={dismiss}>Retour au scanner</button>
           </div>
         )}
       </div>

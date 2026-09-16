@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 import { CloseIcon } from '@/components/icons';
+import { useDismiss } from '@/hooks/useDismiss';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
 type GuestOption = { id: string; nom_affichage: string };
@@ -49,6 +50,7 @@ export function ResponsablePicker({
   onChange: (next: { assigneeIds: string[]; customNames: string[] }) => void;
   onClose: () => void;
 }) {
+  const { closing, dismiss } = useDismiss(onClose);
   const [query, setQuery] = useState('');
   const [guests, setGuests] = useState<GuestOption[]>([]);
   const [loadingGuests, setLoadingGuests] = useState(false);
@@ -111,14 +113,14 @@ export function ResponsablePicker({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex flex-col bg-bg/95 backdrop-blur-xl safe-top safe-bottom"
+      className={'fixed inset-0 z-[70] flex flex-col bg-bg/95 backdrop-blur-xl safe-top safe-bottom ' + (closing ? 'sheet-panel-closing' : 'sheet-panel')}
       role="dialog"
       aria-modal="true"
       aria-label="Choisir les responsables"
     >
       <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <h2 className="font-display text-lg">Responsables</h2>
-        <button type="button" onClick={onClose} aria-label="Fermer" className="glass-icon-button">
+        <button type="button" onClick={dismiss} aria-label="Fermer" className="glass-icon-button">
           <CloseIcon className="h-5 w-5" />
         </button>
       </div>
@@ -253,7 +255,7 @@ export function ResponsablePicker({
       </div>
 
       <div className="border-t border-hairline px-4 py-3">
-        <button type="button" onClick={onClose} className="btn-primary w-full">Terminé</button>
+        <button type="button" onClick={dismiss} className="btn-primary w-full">Terminé</button>
       </div>
     </div>
   );

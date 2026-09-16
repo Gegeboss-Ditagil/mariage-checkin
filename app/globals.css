@@ -429,3 +429,74 @@ body {
     animation: none !important;
   }
 }
+
+/* v1.53.18 : transitions "sheet" pour les panneaux modaux (fiche
+   d'approbation, camera, "Invite surprise", selecteur de responsables,
+   activite d'agenda, aide d'installation) -- retour de Gersom le 16/09/2026 :
+   "corrige fluidifie [...] assure-toi qu'il n'y a jamais de flash partout".
+   Jusque-la ces panneaux apparaissaient/disparaissaient d'un coup (montage/
+   demontage React instantane). Utilise en JS via hooks/useDismiss.ts : la
+   classe "-closing" est appliquee pendant l'animation de sortie, avant le
+   demontage reel. Meme courbe que les fondus de page (decelerate proche
+   d'iOS/Material), jamais de rebond. */
+@keyframes sheet-panel-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes sheet-panel-out {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(24px); opacity: 0; }
+}
+@keyframes sheet-card-in {
+  from { transform: translateY(16px) scale(0.96); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes sheet-card-out {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to { transform: translateY(10px) scale(0.97); opacity: 0; }
+}
+@keyframes sheet-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Panneau plein ecran (camera, "Invite surprise", selecteur de responsables) :
+   glisse depuis le bas, comme une presentation modale iOS. */
+.sheet-panel {
+  animation: sheet-panel-in 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.sheet-panel-closing {
+  animation: sheet-panel-out 180ms ease-in both;
+}
+
+/* Carte centree avec fond assombri (fiche d'approbation, activite d'agenda,
+   aide d'installation) : leger "pop" (translation + agrandissement), comme
+   une alerte/feuille iOS. */
+.sheet-card {
+  animation: sheet-card-in 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.sheet-card-closing {
+  animation: sheet-card-out 180ms ease-in both;
+}
+
+.sheet-backdrop {
+  animation: sheet-backdrop-in 220ms ease-out both;
+}
+.sheet-backdrop-closing {
+  animation: sheet-backdrop-out 180ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-panel,
+  .sheet-panel-closing,
+  .sheet-card,
+  .sheet-card-closing,
+  .sheet-backdrop,
+  .sheet-backdrop-closing {
+    animation: none !important;
+  }
+}
