@@ -176,7 +176,7 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar title="Agenda du jour J" backHref="/dashboard" />
         <div className="flex-1 overflow-y-auto px-4 py-4">

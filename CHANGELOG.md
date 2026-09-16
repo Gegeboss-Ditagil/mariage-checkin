@@ -3,6 +3,46 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.10] — 2026-09-16
+
+Retour de Gersom (photo seatplan.io transmise en référence) : « la manière comment tu affiches les noms, ce n'est pas facile, ce n'est pas évident, et en plus tu fais des erreurs... s'ils sont plutôt affichés en perpendiculaire et que c'est justement juste le côté court du rectangle qui touche la tangente du cercle, ça serait plus efficace... utilise le même modèle... aussi la logique de comment il raccourcit les noms ».
+
+### Modifié
+- **`components/TableSeatWheel.tsx` : orientation des étiquettes de siège inversée**, du modèle en place depuis v1.48.2 (pastille large, côté long tangent au cercle — comme un maillon de chaîne suivant la courbe) vers le modèle seatplan.io demandé (pastille étroite et longue, côté court tangent, côté long radial — comme un rayon de roue). Seuls `SEAT_WIDTH`/`SEAT_HEIGHT` sont inversés par rapport à l'ancienne version ; la rotation horaire depuis le haut, déjà identique à seatplan.io, est inchangée.
+- **Nouvelle logique de troncature des noms** (`splitSeatLabel`), reproduisant le motif observé sur les photos seatplan.io : le prénom (premier mot) est affiché sur la première ligne, tronqué avec une ellipse s'il dépasse 8 caractères ; le reste du nom (nom de famille) est affiché sur la seconde ligne, empilée radialement, tronquée de la même façon si nécessaire. Un nom à un seul mot reste sur une seule ligne centrée. Purement un habillage d'affichage : le nom complet reste utilisé tel quel par `namesMatch`/`findSeatIndexByName` pour toute correspondance — jamais tronqué pour la logique métier.
+- Le surlignage (`highlightedIndices`, couleurs accent) et toute l'interactivité existante (tap pour surligner, `aria-label`, siège vide en trait pointillé) sont inchangés — seule la géométrie et le texte des étiquettes changent.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (test du siège vide mis à jour pour la nouvelle structure de texte ; 2 nouveaux tests verrouillant les dimensions inversées et `splitSeatLabel`).
+
+## [1.53.9] — 2026-09-16
+
+Retour de Gersom : « quand je navigue entre les différentes pages de l'application, j'ai toujours un petit flash d'une page blanche... surtout au début, après ça améliore ». Demande explicite de parcourir systématiquement les écrans depuis le tableau de bord pour reproduire et corriger, plutôt qu'un correctif isolé.
+
+### Root cause
+Parcours systématique des 11 écrans principaux accessibles depuis `BottomNav` (tableau de bord et toutes ses destinations : `/scan`, `/plan-table`, `/search`, `/staff`, `/agenda`, `/approbations`, `/exceptions`, `/history`, `/placement`, `/admin`), comparé aux écrans de détail (`/tables/[tableId]`, `/checkin/[invitationId]`...) qui n'ont jamais ce symptôme. Différence trouvée : ces 11 écrans (et eux seuls) utilisent `position: fixed` (`fixed inset-0`, introduit en v1.45.0 pour ancrer chaque page au viewport réel) **sans jamais poser de `background-color` directement sur ce conteneur** — ils comptaient uniquement sur `body { @apply bg-bg }` pour être opaques. Un élément `fixed` obtient sa propre couche de composition côté navigateur (particulièrement WebKit/iOS en PWA installée en mode standalone) ; sans couleur de fond posée SUR cette couche précise, le navigateur peut la peindre en blanc le temps d'un ou deux frames pendant une transition de route, même quand `body` est bien opaque en dessous. « Ça s'améliore avec le temps » correspond exactement au moteur qui finit par mettre en cache la couche de composition de chaque route déjà visitée dans la session.
+
+### Corrigé
+- **`bg-bg` ajouté directement sur le conteneur `fixed inset-0`** des 11 écrans principaux (`app/dashboard`, `/scan`, `/plan-table`, `/search`, `/staff`, `/agenda`, `/approbations`, `/exceptions`, `/history`, `/placement`, `/admin`) — la couche de composition WebKit de chaque écran porte désormais sa propre couleur opaque, jamais seulement héritée du body.
+- **`app/globals.css` : `background-color: var(--bg)` posé explicitement en CSS** sur la règle `html, body` (en plus de la classe Tailwind `bg-bg` déjà présente sur `body`) — filet redondant à coût nul qui ne dépend d'aucun ordre de calcul de classes, recommandé pour ce type de quirk WebKit.
+- Vérifié que toutes les autres surfaces `fixed inset-0` de l'app (caméra plein écran, fiche "Invité surprise", `ResponsablePicker`, `SplashScreen`, modale d'installation) avaient déjà un fond explicite — seuls les 11 écrans principaux en manquaient.
+
+### Tests
+- `tests/scroll-fixed-shell.test.ts` (classe mise à jour pour inclure `bg-bg`, nouveau test verrouillant `background-color` explicite sur `html, body`).
+- `tests/navigation-resilience.test.ts` (regex mise à jour pour la nouvelle classe).
+
+## [1.53.8] — 2026-09-16
+
+Retour de Gersom (confirme le swipe fonctionnel sur son iPhone) : « au lieu que ce soit un carré rouge... avec le cercle, le trash, je veux qu'il soit dans un icône circulaire » (référence Messages iOS) ; « il y a aussi un problème avec reconsidérer la table en vert, qui est un problème de sizing... on peut peut-être raccourcir le texte ».
+
+### Corrigé
+- **`components/SwipeableDeleteCard.tsx` : le panneau de suppression révélé par le glissement devient une icône ronde rouge** (52px, fond transparent autour) au lieu d'un aplat rectangulaire plein pleine hauteur — fidèle au motif Mute/Trash de Messages iOS transmis en référence.
+- **Débordement du badge de statut et du bouton "Reconsidérer..." pendant/après le glissement** : `min-w-full` (seulement une largeur minimale, jamais bornée) sur le panneau de contenu de `SwipeableDeleteCard` laissait un libellé de bouton plus large que la carte forcer le conteneur de défilement horizontal à s'élargir au-delà de la largeur visible, coupant net le contenu à droite. Remplacé par `w-full` + `overflow-hidden`, qui bornent strictement le panneau à la largeur de la carte quel que soit son contenu.
+- **Libellé "Reconsidérer → choisir une table" raccourci en "Reconsidérer"** (liste et fiche détaillée de `/approbations`, même lien vers `/approbations/[id]/assign`, comportement inchangé) — supprime la cause immédiate du débordement en plus du correctif structurel ci-dessus.
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts` (1 test mis à jour pour le confinement du panneau, 1 nouveau test verrouillant l'icône ronde et l'absence d'aplat rectangulaire ; libellé "Reconsidérer" mis à jour).
+
 ## [1.53.7] — 2026-09-16
 
 Retour de Gersom (capture d'écran de Messages iOS + message explicite) : « No, I really want the swipe... just like an iPhone » — le bouton de suppression explicite ajouté en v1.53.6 n'était qu'un filet de sécurité, pas ce qu'il demandait ; il veut le vrai geste de glissement qui révèle un bouton, comme le balayage natif de Messages/Mail sur iOS.

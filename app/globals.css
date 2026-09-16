@@ -64,6 +64,17 @@ html, body {
   height: 100%;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: contain;
+  /* v1.53.9 : quirk WebKit connu sur iOS (PWA en mode standalone) -- un
+     element `position: fixed` obtient sa propre couche de composition, et si
+     AUCUN element de la chaine (html, body, l'ecran lui-meme) ne porte de
+     `background-color` explicite au niveau CSS (par opposition a une classe
+     Tailwind seule sur un enfant), WebKit peut peindre cette couche en blanc
+     le temps d'un ou deux frames pendant une transition -- meme quand le
+     body a bien `bg-bg` applique. Poser la couleur ici, sur html ET body,
+     comble ce trou sans dependre de l'ordre de calcul des classes.
+     Voir aussi `bg-bg` ajoute directement sur le conteneur `fixed inset-0`
+     de chaque ecran principal (dashboard, scan, plan-table, etc.). */
+  background-color: var(--bg);
 }
 
 body {

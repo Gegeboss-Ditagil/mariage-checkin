@@ -30,7 +30,31 @@ test('les sieges rayonnent autour d\'un cercle central via une rotation SVG (pas
 
 test('un siege vide est visuellement distinct (trait pointille) et affiche "Vide"', () => {
   assert.match(source, /strokeDasharray=\{name \? undefined : '5 4'\}/);
-  assert.match(source, /\{name \|\| 'Vide'\}/);
+  assert.match(source, />\s*Vide\s*<\/text>/);
+});
+
+// v1.53.10, retour de Gersom (photo seatplan.io en reference) : "ce n'est
+// pas facile [a lire]... et en plus tu fais des erreurs... s'ils sont
+// plutot affiches en perpendiculaire et que c'est justement juste le cote
+// court du rectangle qui touche la tangente du cercle" -- l'etiquette
+// devient etroite (cote court tangent) et longue (cote long radial), au
+// lieu de l'ancienne pastille large (cote long tangent, v1.48.2-v1.53.3).
+test("l'etiquette de siege a le cote court tangent au cercle et le cote long radial (SEAT_WIDTH < SEAT_HEIGHT), inverse de l'ancienne pastille large", () => {
+  assert.match(source, /SEAT_WIDTH = 46/);
+  assert.match(source, /SEAT_HEIGHT = 64/);
+});
+
+// "Aussi la logique de comment il raccourcit les noms" -- seatplan.io
+// tronque le prenom (avec "...") sur la premiere ligne et garde le reste du
+// nom sur la seconde ligne, empilees radialement. Purement un habillage
+// d'affichage : le nom complet reste utilise tel quel par
+// namesMatch/findSeatIndexByName (jamais tronque pour la correspondance).
+test('splitSeatLabel scinde un nom en deux lignes (prenom tronque avec ellipse si trop long, reste du nom en dessous), un seul mot restant sur une seule ligne', () => {
+  assert.match(source, /function splitSeatLabel\(name: string\): \[string, string \| null\] \{/);
+  assert.match(source, /const MAX_LINE_CHARS = 8;/);
+  assert.match(source, /function truncateLine\(s: string\): string \{\s*\n\s*return s\.length > MAX_LINE_CHARS \? s\.slice\(0, MAX_LINE_CHARS\) \+ '…' : s;/);
+  assert.match(source, /if \(words\.length <= 1\) return \[truncateLine\(words\[0\] \|\| name\), null\];/);
+  assert.match(source, /return \[truncateLine\(words\[0\]\), truncateLine\(words\.slice\(1\)\.join\(' '\)\)\];/);
 });
 
 test('le siege selectionne est mis en evidence avec les couleurs accent', () => {

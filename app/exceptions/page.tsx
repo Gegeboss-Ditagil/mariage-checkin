@@ -81,7 +81,7 @@ export default function ExceptionsPage() {
   const resolved = exceptions.filter((e) => e.resolved);
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Exceptions"

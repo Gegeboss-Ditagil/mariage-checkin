@@ -219,7 +219,7 @@ test('la barre de navigation devient une bande verticale au bord droit en paysag
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
     assert.match(
       source,
-      /fixed inset-0 flex flex-col overflow-hidden landscape:flex-row/,
+      /fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row/,
       relPath + " doit utiliser le patron d'ecran responsive paysage"
     );
   }
