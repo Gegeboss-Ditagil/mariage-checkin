@@ -947,20 +947,12 @@ export default function CheckinPage() {
           onAfterAdd={handlePanelAdd}
           onOpenSurpriseGuest={() => setShowCamera(true)}
           onFinish={() => router.push('/scan')}
+          onMerge={() => router.push('/checkin/' + invitation.id + '/merge')}
           canManage={canRename}
           canAdd={canSubmitGuestApproval}
           canMove={canMoveGuest}
+          canMerge={canMerge}
         />
-
-        {canMerge && (
-          <button
-            type="button"
-            className="action-row mb-3"
-            onClick={() => router.push('/checkin/' + invitation.id + '/merge')}
-          >
-            ⇄ Fusionner avec un autre groupe
-          </button>
-        )}
 
         {invitation.nombre_arrive > invitation.nombre_prevu && (
           <button

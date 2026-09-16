@@ -3,6 +3,29 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.12] — 2026-09-16
+
+Retour de Gersom (capture d'écran d'une demande "Test" + capture de la fiche "Bernard Kadina" sur `/checkin/[invitationId]`).
+
+### Placement automatique : le côté passe désormais devant la réserve
+
+« Si la personne est venue avec quelqu'un... on va suggérer en premier : un, on va analyser sa table, et deux, si elle est côté GG ou côté Nelly pour la mettre dans une table qui est pareille, et sinon ensuite l'excédentaire. Et ensuite, s'il y a plein de places dans l'excédentaire, voir s'il y a d'autres places quelque part d'autre. »
+
+- **`auto_assign_table_for_guest_approval`** (migration `0056_guest_approval_cote_before_reserve.sql`, exécutée et vérifiée en production Supabase le 16/09/2026, `SECURITY INVOKER`) : nouvel ordre de priorité — 0. la table du groupe avec qui l'invité est arrivé (inchangé) ; 1. **NOUVEAU** une table normale du même côté (Gégé/Nelly) avec assez de place ; 2. la table excédentaire (« Johannesburg »), quel que soit le côté — reprend l'ancienne étape 1, simplement déplacée après le côté ; 3. n'importe quelle autre table avec assez de place, côté opposé inclus. Seul l'ordre change, chaque étape individuelle (calcul de « libres », de « même côté ») reste identique à 0046.
+- **`app/approbations/[id]/assign/page.tsx`** (assignation manuelle) : même reclassement des recommandations, avec un nouveau badge « ★ Même côté » à côté du badge existant « ★ Arrivé(e) avec ce groupe ».
+
+### `GuestArrivalPanel` (`/checkin/[invitationId]`) : trois ajustements
+
+« Quand on arrive sur cette page de check-in, il faudra directement que le nom des invitations qui correspondent soit directement highlight sur la table en bas. Tu vas enlever le petit message qui est écrit sur la table en bas... on connaît déjà le fonctionnement. Le bouton fusionner, juste en haut du plan, parce que sinon on ne le voit plus, il se perd. »
+
+- **Surlignage automatique à l'ouverture** : tous les sièges dont le nom correspond exactement à un membre déjà listé sont surlignés dès que la fiche est prête, sans attendre un tap sur un 📍 — une seule fois par fiche (ne remplace jamais un choix fait ensuite par l'agent).
+- **Texte d'instructions retiré** sous le dessin « Vu sur le plan photographié » — uniquement sur cette fiche (les autres pages qui affichent ce même dessin, `/plan-table` et `/tables/[tableId]`, gardent leur propre texte).
+- **Bouton « ⇄ Fusionner avec un autre groupe »** déplacé juste au-dessus du dessin (au lieu d'après tout le reste de la page, où il se perdait) — vit désormais dans `GuestArrivalPanel` (nouvelles props `canMerge`/`onMerge`) plutôt que dans la page parente.
+
+### Tests
+- `tests/guest-approval-cote-priority.test.ts` (nouveau) : verrouille l'ordre de priorité de 0056 et la sélection manuelle correspondante.
+- `tests/guest-approvals.test.ts` : test mis à jour pour la nouvelle priorité (même côté avant réserve).
+
 ## [1.53.11] — 2026-09-16
 
 Retour de Gersom (5 captures d'écran seatplan.io en bien meilleure résolution, couvrant quasiment les 42 tables) : « Voici une meilleure résolution avec tous les noms pour pouvoir t'aider encore mieux. Analyse, extrait bien les données et les datas pour pouvoir refaire la même chose. »
