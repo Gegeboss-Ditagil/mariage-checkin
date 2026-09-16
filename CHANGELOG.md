@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.10] — 2026-09-16
+
+Retour de Gersom (photo seatplan.io transmise en référence) : « la manière comment tu affiches les noms, ce n'est pas facile, ce n'est pas évident, et en plus tu fais des erreurs... s'ils sont plutôt affichés en perpendiculaire et que c'est justement juste le côté court du rectangle qui touche la tangente du cercle, ça serait plus efficace... utilise le même modèle... aussi la logique de comment il raccourcit les noms ».
+
+### Modifié
+- **`components/TableSeatWheel.tsx` : orientation des étiquettes de siège inversée**, du modèle en place depuis v1.48.2 (pastille large, côté long tangent au cercle — comme un maillon de chaîne suivant la courbe) vers le modèle seatplan.io demandé (pastille étroite et longue, côté court tangent, côté long radial — comme un rayon de roue). Seuls `SEAT_WIDTH`/`SEAT_HEIGHT` sont inversés par rapport à l'ancienne version ; la rotation horaire depuis le haut, déjà identique à seatplan.io, est inchangée.
+- **Nouvelle logique de troncature des noms** (`splitSeatLabel`), reproduisant le motif observé sur les photos seatplan.io : le prénom (premier mot) est affiché sur la première ligne, tronqué avec une ellipse s'il dépasse 8 caractères ; le reste du nom (nom de famille) est affiché sur la seconde ligne, empilée radialement, tronquée de la même façon si nécessaire. Un nom à un seul mot reste sur une seule ligne centrée. Purement un habillage d'affichage : le nom complet reste utilisé tel quel par `namesMatch`/`findSeatIndexByName` pour toute correspondance — jamais tronqué pour la logique métier.
+- Le surlignage (`highlightedIndices`, couleurs accent) et toute l'interactivité existante (tap pour surligner, `aria-label`, siège vide en trait pointillé) sont inchangés — seule la géométrie et le texte des étiquettes changent.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` (test du siège vide mis à jour pour la nouvelle structure de texte ; 2 nouveaux tests verrouillant les dimensions inversées et `splitSeatLabel`).
+
 ## [1.53.9] — 2026-09-16
 
 Retour de Gersom : « quand je navigue entre les différentes pages de l'application, j'ai toujours un petit flash d'une page blanche... surtout au début, après ça améliore ». Demande explicite de parcourir systématiquement les écrans depuis le tableau de bord pour reproduire et corriger, plutôt qu'un correctif isolé.
