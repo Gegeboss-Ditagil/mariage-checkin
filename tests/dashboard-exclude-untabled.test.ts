@@ -29,6 +29,19 @@ test('le tableau de bord exclut les invitations sans table (table_id null) du ca
   assert.match(statsBlock, /invitationsAvecTable\.reduce\(\(s, i\) => s \+ Math\.max\(0, i\.nombre_arrive - i\.nombre_prevu\), 0\)/);
 });
 
-test("/dashboard/liste (le détail derrière chaque tuile) exclut aussi les invitations sans table, pour rester cohérent avec le chiffre affiché sur la tuile", () => {
-  assert.match(listeSource, /function filtreInvitation\(type: string, inv: InvitationRow\): boolean \{\s*\n\s*if \(inv\.table_id === null\) return false;/);
+test("/dashboard/liste (le détail derrière chaque tuile) exclut aussi les invitations sans table par défaut, pour rester cohérent avec le chiffre affiché sur la tuile", () => {
+  const filtresBlock = listeSource.slice(listeSource.indexOf('const filtres = invitations.filter'), listeSource.indexOf('const totalPersonnes'));
+  assert.match(filtresBlock, /if \(inv\.table_id === null\) return false;/);
+});
+
+// v1.53.14, retour de Gersom (capture d'écran de "Tous les invités") : "il
+// faudra avoir un petit bouton pour dire... sans table, tout simplement...
+// pour ceux qui sont sans table" -- depuis que ces invitations sont
+// exclues par défaut, il faut un moyen de les retrouver pour leur assigner
+// une table.
+test("une pastille dédiée \"Sans table\" isole exactement les invitations sans table (l'inverse de l'exclusion par défaut)", () => {
+  assert.match(listeSource, /type ListeFiltre = 'toutes' \| 'Nelly' \| 'Gege' \| 'staff' \| 'sansTable';/);
+  assert.match(listeSource, /\{ key: 'sansTable', label: 'Sans table', valeur: 'sansTable' as ListeFiltre \}/);
+  const filtresBlock = listeSource.slice(listeSource.indexOf('const filtres = invitations.filter'), listeSource.indexOf('const totalPersonnes'));
+  assert.match(filtresBlock, /if \(listeFiltre === 'sansTable'\) return inv\.table_id === null;/);
 });

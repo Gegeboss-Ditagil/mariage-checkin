@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.14] — 2026-09-16
+
+Retour de Gersom (capture d'écran de « Tous les invités », qui affichait encore les invitations sans table comme « Assistant photographe 2/3 ») : « Il faudra avoir un petit bouton pour dire non, sans table, tout simplement. Il faudra le mettre pour ceux qui sont sans table. »
+
+### Ajouté
+- **Pastille « Sans table »** (`app/dashboard/liste/page.tsx`) ajoutée à la rangée de filtres existante (Toutes/Côté Nelly/Côté Gégé/Staff) : isole exactement l'inverse de l'exclusion par défaut de v1.53.13 — uniquement les invitations sans `table_id` — pour qu'un placeur puisse encore les retrouver et leur assigner une table, maintenant qu'elles n'apparaissent plus dans les autres vues.
+- Le calcul du filtre est restructuré en une seule fonction (`filtres = invitations.filter((inv) => { ... })`) plutôt que deux conditions chaînées, pour que l'exclusion par défaut et son inverse (« Sans table ») restent lisibles côte à côte.
+
+### Tests
+- `tests/dashboard-exclude-untabled.test.ts` : nouveau test verrouillant la pastille « Sans table » et sa logique inverse.
+- `tests/dashboard-liste-cote-filter.test.ts` : mis à jour pour le type `ListeFiltre` élargi.
+
 ## [1.53.13] — 2026-09-16
 
 Retour de Gersom (capture d'écran du tableau de bord, « Invités attendus » à 409) : « Les invités qui n'ont pas de table, enlève-les du calcul. Exemple, Auguste. Non, on veut seulement voir le nombre d'invités. »

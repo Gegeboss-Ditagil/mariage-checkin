@@ -12,7 +12,10 @@ import clsx from 'clsx';
 // 'Nelly'/'Gege' filtrent par cote; 'staff' isole category === 'Staff' --
 // demande de Gersom le 28/08/2026 : le total "399 personnes" mélange
 // invités et staff sans distinction possible jusqu'ici sur cette page.
-type ListeFiltre = 'toutes' | 'Nelly' | 'Gege' | 'staff';
+// 'sansTable' ajoutée en v1.53.14 : depuis que ces invitations sont
+// exclues par défaut (v1.53.13), il faut un moyen de les retrouver pour
+// pouvoir leur assigner une table.
+type ListeFiltre = 'toutes' | 'Nelly' | 'Gege' | 'staff' | 'sansTable';
 
 const TITRES: Record<string, string> = {
   tous: 'Tous les invités',
@@ -24,13 +27,7 @@ const TITRES: Record<string, string> = {
   supplementaire: 'Invitations en excédent',
 };
 
-// v1.53.13, retour de Gersom : une invitation sans table_id (ex. "Auguste",
-// ajoutée sans table) n'a pas encore de place dans la salle -- exclue des
-// mêmes tuiles du tableau de bord (voir app/dashboard/page.tsx), donc
-// exclue ici aussi pour que le détail corresponde toujours au chiffre de
-// la tuile cliquée.
 function filtreInvitation(type: string, inv: InvitationRow): boolean {
-  if (inv.table_id === null) return false;
   if (type === 'arrives') return inv.nombre_arrive > 0;
   if (type === 'restants') return inv.nombre_arrive < inv.nombre_prevu;
   if (type === 'complet') return inv.statut === 'complet';
@@ -103,12 +100,21 @@ function ListeContent() {
   }, [type]);
 
   const tableParId = new Map(tables.map((t) => [t.id, t]));
-  const filtres = invitations.filter(
-    (inv) =>
-      filtreInvitation(type, inv) &&
-      (listeFiltre === 'toutes' ||
-        (listeFiltre === 'staff' ? inv.category === 'Staff' : inv.cote === listeFiltre))
-  );
+  // v1.53.13 : une invitation sans table_id (ex. "Auguste", ajoutée sans
+  // table) n'a pas encore de place dans la salle -- exclue par défaut, pour
+  // que cette liste corresponde toujours au chiffre de la tuile cliquée sur
+  // /dashboard (qui exclut déjà ces invitations, voir app/dashboard/page.tsx).
+  // v1.53.14, retour de Gersom : "il faudra avoir un petit bouton pour dire
+  // sans table" -- la pastille "Sans table" isole exactement l'inverse
+  // (uniquement celles qui n'ont pas encore de table), pour qu'un placeur
+  // puisse encore les retrouver et leur en assigner une.
+  const filtres = invitations.filter((inv) => {
+    if (!filtreInvitation(type, inv)) return false;
+    if (listeFiltre === 'sansTable') return inv.table_id === null;
+    if (inv.table_id === null) return false;
+    if (listeFiltre === 'toutes') return true;
+    return listeFiltre === 'staff' ? inv.category === 'Staff' : inv.cote === listeFiltre;
+  });
   const totalPersonnes = filtres.reduce((s, i) => s + i.nombre_arrive, 0);
   const titre = TITRES[type] || 'Invités';
 
@@ -148,6 +154,7 @@ function ListeContent() {
               { key: 'nelly', label: 'Côté Nelly', valeur: 'Nelly' as ListeFiltre },
               { key: 'gege', label: 'Côté Gégé', valeur: 'Gege' as ListeFiltre },
               { key: 'staff', label: 'Staff', valeur: 'staff' as ListeFiltre },
+              { key: 'sansTable', label: 'Sans table', valeur: 'sansTable' as ListeFiltre },
             ]).map((f) => (
               <button
                 key={f.key}

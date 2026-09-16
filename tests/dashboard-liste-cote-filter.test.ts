@@ -23,8 +23,8 @@ test('un filtre "Staff" isole category === Staff, car le total "personnes" melan
   // haut) inclut le staff sans distinction possible -- ajout d'une
   // quatrieme pastille "Staff" dans la meme rangee, single-select avec
   // "Toutes"/"Côté Nelly"/"Côté Gégé".
-  assert.match(source, /type ListeFiltre = 'toutes' \| 'Nelly' \| 'Gege' \| 'staff';/);
-  assert.match(source, /listeFiltre === 'staff' \? inv\.category === 'Staff' : inv\.cote === listeFiltre/);
+  assert.match(source, /type ListeFiltre = 'toutes' \| 'Nelly' \| 'Gege' \| 'staff' \| 'sansTable';/);
+  assert.match(source, /return listeFiltre === 'staff' \? inv\.category === 'Staff' : inv\.cote === listeFiltre;/);
   assert.match(source, /\{ key: 'staff', label: 'Staff', valeur: 'staff' as ListeFiltre \}/);
 });
 
