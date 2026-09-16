@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.8] — 2026-09-16
+
+Retour de Gersom (confirme le swipe fonctionnel sur son iPhone) : « au lieu que ce soit un carré rouge... avec le cercle, le trash, je veux qu'il soit dans un icône circulaire » (référence Messages iOS) ; « il y a aussi un problème avec reconsidérer la table en vert, qui est un problème de sizing... on peut peut-être raccourcir le texte ».
+
+### Corrigé
+- **`components/SwipeableDeleteCard.tsx` : le panneau de suppression révélé par le glissement devient une icône ronde rouge** (52px, fond transparent autour) au lieu d'un aplat rectangulaire plein pleine hauteur — fidèle au motif Mute/Trash de Messages iOS transmis en référence.
+- **Débordement du badge de statut et du bouton "Reconsidérer..." pendant/après le glissement** : `min-w-full` (seulement une largeur minimale, jamais bornée) sur le panneau de contenu de `SwipeableDeleteCard` laissait un libellé de bouton plus large que la carte forcer le conteneur de défilement horizontal à s'élargir au-delà de la largeur visible, coupant net le contenu à droite. Remplacé par `w-full` + `overflow-hidden`, qui bornent strictement le panneau à la largeur de la carte quel que soit son contenu.
+- **Libellé "Reconsidérer → choisir une table" raccourci en "Reconsidérer"** (liste et fiche détaillée de `/approbations`, même lien vers `/approbations/[id]/assign`, comportement inchangé) — supprime la cause immédiate du débordement en plus du correctif structurel ci-dessus.
+
+### Tests
+- `tests/approbations-ux-improvements.test.ts` (1 test mis à jour pour le confinement du panneau, 1 nouveau test verrouillant l'icône ronde et l'absence d'aplat rectangulaire ; libellé "Reconsidérer" mis à jour).
+
 ## [1.53.7] — 2026-09-16
 
 Retour de Gersom (capture d'écran de Messages iOS + message explicite) : « No, I really want the swipe... just like an iPhone » — le bouton de suppression explicite ajouté en v1.53.6 n'était qu'un filet de sécurité, pas ce qu'il demandait ; il veut le vrai geste de glissement qui révèle un bouton, comme le balayage natif de Messages/Mail sur iOS.

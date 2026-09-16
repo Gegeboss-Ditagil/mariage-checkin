@@ -137,9 +137,12 @@ const reserveMigration = readFileSync(
 test("reconsiderer un refus mene d'abord au choix de table (/approbations/[id]/assign), plus a une approbation directe", () => {
   // Les deux boutons "Reconsidérer" (carte de liste + fiche détaillée)
   // sont désormais des liens vers l'écran de choix de table, pas des
-  // appels directs à decide('approuve').
-  assert.match(approbationsPage, /Reconsidérer → choisir une table/);
+  // appels directs à decide('approuve'). Libellé raccourci en v1.53.8
+  // (retour de Gersom : le texte plus long débordait de la carte de liste,
+  // désormais contenue par SwipeableDeleteCard).
+  assert.match(approbationsPage, />\s*Reconsidérer\s*<\/Link>/);
   assert.doesNotMatch(approbationsPage, /Reconsidérer → Approuver/);
+  assert.doesNotMatch(approbationsPage, /Reconsidérer → choisir une table/);
   assert.match(
     approbationsPage,
     /r\.statut === 'refuse' && role && hasCapability\(role, 'reviewGuestApproval'\) && hasCapability\(role, 'assignGuestApproval'\)/
@@ -223,10 +226,27 @@ test('swipe pour supprimer une demande deja decidee, reserve a admin -- API DELE
 test("le glissement s'appuie sur un vrai defilement horizontal natif (scroll-snap), plus aucun Pointer Event/detection de geste custom, pour survivre aux echecs repetes sur l'appareil reel de Gersom", () => {
   assert.doesNotMatch(swipeableDeleteCard, /onPointerDown|onPointerMove|onPointerUp|onPointerCancel|setPointerCapture/);
   assert.match(swipeableDeleteCard, /className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto/);
-  assert.match(swipeableDeleteCard, /className="min-w-full shrink-0 snap-start"/);
+  assert.match(swipeableDeleteCard, /className="w-full shrink-0 snap-start overflow-hidden"/);
   assert.match(swipeableDeleteCard, /snap-end/);
   assert.match(swipeableDeleteCard, /aria-label="Supprimer définitivement"/);
   assert.match(swipeableDeleteCard, /onClick=\{handleDeleteClick\}/);
+});
+
+// v1.53.8, retour de Gersom (confirme fonctionnel sur son iPhone) : (1) "au
+// lieu que ce soit un carre rouge... je veux qu'il soit dans un icone
+// circulaire" -- le panneau revele par le glissement doit reprendre le
+// motif Mute/Trash de Messages iOS (icone rond colore sur fond neutre),
+// jamais un aplat rectangulaire plein. (2) `min-w-full` (min-width
+// seulement, jamais borne en largeur maximale) laissait un contenu plus
+// large que la carte (le libelle "Reconsidérer → choisir une table")
+// forcer le conteneur de defilement a s'elargir, coupant le badge de
+// statut -- `w-full` + `overflow-hidden` corrigent la cause structurelle,
+// le libelle est aussi raccourci en "Reconsidérer" par la meme occasion.
+test("le bouton de suppression revele par le glissement est une icone ronde (jamais un aplat rectangulaire plein), et le panneau de contenu est strictement borne en largeur", () => {
+  assert.doesNotMatch(swipeableDeleteCard, />\s*Supprimer\s*<\/button>/);
+  assert.match(swipeableDeleteCard, /rounded-full bg-status-over text-white/);
+  assert.match(swipeableDeleteCard, /ACTION_CIRCLE_SIZE = 52/);
+  assert.match(swipeableDeleteCard, /height: ACTION_CIRCLE_SIZE, width: ACTION_CIRCLE_SIZE/);
 });
 
 test('GuestArrivalPanel : la branche "ensure" (backfill generique) marque aussi initializing=true avant son fetch, comme la branche "initialize" -- sinon settled devenait brievement vrai avec visible=false', () => {

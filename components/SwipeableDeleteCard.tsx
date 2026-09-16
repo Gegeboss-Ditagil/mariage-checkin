@@ -31,7 +31,20 @@ import { TrashIcon } from '@/components/icons';
 // v1.53.6 (icone poubelle a cote du badge de statut) reste en place en
 // parallele, au cas ou ce troisieme mecanisme se heurterait lui aussi a une
 // particularite non anticipee de son appareil.
+//
+// v1.53.8, retour de Gersom (confirme fonctionnel sur son iPhone) : (1) le
+// panneau de suppression devient un icone circulaire rouge (jamais un
+// aplat rectangulaire plein), fidele au motif Mute/Trash de Messages iOS
+// (capture d'ecran transmise en reference) -- le fond du panneau reste
+// transparent (le meme arriere-plan que la liste transparait), seul le
+// cercle porte la couleur. (2) `min-w-full` (min-width seulement) laissait
+// un contenu plus large que la carte (ex. un long libelle de bouton) forcer
+// le conteneur de defilement a s'elargir au-dela de la largeur visible,
+// coupant net le badge de statut et le texte du bouton "Reconsiderer" --
+// `w-full` + `overflow-hidden` bornent desormais strictement le panneau de
+// contenu a la largeur de la carte, quel que soit ce qu'il contient.
 const ACTION_WIDTH = 88;
+const ACTION_CIRCLE_SIZE = 52;
 
 export function SwipeableDeleteCard({
   enabled,
@@ -60,7 +73,7 @@ export function SwipeableDeleteCard({
         className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto scroll-smooth overscroll-x-contain"
       >
         <div
-          className="min-w-full shrink-0 snap-start"
+          className="w-full shrink-0 snap-start overflow-hidden"
           style={{ opacity: deleting ? 0.4 : 1, transition: 'opacity 200ms ease-out' }}
         >
           {children}
@@ -70,11 +83,15 @@ export function SwipeableDeleteCard({
           aria-label="Supprimer définitivement"
           disabled={deleting}
           onClick={handleDeleteClick}
-          className="flex shrink-0 snap-end flex-col items-center justify-center gap-1 bg-status-over text-xs font-bold text-white disabled:opacity-60"
+          className="flex shrink-0 snap-end items-center justify-center disabled:opacity-60"
           style={{ width: ACTION_WIDTH }}
         >
-          <TrashIcon className="h-6 w-6" />
-          Supprimer
+          <span
+            className="flex items-center justify-center rounded-full bg-status-over text-white shadow-elev-2 transition-transform active:scale-90"
+            style={{ height: ACTION_CIRCLE_SIZE, width: ACTION_CIRCLE_SIZE }}
+          >
+            <TrashIcon className="h-6 w-6" />
+          </span>
         </button>
       </div>
     </div>

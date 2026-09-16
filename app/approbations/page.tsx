@@ -346,7 +346,7 @@ export default function ApprobationsPage() {
                     href={'/approbations/' + r.id + '/assign'}
                     className="glass-pill-complete mt-2 flex min-h-10 w-full items-center justify-center text-sm"
                   >
-                    Reconsidérer → choisir une table
+                    Reconsidérer
                   </Link>
                 )}
               </div>
@@ -508,7 +508,7 @@ export default function ApprobationsPage() {
                 carte de liste plus haut. */}
             {selectedRequest.statut === 'refuse' && role && hasCapability(role, 'reviewGuestApproval') && hasCapability(role, 'assignGuestApproval') && (
               <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="glass-pill-complete mt-3 flex min-h-12 w-full items-center justify-center px-4 py-3 text-base">
-                Reconsidérer → choisir une table
+                Reconsidérer
               </Link>
             )}
 
