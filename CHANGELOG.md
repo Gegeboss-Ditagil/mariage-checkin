@@ -3,6 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.15] — 2026-09-16
+
+Retour de Gersom (capture d'écran de `/plan-table`, table 3, + message vocal) — trois demandes liées au dessin « Vu sur le plan photographié ».
+
+### Retiré
+- Le paragraphe d'instructions sous le dessin (« Touchez un nom... », « Touchez 🪑... ») a disparu de `/plan-table`, `/tables/[tableId]` et `/table/[tableId]` (« retire ce texte »). `GuestArrivalPanel` l'avait déjà perdu en v1.53.11/v1.53.12 pour une raison différente.
+
+### Modifié — navigation depuis la carte de la table sélectionnée sur `/plan-table`
+« Je suis coincé dans un mode select guest to see where is seated... comment entrer dans son invitation par la suite ? [...] je dois redescendre dans la page et aller jusqu'à la table cliquée et ensuite aller dans la page avec les invitations de toute la table [...] seulement quand j'appuie sur les chaises en bas que ça souligne le nom en haut. Et une fois qu'on va cliquer sur le nom en haut, ça va nous amener dans la page [qui montre] toutes les invitations de cette table et la table en bas. »
+
+- v1.48.5 faisait toucher un nom dans la liste de la table sélectionnée surligner son siège au lieu de naviguer, sans issue directe ensuite vers `/tables/[tableId]`. Revient sur ce choix : `TableCard` (composant interne de `app/plan-table/page.tsx`) perd son prop `onSelectInvitation` — la carte entière (en-tête + liste) redevient un seul `<Link>` vers `/tables/[tableId]`, comme les grilles non sélectionnées plus bas sur la page. Seul le sens siège → nom (toucher une chaise sur le dessin surligne la ligne correspondante) reste actif.
+
+### Ajouté — deux flèches d'orientation sur le dessin
+« Quand on voit la table, on devrait comprendre où est le nord, est, sud... on va tout simplement mettre une flèche en direction de deux éléments. La piste de danse et les mariés. Et la ligne centrale. Comme ça, on comprend rapidement où est la table. Deux flèches. »
+
+- `components/FloorPlan.tsx` exporte deux repères (`DANCE_FLOOR_LANDMARK`, `CENTRAL_AISLE_LANDMARK`), calculés depuis les mêmes salles déjà dessinées sur le plan (« Piste de danse » + « Les mariés » combinées en un seul repère, « Allée centrale » pour le second) — jamais une seconde source de coordonnées.
+- `lib/floorPlanOrientation.ts` (nouveau) : `getTableOrientation(tableNumber)` calcule, depuis la vraie position de la table sur le plan, l'angle (sens horaire depuis le haut, même convention que les sièges) vers chacun des deux repères.
+- `components/TableSeatWheel.tsx` dessine deux petites flèches (💃 piste de danse/mariés, 🚶 allée centrale) juste au-delà des étiquettes de sièges, avec un viewBox élargi d'autant ; libellés non tournés (placés par trigonométrie) pour rester lisibles quel que soit l'angle. Purement un repère visuel — jamais une donnée écrite en base.
+
+### Tests
+- `tests/table-seat-wheel.test.ts` : test mis à jour (navigation au lieu de surlignage sur tap-nom) + nouveau test verrouillant la disparition des paragraphes d'instructions.
+- `tests/floor-plan-seats.test.ts` : test mis à jour pour le sens siège → nom uniquement.
+- `tests/table-orientation-arrows.test.ts` (nouveau) : verrouille les repères, la formule d'angle (avec contrôle numérique indépendant), le rendu SVG et le câblage sur les quatre écrans concernés.
+
 ## [1.53.14] — 2026-09-16
 
 Retour de Gersom (capture d'écran de « Tous les invités », qui affichait encore les invitations sans table comme « Assistant photographe 2/3 ») : « Il faudra avoir un petit bouton pour dire non, sans table, tout simplement. Il faudra le mettre pour ceux qui sont sans table. »

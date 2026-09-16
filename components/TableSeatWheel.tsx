@@ -38,6 +38,19 @@ import clsx from 'clsx';
 // /checkin/[invitationId]) -- ce composant reste un simple afficheur, la
 // semantique (bascule ou remplacement) vit chez l'appelant.
 
+// v1.53.15, retour de Gersom : deux petites fleches d'orientation autour du
+// cercle -- "on devrait comprendre où est le nord, est, sud... on va mettre
+// une flèche en direction de deux éléments. La piste de danse et les
+// mariés. Et la ligne centrale." Angles fournis par
+// lib/floorPlanOrientation.ts (calcules depuis la vraie position de la table
+// sur components/FloorPlan.tsx), meme convention de rotation que les sieges
+// (0° = en haut, sens horaire). Optionnel : absent pour une table sans
+// position connue sur le plan.
+export interface TableOrientation {
+  danseAngle: number;
+  alleeAngle: number;
+}
+
 interface TableSeatWheelProps {
   tableNumber: number;
   seats: (string | null)[];
@@ -48,6 +61,7 @@ interface TableSeatWheelProps {
   // d'une autre liste) ; ce composant se contente d'afficher l'ensemble.
   highlightedIndices: number[];
   onSelectSeat: (index: number) => void;
+  orientation?: TableOrientation | null;
 }
 
 const VIEW_SIZE = 320;
@@ -63,6 +77,14 @@ const SEAT_HEIGHT = 64;
 // l'etiquette, dans le repere local (avant rotation du groupe).
 const LINE_OFFSET = 11;
 const MAX_LINE_CHARS = 8;
+// Rayon maximal occupe par une etiquette de siege (SEAT_RADIUS +
+// SEAT_HEIGHT/2) : les fleches d'orientation commencent juste au-dela, pour
+// ne jamais chevaucher un nom. VIEW_MARGIN elargit le viewBox d'autant
+// (sans deplacer aucune coordonnee existante) pour leur faire de la place.
+const ARROW_INNER_RADIUS = 146;
+const ARROW_OUTER_RADIUS = 162;
+const ARROW_LABEL_RADIUS = 176;
+const VIEW_MARGIN = 42;
 
 function truncateLine(s: string): string {
   return s.length > MAX_LINE_CHARS ? s.slice(0, MAX_LINE_CHARS) + '…' : s;
@@ -79,12 +101,46 @@ function splitSeatLabel(name: string): [string, string | null] {
   return [truncateLine(words[0]), truncateLine(words.slice(1).join(' '))];
 }
 
-export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelectSeat }: TableSeatWheelProps) {
+// Une fleche : trait + pointe dessines "vers le haut" en coordonnees locales
+// (comme un siege a l'angle 0), puis pivotes autour du centre -- meme
+// technique que les etiquettes de siege. Le libelle reste volontairement
+// hors de ce groupe pivote, place directement par trigonometrie, pour rester
+// lisible quel que soit l'angle plutot que de tourner avec la fleche.
+function OrientationArrow({ angle, label, title }: { angle: number; label: string; title: string }) {
+  const radians = (angle * Math.PI) / 180;
+  const labelX = CENTER + Math.sin(radians) * ARROW_LABEL_RADIUS;
+  const labelY = CENTER - Math.cos(radians) * ARROW_LABEL_RADIUS;
+  return (
+    <g>
+      <title>{title}</title>
+      <g transform={`rotate(${angle} ${CENTER} ${CENTER})`}>
+        <line
+          x1={CENTER}
+          y1={CENTER - ARROW_INNER_RADIUS}
+          x2={CENTER}
+          y2={CENTER - ARROW_OUTER_RADIUS}
+          className="stroke-accent stroke-2"
+        />
+        <polygon
+          points={`${CENTER - 5},${CENTER - ARROW_OUTER_RADIUS + 7} ${CENTER + 5},${CENTER - ARROW_OUTER_RADIUS + 7} ${CENTER},${CENTER - ARROW_OUTER_RADIUS - 5}`}
+          className="fill-accent"
+        />
+      </g>
+      <text x={labelX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="text-[16px]">
+        {label}
+      </text>
+    </g>
+  );
+}
+
+export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelectSeat, orientation }: TableSeatWheelProps) {
   const count = seats.length || 10;
+  const viewMin = -VIEW_MARGIN;
+  const viewSpan = VIEW_SIZE + VIEW_MARGIN * 2;
 
   return (
     <svg
-      viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
+      viewBox={`${viewMin} ${viewMin} ${viewSpan} ${viewSpan}`}
       className="mx-auto h-auto w-full max-w-[360px] select-none"
       role="img"
       aria-label={`Places de la table ${tableNumber} vues sur le plan photographié`}
@@ -157,6 +213,13 @@ export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelec
       <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="middle" className="fill-accent text-2xl font-bold">
         {tableNumber}
       </text>
+
+      {orientation && (
+        <>
+          <OrientationArrow angle={orientation.danseAngle} label="💃" title="Direction de la piste de danse et des mariés" />
+          <OrientationArrow angle={orientation.alleeAngle} label="🚶" title="Direction de l'allée centrale" />
+        </>
+      )}
     </svg>
   );
 }

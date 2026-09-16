@@ -123,16 +123,35 @@ test('GuestArrivalPanel surligne aussi la ligne du membre retrouve quand on touc
 // v1.48.8, retour de Gersom : "quand j'appuie sur Jonas, j'aimerais aussi que
 // son nom en haut dans la fiche soit surligne" -- la liste au-dessus du
 // dessin ne montrait jusqu'ici aucun etat "selectionne" sur la ligne touchee,
-// seul le siege en bas changeait.
-test("/plan-table surligne aussi la ligne de l'invitation touchee dans la liste (pas seulement son siege)", () => {
+// seul le siege en bas changeait. La ligne se surligne toujours (via
+// selectedInvitationId, mis a jour par onSelectSeat), mais v1.53.15 (voir le
+// test suivant) retire la capacite inverse -- toucher directement un nom
+// n'a plus d'effet sur le surlignage, seul le siege le declenche desormais.
+test("/plan-table surligne la ligne de l'invitation correspondant au siege touche", () => {
   assert.match(pageSource, /selectedInvitationId\?: string \| null;/);
-  assert.match(pageSource, /setSelectedInvitationId\(inv\.id\);/);
+  assert.match(pageSource, /setSelectedInvitationId\(match \? match\.id : null\);/);
   assert.match(pageSource, /inv\.id === selectedInvitationId \? '-mx-1\.5 bg-accent-tint px-1\.5 py-1 ring-1 ring-accent\/40' : ''/);
   // Reinitialise partout ou highlightedSeats l'est deja (changement de table/
   // zone/localisation), sinon une ligne resterait surlignee pour une autre table.
   const resets = pageSource.match(/setHighlightedSeats\(\[\]\);/g) || [];
   const idResets = pageSource.match(/setSelectedInvitationId\(null\);/g) || [];
   assert.ok(idResets.length >= resets.length, 'selectedInvitationId doit etre reinitialise partout ou highlightedSeats l\'est');
+});
+
+// v1.53.15, retour de Gersom (capture d'écran de /plan-table, table 3) :
+// "je suis coincé dans un mode select guest to see where is seated...
+// comment entrer dans son invitation par la suite ?" -- v1.48.5 faisait
+// toucher un nom surligner son siège au lieu de naviguer, sans issue directe
+// vers /tables/[tableId] ensuite. Retire cette capacité (onSelectInvitation)
+// : toucher un nom navigue de nouveau normalement, seul onSelectSeat (siège
+// -> nom) surligne encore une ligne.
+test("toucher un nom dans la liste de la table sélectionnée navigue de nouveau vers /tables/[tableId] (onSelectInvitation retiré)", () => {
+  assert.doesNotMatch(pageSource, /onSelectInvitation/);
+  const cardBlock = pageSource.slice(pageSource.indexOf('function TableCard('));
+  // La carte entiere (en-tete + liste) est de nouveau un seul <Link>, sans
+  // branche conditionnelle selon un ancien onSelectInvitation.
+  assert.match(cardBlock, /<Link href=\{'\/tables\/' \+ table\.id\} className="block">/);
+  assert.match(cardBlock, /\{invitationsList\}\s*\n\s*<\/Link>/);
 });
 
 // v1.48.8, retour de Gersom (photo "Table 1 — Maquela do Zombo") : la fiche
@@ -229,4 +248,21 @@ test('/plan-table lit ?table=<numero> pour localiser une table venant de /tables
   // dynamiques de l'app, ex. /tables/[tableId]).
   assert.match(planTableSource, /import \{ Suspense,/);
   assert.match(planTableSource, /<Suspense fallback=\{null\}>\s*\n\s*<PlanTablePageInner \/>/);
+});
+
+// v1.53.15, retour de Gersom : "retire ce texte" (les deux variantes du
+// paragraphe d'instructions sous le dessin "vu sur le plan photographié",
+// citées textuellement dans le message). Retiré des trois pages qui
+// l'affichaient -- /plan-table, /tables/[tableId] et /table/[tableId]
+// (GuestArrivalPanel l'avait déjà perdu en v1.53.11/v1.53.12, sur cette même
+// fiche uniquement, pour une raison différente : "on connaît déjà le
+// fonctionnement").
+test('les paragraphes d\'instructions sous le dessin ont disparu de /plan-table, /tables/[tableId] et /table/[tableId]', () => {
+  const tablesSource = readFileSync(new URL('../app/tables/[tableId]/page.tsx', import.meta.url), 'utf8');
+  const tableSource = readFileSync(new URL('../app/table/[tableId]/page.tsx', import.meta.url), 'utf8');
+  for (const src of [pageSource, tablesSource, tableSource]) {
+    assert.doesNotMatch(src, /Touchez un nom/);
+    assert.doesNotMatch(src, /Touchez 🪑/);
+    assert.doesNotMatch(src, /ne reflète pas forcément la table actuelle/);
+  }
 });
