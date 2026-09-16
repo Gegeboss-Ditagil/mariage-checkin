@@ -27,9 +27,11 @@ export function GuestArrivalPanel({
   onAfterAdd,
   onOpenSurpriseGuest,
   onFinish,
+  onMerge,
   canManage,
   canAdd,
   canMove,
+  canMerge,
 }: {
   invitation: InvitationRow;
   // v1.48.5, retour de Gersom : afficher directement sur cette fiche le
@@ -91,6 +93,15 @@ export function GuestArrivalPanel({
   // `canAdd` (utile à tous les rôles, pas seulement ceux qui peuvent ajouter
   // un invité) -- la navigation elle-même reste décidée par le parent.
   onFinish?: () => void;
+  // v1.53.11, retour de Gersom : "le bouton fusionner... juste en haut du
+  // plan, parce que sinon on ne le voit plus, il se perd" -- vivait jusqu'ici
+  // dans la page parente, APRÈS ce panneau (donc après les deux cartes,
+  // caméra/plan compris) ; déplacé ici pour être positionné juste au-dessus
+  // du dessin "vu sur le plan photographié". Même capacité (mergeInvitations)
+  // et même navigation (/checkin/[invitationId]/merge), simplement rendus
+  // à cet endroit précis plutôt que par le parent.
+  onMerge?: () => void;
+  canMerge?: boolean;
 }) {
   const router = useRouter();
   const online = useOnline();
@@ -125,6 +136,14 @@ export function GuestArrivalPanel({
   const [highlightedGuestId, setHighlightedGuestId] = useState<string | null>(null);
   const seatWheelRef = useRef<HTMLDivElement>(null);
   const membersListRef = useRef<HTMLUListElement>(null);
+  // v1.53.11, retour de Gersom : "quand on arrive sur cette page de
+  // check-in, il faudra directement que le nom des invitations qui
+  // correspondent soit directement highlight sur la table en bas" -- jusqu'ici
+  // il fallait toucher un 📍/un siège pour surligner quoi que ce soit.
+  // Marque l'invitation déjà traitée pour ne le faire qu'une seule fois par
+  // fiche (jamais reécraser un choix manuel ultérieur, ex. après un tap sur
+  // un siège différent ou un renommage qui recharge `members`).
+  const autoHighlightedInvitationIdRef = useRef<string | null>(null);
 
   // Ids des membres actuellement listes -- permet de filtrer LOCALEMENT les
   // evenements Realtime de la table globale `guests` (impossible de filtrer
@@ -174,6 +193,7 @@ export function GuestArrivalPanel({
     setMembers([]);
     setHighlightedSeats([]);
     setHighlightedGuestId(null);
+    autoHighlightedInvitationIdRef.current = null;
     onVisibilityChange?.(true);
     (async () => {
       let list = await load();
@@ -358,6 +378,25 @@ export function GuestArrivalPanel({
     onVisibilityChange?.(visible);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settled, visible]);
+
+  // v1.53.11 : surligne d'emblee, une seule fois par fiche (voir
+  // autoHighlightedInvitationIdRef ci-dessus), tous les sieges dont le nom
+  // correspond exactement a un membre deja liste -- sans attendre un tap sur
+  // un 📍. Ne remplace jamais un choix fait ensuite par l'agent (tap sur un
+  // siege ou un 📍 different) : ce n'est qu'un point de depart.
+  useEffect(() => {
+    if (!settled || !visible) return;
+    if (autoHighlightedInvitationIdRef.current === invitation.id) return;
+    const currentSeats = tableNumber !== null ? TABLE_SEAT_NAMES[tableNumber] : undefined;
+    if (!currentSeats) return;
+    autoHighlightedInvitationIdRef.current = invitation.id;
+    const indices: number[] = [];
+    for (const guest of members) {
+      const idx = findSeatIndexByName(tableNumber as number, guest.nom_affichage);
+      if (idx !== null && !indices.includes(idx)) indices.push(idx);
+    }
+    if (indices.length > 0) setHighlightedSeats(indices);
+  }, [settled, visible, invitation.id, tableNumber, members]);
 
   if (!settled) return <div className="card mb-3 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;
@@ -569,6 +608,19 @@ export function GuestArrivalPanel({
       {error && <p className="mt-2 text-xs font-medium text-status-over">{error}</p>}
     </div>
 
+    {canMerge && onMerge && (
+      <button type="button" className="action-row mb-3" onClick={onMerge}>
+        ⇄ Fusionner avec un autre groupe
+      </button>
+    )}
+
+    {/* v1.53.11, retour de Gersom : "enlève le petit message... toucher un
+        nom ou blablabla... on connaît déjà le fonctionnement" -- le texte
+        d'instructions ("Touchez un nom...") affiché sous le dessin sur les
+        autres pages (/plan-table, /tables/[tableId]) est retiré ICI
+        uniquement : cette fiche est justement celle où l'agent vient de
+        voir le mécanisme se déclencher tout seul (surlignage automatique
+        ci-dessus), plus besoin de l'expliquer. */}
     {seats && (
       <div ref={seatWheelRef} className="card mb-3 p-4">
         <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
@@ -598,11 +650,6 @@ export function GuestArrivalPanel({
             }
           }}
         />
-        <p className="mt-2 text-center text-[11px] text-text-faint">
-          Touchez un nom, ou 📍 à côté d’un invité ci-dessus, pour mettre son siège en évidence, et vice versa.
-          Extrait par lecture du plan photo transmis par Gersom (14/09/2026) — purement informatif, ne reflète pas
-          forcément la table actuelle de chaque invité en base.
-        </p>
       </div>
     )}
     </>

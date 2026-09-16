@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { InvitationRow, OverflowAssignmentRow, TableRow, PLACEMENT_LABELS, STATUS_LABELS } from '@/lib/types';
+import { InvitationRow, OverflowAssignmentRow, TableRow, PLACEMENT_LABELS, STATUS_LABELS, COTE_LABELS } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { TablePicker } from '@/components/TablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
@@ -83,27 +83,51 @@ export default function AssignGuestApprovalTablePage() {
   // forcé sur la table choisie (une chaise de plus, comme lors d'un
   // déplacement 0008), jamais laissé sans table.
   const [force, setForce] = useState(false);
+  // Même calcul que le RPC (côté déduit des invitations déjà assises à
+  // cette table, cf. 0056_guest_approval_cote_before_reserve.sql) -- extrait
+  // de `recommendations` pour être réutilisé aussi par le badge "★ Même
+  // côté" ci-dessous.
+  const sameCoteTableIds = useMemo(() => {
+    const cote = request?.cote || null;
+    const counts = new Map<string, { same: number; other: number }>();
+    for (const inv of invitations) {
+      if (!inv.table_id) continue;
+      const entry = counts.get(inv.table_id) || { same: 0, other: 0 };
+      if (inv.cote === cote) entry.same++;
+      else entry.other++;
+      counts.set(inv.table_id, entry);
+    }
+    const ids = new Set<string>();
+    for (const [tableId, { same, other }] of counts) {
+      if (same > other) ids.add(tableId);
+    }
+    return ids;
+  }, [request?.cote, invitations]);
   const recommendations = useMemo(() => {
     const needed = request?.nombre_invites || 1;
     const linkedTableId = request?.linked_invitation_table_id || null;
     return usages
       .filter((usage) => force || usage.libresEstimees >= needed)
       .sort((a, b) => {
-        // Priorité 0 : la table du groupe avec qui l'invité est arrivé
-        // (quand elle a de la place) -- même logique que le placement
-        // automatique à l'approbation (auto_assign_table_for_guest_approval,
-        // 0045/0046), reprise ici pour l'assignation manuelle. Ensuite,
-        // même ordre qu'avant : table 42 (excédentaire, "Johannesburg" depuis
-        // le 14/09/2026 -- avant cette date, c'était la table 41) en
-        // priorité, puis réserve, puis les tables normales.
+        // Priorité 0 : la table du groupe avec qui l'invité est arrivé.
+        // Priorité 1 : une table normale du même côté (Gégé/Nelly) que
+        // l'invité. Priorité 2 : la table excédentaire ("Johannesburg",
+        // seule table réserve depuis le 14/09/2026), quel que soit le côté.
+        // Priorité 3 : n'importe quelle autre table normale, côté opposé
+        // inclus. Ordre voulu par Gersom le 16/09/2026 (« on va suggérer en
+        // premier sa table, deux si elle est côté GG ou côté Nelly... et
+        // sinon ensuite l'excédentaire... et ensuite voir s'il y a d'autres
+        // places quelque part d'autre ») -- même priorité que le placement
+        // automatique à l'approbation, voir 0056.
         const priority = (usage: TableCapacity) => {
           if (usage.libresEstimees < needed) return 4;
           if (linkedTableId && usage.table.id === linkedTableId) return 0;
-          return usage.table.number === 42 ? 1 : usage.table.is_reserve ? 2 : 3;
+          if (!usage.table.is_reserve && sameCoteTableIds.has(usage.table.id)) return 1;
+          return usage.table.is_reserve ? 2 : 3;
         };
         return priority(a) - priority(b) || a.table.number - b.table.number;
       });
-  }, [request?.nombre_invites, request?.linked_invitation_table_id, usages, force]);
+  }, [request?.nombre_invites, request?.linked_invitation_table_id, usages, force, sameCoteTableIds]);
 
   // Présélectionne automatiquement la meilleure table (recommendations[0],
   // déjà triée avec la priorité "arrivé avec ce groupe" ci-dessus) dès que
@@ -349,6 +373,7 @@ export default function AssignGuestApprovalTablePage() {
             <div className="grid gap-2 sm:grid-cols-2">
               {recommendations.map((usage) => {
                 const isLinkedTable = !!request.linked_invitation_table_id && usage.table.id === request.linked_invitation_table_id;
+                const isSameCote = !isLinkedTable && !usage.table.is_reserve && sameCoteTableIds.has(usage.table.id);
                 return (
                   <button
                     key={usage.table.id}
@@ -368,6 +393,9 @@ export default function AssignGuestApprovalTablePage() {
                         priorité 0 dans `recommendations` ci-dessus. */}
                     {isLinkedTable && (
                       <span className="mt-0.5 block text-xs font-bold text-accent">★ Arrivé(e) avec ce groupe</span>
+                    )}
+                    {isSameCote && (
+                      <span className="mt-0.5 block text-xs font-bold text-accent">★ Même côté ({COTE_LABELS[request.cote]})</span>
                     )}
                   </button>
                 );
