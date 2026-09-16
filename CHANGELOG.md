@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.5] — 2026-09-16
+
+Retour de Gersom (capture d'écran de la fiche détaillée d'une demande d'approbation "Test") : « il y a un problème avec les deux flèches, corrige » — la flèche précédente recouvrait partiellement le badge "Côté Gégé/Nelly" juste en dessous de la photo.
+
+### Corrigé
+- **`app/approbations/page.tsx` : les flèches précédente/suivante de la fiche détaillée d'une demande étaient positionnées à un pourcentage fixe de la hauteur du viewport** (`fixed left-3/right-3 top-[46%]`), une estimation censée les aligner sur la photo mais qui ne correspondait pas à sa position réelle une fois la hauteur variable de l'en-tête prise en compte — elles atterrissaient alors par-dessus le badge "Côté Gégé/Nelly" juste en dessous, le recouvrant partiellement (texte illisible, comme dans la capture transmise). Corrigé en ancrant les deux boutons directement au conteneur de la photo (nouveau wrapper `relative`), qui a toujours une position et une hauteur connues : les flèches restent désormais systématiquement centrées sur la photo elle-même, jamais sur le contenu en dessous, quelle que soit la taille de l'écran ou la longueur du titre de la demande.
+
+### Tests
+- `tests/guest-approvals.test.ts` (1 nouveau test verrouillant l'ancrage au conteneur de la photo ; 1 test existant ajusté pour les tailles de flèche désormais responsives — 44px sur mobile, 56px à partir de `sm:`).
+
+## [1.53.4] — 2026-09-16
+
+Retour de Gersom (capture d'écran `/approbations` + message vocal) : (1) après avoir réellement autorisé les notifications et reçu une vraie alerte push sur son iPhone, le bouton restait bloqué sur « notifications à configurer » ; (2) « je ne peux pas swipe left or right » — le swipe pour supprimer (v1.53.2) ne fonctionnait toujours pas du tout, malgré le correctif précédent.
+
+### Corrigé
+- **`components/PushNotificationButton.tsx` ne reflétait jamais l'état réel du navigateur/OS au chargement** : le statut affiché démarrait toujours à `'idle'` et ne changeait qu'en réaction à un clic dans la session en cours ; un échec ponctuel (réseau, timing) lors d'un essai précédent laissait le message bloqué sur « à configurer » même une fois les notifications effectivement actives (abonnement déjà enregistré, vraies alertes reçues). Nouveau `useEffect` de réconciliation au montage : si `Notification.permission === 'granted'` et qu'un abonnement `pushManager` existe déjà, le statut passe directement à `'enabled'` ; si la permission est réellement `'denied'`, le statut le reflète aussi immédiatement — sans attendre un nouveau clic.
+- **Swipe pour supprimer sur `/approbations` (`components/SwipeableDeleteCard.tsx`) toujours non fonctionnel après le correctif v1.53.2** (« verrouillage d'axe » : ne capturer le pointeur qu'après avoir détecté un geste horizontal) — confirmé par un second test réel de Gersom : tapoter la carte l'ouvre bien, mais aucun glissement, même partiel, ne produit de réaction. Cause probable : sur iOS Safari, ne PAS capturer le pointeur dès `onPointerDown` laisse le moteur natif trancher seul le sens du geste avant que le JS n'ait pu observer assez de mouvement pour justifier une capture tardive — avec `touch-action: pan-y`, WebKit tranche alors presque systématiquement pour un défilement vertical natif, et plus aucun `pointermove` horizontal exploitable n'est jamais délivré à React. Nouvelle approche, conforme à la spécification touch-action/Pointer Events (utilisée par la plupart des bibliothèques de glissement) : capturer le pointeur **immédiatement** à `onPointerDown`, suivre `pointermove` pour tout déplacement horizontal, et compter sur le navigateur pour annuler proprement la séquence (`pointercancel`, déjà câblé sur `onPointerUp`) dès qu'il détecte lui-même un défilement vertical dominant — `touch-action: pan-y` garantit que ce défilement natif reste possible malgré la capture. Diagnostic par lecture du code et de la spécification (aucun appareil iOS réel disponible dans cet environnement pour reproduire) — à reconfirmer par Gersom.
+
+### Tests
+- `tests/push-notification-instructions.test.ts` (1 nouveau test verrouillant le `useEffect` de réconciliation au montage).
+- `tests/approbations-ux-improvements.test.ts` (test de capture immédiate du pointeur remplace celui du verrouillage d'axe, devenu obsolète).
+
 ## [1.53.3] — 2026-09-16
 
 Retour de Gersom (2 captures d'écran, `/tables/[tableId]` table 1 et `Famille Mbiyavanga Mavinga`/table 4) : (1) le badge "Non arrivé" prend trop de place sur la ligne ; (2) toucher un nom devrait mettre en évidence son siège ; (3) dernier assessment demandé sur toutes les lectures OCR du plan photographié ("Fiston" lu "Fixton/Fixon").

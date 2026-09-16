@@ -125,12 +125,31 @@ test('la fenetre detaillee navigue entre les demandes et confirme clairement cha
   assert.match(approbationsPageSource, /Approuvé — sans table/);
 });
 
+// v1.53.5, bug reel signale par Gersom (capture d'ecran) : les fleches
+// precedente/suivante etaient positionnees a un pourcentage fixe de la
+// hauteur du VIEWPORT (`fixed ... top-[46%]`), une estimation qui ne
+// correspondait pas a la position reelle de la photo dans la fiche
+// (hauteur d'en-tete variable) -- elles atterrissaient par-dessus le badge
+// "Côté Gégé/Nelly" juste en dessous de la photo, le recouvrant
+// partiellement. Corrige en ancrant les fleches au conteneur de la photo
+// lui-meme (position relative connue), jamais a un pourcentage du viewport.
+test('les fleches precedente/suivante sont ancrees au conteneur de la photo (jamais un pourcentage fixe du viewport qui pourrait chevaucher les badges en dessous)', () => {
+  const codeStart = approbationsPageSource.indexOf('<div className="relative">');
+  const codeEnd = approbationsPageSource.indexOf('grid grid-cols-2 gap-2 rounded-2xl border border-hairline bg-surface-2/70');
+  const photoBlockCode = approbationsPageSource.slice(codeStart, codeEnd);
+  assert.match(photoBlockCode, /className="max-h-\[26dvh\][^"]*"/);
+  assert.doesNotMatch(photoBlockCode, /top-\[46%\]/);
+  assert.doesNotMatch(photoBlockCode, /className="[^"]*\bfixed\b/);
+  assert.match(photoBlockCode, /aria-label="Demande précédente"[\s\S]*?className="absolute left-1 top-1\/2/);
+  assert.match(photoBlockCode, /aria-label="Demande suivante"[\s\S]*?className="absolute right-1 top-1\/2/);
+});
+
 test('la fiche approbation est remontee, structure ses informations et utilise des fleches iOS en verre', () => {
   assert.match(approbationsPageSource, /items-center justify-center overflow-y-auto/);
   assert.match(approbationsPageSource, /max-h-\[calc\(100dvh-2rem\)\]/);
   assert.match(approbationsPageSource, /ChevronLeftIcon/);
   assert.match(approbationsPageSource, /ChevronRightIcon/);
-  assert.match(approbationsPageSource, /h-14 w-14/);
+  assert.match(approbationsPageSource, /sm:h-14 sm:w-14/);
   assert.match(approbationsPageSource, /backdrop-blur-2xl/);
   assert.match(approbationsPageSource, />Nom<\/p>/);
   assert.match(approbationsPageSource, />Invités<\/p>/);

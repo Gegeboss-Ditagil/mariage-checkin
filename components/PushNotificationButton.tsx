@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function toUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -34,6 +34,47 @@ const DENIED_INSTRUCTIONS: Record<ReturnType<typeof detectPlatform>, string> = {
 
 export function PushNotificationButton() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'enabled' | 'unsupported' | 'denied' | 'in_app'>('idle');
+
+  // v1.53.4, retour de Gersom : après avoir réellement autorisé les
+  // notifications (et reçu une vraie alerte push sur son iPhone), le bouton
+  // restait bloqué sur « notifications à configurer » -- le state démarrait
+  // toujours à 'idle' et ne se mettait à jour qu'en réaction à un clic dans
+  // la session en cours, jamais en vérifiant l'état réel du navigateur/OS au
+  // chargement. Ce useEffect réconcilie le statut affiché avec la permission
+  // et l'abonnement réels dès le montage, pour que le message ne mente
+  // jamais une fois l'activation véritablement effective.
+  useEffect(() => {
+    let cancelled = false;
+    async function reconcile() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+        if (!cancelled) setStatus('unsupported');
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        if (!cancelled) setStatus('denied');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const existing = await registration.pushManager.getSubscription();
+          if (!cancelled) setStatus(existing ? 'enabled' : 'idle');
+        } catch (error) {
+          console.error('Echec verification abonnement notifications push', error);
+        }
+        return;
+      }
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      if (isIos && !isStandalone && !cancelled) {
+        setStatus('in_app');
+      }
+    }
+    void reconcile();
+    return function cleanupReconcile() {
+      cancelled = true;
+    };
+  }, []);
 
   async function enable() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {

@@ -343,26 +343,6 @@ export default function ApprobationsPage() {
             onClick={(event) => event.stopPropagation()}
             className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-surface/95 p-4 shadow-elev-2 backdrop-blur-2xl"
           >
-            {requests.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  aria-label="Demande précédente"
-                  onClick={() => moveSelection(-1)}
-                  className="fixed left-3 top-[46%] z-[60] flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-surface/80 text-accent shadow-elev-2 backdrop-blur-2xl transition-transform active:scale-90 sm:absolute sm:-left-16 sm:top-1/2"
-                >
-                  <ChevronLeftIcon className="h-8 w-8" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Demande suivante"
-                  onClick={() => moveSelection(1)}
-                  className="fixed right-3 top-[46%] z-[60] flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-surface/80 text-accent shadow-elev-2 backdrop-blur-2xl transition-transform active:scale-90 sm:absolute sm:-right-16 sm:top-1/2"
-                >
-                  <ChevronRightIcon className="h-8 w-8" />
-                </button>
-              </>
-            )}
             <div className="mb-2 flex items-start justify-between gap-3">
               <div>
                 <p className="eyebrow">Demande d'approbation</p>
@@ -383,15 +363,48 @@ export default function ApprobationsPage() {
                 scroller") -- 42dvh->26dvh, laisse largement la place aux
                 champs et aux boutons Approuver/Refuser en dessous sans
                 defiler sur un iPhone standard. */}
-            {selectedRequest.photo_signed_url ? (
-              <img
-                src={selectedRequest.photo_signed_url}
-                alt={'Photo de la demande pour ' + selectedRequest.nom_invite}
-                className="max-h-[26dvh] w-full rounded-2xl bg-black object-contain"
-              />
-            ) : (
-              <div className="flex min-h-32 items-center justify-center rounded-2xl bg-surface-2 text-sm text-text-faint">Photo indisponible</div>
-            )}
+            {/* v1.53.5, retour de Gersom (capture d'écran) : les flèches
+                précédente/suivante étaient positionnées à un pourcentage fixe
+                de la hauteur du VIEWPORT (top-[46%] fixed), une estimation qui
+                ne correspondait pas forcément à la position réelle de la
+                photo dans la fiche (hauteur d'en-tête variable) -- elles
+                atterrissaient alors par-dessus le badge "Côté Gégé/Nelly",
+                le recouvrant partiellement. Corrigé en les ancrant au
+                conteneur de la photo lui-même (`relative`), qui a toujours
+                une position/hauteur connue : les flèches restent désormais
+                systématiquement centrées sur la photo, jamais sur le
+                contenu en dessous. */}
+            <div className="relative">
+              {selectedRequest.photo_signed_url ? (
+                <img
+                  src={selectedRequest.photo_signed_url}
+                  alt={'Photo de la demande pour ' + selectedRequest.nom_invite}
+                  className="max-h-[26dvh] w-full rounded-2xl bg-black object-contain"
+                />
+              ) : (
+                <div className="flex min-h-32 items-center justify-center rounded-2xl bg-surface-2 text-sm text-text-faint">Photo indisponible</div>
+              )}
+              {requests.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Demande précédente"
+                    onClick={() => moveSelection(-1)}
+                    className="absolute left-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-surface/80 text-accent shadow-elev-2 backdrop-blur-2xl transition-transform active:scale-90 sm:-left-16 sm:h-14 sm:w-14"
+                  >
+                    <ChevronLeftIcon className="h-6 w-6 sm:h-8 sm:w-8" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Demande suivante"
+                    onClick={() => moveSelection(1)}
+                    className="absolute right-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-surface/80 text-accent shadow-elev-2 backdrop-blur-2xl transition-transform active:scale-90 sm:-right-16 sm:h-14 sm:w-14"
+                  >
+                    <ChevronRightIcon className="h-6 w-6 sm:h-8 sm:w-8" />
+                  </button>
+                </>
+              )}
+            </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className={'rounded-full px-3 py-1 text-sm font-bold ' + (selectedRequest.cote === 'Gege' ? 'bg-gege/15 text-gege' : 'bg-nelly/15 text-nelly')}>
