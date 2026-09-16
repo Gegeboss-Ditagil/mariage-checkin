@@ -3,6 +3,32 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.2] — 2026-09-16
+
+Retour de Gersom (2 captures d'écran) : (1) message d'erreur Twilio affiché à tort alors que la fonctionnalité est volontairement désactivée ; (2) le swipe pour supprimer une demande décidée sur `/approbations` ne fonctionne toujours pas (rôle admin confirmé directement en base avant d'aller plus loin, voir `docs/QE_QA_PROCESS.md`).
+
+### Ajouté
+- **Bouton bascule « SMS/WhatsApp (Twilio) » sur `/admin`** : active/désactive `events.twilio_enabled` (migration `0055_events_twilio_enabled.sql`, appliquée et vérifiée en production Supabase le jour même) sans redéploiement ni accès Vercel — remplace l'ancien interrupteur par variable d'environnement `TWILIO_ENABLED` (v1.48.3). `lib/twilio.ts` (`getTwilioConfig`/`getWhatsAppConfig`/`sendSms`/`sendWhatsApp`) et `lib/guestApprovalNotify.ts` (`notifyApprover`/`notifyApproverDecision`/`notifyFestinDirectors`) reçoivent désormais cet état explicitement en paramètre plutôt que de le lire eux-mêmes ; les trois appelants (`app/api/guest-approvals/route.ts`, `lib/guestApprovalDecide.ts`, `app/api/guest-approvals/[id]/assign-table/route.ts`) le lisent depuis la ligne `events` de l'événement concerné. Les identifiants `TWILIO_*` restent nécessaires sur Vercel pour un envoi réel.
+
+### Corrigé
+- **Le message d'erreur Twilio n'apparaît plus tant que la fonctionnalité est volontairement désactivée** : `POST /api/guest-approvals` distingue désormais `sms_skipped` (Twilio désactivé par le toggle admin — jamais un problème) de `sms_error` (Twilio activé mais mal configuré, ou refus d'envoi — un vrai problème à signaler). `components/GuestApprovalCaptureFlow.tsx` n'affiche plus le bandeau rouge « Le message Twilio n'est pas parti » quand `sms_skipped` est vrai.
+- **Bug réel — swipe pour supprimer inopérant sur `/approbations`** (`components/SwipeableDeleteCard.tsx`) : le pointeur était capturé (`setPointerCapture`) dès `onPointerDown`, avant de savoir si le geste allait être horizontal ou vertical. Sur WebKit/iOS, capturer un pointeur tactile aussi tôt, combiné à `touch-action: pan-y`, peut faire annuler la séquence de pointeur dès la moindre composante verticale détectée — l'utilisateur ne voyait alors jamais rien se passer, quel que soit son geste. Corrigé en ne verrouillant l'axe (et en ne capturant le pointeur) qu'une fois le mouvement assez net pour trancher (`AXIS_LOCK_THRESHOLD`) : un axe horizontal verrouille le geste (poubelle, suppression possible) ; un axe vertical relâche entièrement la main au défilement natif de la liste, sans jamais entrer en conflit avec lui. N'ayant pas pu reproduire sur un vrai appareil iOS depuis cet environnement, ce correctif part d'une cause plausible identifiée par lecture du code (technique de « direction lock » standard pour ce genre de geste) plutôt que d'une reproduction directe — à reconfirmer par Gersom après ce lot.
+
+### Documentation mise à jour
+`CHANGELOG.md`, `CLAUDE.md`, `docs/BUSINESS_RULES.md`, `DEPLOIEMENT.md`
+
+### Version
+`Version: 1.53.1 → 1.53.2`
+
+### Tests exécutés
+- `npx tsc --noEmit` — OK
+- `node --test tests/*.test.ts` — 297/297 OK
+- `npm run build` — OK
+- `git diff --check` — OK
+
+### Migrations
+- `0055_events_twilio_enabled.sql` — appliquée et vérifiée en production Supabase.
+
 ## [1.53.1] — 2026-09-16
 
 Bug réel signalé par Gersom (capture d'écran `/scan`, thème Maison) : le titre de la page ("Scanner un QR code" / "Présentez le QR de l'invité devant la caméra") apparaissait superposé et illisible avec la bannière transitoire "Nouvelle approbation" (`components/AccountMenu.tsx`), les deux textes se lisant l'un à travers l'autre.

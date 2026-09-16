@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { canAccessPath, hasCapability } from '../lib/permissions.ts';
-import { validateTwilioSignature, isTwilioEnabled, sendSms, sendWhatsApp, TwilioConfigError } from '../lib/twilio.ts';
+import { validateTwilioSignature, sendSms, sendWhatsApp, TwilioConfigError } from '../lib/twilio.ts';
 import { createHmac } from 'node:crypto';
 
 // Invité surprise avec approbation SMS à distance (v1.27.0) -- demande de
@@ -403,41 +403,37 @@ test('sendWhatsApp utilise un Content Template (jamais de texte libre pour un me
 });
 
 // v1.48.3 -- demande de Gersom : Twilio reste desactive intentionnellement
-// pour l'instant ("c'est toggle off... on activera plus tard"), via un
-// interrupteur explicite (TWILIO_ENABLED) plutot que de deduire l'etat de la
-// presence des identifiants -- reactiver plus tard ne doit demander aucun
+// pour l'instant ("c'est toggle off... on activera plus tard"). v1.53.2 :
+// l'interrupteur n'est plus une variable d'environnement (TWILIO_ENABLED,
+// necessitait un acces Vercel) mais `events.twilio_enabled` (migration 0055),
+// lu par l'appelant et passe explicitement en parametre `enabled` a
+// sendSms/sendWhatsApp -- reactiver depuis /admin ne doit demander aucun
 // changement de code. Tests comportementaux (pas seulement une inspection du
-// source) : verifient qu'aucune requete reseau n'est meme tentee tant que le
-// toggle est desactive, et que sendSms/sendWhatsApp s'adaptent
-// automatiquement une fois TWILIO_ENABLED='true' pose.
-test('Twilio est desactive par defaut (TWILIO_ENABLED absent) : aucune requete reseau tentee', async () => {
-  const original = process.env.TWILIO_ENABLED;
+// source) : verifient qu'aucune requete reseau n'est meme tentee quand
+// `enabled` est faux, et que sendSms/sendWhatsApp s'adaptent automatiquement
+// une fois `enabled` vrai.
+test('enabled=false (Twilio desactive pour l\'evenement) : aucune requete reseau tentee', async () => {
   const originalFetch = globalThis.fetch;
   let fetchCalled = false;
   try {
-    delete process.env.TWILIO_ENABLED;
-    assert.equal(isTwilioEnabled(), false);
     globalThis.fetch = (async () => {
       fetchCalled = true;
       return new Response('{}', { status: 200 });
     }) as typeof fetch;
 
-    await assert.rejects(() => sendSms('+33600000000', 'test'), TwilioConfigError);
-    assert.equal(fetchCalled, false, 'sendSms ne doit tenter aucune requete reseau quand le toggle est desactive');
+    await assert.rejects(() => sendSms('+33600000000', 'test', false), TwilioConfigError);
+    assert.equal(fetchCalled, false, 'sendSms ne doit tenter aucune requete reseau quand enabled=false');
 
     // sendWhatsApp est concu pour un no-op silencieux (canal optionnel) --
-    // le toggle desactive doit produire le meme silence, jamais une requete.
-    await sendWhatsApp('+33600000000', 'HX123', { '1': 'x' });
-    assert.equal(fetchCalled, false, 'sendWhatsApp ne doit tenter aucune requete reseau quand le toggle est desactive');
+    // enabled=false doit produire le meme silence, jamais une requete.
+    await sendWhatsApp('+33600000000', 'HX123', { '1': 'x' }, false);
+    assert.equal(fetchCalled, false, 'sendWhatsApp ne doit tenter aucune requete reseau quand enabled=false');
   } finally {
-    if (original === undefined) delete process.env.TWILIO_ENABLED;
-    else process.env.TWILIO_ENABLED = original;
     globalThis.fetch = originalFetch;
   }
 });
 
-test('TWILIO_ENABLED=true reactive Twilio sans autre changement de code (toggle explicite, pas seulement les identifiants)', async () => {
-  const originalEnabled = process.env.TWILIO_ENABLED;
+test('enabled=true reactive Twilio sans autre changement de code (le parametre explicite, pas seulement les identifiants)', async () => {
   const originalSid = process.env.TWILIO_ACCOUNT_SID;
   const originalToken = process.env.TWILIO_AUTH_TOKEN;
   const originalFrom = process.env.TWILIO_PHONE_NUMBER;
@@ -445,16 +441,13 @@ test('TWILIO_ENABLED=true reactive Twilio sans autre changement de code (toggle 
   let fetchCalled = false;
   let sawAbortSignal = false;
   try {
-    process.env.TWILIO_ENABLED = 'true';
-    assert.equal(isTwilioEnabled(), true);
-
-    // Sans identifiants, meme active, reste une erreur de configuration
-    // explicite (pas juste "desactive") -- le toggle ne remplace jamais la
-    // verification des identifiants, il s'y ajoute.
+    // Sans identifiants, meme enabled=true, reste une erreur de
+    // configuration explicite (pas juste "desactive") -- le toggle ne
+    // remplace jamais la verification des identifiants, il s'y ajoute.
     delete process.env.TWILIO_ACCOUNT_SID;
     delete process.env.TWILIO_AUTH_TOKEN;
     delete process.env.TWILIO_PHONE_NUMBER;
-    await assert.rejects(() => sendSms('+33600000000', 'test'), TwilioConfigError);
+    await assert.rejects(() => sendSms('+33600000000', 'test', true), TwilioConfigError);
 
     process.env.TWILIO_ACCOUNT_SID = 'ACtest';
     process.env.TWILIO_AUTH_TOKEN = 'test-token';
@@ -465,12 +458,10 @@ test('TWILIO_ENABLED=true reactive Twilio sans autre changement de code (toggle 
       return new Response('{}', { status: 200 });
     }) as typeof fetch;
 
-    await sendSms('+33600000000', 'test');
-    assert.equal(fetchCalled, true, 'sendSms doit tenter la requete une fois le toggle active et les identifiants presents');
+    await sendSms('+33600000000', 'test', true);
+    assert.equal(fetchCalled, true, 'sendSms doit tenter la requete une fois enabled=true et les identifiants presents');
     assert.equal(sawAbortSignal, true, 'la requete doit rester bornee par un AbortSignal (voir TWILIO_REQUEST_TIMEOUT_MS)');
   } finally {
-    if (originalEnabled === undefined) delete process.env.TWILIO_ENABLED;
-    else process.env.TWILIO_ENABLED = originalEnabled;
     if (originalSid === undefined) delete process.env.TWILIO_ACCOUNT_SID;
     else process.env.TWILIO_ACCOUNT_SID = originalSid;
     if (originalToken === undefined) delete process.env.TWILIO_AUTH_TOKEN;
@@ -481,9 +472,32 @@ test('TWILIO_ENABLED=true reactive Twilio sans autre changement de code (toggle 
   }
 });
 
+// v1.53.2, retour de Gersom (16/09/2026, capture d'ecran "Demande
+// d'approbation") : "assure-toi qu'on n'a pas ce message concernant
+// Twilio... si c'est desactive, tous ces problemes-la disparaissent" -- le
+// message d'erreur Twilio ne doit plus s'afficher a l'agent tant que le
+// toggle admin (events.twilio_enabled) reste volontairement desactive.
+test('la route de creation distingue "Twilio volontairement desactive" (sms_skipped) d\'un vrai echec d\'envoi (sms_error)', () => {
+  assert.match(createRouteSource, /sms_skipped: smsSkipped/);
+  assert.match(createRouteSource, /if \(err instanceof TwilioConfigError && !event\.twilio_enabled\)/);
+  assert.match(createRouteSource, /smsSkipped = true;/);
+});
+
+test('le bouton "Invité surprise" n\'affiche plus le message Twilio quand la demande est simplement sautee (smsSkipped)', () => {
+  const captureFlowSource = readFileSync(new URL('../components/GuestApprovalCaptureFlow.tsx', import.meta.url), 'utf8');
+  assert.match(captureFlowSource, /!confirmation\.smsSent && !confirmation\.smsSkipped/);
+});
+
+test('un bouton admin dans /admin active/desactive Twilio (events.twilio_enabled), sans passer par une variable d\'environnement Vercel', () => {
+  const adminPageSource = readFileSync(new URL('../app/admin/page.tsx', import.meta.url), 'utf8');
+  const adminEventRouteSource = readFileSync(new URL('../app/api/admin/event/route.ts', import.meta.url), 'utf8');
+  assert.match(adminPageSource, /twilio_enabled: !event\.twilio_enabled/);
+  assert.match(adminEventRouteSource, /patch\.twilio_enabled = Boolean\(twilio_enabled\);/);
+});
+
 test('notifyApprover envoie SMS et WhatsApp en parallele, best-effort chacun (l\'echec de l\'un ne bloque pas l\'autre)', () => {
   assert.match(notifySource, /Promise\.allSettled/);
-  assert.match(notifySource, /sendWhatsApp\(request\.approver_phone, process\.env\.TWILIO_WHATSAPP_CONTENT_SID_REQUEST/);
+  assert.match(notifySource, /sendWhatsApp\(\s*\n\s*request\.approver_phone,\s*\n\s*process\.env\.TWILIO_WHATSAPP_CONTENT_SID_REQUEST/);
   // Seul l'echec du SMS (canal de reference) remonte une exception.
   assert.match(notifySource, /if \(results\[0\]\.status === 'rejected'\) throw results\[0\]\.reason;/);
 });
@@ -541,7 +555,7 @@ test('le compte d\'approbations en attente est explicitement exclu du cache HTTP
 });
 
 test('les approbations et abonnements push utilisent evenement de la session, jamais le premier evenement', () => {
-  assert.match(createRouteSource, /\.eq\('id', user\.event_id\)\.maybeSingle\(\)/);
+  assert.match(createRouteSource, /\.eq\('id', user\.event_id\)\s*\n?\s*\.maybeSingle\(\)/);
   assert.match(pushSubscribeRouteSource, /\.eq\('id', user\.event_id\)\.maybeSingle\(\)/);
   assert.match(clientCacheSource, /cache: 'no-store'/);
 });
@@ -577,14 +591,14 @@ test('les notifications best-effort (SMS, WhatsApp, Push) sont bornees dans le t
 });
 
 test('la confirmation SMS/WhatsApp et le Push aux placeurs sont envoyes en parallele apres une decision, jamais en sequence', () => {
-  assert.match(decideLibSource, /Promise\.allSettled\(\[\s*\n\s*notifyApproverDecision\(updated, decision, reserveRemaining\)\.catch/);
+  assert.match(decideLibSource, /Promise\.allSettled\(\[\s*\n\s*notifyApproverDecision\(updated, decision, reserveRemaining, twilioEnabled\)\.catch/);
   assert.match(decideLibSource, /notifyGuestApprovalPlaceurs\(supabase, updated, tableNumber\)\.catch/);
 });
 
 test('le rapport aux directeurs de festin et le Push aux placeurs sont envoyes en parallele apres une assignation directe, jamais en sequence', () => {
   assert.match(
     assignRouteSource,
-    /Promise\.allSettled\(\[\s*\n\s*notifyFestinDirectors\(supabase, request, table\.number, reserveRemaining\),/
+    /Promise\.allSettled\(\[\s*\n\s*notifyFestinDirectors\(supabase, request, table\.number, reserveRemaining, twilioEnabled\),/
   );
   assert.match(assignRouteSource, /notifyGuestApprovalPlaceurs\(supabase, request, table\.number\)\.catch/);
 });

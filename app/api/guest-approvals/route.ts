@@ -63,7 +63,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'approver_not_configured' }, { status: 400 });
   }
 
-  const { data: event } = await supabase.from('events').select('id').eq('id', user.event_id).maybeSingle();
+  const { data: event } = await supabase
+    .from('events')
+    .select('id, twilio_enabled')
+    .eq('id', user.event_id)
+    .maybeSingle();
   if (!event) {
     return NextResponse.json({ error: 'event_not_found' }, { status: 400 });
   }
@@ -113,24 +117,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'insert_failed' }, { status: 500 });
   }
 
-  // Le SMS peut échouer (Twilio désactivé par le toggle TWILIO_ENABLED,
-  // non configuré, numéro invalide, solde...) sans faire perdre la demande
-  // déjà enregistrée (photo + infos) : l'agent est prévenu explicitement
-  // dans la réponse pour contacter l'approbateur autrement le temps de
-  // résoudre le problème (ou tant que le toggle reste volontairement
-  // désactivé -- voir lib/twilio.ts).
+  // Le SMS peut échouer (Twilio désactivé pour cet événement, non configuré,
+  // numéro invalide, solde...) sans faire perdre la demande déjà enregistrée
+  // (photo + infos) : l'agent est prévenu explicitement dans la réponse pour
+  // contacter l'approbateur autrement le temps de résoudre le problème --
+  // MAIS seulement quand c'est un vrai problème. Tant que Twilio est
+  // volontairement désactivé (`events.twilio_enabled` = faux, voir
+  // lib/twilio.ts et la migration 0055), ce n'est jamais un problème à
+  // signaler -- `sms_skipped` distingue les deux cas (retour de Gersom le
+  // 16/09/2026 : "assure-toi qu'on n'a pas ce message concernant Twilio...
+  // si c'est désactivé, tous ces problèmes-là disparaissent").
   let smsSent = true;
   let smsError: string | null = null;
+  let smsSkipped = false;
   try {
-    await notifyApprover(created, baseUrl(req) + '/approve/' + token);
+    await notifyApprover(created, baseUrl(req) + '/approve/' + token, event.twilio_enabled ?? false);
   } catch (err) {
     smsSent = false;
-    smsError =
-      err instanceof TwilioConfigError
-        ? 'Twilio désactivé ou non configuré (SMS non envoyé) — prévenez l\'approbateur autrement'
-        : err instanceof TwilioSendError
-          ? "Twilio a refusé l'envoi (numéro invalide ?)"
-          : 'Erreur inconnue';
+    if (err instanceof TwilioConfigError && !event.twilio_enabled) {
+      smsSkipped = true;
+    } else {
+      smsError =
+        err instanceof TwilioConfigError
+          ? 'Twilio activé mais mal configuré (identifiants manquants) — prévenez l\'approbateur autrement'
+          : err instanceof TwilioSendError
+            ? "Twilio a refusé l'envoi (numéro invalide ?)"
+            : 'Erreur inconnue';
+    }
   }
 
   const signedUrl = await getSignedPhotoUrl(supabase, photoPath);
@@ -144,6 +157,7 @@ export async function POST(req: NextRequest) {
     approver_nom: approver.nom,
     sms_sent: smsSent,
     sms_error: smsError,
+    sms_skipped: smsSkipped,
   });
 }
 

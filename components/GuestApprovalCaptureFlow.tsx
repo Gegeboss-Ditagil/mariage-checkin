@@ -30,7 +30,16 @@ export function GuestApprovalCaptureFlow({
   const [nomInvite, setNomInvite] = useState('');
   const [nombreInvites, setNombreInvites] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<{ approverNom: string; smsSent: boolean; smsError: string | null } | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    approverNom: string;
+    smsSent: boolean;
+    smsError: string | null;
+    // Twilio volontairement désactivé pour l'événement (events.twilio_enabled,
+    // voir lib/twilio.ts) -- jamais un problème à signaler à l'agent, à
+    // distinguer d'un vrai échec d'envoi (smsError). Retour de Gersom le
+    // 16/09/2026 : "si c'est désactivé, tous ces problèmes-là disparaissent".
+    smsSkipped: boolean;
+  } | null>(null);
   const [preview, setPreview] = useState('');
 
   useEffect(() => {
@@ -62,7 +71,12 @@ export function GuestApprovalCaptureFlow({
       const response = await fetch('/api/guest-approvals', { method: 'POST', body: form });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Échec de la demande');
-      setConfirmation({ approverNom: data.approver_nom, smsSent: data.sms_sent, smsError: data.sms_error });
+      setConfirmation({
+        approverNom: data.approver_nom,
+        smsSent: data.sms_sent,
+        smsError: data.sms_error,
+        smsSkipped: Boolean(data.sms_skipped),
+      });
       setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur réseau — réessayez');
@@ -138,7 +152,9 @@ export function GuestApprovalCaptureFlow({
             <p className="text-3xl">✅</p>
             <p className="text-lg font-semibold">Approbation en attente</p>
             <p className="text-sm text-text-muted">La demande est visible immédiatement dans l’application pour les approbateurs.</p>
-            {!confirmation.smsSent && <p className="text-sm font-medium text-status-over">Le message Twilio n’est pas parti ({confirmation.smsError}). La demande reste disponible dans l’application.</p>}
+            {!confirmation.smsSent && !confirmation.smsSkipped && (
+              <p className="text-sm font-medium text-status-over">Le message Twilio n’est pas parti ({confirmation.smsError}). La demande reste disponible dans l’application.</p>
+            )}
             <button type="button" className="btn-primary w-full" onClick={onClose}>Retour au scanner</button>
           </div>
         )}

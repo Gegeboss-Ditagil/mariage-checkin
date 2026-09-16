@@ -38,6 +38,28 @@ export default function AdminHome() {
     setBusy(false);
   }
 
+  // Interrupteur Twilio (SMS/WhatsApp de l'approbation d'invité surprise) --
+  // retour de Gersom le 16/09/2026 : remplace l'ancien toggle par variable
+  // d'environnement TWILIO_ENABLED (v1.48.3, réservé à un accès Vercel) par
+  // un bouton accessible directement depuis cette page (events.twilio_enabled,
+  // migration 0055) — "ce problème sera rapidement réglé là". Tant que
+  // désactivé (par défaut), aucune requête réseau Twilio n'est tentée et
+  // l'agent qui soumet une demande ne voit plus aucun message à ce sujet.
+  async function toggleTwilio() {
+    if (!event) return;
+    setBusy(true);
+    setMessage(null);
+    const res = await fetch('/api/admin/event', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ twilio_enabled: !event.twilio_enabled }),
+    });
+    const data = await res.json();
+    if (res.ok) setEvent(data.event);
+    else setMessage(data.error);
+    setBusy(false);
+  }
+
   async function resetTestData() {
     if (!confirm('Réinitialiser toutes les arrivées enregistrées ? Cette action est irréversible.')) return;
     setBusy(true);
@@ -84,6 +106,28 @@ export default function AdminHome() {
             <AdminLink href="/exceptions" label="Exceptions" icon="⚠" />
             <AdminLink href="/admin/exports" label="Exports" icon="↓" />
           </nav>
+
+          <div className="card">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold">SMS/WhatsApp (Twilio)</p>
+                <p className="mt-0.5 text-sm text-text-faint">
+                  Confirmation à l'approbateur et rapport aux directeurs de festin pour les invités surprise.
+                  {event && !event.twilio_enabled && ' Désactivé : aucun message n\'est envoyé, et aucune erreur ne s\'affiche à ce sujet.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-pressed={event?.twilio_enabled ?? false}
+                aria-label="Activer ou désactiver Twilio"
+                disabled={busy || !event}
+                className={'shrink-0 glass-toggle' + (event?.twilio_enabled ? ' glass-toggle-on' : '')}
+                onClick={toggleTwilio}
+              >
+                <span aria-hidden className={'glass-toggle-thumb' + (event?.twilio_enabled ? ' glass-toggle-thumb-on' : '')} />
+              </button>
+            </div>
+          </div>
 
           <div className="card">
             <p className="mb-2 font-semibold">Mode test</p>
