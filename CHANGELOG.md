@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.17] — 2026-09-16
+
+Retour de Gersom (capture d'écran de `/tables/[tableId]`, table 2) : « le bouton sélectionner plusieurs invités n'aurait jamais été comme ça dans un iPhone. »
+
+### Corrigé
+- Le bouton « Sélectionner plusieurs invités »/« Annuler la sélection » (`/tables/[tableId]` et `/table/[tableId]`) était un lien texte souligné (`underline underline-offset-2`) — une convention web (hyperlien), jamais un bouton natif iOS. Devient un vrai bouton texte dans la barre de navigation (`TopBar` `right`), sans soulignement — même emplacement/style que le bouton « Select »/« Cancel » de Photos ou Mail sur iOS. Libellés raccourcis en « Sélectionner »/« Annuler » (un bouton de barre de navigation reste court, jamais une phrase complète).
+
+### Tests
+- `tests/select-multiple-native-button.test.ts` (nouveau) : verrouille l'absence de soulignement et le rendu via `TopBar right` sur les deux routes.
+
 ## [1.53.16] — 2026-09-16
 
 Retour de Gersom (capture d'écran de l'app Musique d'Apple, en référence) : « il y a beaucoup de flash, surtout quand je navigue entre les onglets recherche et plan... vous pouvez faire des recherches des repos disponibles pour donner un effet iOS... travaille en général sur l'aspect iOS de l'application, le slide, la navigation, l'expérience utilisateur... base-toi vraiment sur leur style, leur guide... c'est surtout au niveau de la navigation, comment est-ce que les éléments se déplacent. »

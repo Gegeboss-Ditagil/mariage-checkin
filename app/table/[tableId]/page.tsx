@@ -266,7 +266,26 @@ export default function TablePage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={titre} backHref="/scan" />
+      <TopBar
+        title={titre}
+        backHref="/scan"
+        // v1.53.17, retour de Gersom (capture d'écran) : "le bouton
+        // sélectionner plusieurs invités n'aurait jamais été comme ça dans
+        // un iPhone" -- un lien souligné est une convention web, jamais
+        // iOS. Devient un vrai bouton texte dans la barre de navigation
+        // (comme "Select"/"Cancel" dans Photos ou Mail), sans soulignement.
+        right={
+          canMoveGuests && !echangeAvecTableId ? (
+            <button
+              type="button"
+              onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
+              className="whitespace-nowrap text-sm font-semibold text-accent active:opacity-60"
+            >
+              {selectMode ? 'Annuler' : 'Sélectionner'}
+            </button>
+          ) : undefined
+        }
+      />
 
       {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
@@ -306,15 +325,6 @@ export default function TablePage() {
               Sélectionnez qui quitte cette table en échange de {echangeIdsA.length} invitation
               {echangeIdsA.length > 1 ? 's' : ''} venant de l'autre table.
             </p>
-          )}
-          {canMoveGuests && !echangeAvecTableId && (
-            <button
-              type="button"
-              onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
-              className="mb-3 text-sm font-semibold text-accent underline underline-offset-2"
-            >
-              {selectMode ? 'Annuler la sélection' : 'Sélectionner plusieurs invités'}
-            </button>
           )}
         </div>
       )}
