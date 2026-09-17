@@ -148,6 +148,9 @@ test("le picker de responsables recherche aussi parmi les invites (aide de derni
 
 test("l'API /api/agenda normalise custom_assignees en tableau meme si la migration 0043 n'est pas encore appliquee (select('*') omet silencieusement une colonne manquante)", () => {
   assert.match(agendaApiSource, /function normalizeAgendaItem/);
-  assert.match(agendaApiSource, /items: \(items \|\| \[\]\)\.map\(normalizeAgendaItem\)/);
+  // Depuis v1.55.0 (0058_agenda_items_private.sql), la liste normalisee est
+  // encore filtree par visibilite avant d'etre renvoyee -- voir
+  // tests/agenda-privacy.test.ts pour ce filtrage.
+  assert.match(agendaApiSource, /const normalized = \(items \|\| \[\]\)\.map\(normalizeAgendaItem\)/);
   assert.match(agendaApiSource, /item: normalizeAgendaItem\(data\)/);
 });
