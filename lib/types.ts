@@ -5,12 +5,18 @@
 // visibilite : lecture seule.
 export type Role = 'admin' | 'directeur' | 'placeur' | 'agent_checkin' | 'visibilite';
 
+// Demande de Gersom le 17/09/2026 (capture d'ecran /scan, eyebrow "STAFF"
+// generique) : "pas juste ecrire staff... le bon role" pour chaque
+// personne. `visibilite` devient "Approbateur" (plus fidele a son usage
+// reel depuis v1.42.0 -- ce role a reviewGuestApproval/assignGuestApproval,
+// "lecture seule" etait devenu inexact) ; `agent_checkin` devient "Agent
+// scanner" (au lieu de "Agent scan").
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Admin',
   directeur: 'Directeur de festin',
   placeur: 'Agent placeur',
-  agent_checkin: 'Agent scan',
-  visibilite: 'Visibilité (lecture seule)',
+  agent_checkin: 'Agent scanner',
+  visibilite: 'Approbateur',
 };
 
 export type InvitationStatut = 'non_arrive' | 'partiel' | 'complet' | 'excedent';

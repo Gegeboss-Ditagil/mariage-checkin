@@ -9,6 +9,7 @@ import { ScanStatsStrip } from '@/components/ScanStatsStrip';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
+import { ROLE_LABELS } from '@/lib/types';
 import { GuestApprovalCaptureFlow } from '@/components/GuestApprovalCaptureFlow';
 import { GuestApprovalsShortcut } from '@/components/GuestApprovalsShortcut';
 import { NextAgendaActivity } from '@/components/NextAgendaActivity';
@@ -144,7 +145,12 @@ export default function ScanPage() {
             paysage. Le titre se resume au strict minimum pour laisser toute
             la hauteur disponible a cette rangee. Portrait inchange. */}
         <div className="flex-1 overflow-y-auto px-4 pt-2 landscape:flex landscape:flex-col landscape:overflow-hidden">
-          <p className="eyebrow landscape:hidden">Staff</p>
+          {/* Role reel de la personne connectee (retour de Gersom le
+              17/09/2026 : "pas juste ecrire staff... le bon role") au lieu
+              d'un generique "Staff" -- ROLE_LABELS (lib/types.ts) reste
+              affiche tant que le role n'est pas encore lu (meme texte,
+              aucune variation de hauteur, donc aucun decalage). */}
+          <p className="eyebrow landscape:hidden">{role ? ROLE_LABELS[role] : 'Staff'}</p>
           <h1 className="font-display text-xl landscape:mb-1 landscape:text-base">Scanner un QR code</h1>
           <p className="text-xs text-text-faint landscape:hidden">Présentez le QR de l'invité devant la caméra</p>
 

@@ -44,7 +44,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 
 ## Rôles
 
-| Capacité | Admin | Directeur | Placeur | Agent scan | Visibilité |
+| Capacité | Admin | Directeur | Placeur | Agent scanner | Approbateur |
 |---|---:|---:|---:|---:|---:|
 | Destination après connexion | Scan | Dashboard | Scan | Scan | Dashboard |
 | Scanner un QR | Oui | Oui | Oui | Oui | Non |

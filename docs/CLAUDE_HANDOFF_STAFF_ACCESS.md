@@ -1,7 +1,7 @@
 # Transmission Claude — accès sécurisé à `/staff`
 
-**Version documentaire : 1.46.1**
-**Dernière mise à jour : 2026-09-14**
+**Version documentaire : 1.54.2**
+**Dernière mise à jour : 2026-09-17**
 
 Ce fichier explique la logique d'accès Staff à conserver lors des prochains changements. Il ne contient volontairement aucun code PIN ni secret.
 
@@ -23,8 +23,8 @@ Ne jamais recréer une liste telle que `role === 'admin' || role === ...` dans u
 | Admin | Oui | Oui | Oui | Onglets Sans table / Avec table, lignes cliquables |
 | Directeur | Oui | Oui | Oui | Onglets Sans table / Avec table, lignes cliquables |
 | Placeur | Oui | Non | Oui | Seulement le staff `notable` sans table |
-| Agent scan (`agent_checkin`) | Oui | Non | Oui | Seulement le staff `notable` sans table |
-| Visibilité | Oui | Oui | Non | Onglets Sans table / Avec table, lecture seule |
+| Agent scanner (`agent_checkin`) | Oui | Non | Oui | Seulement le staff `notable` sans table |
+| Approbateur (`visibilite`) | Oui | Oui | Non | Onglets Sans table / Avec table, lecture seule |
 
 La section Staff du dashboard utilise `viewAllStaff`. Le raccourci Staff et le QR `STAFF` sur `/scan` utilisent `viewStaff` et restent naturellement invisibles à visibilité, qui n'a pas la capacité `scan` et ne peut pas ouvrir `/scan`.
 

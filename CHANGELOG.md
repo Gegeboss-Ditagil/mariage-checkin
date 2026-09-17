@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.54.2] — 2026-09-17
+
+Retour de Gersom (message vocal) : « pour chaque personne, tu vas mettre le bon rôle, pas juste écrire staff... pour directeur de festin, tu écris directeur de festin, pour admin, admin, visibilité... en fait ça sera surtout approbateur, pour les scanners, agent scanner, et ensuite agent placeur. »
+
+### Corrigé — noms de rôle affichés
+- `lib/types.ts` (`ROLE_LABELS`, source centrale déjà utilisée par `AccountMenu`/`admin/users`) : `agent_checkin` devient « Agent scanner » (au lieu de « Agent scan ») ; `visibilite` devient « Approbateur » (au lieu de « Visibilité (lecture seule)», devenu inexact depuis que ce rôle a `reviewGuestApproval`/`assignGuestApproval`, v1.42.0 — pas seulement lecture seule).
+- `app/scan/page.tsx` : l'eyebrow au-dessus de « Scanner un QR code », jusqu'ici le texte fixe « Staff » pour tout le monde, affiche désormais le vrai rôle de la personne connectée (`ROLE_LABELS[role]`) — reste « Staff » le temps très bref que le rôle se charge (même hauteur, aucun décalage).
+- `app/admin/users/page.tsx` (`ROLE_OPTIONS`, liste descriptive du sélecteur de rôle) : libellé de `visibilite` mis à jour pour refléter les vraies capacités (« Approbateur (lecture seule + approbations d'invités surprise) »).
+- `README.md`, `docs/BUSINESS_RULES.md`, `docs/CLAUDE_HANDOFF_STAFF_ACCESS.md` : occurrences de « Agent scan »/« Visibilité » alignées sur les mêmes noms.
+
+### Tests
+- `tests/role-labels.test.ts` (nouveau) : verrouille le contenu de `ROLE_LABELS` et l'affichage dynamique sur `/scan`.
+
 ## [1.54.1] — 2026-09-17
 
 Bug réel signalé par Gersom (capture d'écran `/scan`) : « souvent, quand je vais load cette page, les trois boutons en bas, approbation, agenda et tableau de bord, ils ne viennent pas en même temps, c'est décalé, ça bug un peu. »
