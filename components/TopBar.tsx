@@ -4,6 +4,7 @@ import { Link } from 'next-view-transitions';
 import { usePathname } from 'next/navigation';
 import { AccountMenu } from '@/components/AccountMenu';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 
 export function TopBar({
   title,
@@ -28,6 +29,10 @@ export function TopBar({
   const onDashboard = pathname === '/dashboard' || pathname?.startsWith('/dashboard/');
   const effectiveBackHref =
     backHref && backHref !== '/' && !onDashboard && (role === 'admin' || role === 'visibilite') ? '/dashboard' : backHref;
+  // Geste "glisser depuis le bord gauche" pour revenir en arriere -- va
+  // toujours a la meme destination que la fleche "‹" ci-dessous, jamais un
+  // simple retour d'historique du navigateur (voir hooks/useSwipeBack.ts).
+  useSwipeBack(effectiveBackHref);
   return (
     <header className="sticky top-0 z-10 bg-glass backdrop-blur border-b border-hairline">
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-1">
