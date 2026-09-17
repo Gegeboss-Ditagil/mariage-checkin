@@ -22,6 +22,8 @@ En présence d'un bug (signalé par l'utilisateur ou constaté), suivre `docs/QE
 
 Dans chaque PR, indiquer explicitement : `Version: X.Y.Z → A.B.C` ou `Version inchangée: X.Y.Z`, les fichiers documentaires mis à jour, les tests exécutés et les éventuelles migrations.
 
+**Avant CHAQUE `git push` vers la branche désignée — pas seulement en tout début de session — vérifier que la pull request associée est toujours ouverte et non fusionnée** (ex. `pull_request_read` méthode `get`, champs `state`/`merged`). Gersom peut fusionner une PR à n'importe quel moment pendant qu'un agent continue de travailler dans la même session ; un commit poussé après coup atterrit sur une branche déjà fusionnée et n'entre jamais dans `main`, sans qu'aucune erreur ne le signale — incident réel survenu deux fois (v1.53.18 : commits jamais poussés avant la fusion ; v1.55.0 : commit poussé mais après que la fusion avait déjà eu lieu sur un head antérieur). Si la PR est déjà fusionnée ou fermée, ne jamais pousser sur cette branche : suivre immédiatement la section « Git Development Branch Requirements » (redémarrer depuis la dernière branche par défaut, garder les commits non fusionnés en les rebasant dessus) avant de committer la suite, puis ouvrir une nouvelle PR.
+
 Les permissions sont centralisées dans `lib/permissions.ts`. Ne recréez pas de listes de rôles dispersées si une capacité existe déjà. Ajoutez ou modifiez la capacité, ses tests et la documentation dans le même lot/version.
 
 Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation explicite, aperçu des impacts, sauvegarde et procédure de retour arrière. Toute modification manuelle de production doit être reflétée dans une migration GitHub et dans le changelog de la version correspondante.
