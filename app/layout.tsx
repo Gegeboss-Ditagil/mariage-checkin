@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
+import { ViewTransitions } from 'next-view-transitions';
 import './globals.css';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { OnlineIndicator } from '@/components/OnlineIndicator';
@@ -49,8 +50,19 @@ export const viewport: Viewport = {
   themeColor: '#f4f4f7',
 };
 
+// v1.53.16, retour de Gersom : "beaucoup de flash... base-toi sur le style
+// iOS natif... la navigation, comment est-ce que les éléments se déplacent".
+// View Transitions API (via next-view-transitions, meme approche que
+// recommandee par l'equipe Next.js avant son support natif dans le
+// framework) : capture un instantane de l'ancienne page et fond
+// doucement vers la nouvelle au lieu d'un remplacement brut du DOM -- masque
+// tout residu de flash de peinture entre deux onglets, et se rapproche du
+// fondu instantane d'un UITabBarController natif. Sans effet (retombe sur
+// une navigation normale, sans erreur) sur les navigateurs sans support de
+// document.startViewTransition -- degrade proprement, jamais bloquant.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    <ViewTransitions>
     <html lang="fr" className={displayFont.variable + ' ' + sansFont.variable}>
       <head>
         {/*
@@ -89,5 +101,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto min-h-dvh w-full max-w-md safe-top safe-bottom landscape:max-w-none">{children}</div>
       </body>
     </html>
+    </ViewTransitions>
   );
 }

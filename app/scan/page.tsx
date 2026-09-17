@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QrScanner, type QrScannerHandle } from '@/components/QrScanner';
 import { UserMenu } from '@/components/UserMenu';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { TopBar } from '@/components/TopBar';
 import { EventRow } from '@/lib/types';
 

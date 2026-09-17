@@ -3,6 +3,69 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.18] — 2026-09-16
+
+Retour de Gersom : « transitions des panneaux modaux (fiche d'approbation, caméra...), fais absolument tout. Corrige, fluidifie. Teste tous les edge cases, assure-toi qu'il n'y a jamais de flash partout. »
+
+### Ajouté — transitions "sheet" pour tous les panneaux modaux
+Suite directe du « Non fait dans ce lot » de v1.53.16. Jusqu'ici, les six panneaux modaux de l'application apparaissaient/disparaissaient d'un coup (montage/démontage React instantané, aucune animation). `hooks/useDismiss.ts` (nouveau) centralise le cycle "jouer l'animation de sortie PUIS démonter réellement" : `dismiss()` déclenche la classe `-closing`, puis appelle le vrai `onClose` après la durée de l'animation (200ms, 0ms si `prefers-reduced-motion: reduce`) — le composant ne se démonte jamais net au milieu d'un tap.
+
+`app/globals.css` : deux familles de classes, réutilisées partout via `useDismiss` :
+- `.sheet-panel`/`.sheet-panel-closing` — glissement depuis/vers le bas (`translateY`), pour les panneaux plein écran qui n'ont pas de fond assombri séparé (ils couvrent déjà tout l'écran) : caméra, "Invité surprise", sélecteur de responsables.
+- `.sheet-card`/`.sheet-card-closing` + `.sheet-backdrop`/`.sheet-backdrop-closing` — un léger "pop" (translation + agrandissement) pour la carte, un fondu pour le fond assombri, pour les boîtes de dialogue centrées : fiche d'approbation, les deux modales d'agenda (nouvelle activité/modifier), aide d'installation.
+
+Courbe `cubic-bezier(0.32, 0.72, 0, 1)` à l'entrée (la même courbe "decelerate" qu'iOS/Material pour une présentation modale, jamais de rebond), sortie plus courte en `ease-in`. Respecte `prefers-reduced-motion` (aucune animation).
+
+Six surfaces mises à jour :
+- `components/GuestApprovalCaptureFlow.tsx`, `components/PhotoCaptureCamera.tsx`, `components/ResponsablePicker.tsx` — panneau plein écran (`.sheet-panel`).
+- `components/InstallAppButton.tsx` (aide d'installation) et `app/agenda/page.tsx` (modales "Nouvelle activité"/"Modifier l'activité") — carte + fond (`.sheet-card` + `.sheet-backdrop`).
+- `app/approbations/page.tsx` (fiche détaillée d'une demande) — carte + fond, y compris la fermeture par Échap, par le X, par le fond assombri, et par "Non — laisser le placeur l'assigner", qui passent tous désormais par `dismiss()`.
+
+### Audit "jamais de flash" (edge cases)
+Passage systématique demandé par Gersom sur l'ensemble de l'application, au-delà des seuls panneaux modaux :
+- Confirmé qu'aucun `fixed inset-0` de l'application (écrans principaux, six `Suspense fallback`, panneaux modaux) n'est sans fond peint explicite — recherche exhaustive, zéro résultat orphelin.
+- Confirmé que `html`/`body` gardent leur `background-color: var(--bg)` explicite (v1.53.9) et que les six correctifs de `Suspense fallback={null}` de v1.53.16 sont bien en place.
+- `app/error.tsx`/`app/global-error.tsx` : pas de risque de flash (ni l'un ni l'autre n'utilise `position: fixed`, donc pas de couche de composition séparée — la cause racine de v1.53.9 ne s'applique pas ici).
+
+### Tests
+- `tests/sheet-transitions.test.ts` (nouveau) : verrouille `hooks/useDismiss.ts` (état `closing`, délai, garde reduced-motion), les classes/keyframes CSS (entrée, sortie, garde reduced-motion), et le câblage `useDismiss`/`dismiss()` sur les six surfaces — y compris l'absence de tout appel `onClick={onClose}` direct qui contournerait l'animation de sortie.
+- `tests/agenda-form.test.ts` : assertions mises à jour pour `onClose={dismissInsert}`/`onClose={dismissEdit}` (remplace les anciens callbacks inline).
+
+## [1.53.17] — 2026-09-16
+
+Retour de Gersom (capture d'écran de `/tables/[tableId]`, table 2) : « le bouton sélectionner plusieurs invités n'aurait jamais été comme ça dans un iPhone. »
+
+### Corrigé
+- Le bouton « Sélectionner plusieurs invités »/« Annuler la sélection » (`/tables/[tableId]` et `/table/[tableId]`) était un lien texte souligné (`underline underline-offset-2`) — une convention web (hyperlien), jamais un bouton natif iOS. Devient un vrai bouton texte dans la barre de navigation (`TopBar` `right`), sans soulignement — même emplacement/style que le bouton « Select »/« Cancel » de Photos ou Mail sur iOS. Libellés raccourcis en « Sélectionner »/« Annuler » (un bouton de barre de navigation reste court, jamais une phrase complète).
+
+### Tests
+- `tests/select-multiple-native-button.test.ts` (nouveau) : verrouille l'absence de soulignement et le rendu via `TopBar right` sur les deux routes.
+
+## [1.53.16] — 2026-09-16
+
+Retour de Gersom (capture d'écran de l'app Musique d'Apple, en référence) : « il y a beaucoup de flash, surtout quand je navigue entre les onglets recherche et plan... vous pouvez faire des recherches des repos disponibles pour donner un effet iOS... travaille en général sur l'aspect iOS de l'application, le slide, la navigation, l'expérience utilisateur... base-toi vraiment sur leur style, leur guide... c'est surtout au niveau de la navigation, comment est-ce que les éléments se déplacent. »
+
+### Root cause du flash (bug réel, distinct de v1.53.9)
+`app/search/page.tsx`, `app/plan-table/page.tsx`, `app/tables/[tableId]/page.tsx`, `app/dashboard/liste/page.tsx`, `app/onboarding/theme/page.tsx` et `app/login/page.tsx` enveloppent tous leur contenu dans `<Suspense fallback={null}>` (requis par `useSearchParams()`) — pendant la brève fenêtre où React suspend ce composant lors d'un changement de route, `fallback={null}` ne peint RIEN, pas même le fond de page. Seules deux de ces six pages sont des onglets de `BottomNav` (`/search` et `/plan-table`) — correspond exactement au symptôme précis signalé (« surtout entre recherche et plan »), alors que les autres onglets (dashboard, scan, staff, agenda, approbations, exceptions, history, placement, admin) n'utilisent pas `useSearchParams()` à leur racine et n'ont donc jamais ce trou.
+
+### Corrigé
+- Les six `fallback={null}` remplacés par un fond peint (`<div className="fixed inset-0 bg-bg" />` pour les deux écrans à coquille `fixed`, `<div className="min-h-dvh bg-bg" />` pour les quatre autres) — plus aucun trou de peinture pendant le changement de route.
+
+### Ajouté — recherche + adoption d'une solution open-source pour un fondu natif iOS entre les pages
+Recherche effectuée comme demandé : la librairie **`next-view-transitions`** (Shu Ding, compatible Next.js 14 App Router, activement maintenue) enveloppe la [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) du navigateur — capture un instantané de l'ancienne page et fond doucement vers la nouvelle au lieu du remplacement brut du DOM par défaut, exactement le mécanisme qui masquerait tout résidu de flash de peinture, et se rapproche du fondu d'un `UITabBarController` natif. Dégrade proprement (navigation normale, sans erreur) sur les navigateurs sans support de `document.startViewTransition`.
+
+- `app/layout.tsx` enveloppé avec `<ViewTransitions>` (autour de `<html>`, comme documenté par la librairie).
+- Les 11 fichiers qui utilisaient `<Link>` de `next/link` et les 22 qui utilisaient `useRouter` de `next/navigation` passent désormais par `next-view-transitions` (`Link`, `useTransitionRouter as useRouter`) — changement d'import uniquement, aucune logique modifiée, tous les appels `.push()`/`.replace()` existants restent inchangés.
+- `app/globals.css` : fondu réglé à 180ms (`::view-transition-old(root)`/`::view-transition-new(root)`) ; `.bottom-nav-glass` reçoit un `view-transition-name` stable et son animation est explicitement désactivée, pour que la barre de navigation (recréée à l'identique par chaque page) ne clignote/double jamais pendant le fondu — exactement comme la barre d'onglets d'une app iOS native, qui ne bouge jamais pendant un changement d'onglet. Respecte `prefers-reduced-motion`.
+- `components/BottomNav.tsx` : les onglets (`SideLink`) gagnent un retour tactile au toucher (`active:opacity-60`, dim instantané façon `UIControl` natif) — jusqu'ici seul le bouton central avait un retour tactile propre (`active:scale-[0.96]`).
+
+### Non fait dans ce lot (périmètre du prochain tour si demandé)
+Transitions de type « sheet » (glissement depuis le bas) pour les panneaux modaux (fiche d'approbation, caméra, fusion de groupe...) — cette passe couvre la navigation entre pages/onglets, pas encore les présentations modales.
+
+### Tests
+- `tests/ios-navigation-transitions.test.ts` (nouveau) : verrouille l'intégration `next-view-transitions` (dépendance, `ViewTransitions`, CSS de transition, retour tactile), l'absence de tout import résiduel de `next/link`/`useRouter` de `next/navigation`, et les six correctifs de fallback.
+- `tests/table-seat-wheel.test.ts` : assertion mise à jour pour le nouveau fallback de `/plan-table`.
+
 ## [1.53.15] — 2026-09-16
 
 Retour de Gersom (capture d'écran de `/plan-table`, table 3, + message vocal) — trois demandes liées au dessin « Vu sur le plan photographié ».

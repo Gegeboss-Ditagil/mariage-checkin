@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useDismiss } from '@/hooks/useDismiss';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -21,6 +22,7 @@ export function InstallAppButton() {
   const [standalone, setStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const { closing: helpClosing, dismiss: dismissHelp } = useDismiss(() => setShowHelp(false));
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -74,16 +76,16 @@ export function InstallAppButton() {
 
       {showHelp && (
         <div
-          className="fixed inset-0 z-30 flex items-end justify-center bg-black/60 px-4 pb-6 backdrop-blur-sm sm:items-center"
-          onClick={() => setShowHelp(false)}
+          className={'fixed inset-0 z-30 flex items-end justify-center bg-black/60 px-4 pb-6 backdrop-blur-sm sm:items-center ' + (helpClosing ? 'sheet-backdrop-closing' : 'sheet-backdrop')}
+          onClick={dismissHelp}
         >
           <div
-            className="relative w-full max-w-sm rounded-xl3 border border-hairline bg-surface p-5 text-center shadow-card"
+            className={'relative w-full max-w-sm rounded-xl3 border border-hairline bg-surface p-5 text-center shadow-card ' + (helpClosing ? 'sheet-card-closing' : 'sheet-card')}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
-              onClick={() => setShowHelp(false)}
+              onClick={dismissHelp}
               aria-label="Fermer"
               className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-hairline bg-surface-2 text-lg leading-none text-text active:scale-[0.95] transition-transform"
             >
@@ -104,7 +106,7 @@ export function InstallAppButton() {
                 </p>
               </div>
             )}
-            <button className="btn-secondary mt-5 w-full" onClick={() => setShowHelp(false)}>
+            <button className="btn-secondary mt-5 w-full" onClick={dismissHelp}>
               Compris
             </button>
           </div>

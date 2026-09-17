@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { ComponentType, useCallback, useEffect, useState } from 'react';
@@ -143,7 +143,12 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
     {item.label}
   </>;
   const className = clsx(
-    'flex min-h-[76px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold transition-colors landscape:min-h-0 landscape:py-0',
+    // v1.53.16 : dim instantane au toucher (active:opacity-60, sans transition
+    // dessus -- exactement le retour "highlighted" d'un UIControl natif iOS,
+    // pas un rebond/scale) en plus du changement de couleur deja existant --
+    // jusqu'ici SideLink n'avait aucun retour tactile propre, contrairement au
+    // bouton central (active:scale-[0.96]) juste a cote.
+    'flex min-h-[76px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold transition-colors active:opacity-60 landscape:min-h-0 landscape:py-0',
     active ? 'text-accent' : 'text-text-muted active:text-text'
   );
   return (

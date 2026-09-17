@@ -8,6 +8,7 @@ import { CloseIcon, ChevronRightIcon } from '@/components/icons';
 import { ResponsablePicker } from '@/components/ResponsablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { usePolling } from '@/hooks/usePolling';
+import { useDismiss } from '@/hooks/useDismiss';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
 type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; custom_assignees: string[]; completed: boolean };
@@ -111,6 +112,8 @@ export default function AgendaPage() {
   // ouverte d'une activite a l'autre (state du parent, elle se
   // demonte/remonte mais pas la page).
   const [responsablePickerOpen, setResponsablePickerOpen] = useState(false);
+  const { closing: insertClosing, dismiss: dismissInsert } = useDismiss(() => setInsertAt(null));
+  const { closing: editClosing, dismiss: dismissEdit } = useDismiss(() => openEditing(null));
 
   function openEditing(item: AgendaItem | null) {
     setResponsablePickerOpen(false);
@@ -170,7 +173,7 @@ export default function AgendaPage() {
     const data = await response.json();
     if (!response.ok) return setError(data.error || 'Ajout impossible');
     setItems((current) => [...current, data.item].sort((a, b) => a.sort_order - b.sort_order));
-    setInsertAt(null);
+    dismissInsert();
     setNewAssigneeIds([]);
     setNewCustomAssignees([]);
   }
@@ -238,9 +241,9 @@ export default function AgendaPage() {
       {role && <BottomNav role={role} />}
 
       {insertAt !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
-          <form onSubmit={addItem} className="card max-h-[88dvh] w-full max-w-md space-y-4 overflow-y-auto dark:backdrop-blur-2xl">
-            <ModalHeader title="Nouvelle activité" onClose={() => setInsertAt(null)} />
+        <div className={'fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm ' + (insertClosing ? 'sheet-backdrop-closing' : 'sheet-backdrop')}>
+          <form onSubmit={addItem} className={'card max-h-[88dvh] w-full max-w-md space-y-4 overflow-y-auto dark:backdrop-blur-2xl ' + (insertClosing ? 'sheet-card-closing' : 'sheet-card')}>
+            <ModalHeader title="Nouvelle activité" onClose={dismissInsert} />
             <TimeRangePicker initialLabel="" />
             <div>
               <FieldLabel>Activité</FieldLabel>
@@ -279,9 +282,9 @@ export default function AgendaPage() {
       )}
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+        <div className={'fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm ' + (editClosing ? 'sheet-backdrop-closing' : 'sheet-backdrop')}>
           <form
-            className="card max-h-[88dvh] w-full max-w-md space-y-4 overflow-y-auto dark:backdrop-blur-2xl"
+            className={'card max-h-[88dvh] w-full max-w-md space-y-4 overflow-y-auto dark:backdrop-blur-2xl ' + (editClosing ? 'sheet-card-closing' : 'sheet-card')}
             onSubmit={async (event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
@@ -293,10 +296,10 @@ export default function AgendaPage() {
                 assignee_ids: editing.assignee_ids,
                 custom_assignees: editing.custom_assignees || [],
               });
-              if (saved) openEditing(null);
+              if (saved) dismissEdit();
             }}
           >
-            <ModalHeader title="Modifier l’activité" onClose={() => openEditing(null)} />
+            <ModalHeader title="Modifier l’activité" onClose={dismissEdit} />
             <TimeRangePicker key={editing.id} initialLabel={editing.time_label} />
             <div>
               <FieldLabel>Activité</FieldLabel>

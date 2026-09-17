@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 import { InvitationRow, TableRow, OverflowAssignmentRow } from '@/lib/types';
@@ -30,7 +31,7 @@ function volCode(number: number): string | null {
 
 export default function TableDetailPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-dvh bg-bg" />}>
       <TableDetailInner />
     </Suspense>
   );
@@ -283,7 +284,26 @@ function TableDetailInner() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={titre} backHref="/tables" />
+      <TopBar
+        title={titre}
+        backHref="/tables"
+        // v1.53.17, retour de Gersom (capture d'écran) : "le bouton
+        // sélectionner plusieurs invités n'aurait jamais été comme ça dans
+        // un iPhone" -- un lien souligné est une convention web, jamais
+        // iOS. Devient un vrai bouton texte dans la barre de navigation
+        // (comme "Select"/"Cancel" dans Photos ou Mail), sans soulignement.
+        right={
+          canMoveGuests && !echangeAvecTableId ? (
+            <button
+              type="button"
+              onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
+              className="whitespace-nowrap text-sm font-semibold text-accent active:opacity-60"
+            >
+              {selectMode ? 'Annuler' : 'Sélectionner'}
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className="px-4 py-4 pb-24">
         {movedNotice && (
@@ -297,16 +317,6 @@ function TableDetailInner() {
             Sélectionnez qui quitte cette table en échange de {echangeIdsA.length} invitation
             {echangeIdsA.length > 1 ? 's' : ''} venant de l'autre table.
           </p>
-        )}
-
-        {canMoveGuests && !echangeAvecTableId && (
-          <button
-            type="button"
-            onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
-            className="mb-3 text-sm font-semibold text-accent underline underline-offset-2"
-          >
-            {selectMode ? 'Annuler la sélection' : 'Sélectionner plusieurs invités'}
-          </button>
         )}
 
         <div className="card mb-4 grid grid-cols-3 text-center">

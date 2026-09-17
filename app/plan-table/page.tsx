@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'next-view-transitions';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -77,7 +77,7 @@ const CAPACITE_OFFICIELLE = 410;
 
 export default function PlanTablePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="fixed inset-0 bg-bg" />}>
       <PlanTablePageInner />
     </Suspense>
   );

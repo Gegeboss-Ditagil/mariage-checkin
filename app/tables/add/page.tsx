@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { TopBar } from '@/components/TopBar';
 import { TablePicker } from '@/components/TablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';

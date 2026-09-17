@@ -56,8 +56,8 @@ test('les deux formulaires (nouvelle activite, modifier) ont un bouton de fermet
   assert.match(agendaPage, /function ModalHeader/);
   assert.match(agendaPage, /CloseIcon/);
   assert.match(agendaPage, /rounded-full border border-white\/30 bg-surface\/75.*backdrop-blur-xl/);
-  assert.match(agendaPage, /<ModalHeader title="Nouvelle activité" onClose=\{\(\) => setInsertAt\(null\)\} \/>/);
-  assert.match(agendaPage, /<ModalHeader title="Modifier l’activité" onClose=\{\(\) => openEditing\(null\)\} \/>/);
+  assert.match(agendaPage, /<ModalHeader title="Nouvelle activité" onClose=\{dismissInsert\} \/>/);
+  assert.match(agendaPage, /<ModalHeader title="Modifier l’activité" onClose=\{dismissEdit\} \/>/);
 });
 
 test('le selecteur de responsables utilise une coche personnalisee (rond accent) au lieu de la case a cocher par defaut du navigateur', () => {
