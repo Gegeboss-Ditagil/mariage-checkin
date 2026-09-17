@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.55.1] — 2026-09-17
+
+Retour de Gersom (capture d'écran `/agenda`) : (1) taper sur une carte pour la modifier fait apparaître le clavier « mais ça bug après » ; (2) « quand on swipe à partir de la gauche vers la droite... ça fonctionne, mais seulement si je mets mon doigt vraiment sur le bout de l'écran... j'aimerais que ce soit un peu plus intuitif, un peu comme iOS ».
+
+### Corrigé — clavier qui fait sauter les panneaux modaux
+`app/layout.tsx` : le viewport déclare désormais `interactiveWidget: 'resizes-content'`. **Root cause probable** (diagnostic par lecture du code/de la spécification, aucun appareil iOS réel disponible dans cet environnement — à reconfirmer par Gersom) : bug WebKit très documenté (« fixed position + champ actif + clavier ») — sans ce réglage, Safari/WKWebView ne redimensionne que le viewport *visuel* à l'ouverture du clavier, laissant les unités `dvh` (utilisées par tous les panneaux modaux `fixed inset-0`/`max-h-[88dvh]`, dont ceux de `/agenda`) figées à la hauteur pleine ; le navigateur tente alors de faire défiler toute la mise en page fixe pour amener le champ actif au-dessus du clavier, ce qui fait sauter/décaler le panneau. `resizes-content` fait au contraire redimensionner le viewport de mise en page lui-même : les `dvh` se remettent à jour normalement.
+
+### Ajouté — geste de retour depuis le bord gauche, plus généreux
+`hooks/useSwipeBack.ts` (nouveau), câblé dans `components/TopBar.tsx` sur `effectiveBackHref` (même destination que la flèche « ‹ » visible, jamais un simple retour d'historique navigateur). Le geste ressenti par Gersom est en réalité le geste système iOS pour les apps installées sur l'écran d'accueil — sa zone de détection est fixée par iOS lui-même, aucune API web ne permet de l'élargir. Ce hook implémente donc un geste propre à l'application, en plus : zone de départ élargie (32px depuis le bord gauche, contre une zone système bien plus étroite), seuil de déclenchement à 60px de déplacement horizontal, annulé par un pincement (deux doigts) ou un déplacement surtout vertical (défilement normal de la liste) — mêmes garde-fous que `hooks/usePullToRefresh.ts`.
+
+### Tests
+- `tests/swipe-back.test.ts` (nouveau, 6 tests) : viewport, zone de bord, garde-fous multi-doigts/vertical, remise à zéro sur `touchend`/`touchcancel`, destination identique au bouton visible, câblage dans `TopBar`.
+
 ## [1.55.0] — 2026-09-17
 
 Retour de Gersom (message vocal, suite au parcours de `/agenda`) : « on va maintenant pouvoir ajouter des fonctionnalités au calendrier... la visibilité de l'agenda... peut-être que ce n'est pas visible pour les agents scanners et les agents placeurs, seulement pour les directeurs de festin... tu mets l'option privé ou pas... c'est vraiment caché de tous, sauf pour les directeurs de festin et administrateurs. »

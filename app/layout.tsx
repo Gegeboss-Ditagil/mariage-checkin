@@ -44,10 +44,22 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  // Valeur par defaut (Atrium clair) ; le script anti-flash ci-dessous et
-  // hooks/useTheme.ts la mettent a jour cote client des que le theme effectif
-  // (Maison sombre, ou 'Automatique' resolu via prefers-color-scheme) est
-  // connu -- Next ne permet pas de valeur conditionnelle ici cote serveur.
+  // 'resizes-content' (retour de Gersom le 17/09/2026, capture d'ecran
+  // /agenda : "j'appuie sur les cartes, ca me sort le clavier... mais ca
+  // bug apres") : sans lui, Safari/WKWebView ne retaille QUE le viewport
+  // visuel quand le clavier apparait -- les unites `dvh` utilisees par tous
+  // les panneaux modaux (`fixed inset-0`, `max-h-[88dvh]`) restent figees a
+  // la hauteur PLEINE, et le navigateur tente alors de faire defiler toute
+  // la mise en page fixe pour amener le champ actif au-dessus du clavier --
+  // bug WebKit tres documente ("fixed position + focused input + clavier")
+  // qui fait sauter/decaler brutalement le panneau. `resizes-content` fait
+  // au contraire retailer le viewport de MISE EN PAGE lui-meme a l'ouverture
+  // du clavier : les `dvh` se remettent a jour normalement, le panneau
+  // (deja `overflow-y-auto`) se retasse proprement dans l'espace visible
+  // restant, sans saut. Diagnostic par lecture du code/de la specification
+  // (aucun appareil iOS reel disponible dans cet environnement) -- a
+  // reconfirmer par Gersom.
+  interactiveWidget: 'resizes-content',
   themeColor: '#f4f4f7',
 };
 
