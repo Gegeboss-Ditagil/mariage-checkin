@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.55.2] — 2026-09-17
+
+Retour de Gersom (3 captures d'écran `/agenda`, sur la preview de PR #96) : (1) la flèche « › » de « Choisir les responsables » n'est pas centrée, pas beau ; (2) le clavier/roulette natif apparaît encore en cliquant sur une activité, alors qu'il ne devrait servir qu'à entrer dans la fiche ; l'app semble se figer et nécessite un tirer-pour-rafraîchir pour s'en sortir.
+
+### Corrigé — bug CSS réel, flèche non alignée
+Root cause trouvée : `.action-row`/`.action-row-muted` (`app/globals.css`) déclarent `block`/`text-center`, et étaient écrites après `@tailwind utilities` sans jamais être enveloppées dans `@layer` (aucun `@layer` dans tout ce fichier jusqu'ici) — donc après dans la feuille de style finale. À spécificité CSS égale, la règle la plus tardive dans la feuille gagne : ces deux classes l'emportaient systématiquement sur les utilitaires `flex`/`items-center`/`text-left` ajoutés en plus dans le `className`, aux **5 endroits** où c'est fait (`app/agenda/page.tsx` ×2, `components/ResponsablePicker.tsx` ×3) — pas seulement le bouton signalé. Le bouton retombait en `display: block` centré, la flèche suivant juste en flux normal au lieu d'être alignée à droite par le flex. Corrigé en enveloppant `.action-row`/`.action-row-muted` dans `@layer components {}` — Tailwind les replace alors avant les utilitaires dans la cascade, indépendamment de leur position dans le fichier, rendant aux utilitaires leur priorité normale. Vérifié dans la feuille compilée (`.next/static/css`) : `.action-row` précède désormais bien `.flex`/`.items-center`.
+
+### Corrigé — clavier/roulette natif qui apparaît sans avoir touché un champ
+- `app/agenda/page.tsx` : le champ Titre de la fiche « Nouvelle activité » avait `autoFocus`, ouvrant le clavier dès l'ouverture de la fiche — retiré. Toucher un champ reste désormais le seul moyen d'y faire apparaître le clavier.
+- `hooks/useDismiss.ts` (partagé par les six panneaux modaux de l'app) et `openEditing`/`openInsertAt` (`app/agenda/page.tsx`) retirent désormais explicitement le focus actif (`document.activeElement?.blur()`) avant de fermer un panneau et avant d'en ouvrir un nouveau — root cause probable (diagnostic par lecture du code, aucun appareil iOS disponible dans cet environnement pour reproduire « figé... swipe down et refresh » — à reconfirmer par Gersom) : un champ resté focalisé au moment où React démonte ses nœuds peut laisser WKWebView réafficher son clavier/roulette natif sur le prochain champ de même type apparaissant au même endroit, sans qu'aucun tap ne l'ait redemandé.
+
+### Tests
+- `tests/agenda-action-row-focus.test.ts` (nouveau, 4 tests) : `@layer components`, absence d'`autoFocus`, garde de focus à l'ouverture et à la fermeture.
+
 ## [1.55.1] — 2026-09-17
 
 Retour de Gersom (capture d'écran `/agenda`) : (1) taper sur une carte pour la modifier fait apparaître le clavier « mais ça bug après » ; (2) « quand on swipe à partir de la gauche vers la droite... ça fonctionne, mais seulement si je mets mon doigt vraiment sur le bout de l'écran... j'aimerais que ce soit un peu plus intuitif, un peu comme iOS ».
