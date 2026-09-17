@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.53.19**
+**Version documentaire : 1.55.0**
 **Dernière mise à jour : 2026-09-17**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -74,6 +74,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 
 Depuis v1.31.1, `/agenda` est visible et modifiable avec `viewAgenda`/`manageAgenda` (`admin` et `directeur`). Nelly porte maintenant le rôle complet `directeur`, identique à Rémy, plutôt qu'une exception limitée à l'agenda. Heure, titre, département, détails, ordre, responsables et état terminé sont persistés dans `agenda_items`; les routes API revérifient chaque lecture et écriture côté serveur.
+
+Depuis v1.55.0, un élément d'agenda peut être marqué `is_private` (`agenda_items.is_private`, migration `0058`) — `GET /api/agenda` retire alors cette ligne de la réponse JSON pour tout rôle sans `manageAgenda` (agent scan, agent placeur) : un filtrage réel côté serveur, jamais un simple masquage visuel côté client. Aucune nouvelle capacité : la restriction réutilise `manageAgenda`, déjà réservée à `admin`/`directeur`.
 
 Depuis v1.40.0, `agent_checkin` a aussi `viewAgenda` (jamais `manageAgenda`) — retour de Gersom sur Agent001 : « il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ». Ce rôle consulte donc le chronogramme sans le modifier ; `/staff` reste par ailleurs atteignable pour lui via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre du bas remplace Staff par Agenda.
 

@@ -11,7 +11,7 @@ import { usePolling } from '@/hooks/usePolling';
 import { useDismiss } from '@/hooks/useDismiss';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
-type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; custom_assignees: string[]; completed: boolean };
+type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; custom_assignees: string[]; completed: boolean; is_private: boolean };
 
 // `time_label` accepte une heure seule ("08:00") ou une plage ("18:30–19:00",
 // tiret cadratin -- voir le chronogramme seed dans 0039_shared_agenda.sql).
@@ -168,7 +168,7 @@ export default function AgendaPage() {
     const form = new FormData(event.currentTarget);
     const response = await fetch('/api/agenda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       time_label: form.get('time_label'), title: form.get('title'), department: form.get('department'), details: form.get('details'), sort_order: insertAt,
-      assignee_ids: newAssigneeIds, custom_assignees: newCustomAssignees,
+      assignee_ids: newAssigneeIds, custom_assignees: newCustomAssignees, is_private: form.get('is_private') === 'on',
     }) });
     const data = await response.json();
     if (!response.ok) return setError(data.error || 'Ajout impossible');
@@ -226,7 +226,14 @@ export default function AgendaPage() {
                     )}
                     <time className="w-16 shrink-0 pt-1 text-sm font-bold tabular-nums text-accent">{item.time_label}</time>
                     <div className="min-w-0 flex-1 text-left">
-                      <div className="flex flex-wrap items-start justify-between gap-2"><p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p><span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span></div>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p>
+                        <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                          {/* Rendue seulement pour admin/directeur (API 0058) -- jamais renvoyee aux autres roles, ce n'est pas un masquage cote client. */}
+                          {item.is_private && <span className="rounded-full border border-accent/40 bg-accent-tint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Privé</span>}
+                          <span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span>
+                        </span>
+                      </div>
                       {item.details && <p className="mt-1 text-xs leading-relaxed text-text-muted">{item.details}</p>}
                       {assigneeNames.length > 0 && <p className="mt-2 text-xs font-semibold text-text-muted">{assigneeNames.join(', ')}</p>}
                     </div>
@@ -276,6 +283,22 @@ export default function AgendaPage() {
                 <ChevronRightIcon className="h-5 w-5 shrink-0 text-text-faint" />
               </button>
             </div>
+            {/* Demande de Gersom le 17/09/2026 : "peut-etre que ce n'est pas
+                visible pour les agents scanners et les agents placeurs,
+                seulement pour les directeurs de festins... tu mets l'option
+                prive ou pas". Reserve a admin/directeur (seuls roles a voir
+                ce formulaire, canManage) -- filtre reellement cote serveur
+                dans GET /api/agenda (0058_agenda_items_private.sql), jamais
+                un simple masquage visuel. */}
+            <label className="flex items-start gap-3 rounded-xl2 border border-hairline bg-surface p-3">
+              <input type="checkbox" name="is_private" className="mt-1 h-5 w-5" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Privé</span>
+                <span className="block text-xs text-text-muted">
+                  Visible seulement par les directeurs de festin et les administrateurs — caché pour les agents scanners et les agents placeurs.
+                </span>
+              </span>
+            </label>
             <button className="btn-primary w-full">Ajouter et partager</button>
           </form>
         </div>
@@ -295,6 +318,7 @@ export default function AgendaPage() {
                 details: form.get('details'),
                 assignee_ids: editing.assignee_ids,
                 custom_assignees: editing.custom_assignees || [],
+                is_private: form.get('is_private') === 'on',
               });
               if (saved) dismissEdit();
             }}
@@ -337,6 +361,15 @@ export default function AgendaPage() {
                 <ChevronRightIcon className="h-5 w-5 shrink-0 text-text-faint" />
               </button>
             </div>
+            <label className="flex items-start gap-3 rounded-xl2 border border-hairline bg-surface p-3">
+              <input type="checkbox" name="is_private" defaultChecked={editing.is_private} className="mt-1 h-5 w-5" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Privé</span>
+                <span className="block text-xs text-text-muted">
+                  Visible seulement par les directeurs de festin et les administrateurs — caché pour les agents scanners et les agents placeurs.
+                </span>
+              </span>
+            </label>
             <button type="submit" className="btn-primary w-full">Enregistrer et partager</button>
           </form>
         </div>

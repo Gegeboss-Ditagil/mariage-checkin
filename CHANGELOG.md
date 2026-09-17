@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.55.0] — 2026-09-17
+
+Retour de Gersom (message vocal, suite au parcours de `/agenda`) : « on va maintenant pouvoir ajouter des fonctionnalités au calendrier... la visibilité de l'agenda... peut-être que ce n'est pas visible pour les agents scanners et les agents placeurs, seulement pour les directeurs de festin... tu mets l'option privé ou pas... c'est vraiment caché de tous, sauf pour les directeurs de festin et administrateurs. »
+
+### Vérifié — assignation de responsables déjà en place
+La première partie de la demande (« assigner des responsables... un participant ou du staff... ou ajouter des noms tout simplement ») existe déjà depuis v1.37.0/v1.39.0 (`components/ResponsablePicker.tsx`, `assignee_ids`/`custom_assignees`) : recherche plein écran des comptes de l'équipe et des invités, plus noms libres pour un prestataire sans compte, disponible à la fois à la création et à la modification d'une activité. Aucun changement nécessaire ici.
+
+### Ajouté — élément d'agenda privé
+- `supabase/migrations/0058_agenda_items_private.sql` (appliquée et vérifiée en production Supabase le 17/09/2026) : `agenda_items.is_private boolean not null default false`.
+- `GET /api/agenda` : un élément `is_private = true` est retiré de la réponse JSON pour tout rôle sans la capacité `manageAgenda` (réutilise la restriction déjà en place — admin/directeur uniquement, `lib/permissions.ts` — plutôt qu'une nouvelle capacité). Filtrage réellement côté serveur : un agent scan/placeur ne reçoit même pas la ligne dans le réseau, ce n'est jamais un simple masquage visuel côté client. `POST`/`PATCH` acceptent le champ ; `normalizeAgendaItem` le sécurise à `false` si la migration n'était pas encore appliquée (même filet que `custom_assignees`, v1.33.1).
+- `app/agenda/page.tsx` : case à cocher « Privé » (avec description « Visible seulement par les directeurs de festin et les administrateurs — caché pour les agents scanners et les agents placeurs ») dans les deux modales (« Nouvelle activité » et « Modifier l'activité ») ; badge « Privé » affiché sur la carte d'un élément privé (visible seulement par admin/directeur, puisque l'API a déjà filtré les autres rôles).
+- `components/NextAgendaActivity.tsx` (bande « Prochaine activité » sur `/scan`) respecte automatiquement cette visibilité sans changement de code : elle consomme la même liste déjà filtrée par `GET /api/agenda`.
+
+### Tests
+- `tests/agenda-privacy.test.ts` (nouveau, 7 tests) : migration, filtrage serveur, normalisation défensive, POST/PATCH, cases à cocher, badge.
+- `tests/agenda-form.test.ts` : test existant ajusté au nouveau filtrage (`normalized`/`visible`) sans changer ce qu'il verrouille.
+
 ## [1.54.2] — 2026-09-17
 
 Retour de Gersom (message vocal) : « pour chaque personne, tu vas mettre le bon rôle, pas juste écrire staff... pour directeur de festin, tu écris directeur de festin, pour admin, admin, visibilité... en fait ça sera surtout approbateur, pour les scanners, agent scanner, et ensuite agent placeur. »
