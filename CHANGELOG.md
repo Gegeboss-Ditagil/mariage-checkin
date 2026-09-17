@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.53.19] — 2026-09-17
+
+Retour de Gersom : « j'ai un problème de déconnexion énorme sur l'application... surtout quand on navigue de page rapidement, après 5-6 pages, ça se déconnecte souvent. » Suivi du processus QA (`docs/QE_QA_PROCESS.md`) : reproduction par lecture du code (comportement lié à l'infrastructure de déploiement, non reproductible localement sans redéployer), root cause identifiée avec un haut degré de confiance, recherche systématique des cas similaires plutôt qu'un correctif isolé.
+
+### Root cause — bug réel, deux facteurs qui se combinent
+1. **Le jeton de session portait `ver = VERCEL_DEPLOYMENT_ID`** (ou son fallback git sha) depuis v1.1.0 : après CHAQUE déploiement Vercel — même un correctif sans aucun rapport avec les sessions — toutes les sessions actives devenaient instantanément invalides à la prochaine requête protégée. Sur ce projet, qui déploie très fréquemment en développement actif (plusieurs fois par jour, parfois plusieurs fois par heure), c'était la cause principale des déconnexions signalées.
+2. **Next.js précharge automatiquement en arrière-plan CHAQUE `<Link>` visible à l'écran** (`BottomNav` en affiche 4-5 sur chaque page) — une simple requête de prefetch, jamais montrée à l'utilisateur. Le middleware traitait ce prefetch exactement comme une vraie navigation : un échec de vérification de session sur ce prefetch renvoyait quand même les en-têtes `Set-Cookie` qui effacent la session, que le navigateur applique même si la réponse du prefetch n'est jamais affichée — multipliant par 4-5 la fenêtre de vulnérabilité au facteur 1 (4-5x plus de vérifications de session que de vraies navigations à chaque page vue).
+
+### Corrigé
+- **`lib/sessionVersion.ts`** (nouveau) : `SESSION_SCHEMA_VERSION`, une constante incrémentée À LA MAIN uniquement quand le FORMAT du payload de session change réellement (champ ajouté/retiré/renommé dans `SessionUser`) — jamais à chaque déploiement de code. `lib/auth.ts` (création/vérification Node) et `lib/session-edge.ts` (vérification Edge, utilisée par `middleware.ts`) l'utilisent tous les deux à la place de `VERCEL_DEPLOYMENT_ID`/`VERCEL_GIT_COMMIT_SHA`. Un déploiement n'invalide plus aucune session active ; seule l'expiration naturelle (12h, inchangée) ou un vrai changement de format la termine désormais.
+- **`middleware.ts`** : ne nettoie plus les cookies de session sur une simple requête de préchargement (détectée via l'en-tête `next-router-prefetch` posé par Next.js, ou `purpose: prefetch`) — la vraie navigation vers cette page, elle, continue de rediriger normalement vers `/login` si la session est réellement invalide. Un prefetch en arrière-plan qui échoue ne peut plus jamais effacer une session par ailleurs valide affichée sur une autre page.
+
+### Documentation
+- `docs/QE_QA_PROCESS.md` (section 5, garde-fous transverses) : deux nouvelles entrées — lier la validité d'une session à un identifiant qui change à chaque déploiement, et une redirection de middleware qui nettoie des cookies sur une requête que l'utilisateur n'a jamais demandée (prefetch).
+- `docs/BUSINESS_RULES.md`, `DEPLOIEMENT.md`, `docs/QA_SCENARIOS.md` : règle « un déploiement invalide les anciennes sessions » retirée/corrigée partout où elle était documentée comme comportement attendu (elle ne l'est plus) ; nouveau scénario QA de navigation rapide entre 5-6 pages.
+
+### Tests
+- `tests/session-stability.test.ts` (nouveau, 7 tests) : aller-retour Node, interopérabilité Node/Edge (HMAC), un jeton reste valide après un « déploiement » simulé (changement de `VERCEL_DEPLOYMENT_ID`/`VERCEL_GIT_COMMIT_SHA` entre création et vérification — la regression exacte de ce bug), un `ver` différent de `SESSION_SCHEMA_VERSION` reste rejeté même correctement signé (un vrai changement de format doit encore forcer une reconnexion), l'expiration naturelle à 12h n'est pas affectée, verrous anti-régression sur l'absence de toute référence à `VERCEL_DEPLOYMENT_ID`/`VERCEL_GIT_COMMIT_SHA` et sur le court-circuit prefetch de `middleware.ts`.
+- `lib/auth.ts`/`lib/session-edge.ts` : `SessionUser` passe en `import type` (jamais utilisé comme valeur) pour permettre l'exécution directe de ces modules par `node --test`, comme le reste de la suite.
+
 ## [1.53.18] — 2026-09-16
 
 Retour de Gersom : « transitions des panneaux modaux (fiche d'approbation, caméra...), fais absolument tout. Corrige, fluidifie. Teste tous les edge cases, assure-toi qu'il n'y a jamais de flash partout. »

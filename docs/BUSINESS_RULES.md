@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.53.0**
-**Dernière mise à jour : 2026-09-15**
+**Version documentaire : 1.53.19**
+**Dernière mise à jour : 2026-09-17**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -175,7 +175,7 @@ Les comptes génériques peuvent être renommés depuis `/admin/users` au fur et
 - Une table affichée complète exige une confirmation explicite avant affectation exceptionnelle.
 - Les exports, imports et comptes sont administratifs. La lecture des QR (scan) reste ouverte aux rôles scannants; leur association à une table se fait désormais directement en base, l'admin n'ayant plus d'écran dédié pour cela.
 - Une session applicative expire au plus tard après 12 h.
-- Une session appartenant à un ancien déploiement est invalide et doit retourner au login.
+- **(v1.53.19)** Un déploiement n'invalide plus une session active — seule l'expiration naturelle (12 h) ou un changement du format du payload (`SESSION_SCHEMA_VERSION`, incrémenté à la main uniquement quand ce format change réellement) la termine. Avant cette version, chaque déploiement (même sans rapport avec les sessions) déconnectait tout le monde instantanément — cause principale d'un signalement de déconnexions fréquentes en navigation.
 
 ## Données et capacité
 
