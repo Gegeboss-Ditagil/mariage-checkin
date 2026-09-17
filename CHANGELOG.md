@@ -3,6 +3,20 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.54.1] — 2026-09-17
+
+Bug réel signalé par Gersom (capture d'écran `/scan`) : « souvent, quand je vais load cette page, les trois boutons en bas, approbation, agenda et tableau de bord, ils ne viennent pas en même temps, c'est décalé, ça bug un peu. »
+
+### Root cause
+`components/NextAgendaActivity.tsx` (la bande « Prochaine activité » juste au-dessus du bouton Approbations sur `/scan`) démarrait avec `next = undefined` et rendait `null` (rien du tout) tant que son `fetch('/api/agenda')` n'avait pas répondu. Comme ce composant précède `GuestApprovalsShortcut` (le bouton Approbations) dans la même colonne, son apparition tardive (après un aller-retour réseau) poussait ce bouton vers le bas — alors que la barre du bas (Agenda/Bord) était déjà affichée depuis la lecture, quasi instantanée, du cookie de rôle. D'où l'impression que ces éléments « n'arrivent pas en même temps ».
+
+### Corrigé
+- `components/NextAgendaActivity.tsx` : seule la capacité (`viewAgenda`, connue dès le rendu) peut encore renvoyer `null`. L'état de chargement du fetch (`next === undefined`) affiche désormais un texte « Chargement… » à l'intérieur de la même carte, qui reste montée avec la même hauteur du premier rendu jusqu'au chargement complet — plus jamais de disparition/réapparition qui décale le bouton Approbations en dessous.
+- Recherche systématique des cas similaires (`docs/QE_QA_PROCESS.md`) : seul ce composant, parmi tous ceux de `/scan`, faisait dépendre son montage d'un fetch encore en vol (`GuestApprovalsShortcut`/`ScanStatsStrip` réservaient déjà leur place immédiatement).
+
+### Tests
+- `tests/next-agenda-activity.test.ts` : nouveau test verrouillant l'absence de `return null` sur l'état de chargement et la présence du texte « Chargement… ».
+
 ## [1.54.0] — 2026-09-17
 
 Retour de Gersom, suite directe de v1.53.19 : « implemente un systeme de logs complets que tu peux par la suite analyser pour les erreurs et autres, pour t'aider a te corriger et optimiser le systeme quand on fait des corrections ou autres. »
