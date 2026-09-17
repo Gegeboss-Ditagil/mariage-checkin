@@ -105,6 +105,7 @@ export default function AdminHome() {
             <AdminLink href="/history" label="Historique" icon="≡" />
             <AdminLink href="/exceptions" label="Exceptions" icon="⚠" />
             <AdminLink href="/admin/exports" label="Exports" icon="↓" />
+            <AdminLink href="/admin/logs" label="Logs applicatifs" icon="🛠" />
           </nav>
 
           <div className="card">

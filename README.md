@@ -150,7 +150,7 @@ Cette version ajoute le **forçage d'assignation d'un invité surprise sur une t
 - Plan de table temps réel.
 - Dashboard, historique, exceptions et exports.
 - Gestion optionnelle des membres d'un groupe.
-- Rôles : Admin, Directeur de festin, Agent placeur, Agent scan, Visibilité.
+- Rôles : Admin, Directeur de festin, Agent placeur, Agent scanner, Approbateur.
 
 Les permissions sont centralisées dans `lib/permissions.ts`; les contrôles serveur restent obligatoires même si un bouton est masqué dans l'interface.
 

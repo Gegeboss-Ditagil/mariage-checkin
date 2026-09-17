@@ -1,7 +1,7 @@
 # Guide de déploiement
 
-**Version documentaire : 1.53.0**
-**Dernière mise à jour : 2026-09-15**
+**Version documentaire : 1.53.19**
+**Dernière mise à jour : 2026-09-17**
 
 L'application est un projet Next.js déployé sur Vercel avec Supabase en backend.
 
@@ -36,17 +36,15 @@ Pour générer une paire VAPID une seule fois : `npx web-push generate-vapid-key
 
 **Activer/désactiver le SMS/WhatsApp d'approbation d'invité surprise** : depuis `/admin` (bouton bascule « SMS/WhatsApp (Twilio) »), sans redéploiement ni accès Vercel. v1.48.3 introduisait un interrupteur par variable d'environnement (`TWILIO_ENABLED`) ; v1.53.2 (16/09/2026) le remplace par la colonne `events.twilio_enabled` (migration `0055_events_twilio_enabled.sql`), modifiable en un clic depuis l'application. Les identifiants `TWILIO_*` ci-dessus restent nécessaires sur Vercel (ce toggle ne les remplace pas) — sans eux, activer le bouton produit une erreur de configuration explicite plutôt qu'un envoi silencieux.
 
-Vercel fournit également des identifiants de déploiement/commit. La v1.1.0 les utilise pour distinguer une session créée sur une ancienne version d'une session créée sur le déploiement courant.
-
-## 3. Sessions et redéploiements — v1.1.0
+## 3. Sessions et redéploiements — v1.1.0, révisé v1.53.19
 
 - Durée maximale d'une session : **12 heures**.
-- Une session créée sur un ancien déploiement devient invalide lorsqu'elle atteint une route protégée sur le nouveau déploiement.
-- Le middleware supprime les cookies de session/rôle/nom incompatibles puis redirige vers `/login`.
+- **(v1.53.19, corrigé)** Un déploiement n'invalide plus une session active. Avant cette version, le jeton portait `ver = VERCEL_DEPLOYMENT_ID` (identifiant fourni par Vercel) : CHAQUE déploiement, même un correctif sans aucun rapport avec les sessions, invalidait instantanément toutes les sessions actives à la prochaine requête protégée — sur un projet qui déploie très fréquemment, c'était la cause principale d'un signalement de déconnexions fréquentes en navigation (17/09/2026, retour de Gersom : "après 5-6 pages, ça se déconnecte souvent"). `lib/sessionVersion.ts` porte désormais `SESSION_SCHEMA_VERSION`, une constante incrémentée À LA MAIN uniquement quand le FORMAT du payload change réellement (champ ajouté/retiré/renommé dans `SessionUser`) — jamais à chaque déploiement de code.
+- Le middleware ne nettoie plus les cookies sur une simple requête de préchargement (`next-router-prefetch`, déclenchée automatiquement par chaque `<Link>` visible à l'écran) — seule une vraie navigation protégée sans session valide efface les cookies puis redirige vers `/login`.
 - Le service worker ne doit pas mettre en cache les assets `/_next/*` afin d'éviter les anciennes versions JavaScript après un déploiement.
 - `app/error.tsx` fournit une récupération supplémentaire : logout puis retour au login plutôt qu'une page blanche persistante.
 
-Après un déploiement important, tester au moins une PWA déjà installée sur iPhone/Android avec une ancienne session.
+Après un déploiement important, tester au moins une PWA déjà installée sur iPhone/Android avec une session déjà ouverte : elle doit rester connectée (voir `docs/QA_SCENARIOS.md`).
 
 ## 4. Installation PWA
 
@@ -79,6 +77,6 @@ Toute modification structurelle des tables doit être faite via une nouvelle mig
 ## 7. Support le jour J
 
 - Si un téléphone perd internet, ne pas valider d'arrivée hors ligne.
-- Si l'app revient au login après un nouveau déploiement, c'est un comportement attendu : reconnecter l'utilisateur.
-- Si une ancienne PWA semble bloquée, fermer/réouvrir; le mécanisme de récupération doit ensuite charger le nouveau code ou revenir au login.
+- **(v1.53.19)** Un déploiement n'est plus censé déconnecter qui que ce soit — si l'app revient au login pendant l'événement sans qu'aucune action de l'utilisateur ne l'explique, c'est désormais une anomalie à signaler, pas un comportement attendu (avant cette version, c'était le cas après chaque déploiement).
+- Si une ancienne PWA semble bloquée, fermer/réouvrir; le mécanisme de récupération doit ensuite charger le nouveau code sans déconnecter une session par ailleurs valide.
 - `/dashboard` et Supabase restent les sources opérationnelles de contrôle.

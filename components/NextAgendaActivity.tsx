@@ -43,7 +43,7 @@ export function NextAgendaActivity({ role }: { role: Role }) {
   // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts).
   usePolling(loadNext, canPollAgenda ? 30000 : 0);
 
-  if (!hasCapability(role, 'viewAgenda') || next === undefined) return null;
+  if (!hasCapability(role, 'viewAgenda')) return null;
 
   return (
     <Link
@@ -53,7 +53,9 @@ export function NextAgendaActivity({ role }: { role: Role }) {
       <StaffIcon className="h-6 w-6 shrink-0 text-accent" />
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-bold uppercase tracking-wide text-text-faint">Prochaine activité</p>
-        {next ? (
+        {next === undefined ? (
+          <p className="text-sm font-semibold text-text-faint">Chargement…</p>
+        ) : next ? (
           <p className="truncate text-sm font-semibold text-text">
             <span className="font-bold tabular-nums text-accent">{next.time_label}</span> · {next.title}
           </p>

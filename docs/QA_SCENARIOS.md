@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.53.0**
-**Dernière mise à jour : 2026-09-15**
+**Version documentaire : 1.53.19**
+**Dernière mise à jour : 2026-09-17**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -31,10 +31,11 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 
 - Une session valide reste utilisable avant 12 h.
 - Une session expirée est renvoyée vers `/login` et ses cookies auxiliaires sont supprimés.
-- Après un nouveau déploiement, une session issue de l'ancien déploiement est invalidée à la prochaine requête protégée.
+- **(v1.53.19, corrigé)** Un nouveau déploiement n'invalide plus une session active — vérifier en gardant l'app ouverte pendant un déploiement (ou en poussant un correctif quelconque) puis en continuant à naviguer : aucune déconnexion ne doit survenir. Seule l'expiration naturelle (12 h) ou un vrai changement de `SESSION_SCHEMA_VERSION` (`lib/sessionVersion.ts`, à incrémenter uniquement quand le format du payload change) termine encore une session.
+- **Navigation rapide entre 5-6 pages à la suite** (retour de Gersom, 17/09/2026 : "après 5-6 pages, ça se déconnecte souvent") — enchaîner plusieurs pages de `BottomNav` en quelques secondes (chacune précharge automatiquement les autres onglets en arrière-plan) : aucune déconnexion inattendue, aucun retour à `/login` non sollicité.
 - Une erreur client de version/chunk doit afficher la récupération puis retourner au login, pas une page blanche durable.
 - Le service worker ne doit jamais servir `/_next/*` depuis un ancien cache.
-- Vérifier qu'une PWA installée sur iPhone/Android récupère la nouvelle version après redéploiement.
+- Vérifier qu'une PWA installée sur iPhone/Android récupère la nouvelle version après redéploiement (rechargement des assets, sans pour autant déconnecter une session en cours — les deux sont désormais découplés).
 
 ## Capacité (depuis v1.1.0, mis à jour v1.47.0)
 

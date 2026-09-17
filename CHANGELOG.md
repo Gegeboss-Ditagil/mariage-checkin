@@ -3,6 +3,74 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.54.2] — 2026-09-17
+
+Retour de Gersom (message vocal) : « pour chaque personne, tu vas mettre le bon rôle, pas juste écrire staff... pour directeur de festin, tu écris directeur de festin, pour admin, admin, visibilité... en fait ça sera surtout approbateur, pour les scanners, agent scanner, et ensuite agent placeur. »
+
+### Corrigé — noms de rôle affichés
+- `lib/types.ts` (`ROLE_LABELS`, source centrale déjà utilisée par `AccountMenu`/`admin/users`) : `agent_checkin` devient « Agent scanner » (au lieu de « Agent scan ») ; `visibilite` devient « Approbateur » (au lieu de « Visibilité (lecture seule)», devenu inexact depuis que ce rôle a `reviewGuestApproval`/`assignGuestApproval`, v1.42.0 — pas seulement lecture seule).
+- `app/scan/page.tsx` : l'eyebrow au-dessus de « Scanner un QR code », jusqu'ici le texte fixe « Staff » pour tout le monde, affiche désormais le vrai rôle de la personne connectée (`ROLE_LABELS[role]`) — reste « Staff » le temps très bref que le rôle se charge (même hauteur, aucun décalage).
+- `app/admin/users/page.tsx` (`ROLE_OPTIONS`, liste descriptive du sélecteur de rôle) : libellé de `visibilite` mis à jour pour refléter les vraies capacités (« Approbateur (lecture seule + approbations d'invités surprise) »).
+- `README.md`, `docs/BUSINESS_RULES.md`, `docs/CLAUDE_HANDOFF_STAFF_ACCESS.md` : occurrences de « Agent scan »/« Visibilité » alignées sur les mêmes noms.
+
+### Tests
+- `tests/role-labels.test.ts` (nouveau) : verrouille le contenu de `ROLE_LABELS` et l'affichage dynamique sur `/scan`.
+
+## [1.54.1] — 2026-09-17
+
+Bug réel signalé par Gersom (capture d'écran `/scan`) : « souvent, quand je vais load cette page, les trois boutons en bas, approbation, agenda et tableau de bord, ils ne viennent pas en même temps, c'est décalé, ça bug un peu. »
+
+### Root cause
+`components/NextAgendaActivity.tsx` (la bande « Prochaine activité » juste au-dessus du bouton Approbations sur `/scan`) démarrait avec `next = undefined` et rendait `null` (rien du tout) tant que son `fetch('/api/agenda')` n'avait pas répondu. Comme ce composant précède `GuestApprovalsShortcut` (le bouton Approbations) dans la même colonne, son apparition tardive (après un aller-retour réseau) poussait ce bouton vers le bas — alors que la barre du bas (Agenda/Bord) était déjà affichée depuis la lecture, quasi instantanée, du cookie de rôle. D'où l'impression que ces éléments « n'arrivent pas en même temps ».
+
+### Corrigé
+- `components/NextAgendaActivity.tsx` : seule la capacité (`viewAgenda`, connue dès le rendu) peut encore renvoyer `null`. L'état de chargement du fetch (`next === undefined`) affiche désormais un texte « Chargement… » à l'intérieur de la même carte, qui reste montée avec la même hauteur du premier rendu jusqu'au chargement complet — plus jamais de disparition/réapparition qui décale le bouton Approbations en dessous.
+- Recherche systématique des cas similaires (`docs/QE_QA_PROCESS.md`) : seul ce composant, parmi tous ceux de `/scan`, faisait dépendre son montage d'un fetch encore en vol (`GuestApprovalsShortcut`/`ScanStatsStrip` réservaient déjà leur place immédiatement).
+
+### Tests
+- `tests/next-agenda-activity.test.ts` : nouveau test verrouillant l'absence de `return null` sur l'état de chargement et la présence du texte « Chargement… ».
+
+## [1.54.0] — 2026-09-17
+
+Retour de Gersom, suite directe de v1.53.19 : « implemente un systeme de logs complets que tu peux par la suite analyser pour les erreurs et autres, pour t'aider a te corriger et optimiser le systeme quand on fait des corrections ou autres. »
+
+### Ajouté — système de logs applicatifs
+- **`supabase/migrations/0057_app_logs.sql`** (exécutée et vérifiée en production Supabase le 17/09/2026) : table `public.app_logs` (`event_id` → `events` `ON DELETE SET NULL`, `source` `'client'`/`'server'`, `level` `'error'`/`'warn'`/`'info'` défaut `'error'`, `path`, `message`, `stack`, `digest`, `context jsonb`, `created_at`), deux index, RLS activée sans policy — même posture que `audit_logs`/`import_backups` (accès `service_role` uniquement, cette app n'utilisant pas Supabase Auth).
+- **`lib/serverLog.ts`** (nouveau) : `logServerEvent`/`logServerError`, best-effort garanti (toute erreur d'écriture est avalée silencieusement, jamais propagée à l'appelant) — adoption incrémentale route par route, câblé en premier sur `app/api/admin/import-withjoy/route.ts` (échec inattendu de `admin_replace_invitations`, hors cas normal d'aperçu périmé).
+- **`app/api/public/logs/route.ts`** (nouveau, sous le préfixe déjà public `/api/public`) : ingestion des erreurs côté navigateur, plafond 20 Ko, `message` requis, session lue en best-effort (jamais exigée, jamais de 401), toujours `source: 'client'`.
+- **`lib/clientLog.ts`** + **`components/GlobalErrorLogger.tsx`** (nouveaux) : capture `window.onerror`/`unhandledrejection` sur tout le site (monté une fois dans `app/layout.tsx`), déduplique par message sur une fenêtre de 10s, préfère `navigator.sendBeacon` (survit à la navigation) avec repli `fetch(..., { keepalive: true })`.
+- **`app/error.tsx`**/**`app/global-error.tsx`** : signalent désormais chaque erreur capturée au système de logs (en plus du comportement de reconnexion introduit en v1.53.19, inchangé).
+- **`app/admin/logs/page.tsx`** + **`app/api/admin/logs/route.ts`** (nouveaux) : lecteur en lecture seule réservé à l'admin, filtrable par source (navigateur/serveur), cartes dépliables (stack trace + contexte JSON), `Cache-Control: private, no-store`. Lien ajouté sur `/admin`.
+
+### Vérifié — préparation import With Joy
+Audit demandé par Gersom (« assure-toi aussi que l'app est prête à recevoir le fichier CSV de WithJoy pour repartir à zéro avec les invités ») : toutes les migrations jusqu'à `0057` appliquées en production, `guest_approval_requests_linked_invitation_id_fkey` en `ON DELETE SET NULL`, aucune contrainte `RESTRICT` référençant `invitations`, `admin_replace_invitations` en base identique à `supabase/migrations/0052_invitations_withjoy_party_id.sql`, 260 invitations / 0 arrivée enregistrée / `event.status = 'test'`. Le parcours `/admin/import-withjoy` (aperçu → confirmation atomique avec sauvegarde `import_backups`) est fonctionnel sans changement de code nécessaire pour un remplacement complet.
+
+### Tests
+- `tests/app-logs.test.ts` (nouveau, 7 tests) : `logServerEvent`/`logServerError` ne rejettent jamais même sans configuration Supabase, structure de la migration (RLS sans policy), accessibilité sans session de `/api/public/logs`, déduplication/`sendBeacon` de `lib/clientLog.ts`, montage unique de `GlobalErrorLogger`, signalement depuis les deux error boundaries, restriction admin de `/admin/logs`.
+
+## [1.53.19] — 2026-09-17
+
+Retour de Gersom : « j'ai un problème de déconnexion énorme sur l'application... surtout quand on navigue de page rapidement, après 5-6 pages, ça se déconnecte souvent. » Suivi du processus QA (`docs/QE_QA_PROCESS.md`) : reproduction par lecture du code (comportement lié à l'infrastructure de déploiement, non reproductible localement sans redéployer), root cause identifiée avec un haut degré de confiance, recherche systématique des cas similaires plutôt qu'un correctif isolé.
+
+### Root cause — bug réel, trois facteurs qui se combinent
+1. **Le jeton de session portait `ver = VERCEL_DEPLOYMENT_ID`** (ou son fallback git sha) depuis v1.1.0 : après CHAQUE déploiement Vercel — même un correctif sans aucun rapport avec les sessions — toutes les sessions actives devenaient instantanément invalides à la prochaine requête protégée. Sur ce projet, qui déploie très fréquemment en développement actif (plusieurs fois par jour, parfois plusieurs fois par heure), c'était la cause principale des déconnexions signalées.
+2. **Next.js précharge automatiquement en arrière-plan CHAQUE `<Link>` visible à l'écran** (`BottomNav` en affiche 4-5 sur chaque page) — une simple requête de prefetch, jamais montrée à l'utilisateur. Le middleware traitait ce prefetch exactement comme une vraie navigation : un échec de vérification de session sur ce prefetch renvoyait quand même les en-têtes `Set-Cookie` qui effacent la session, que le navigateur applique même si la réponse du prefetch n'est jamais affichée — multipliant par 4-5 la fenêtre de vulnérabilité au facteur 1 (4-5x plus de vérifications de session que de vraies navigations à chaque page vue).
+3. **`app/error.tsx` (filet de secours générique de Next.js pour toute erreur de rendu non capturée, n'importe où dans l'app) déconnectait et renvoyait au login pour N'IMPORTE QUELLE erreur**, pas seulement une vraie erreur de bundle périmé après un déploiement. Déjà documenté comme symptôme en v1.33.1 : un bug de rendu sans aucun rapport avec la session (« un spread sur `undefined` plantait `/agenda` ») avait alors été corrigé au cas par cas, sans jamais corriger le filet générique lui-même — « d'où l'impression de déconnexions fréquentes après quelques manipulations » (citation exacte du changelog de l'époque). La navigation rapide entre pages est justement le moment où un bug de rendu transitoire (course entre le démontage/remontage d'un composant, un effet qui lit un paramètre trop tôt) est le plus probable.
+
+### Corrigé
+- **`lib/sessionVersion.ts`** (nouveau) : `SESSION_SCHEMA_VERSION`, une constante incrémentée À LA MAIN uniquement quand le FORMAT du payload de session change réellement (champ ajouté/retiré/renommé dans `SessionUser`) — jamais à chaque déploiement de code. `lib/auth.ts` (création/vérification Node) et `lib/session-edge.ts` (vérification Edge, utilisée par `middleware.ts`) l'utilisent tous les deux à la place de `VERCEL_DEPLOYMENT_ID`/`VERCEL_GIT_COMMIT_SHA`. Un déploiement n'invalide plus aucune session active ; seule l'expiration naturelle (12h, inchangée) ou un vrai changement de format la termine désormais.
+- **`middleware.ts`** : ne nettoie plus les cookies de session sur une simple requête de préchargement (détectée via l'en-tête `next-router-prefetch` posé par Next.js, ou `purpose: prefetch`) — la vraie navigation vers cette page, elle, continue de rediriger normalement vers `/login` si la session est réellement invalide. Un prefetch en arrière-plan qui échoue ne peut plus jamais effacer une session par ailleurs valide affichée sur une autre page.
+- **`app/error.tsx`** : distingue désormais une vraie erreur de chunk/module périmé (`error.name === 'ChunkLoadError'`, ou message correspondant à « Loading chunk ... failed »/« Failed to fetch dynamically imported module ») — seul cas qui force encore une reconnexion, car le JS déjà chargé ne correspond plus au HTML servi par le nouveau déploiement — de toute autre erreur de rendu, qui affiche désormais un écran recuperable (« Réessayer », relance simplement `reset()`) **sans jamais toucher à la session** ni faire d'appel réseau vers `/api/auth/logout`. Un bouton de secours (« Se reconnecter à la place ») reste disponible si l'utilisateur préfère forcer une reconnexion malgré tout. `app/global-error.tsx` (crash du layout racine lui-même, cas beaucoup plus rare et plus probablement lié à un déploiement) n'est volontairement pas modifié.
+
+### Documentation
+- `docs/QE_QA_PROCESS.md` (section 5, garde-fous transverses) : deux nouvelles entrées — lier la validité d'une session à un identifiant qui change à chaque déploiement, et une redirection de middleware qui nettoie des cookies sur une requête que l'utilisateur n'a jamais demandée (prefetch).
+- `docs/BUSINESS_RULES.md`, `DEPLOIEMENT.md`, `docs/QA_SCENARIOS.md` : règle « un déploiement invalide les anciennes sessions » retirée/corrigée partout où elle était documentée comme comportement attendu (elle ne l'est plus) ; nouveau scénario QA de navigation rapide entre 5-6 pages.
+
+### Tests
+- `tests/session-stability.test.ts` (nouveau, 7 tests) : aller-retour Node, interopérabilité Node/Edge (HMAC), un jeton reste valide après un « déploiement » simulé (changement de `VERCEL_DEPLOYMENT_ID`/`VERCEL_GIT_COMMIT_SHA` entre création et vérification — la regression exacte de ce bug), un `ver` différent de `SESSION_SCHEMA_VERSION` reste rejeté même correctement signé (un vrai changement de format doit encore forcer une reconnexion), l'expiration naturelle à 12h n'est pas affectée, verrous anti-régression sur l'absence de toute référence à `VERCEL_DEPLOYMENT_ID`/`VERCEL_GIT_COMMIT_SHA` et sur le court-circuit prefetch de `middleware.ts`.
+- `tests/error-boundary-reconnect.test.ts` (nouveau, 3 tests) : verrouille la distinction chunk-périmé/erreur-quelconque, l'absence de tout appel réseau inconditionnel vers `/api/auth/logout`, et la présence du bouton `reset()`/du chemin de secours manuel.
+- `lib/auth.ts`/`lib/session-edge.ts` : `SessionUser` passe en `import type` (jamais utilisé comme valeur) pour permettre l'exécution directe de ces modules par `node --test`, comme le reste de la suite.
+
 ## [1.53.18] — 2026-09-16
 
 Retour de Gersom : « transitions des panneaux modaux (fiche d'approbation, caméra...), fais absolument tout. Corrige, fluidifie. Teste tous les edge cases, assure-toi qu'il n'y a jamais de flash partout. »

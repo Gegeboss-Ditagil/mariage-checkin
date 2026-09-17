@@ -14,7 +14,7 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'agent_checkin', label: 'Agent accueil (scan, recherche et check-in)' },
   { value: 'placeur', label: 'Agent placeur (scan + modification tables)' },
   { value: 'directeur', label: 'Directeur de festin (accès complet, hors admin)' },
-  { value: 'visibilite', label: 'Visibilité (lecture seule)' },
+  { value: 'visibilite', label: 'Approbateur (lecture seule + approbations d’invités surprise)' },
   { value: 'admin', label: 'Admin' },
 ];
 

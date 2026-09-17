@@ -42,6 +42,23 @@ test("la bande est inseree juste au-dessus du raccourci Approbations sur /scan, 
 // la camera devient carree a gauche, les trois cartes forment une colonne
 // etroite a sa droite (plutot que rester empilees en pleine largeur sous
 // une camera ecrasee par la faible hauteur du paysage).
+test("le composant reserve sa place des le montage (jamais 'return null' pendant le chargement de /api/agenda) pour ne pas decaler le bouton Approbations juste en dessous", () => {
+  // Bug reel signale par Gersom le 17/09/2026 (capture d'ecran /scan) :
+  // "les trois boutons en bas, approbation, agenda et tableau de bord, ils
+  // ne viennent pas en meme temps, c'est decale". Root cause : `next`
+  // demarre a `undefined` et le composant rendait `null` tant que le fetch
+  // vers /api/agenda n'avait pas repondu -- il apparaissait donc APRES le
+  // reste de la page (BottomNav, bouton Approbations juste en dessous),
+  // poussant ce dernier vers le bas au moment ou son fetch aboutissait.
+  // Seule la capacite (stable, connue des le rendu) doit encore renvoyer
+  // null ; l'etat de chargement du fetch doit rester a l'interieur de la
+  // meme carte, jamais faire disparaitre/reapparaitre le composant entier.
+  assert.doesNotMatch(componentSource, /next === undefined\) return null/);
+  assert.match(componentSource, /if \(!hasCapability\(role, ['"]viewAgenda['"]\)\) return null;/);
+  assert.match(componentSource, /next === undefined \? \(/);
+  assert.match(componentSource, /Chargement…/);
+});
+
 test('en paysage, la camera devient carree a gauche et les trois cartes une colonne etroite a sa droite, sans scroll', () => {
   assert.match(scanPageSource, /landscape:flex landscape:flex-col landscape:overflow-hidden/);
   assert.match(scanPageSource, /landscape:flex-1 landscape:flex-row landscape:items-stretch/);

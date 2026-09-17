@@ -6,18 +6,10 @@
 // d'utiliser lib/auth.ts (Node "crypto", scrypt inclus) — les deux
 // implementations HMAC-SHA256 sont interoperables car c'est un standard :
 // un token cree par auth.ts est verifiable ici, et inversement.
-import { SessionUser } from './types';
+import type { SessionUser } from './types';
+import { SESSION_SCHEMA_VERSION } from './sessionVersion.ts';
 
 const SESSION_COOKIE_NAME = 'wc_session';
-
-function getSessionVersion(): string {
-  return (
-    process.env.VERCEL_DEPLOYMENT_ID ||
-    process.env.VERCEL_GIT_COMMIT_SHA ||
-    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ||
-    'local'
-  );
-}
 
 function base64urlToBytes(str: string): Uint8Array {
   const pad = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4));
@@ -71,7 +63,7 @@ export async function verifySessionTokenEdge(
 
     const payload = JSON.parse(new TextDecoder().decode(toArrayBuffer(base64urlToBytes(encoded))));
     if (typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
-    if (payload.ver !== getSessionVersion()) return null;
+    if (payload.ver !== SESSION_SCHEMA_VERSION) return null;
     return {
       id: payload.id,
       nom_affichage: payload.nom_affichage,
