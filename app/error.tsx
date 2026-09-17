@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { reportClientError } from '@/lib/clientLog';
 
 // Une erreur non capturee QUELQUE PART dans l'app (n'importe quel composant,
 // n'importe quelle page) remonte ici -- c'est le filet generique de Next.js.
@@ -40,7 +41,13 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   const staleDeployment = isStaleDeploymentError(error);
 
   useEffect(() => {
+    // Systeme de logs applicatifs (17/09/2026, voir lib/serverLog.ts) :
+    // chaque erreur qui atteint ce filet est signalee, meme celles qui
+    // forcent une reconnexion -- utile pour confirmer qu'un correctif a
+    // reellement fait baisser leur frequence.
+    reportClientError({ message: error.message, stack: error.stack, digest: error.digest, level: 'error' });
     if (staleDeployment) void reconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staleDeployment]);
 
   if (staleDeployment) {

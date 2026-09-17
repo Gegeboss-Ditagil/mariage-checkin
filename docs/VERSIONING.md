@@ -1,7 +1,7 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.53.0**
-**Dernière mise à jour : 2026-09-15**
+**Version documentaire : 1.54.0**
+**Dernière mise à jour : 2026-09-17**
 
 ## Source de vérité
 
@@ -60,7 +60,7 @@ Avant toute modification :
 
 Après modification, Claude doit confirmer que le code et les documents de référence correspondent à la même version.
 
-## État v1.47.0 (mis à jour depuis v1.15.3)
+## État v1.54.0 (mis à jour depuis v1.47.0)
 
 - 42 tables au total.
 - Tables 1 à 41 : tables normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026).
@@ -68,6 +68,7 @@ Après modification, Claude doit confirmer que le code et les documents de réf�
 - Capacité officielle : 410 places.
 - Capacité absolue avec réserve : 420 places.
 - Session maximale : 12 heures.
-- Une session issue d'un ancien déploiement est invalidée à la prochaine requête protégée.
+- **(Corrigé en v1.53.19)** Un déploiement n'invalide plus une session active — seule l'expiration naturelle (12 h) ou un changement du format du payload (`SESSION_SCHEMA_VERSION`) la termine. Avant cette version, chaque déploiement déconnectait instantanément toutes les sessions actives.
 - Les assets Next.js `/_next/*` ne sont pas servis depuis l'ancien cache PWA.
 - Le staff dispose d'un écran d'arrivées dédié et d'un QR collectif `STAFF`.
+- **(v1.54.0)** `public.app_logs` centralise les erreurs client (`window.onerror`/`unhandledrejection`, `app/error.tsx`/`app/global-error.tsx`) et serveur (`lib/serverLog.ts`), consultables en lecture seule sur `/admin/logs`.

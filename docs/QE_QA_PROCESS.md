@@ -1,6 +1,6 @@
 # Processus QE/QA pour les bugs
 
-**Version documentaire : 1.53.19**
+**Version documentaire : 1.54.0**
 **Dernière mise à jour : 2026-09-17**
 
 Ce document distingue deux moments différents et fixe ce qui est obligatoire à chacun :
@@ -20,7 +20,7 @@ Motivation : plusieurs bugs récents sur `/staff` (téléphone manquant, foyer e
 
 ## 2. QA — quand un bug est signalé
 
-1. **Reproduire avec les vraies données** quand c'est possible — une requête Supabase directe (`select ... where ...`), pas une relecture du code à l'œil. Un bug de données et un bug de code se corrigent différemment ; ne pas conclure avant d'avoir vu la donnée réelle.
+1. **Reproduire avec les vraies données** quand c'est possible — une requête Supabase directe (`select ... where ...`), pas une relecture du code à l'œil. Un bug de données et un bug de code se corrigent différemment ; ne pas conclure avant d'avoir vu la donnée réelle. **(v1.54.0)** `public.app_logs` (consultable sur `/admin/logs`, admin uniquement) capture désormais les erreurs client (`window.onerror`/`unhandledrejection`, `app/error.tsx`/`app/global-error.tsx`) et certaines erreurs serveur inattendues (`lib/serverLog.ts`, adoption incrémentale route par route) — vérifier cette table avant de conclure qu'un bug signalé n'est « pas reproductible », elle peut contenir la trace exacte (message, stack, contexte) au moment de l'incident.
 2. **Isoler la cause racine** : bug dans le script/la page (va se reproduire au prochain import/affichage) vs donnée déjà en base issue d'un import raté (ponctuel, à corriger une fois). Corriger les deux séparément — corriger seulement la donnée sans corriger le script garantit la récidive au prochain import.
 3. **Chercher les cas similaires non signalés** par une requête groupée plutôt que corriger cas par cas ce que l'utilisateur a listé. Exemple concret : l'utilisateur a signalé Messi Matoko mal placé → la bonne question immédiate est « combien d'autres `notable` sans tag de table explicite ont aussi reçu une table par erreur ? », pas seulement corriger Messi Matoko.
 4. **Écrire un test de régression avant de considérer le bug clos.**

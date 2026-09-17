@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
 import { buildImportPlan, parseCsvText } from '@/lib/withjoyImport';
+import { logServerError } from '@/lib/serverLog';
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 
@@ -114,6 +115,13 @@ export async function POST(req: NextRequest) {
   });
   if (error) {
     const stale = error.message.includes('import_source_changed');
+    if (!stale) {
+      // Echec inattendu (pas le cas normal "aperçu perime") -- signale au
+      // systeme de logs (voir lib/serverLog.ts) : c'est exactement le genre
+      // d'incident a pouvoir relire apres coup pour diagnostiquer (ex.
+      // v1.52.0, contrainte de cle etrangere manquante decouverte ainsi).
+      logServerError(error, { event_id: user.event_id, path: '/api/admin/import-withjoy', context: { rpc: 'admin_replace_invitations' } });
+    }
     return NextResponse.json(
       { error: stale ? 'La liste a changé depuis l’aperçu : recommencez avant de confirmer' : "Échec atomique de l'import : " + error.message },
       { status: stale ? 409 : 500 }

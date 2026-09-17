@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.54.0] — 2026-09-17
+
+Retour de Gersom, suite directe de v1.53.19 : « implemente un systeme de logs complets que tu peux par la suite analyser pour les erreurs et autres, pour t'aider a te corriger et optimiser le systeme quand on fait des corrections ou autres. »
+
+### Ajouté — système de logs applicatifs
+- **`supabase/migrations/0057_app_logs.sql`** (exécutée et vérifiée en production Supabase le 17/09/2026) : table `public.app_logs` (`event_id` → `events` `ON DELETE SET NULL`, `source` `'client'`/`'server'`, `level` `'error'`/`'warn'`/`'info'` défaut `'error'`, `path`, `message`, `stack`, `digest`, `context jsonb`, `created_at`), deux index, RLS activée sans policy — même posture que `audit_logs`/`import_backups` (accès `service_role` uniquement, cette app n'utilisant pas Supabase Auth).
+- **`lib/serverLog.ts`** (nouveau) : `logServerEvent`/`logServerError`, best-effort garanti (toute erreur d'écriture est avalée silencieusement, jamais propagée à l'appelant) — adoption incrémentale route par route, câblé en premier sur `app/api/admin/import-withjoy/route.ts` (échec inattendu de `admin_replace_invitations`, hors cas normal d'aperçu périmé).
+- **`app/api/public/logs/route.ts`** (nouveau, sous le préfixe déjà public `/api/public`) : ingestion des erreurs côté navigateur, plafond 20 Ko, `message` requis, session lue en best-effort (jamais exigée, jamais de 401), toujours `source: 'client'`.
+- **`lib/clientLog.ts`** + **`components/GlobalErrorLogger.tsx`** (nouveaux) : capture `window.onerror`/`unhandledrejection` sur tout le site (monté une fois dans `app/layout.tsx`), déduplique par message sur une fenêtre de 10s, préfère `navigator.sendBeacon` (survit à la navigation) avec repli `fetch(..., { keepalive: true })`.
+- **`app/error.tsx`**/**`app/global-error.tsx`** : signalent désormais chaque erreur capturée au système de logs (en plus du comportement de reconnexion introduit en v1.53.19, inchangé).
+- **`app/admin/logs/page.tsx`** + **`app/api/admin/logs/route.ts`** (nouveaux) : lecteur en lecture seule réservé à l'admin, filtrable par source (navigateur/serveur), cartes dépliables (stack trace + contexte JSON), `Cache-Control: private, no-store`. Lien ajouté sur `/admin`.
+
+### Vérifié — préparation import With Joy
+Audit demandé par Gersom (« assure-toi aussi que l'app est prête à recevoir le fichier CSV de WithJoy pour repartir à zéro avec les invités ») : toutes les migrations jusqu'à `0057` appliquées en production, `guest_approval_requests_linked_invitation_id_fkey` en `ON DELETE SET NULL`, aucune contrainte `RESTRICT` référençant `invitations`, `admin_replace_invitations` en base identique à `supabase/migrations/0052_invitations_withjoy_party_id.sql`, 260 invitations / 0 arrivée enregistrée / `event.status = 'test'`. Le parcours `/admin/import-withjoy` (aperçu → confirmation atomique avec sauvegarde `import_backups`) est fonctionnel sans changement de code nécessaire pour un remplacement complet.
+
+### Tests
+- `tests/app-logs.test.ts` (nouveau, 7 tests) : `logServerEvent`/`logServerError` ne rejettent jamais même sans configuration Supabase, structure de la migration (RLS sans policy), accessibilité sans session de `/api/public/logs`, déduplication/`sendBeacon` de `lib/clientLog.ts`, montage unique de `GlobalErrorLogger`, signalement depuis les deux error boundaries, restriction admin de `/admin/logs`.
+
 ## [1.53.19] — 2026-09-17
 
 Retour de Gersom : « j'ai un problème de déconnexion énorme sur l'application... surtout quand on navigue de page rapidement, après 5-6 pages, ça se déconnecte souvent. » Suivi du processus QA (`docs/QE_QA_PROCESS.md`) : reproduction par lecture du code (comportement lié à l'infrastructure de déploiement, non reproductible localement sans redéployer), root cause identifiée avec un haut degré de confiance, recherche systématique des cas similaires plutôt qu'un correctif isolé.

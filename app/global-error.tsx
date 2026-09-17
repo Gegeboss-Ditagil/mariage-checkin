@@ -17,9 +17,20 @@ import { useEffect } from 'react';
  * apres un deploiement -- on nettoie et renvoie vers /login plutot que de
  * laisser 20 personnes bloquees sur un ecran blanc le jour J.
  */
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     let cancelled = false;
+
+    // Signale l'erreur (best-effort, jamais bloquant) -- systeme de logs
+    // applicatifs, voir lib/serverLog.ts. Fetch brut (pas d'import de
+    // lib/clientLog.ts) : ce filet doit rester independant de tout le reste
+    // du code applicatif, au cas ou CE code serait la cause du crash.
+    fetch('/api/public/logs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: error.message, stack: error.stack, digest: error.digest, level: 'error' }),
+      keepalive: true,
+    }).catch(() => {});
 
     async function recover() {
       try {
@@ -36,7 +47,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [error]);
 
   return (
     <html lang="fr">
