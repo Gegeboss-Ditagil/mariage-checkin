@@ -116,11 +116,17 @@ export default function AgendaPage() {
   const { closing: editClosing, dismiss: dismissEdit } = useDismiss(() => openEditing(null));
 
   function openEditing(item: AgendaItem | null) {
+    // Meme garde qu'a la fermeture (hooks/useDismiss.ts) : un champ deja
+    // focalise (temps/titre d'une fiche precedente) peut faire reapparaitre
+    // son clavier/roulette natif des l'ouverture d'une nouvelle fiche sans
+    // qu'aucun tap ne l'ait demande -- retour de Gersom le 17/09/2026.
+    (document.activeElement as HTMLElement | null)?.blur?.();
     setResponsablePickerOpen(false);
     setEditing(item);
   }
 
   function openInsertAt(sortOrder: number) {
+    (document.activeElement as HTMLElement | null)?.blur?.();
     setResponsablePickerOpen(false);
     setNewAssigneeIds([]);
     setNewCustomAssignees([]);
@@ -254,7 +260,13 @@ export default function AgendaPage() {
             <TimeRangePicker initialLabel="" />
             <div>
               <FieldLabel>Activité</FieldLabel>
-              <input name="title" required autoFocus placeholder="Ex. DJ et sonorisation" className="input" />
+              {/* Plus de focus automatique (retour de Gersom le 17/09/2026,
+                  capture d'ecran) : ouvrait immediatement le clavier des l'ouverture
+                  de la fiche "Nouvelle activite", avant meme d'avoir touche
+                  un champ -- "ce n'est pas normal sur cette page... c'est
+                  juste pour rentrer dans une activite". Toucher un champ
+                  reste le seul moyen d'y faire apparaitre le clavier. */}
+              <input name="title" required placeholder="Ex. DJ et sonorisation" className="input" />
             </div>
             <div>
               <FieldLabel>Département</FieldLabel>

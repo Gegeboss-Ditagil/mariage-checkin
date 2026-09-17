@@ -173,21 +173,37 @@ body {
    29/08/2026 : elles doivent se lire comme de vrais boutons cliquables, pas
    comme du texte. Rangee pleine largeur, fond/bordure visibles dans les deux
    themes ; .action-row-muted pour la variante moins engageante ("ne viendra
-   pas") sans dupliquer toute la regle. */
-.action-row {
-  @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-accent
-    active:scale-[0.98] transition-transform;
-  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  backdrop-filter: blur(16px) saturate(160%);
-}
+   pas") sans dupliquer toute la regle.
+   Enveloppees dans @layer components (retour de Gersom le 17/09/2026,
+   capture d'ecran /agenda : la fleche ">" de "Choisir les responsables"
+   n'etait pas centree/alignee) -- root cause reelle : ces deux classes
+   declarent `block`/`text-center`, et etaient ecrites APRES `@tailwind
+   utilities` (aucun `@layer` dans ce fichier) donc APRES dans la feuille de
+   style finale -- a specificite egale, ca les faisait gagner sur les
+   utilitaires `flex`/`items-center`/`text-left` ajoutes en plus dans le
+   `className` (app/agenda/page.tsx, components/ResponsablePicker.tsx,
+   5 usages) : le bouton retombait en `display: block` centre, avec la
+   fleche qui suivait juste en flux normal au lieu d'etre alignee a droite
+   par le flex. `@layer components` replace ces regles avant les utilitaires
+   dans la cascade (independamment de leur position dans ce fichier),
+   rendant aux utilitaires leur priorite normale -- comportement Tailwind
+   voulu pour ce genre de classe "composant" combinee a des utilitaires. */
+@layer components {
+  .action-row {
+    @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-accent
+      active:scale-[0.98] transition-transform;
+    box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+  }
 
-.action-row-muted {
-  @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-text-muted
-    active:scale-[0.98] transition-transform;
-  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  backdrop-filter: blur(16px) saturate(160%);
+  .action-row-muted {
+    @apply block w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-center text-sm font-semibold text-text-muted
+      active:scale-[0.98] transition-transform;
+    box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+  }
 }
 
 /* Bannière transitoire "Nouvelle approbation" (AccountMenu, fixed au-dessus

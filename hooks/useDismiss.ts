@@ -25,6 +25,14 @@ export function useDismiss(onClose: () => void) {
 
   function dismiss() {
     if (closing) return;
+    // Retire le focus (et referme un clavier/selecteur natif encore ouvert,
+    // ex. <input type="time">) avant de demonter le panneau -- retour de
+    // Gersom le 17/09/2026 (capture d'ecran /agenda) : un champ resté
+    // focalisé au moment ou React retire ses noeuds du DOM peut laisser
+    // WKWebView réafficher son clavier/roulette natif sur le prochain champ
+    // de même type qui apparaît au même endroit, sans qu'aucun tap n'ait
+    // demandé cette réouverture. Aucun effet si rien n'est focalisé.
+    if (typeof document !== 'undefined') (document.activeElement as HTMLElement | null)?.blur?.();
     setClosing(true);
     const reducedMotion =
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
