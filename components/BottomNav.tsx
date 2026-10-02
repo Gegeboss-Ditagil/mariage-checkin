@@ -9,6 +9,7 @@ import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, St
 import { hasCapability } from '@/lib/permissions';
 import { usePolling } from '@/hooks/usePolling';
 import { syncAppBadge } from '@/lib/appBadge';
+import { fetchPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
 
@@ -174,12 +175,10 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
   const [pendingCount, setPendingCount] = useState(0);
 
   const loadPendingCount = useCallback(async () => {
-    // cache: 'no-store' -- voir AccountMenu.tsx pour le meme correctif
-    // (badge fige par une reponse HTTP mise en cache, retour Gersom du
-    // 02/09/2026).
-    const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
-    if (!response?.ok) return;
-    const data = await response.json();
+    // Requete partagee (voir lib/pendingApprovalsRequest.ts) -- evite des
+    // requetes identiques simultanees avec AccountMenu/GuestApprovalsShortcut.
+    const data = await fetchPendingApprovalsCount();
+    if (!data) return;
     const nextCount = data.pending_count || 0;
     setPendingCount(nextCount);
     syncAppBadge(nextCount);

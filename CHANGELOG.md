@@ -3,6 +3,29 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.59.0] — 2026-10-02
+
+Retour de Gersom : « l'application reste souvent figée, ça prend du temps avant de répondre, surtout à la page approbation » et « des fois, 5-10-30 minutes passent sans me reloguer... quand je reviens, ça ne demande même pas de login, et là je sais que ça va buguer. »
+
+### Investigué avant de coder
+Les trois derniers lots (#98 bouton de suppression, #99 liquid-glass essayé/retiré, #100 capacité `deleteGuestApproval`) ne touchent rien qui puisse bloquer l'UI — diffs triviaux, vérifiés. Vercel (logs/erreurs de production, 24h) : aucune erreur serveur, réponses rapides. La base de données elle-même (`guest_approval_requests`) est vide au moment du signalement — pas un problème d'échelle de liste. **Root cause trouvée dans `app_logs`** (le propre système de logs applicatifs de l'app, v1.54.0) : une vraie erreur « View transition update callback timed out » capturée sur l'iPhone de Gersom (iOS 18.7, rôle directeur) en plein dans sa fenêtre de test — confirme un vrai ralentissement de page, sans rapport avec les trois derniers lots (le mécanisme `next-view-transitions` date de v1.53.16).
+
+### Corrigé — un vrai écart trouvé en creusant : la reconnexion de secours ne couvrait pas tous les chemins
+`app/error.tsx` sait déjà détecter une vraie erreur de bundle périmé après un déploiement (`ChunkLoadError`...) et forcer une reconnexion propre (v1.53.19) — **mais seulement pour une erreur qui remonte comme un rendu React jeté**. Une erreur du même type survenant dans un callback **asynchrone** (ex. le callback de mise à jour d'une transition de page, exactement le cas capturé ci-dessus) ne remonte jamais à un error boundary React — elle n'atteint que `components/GlobalErrorLogger.tsx` (`window.onerror`/`unhandledrejection`), qui se contentait jusqu'ici de la journaliser sans jamais reconnecter. L'app restait donc sur un bundle périmé, sans jamais redemander de connexion — exactement le signe que Gersom a appris à reconnaître. `lib/staleDeployment.ts` (nouveau) extrait la détection/reconnexion déjà existante, partagée maintenant par `app/error.tsx` ET `GlobalErrorLogger.tsx`.
+
+### Corrigé — contention réseau réelle : trois sondages indépendants pour la même donnée
+`AccountMenu`/`BottomNav`/`GuestApprovalsShortcut` sondaient chacun indépendamment `/api/guest-approvals?count=pending` (5s/15s/5s) — confirmé dans les logs Vercel : des bursts de 2-3 requêtes identiques simultanées (15000 étant un multiple de 5000). `lib/pendingApprovalsRequest.ts` (nouveau, même principe que `warmPromise` dans `lib/guestApprovalClientCache.ts`) partage la même requête en vol entre des appels quasi-simultanés, sans changer la cadence ni l'état propre à chaque composant.
+
+### Non confirmé comme LA cause unique, mais traité comme contributeur plausible
+Une seule occurrence loggée à ce jour — pas une preuve définitive que la contention réseau ci-dessus déclenche à elle seule le dépassement du délai de la transition de page. Les deux correctifs ci-dessus sont sains et utiles indépendamment du diagnostic exact ; si le signalement persiste après ce lot, il faudra un second passage avec plus de données.
+
+### Tests
+- `tests/error-boundary-reconnect.test.ts` : étendu pour couvrir `lib/staleDeployment.ts` et le nouveau comportement de `GlobalErrorLogger.tsx`.
+- `tests/pending-approvals-request.test.ts` (nouveau) : comportemental, confirme que des appels concurrents partagent une seule requête réseau.
+- `tests/guest-approvals.test.ts` : assertions mises à jour pour le nouveau point de partage.
+
+Aucune migration.
+
 ## [1.57.0] — 2026-10-02
 
 Retour de Gersom (capture d'écran `/approbations`, compte directeur « RL » = Rémy Landu) : « je ne suis toujours pas capable de faire le swipe vers la gauche pour l'approbation que je vois de Cedrix... applique le même principe que pour ceux qui ont été refusés. »
