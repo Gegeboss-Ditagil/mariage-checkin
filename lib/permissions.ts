@@ -27,6 +27,7 @@ export type Capability =
   | 'submitGuestApproval'
   | 'reviewGuestApproval'
   | 'assignGuestApproval'
+  | 'deleteGuestApproval'
   | 'exportData'
   | 'adminPanel';
 
@@ -36,7 +37,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'messageContacts',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
-  'exportData', 'adminPanel',
+  'deleteGuestApproval', 'exportData', 'adminPanel',
 ];
 
 // viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
@@ -68,7 +69,16 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // Gersom apres le test de Remy, meme trajectoire que manageTags
   // (v1.30.1) : reste hors du socle operationnel commun, donc toujours
   // refuse a placeur/agent_checkin/visibilite.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'addInvitation'],
+  // deleteGuestApproval ajoutee le 02/10/2026 (retour de Gersom, compte
+  // directeur "RL" -- "je ne suis toujours pas capable de faire le swipe...
+  // applique le meme principe que pour ceux qui ont ete refuses") --
+  // REVIENT sur la regle du 13/09/2026 documentee dans
+  // app/api/guest-approvals/[id]/route.ts ("reserve a adminPanel... jamais
+  // accessible a un demandeur ou un approbateur") : confirme explicitement
+  // par Gersom que directeur (deja approbateur via reviewGuestApproval)
+  // doit malgre tout pouvoir supprimer une demande deja decidee, au meme
+  // titre qu'admin.
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation'],
   // viewAgenda ajoutee le 14/09/2026 (retour de Gersom sur Agent001, verifie
   // en base -- role reellement `placeur` : la barre du bas calque
   // desormais le comportement contextuel de directeur -- voir
@@ -76,7 +86,12 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // /scan et /agenda) -- lecture seule (jamais manageAgenda, reservee a
   // admin/directeur) : meme principe que agent_checkin (03/09/2026), ce
   // role consulte le chronogramme du jour J sans le modifier.
-  placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval', 'viewAgenda'],
+  // deleteGuestApproval ajoutee le 02/10/2026, meme demande/meme jour que
+  // directeur ci-dessus -- confirme explicitement par Gersom pour placeur
+  // aussi, bien que ce role n'ait jamais reviewGuestApproval (il ne decide
+  // jamais une demande, seulement il l'assigne) : la suppression d'une
+  // demande deja decidee par quelqu'un d'autre reste malgre tout accordee.
+  placeur: [...OPERATIONAL_CAPABILITIES, 'viewGuestApprovals', 'submitGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'viewAgenda'],
   // Agent scan (entree/QR) : n'a pas manageTags -- la gestion des etiquettes
   // (cote, roles staff, notable...) est reservee a admin/directeur/placeur.
   // **manageMembers retiree le 14/09/2026** (retour de Gersom, capture

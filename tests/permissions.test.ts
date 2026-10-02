@@ -216,6 +216,23 @@ test('directeur et placeur ont les memes droits operationnels', () => {
   assert.equal(hasCapability('placeur', 'exportData'), false);
 });
 
+// v1.57.0, retour de Gersom (compte directeur "RL") : "je ne suis toujours
+// pas capable de faire le swipe... applique le meme principe que pour ceux
+// qui ont ete refuses". deleteGuestApproval etait jusqu'ici reservee a
+// adminPanel (admin uniquement, "jamais accessible a un demandeur ou un
+// approbateur", voir app/api/guest-approvals/[id]/route.ts avant ce
+// correctif) -- etendue explicitement a directeur (deja approbateur via
+// reviewGuestApproval) ET placeur (jamais approbateur, seulement
+// assignGuestApproval) sur confirmation de Gersom pour les deux. Jamais
+// etendue a visibilite/agent_checkin, qui n'ont pas ete mentionnes.
+test('deleteGuestApproval : admin, directeur et placeur, jamais visibilite ni agent_checkin', () => {
+  assert.equal(hasCapability('admin', 'deleteGuestApproval'), true);
+  assert.equal(hasCapability('directeur', 'deleteGuestApproval'), true);
+  assert.equal(hasCapability('placeur', 'deleteGuestApproval'), true);
+  assert.equal(hasCapability('visibilite', 'deleteGuestApproval'), false);
+  assert.equal(hasCapability('agent_checkin', 'deleteGuestApproval'), false);
+});
+
 test('admin conserve tous les droits sensibles', () => {
   assert.equal(hasCapability('admin', 'adminPanel'), true);
   assert.equal(hasCapability('admin', 'exportData'), true);
