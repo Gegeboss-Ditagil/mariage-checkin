@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.56.0] — 2026-10-02
+
+Retour de Gersom : « la photo reste où la demande reste, je ne peux pas la supprimer... à 20 approbations, ça va polluer la page sans pouvoir réduire le nombre. » Vérification du code existant avant d'écrire quoi que ce soit : la suppression d'une demande déjà décidée (admin uniquement, `statut !== 'en_attente'`) existe déjà depuis v1.53.6/v1.53.8, à la fois en swipe (`SwipeableDeleteCard`) et en bouton explicite, mais **seulement sur la liste** — la fiche détaillée (ouverte en cliquant sur une carte, où la photo est affichée en grand) n'avait aucun moyen de supprimer. C'est ce point précis, pas une question de rôle/permission, qui correspond au symptôme décrit.
+
+### Ajouté — bouton de suppression sur la fiche détaillée d'une demande
+`app/approbations/page.tsx` : même garde (`role === 'admin' && selectedRequest.statut !== 'en_attente'`), même confirmation (`window.confirm`) et même route (`DELETE /api/guest-approvals/[id]`, déjà protégée côté serveur contre toute demande encore `en_attente`) que le bouton de la liste — aucune nouvelle capacité, `lib/permissions.ts` inchangé. Le bouton (icône poubelle) apparaît dans l'en-tête de la fiche, à côté du X de fermeture ; la fiche se referme après suppression.
+
+### Tests
+- `tests/guest-approvals.test.ts` : nouveau test verrouillant la présence du bouton, sa garde, sa confirmation et l'appel à `handleDelete`.
+
 ## [1.55.2] — 2026-09-17
 
 Retour de Gersom (3 captures d'écran `/agenda`, sur la preview de PR #96) : (1) la flèche « › » de « Choisir les responsables » n'est pas centrée, pas beau ; (2) le clavier/roulette natif apparaît encore en cliquant sur une activité, alors qu'il ne devrait servir qu'à entrer dans la fiche ; l'app semble se figer et nécessite un tirer-pour-rafraîchir pour s'en sortir.
