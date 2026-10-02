@@ -13,6 +13,15 @@ Retour de Gersom : « la photo reste où la demande reste, je ne peux pas la sup
 ### Tests
 - `tests/guest-approvals.test.ts` : nouveau test verrouillant la présence du bouton, sa garde, sa confirmation et l'appel à `handleDelete`.
 
+Retour de Gersom, même jour, sur une demande distincte : installer le skill « liquid glass » (https://github.com/deepika-builds/liquid-glass, MIT) et l'appliquer sur la barre de navigation et les cartes. **Essayé puis retiré sur confirmation explicite** : « assure-toi qu'il n'y a pas de problème pour les vrais utilisateurs iPhone et que ça ne casse pas le thème sombre... n'applique pas ça à la nav/aux cartes utilisées par le staff sur iPhone. »
+
+### Tenté puis retiré — verre liquide sur BottomNav/cartes
+- Une première passe avait porté `liquid-glass.js` en TypeScript (`lib/liquidGlass.ts` + `hooks/useLiquidGlass.ts`) et l'avait câblé sur `components/BottomNav.tsx`, la fiche détaillée de `/approbations` et les deux modales de `/agenda`, en reprenant scrupuleusement le flou/la saturation déjà en place sur chaque surface comme repli Safari/Firefox (aucune régression visuelle attendue). Mais ces trois surfaces sont exactement celles que le staff — quasi exclusivement sur iPhone/PWA, où seul le repli CSS s'applique jamais — utilise en continu pendant l'événement. Sur demande explicite de ne prendre aucun risque sur ces écrans réels (thème Maison compris, dont le `--surface` quasi-transparent est déjà connu pour casser si le `backdrop-filter` qui l'accompagne change, voir v1.53.1), **retiré intégralement** : `components/BottomNav.tsx`, `app/approbations/page.tsx` et `app/agenda/page.tsx` sont revenus bit-à-bit identiques à leur état avant cette tentative (vérifié par `git diff origin/main` sur les trois fichiers : aucune différence). `lib/liquidGlass.ts`/`hooks/useLiquidGlass.ts` supprimés (plus aucun appelant dans l'app — les garder aurait laissé du code mort).
+- Le skill lui-même (installation personnelle, hors de ce dépôt) reste produit et livré séparément : `~/.claude/skills/liquid-glass/{SKILL.md,liquid-glass.js}` et `~/.claude/CLAUDE.md` (mode « honnêteté radicale »), remis directement en fichiers à télécharger — une session cloud ne persiste pas `~/.claude/`, Gersom les copie manuellement vers son environnement local.
+- Si un usage ciblé et sûr se présente plus tard (ex. un écran desktop-only, jamais ouvert sur iPhone), le skill personnel documente comment le reporter dans ce dépôt le moment venu.
+
+Aucune migration.
+
 ## [1.55.2] — 2026-09-17
 
 Retour de Gersom (3 captures d'écran `/agenda`, sur la preview de PR #96) : (1) la flèche « › » de « Choisir les responsables » n'est pas centrée, pas beau ; (2) le clavier/roulette natif apparaît encore en cliquant sur une activité, alors qu'il ne devrait servir qu'à entrer dans la fiche ; l'app semble se figer et nécessite un tirer-pour-rafraîchir pour s'en sortir.
