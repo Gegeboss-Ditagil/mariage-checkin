@@ -3,6 +3,25 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.57.0] — 2026-10-02
+
+Retour de Gersom (capture d'écran `/approbations`, compte directeur « RL » = Rémy Landu) : « je ne suis toujours pas capable de faire le swipe vers la gauche pour l'approbation que je vois de Cedrix... applique le même principe que pour ceux qui ont été refusés. »
+
+### Trouvé en creusant avant de coder
+La suppression d'une demande déjà décidée (swipe et bouton explicite, liste et fiche détaillée) est gérée **identiquement** pour `approuve` et `refuse` dans le code — aucune asymétrie entre les deux statuts. Le vrai problème : elle était câblée en dur sur `role === 'admin'` (pas via `lib/permissions.ts`, contrairement à toutes les autres vérifications de ce même fichier), et confirmé par Gersom que le compte « RL » est `directeur` — un rôle qui n'a jamais eu accès à cette suppression, quel que soit le statut.
+
+### Changé — deleteGuestApproval étendue à directeur ET placeur
+`lib/permissions.ts` : nouvelle capacité `deleteGuestApproval` (admin via `ALL_CAPABILITIES`, ajoutée explicitement à `directeur` et `placeur`). **Revient sur une règle explicite posée le 13/09/2026** (`app/api/guest-approvals/[id]/route.ts` : « réservé à `adminPanel`... jamais accessible à un demandeur ou un approbateur ») — directeur est pourtant lui-même un approbateur (`reviewGuestApproval`) ; confirmé explicitement par Gersom qu'il fallait l'étendre malgré ça, et à placeur aussi (qui n'a lui jamais `reviewGuestApproval`, seulement `assignGuestApproval`). Jamais étendue à `visibilite`/`agent_checkin`, non mentionnés.
+- `app/api/guest-approvals/[id]/route.ts` : `hasCapability(user.role, 'adminPanel')` → `hasCapability(user.role, 'deleteGuestApproval')`.
+- `app/approbations/page.tsx` : les trois vérifications `role === 'admin'` (swipe liste, bouton liste, bouton fiche détaillée) remplacées par `hasCapability(role, 'deleteGuestApproval')`.
+- `docs/BUSINESS_RULES.md` : nouvelle ligne dans le tableau des capacités par rôle.
+
+### Tests
+- `tests/permissions.test.ts` : nouvelle capacité verrouillée (admin/directeur/placeur oui, visibilite/agent_checkin non).
+- `tests/guest-approvals.test.ts`, `tests/approbations-ux-improvements.test.ts` : assertions mises à jour pour le nouveau gate.
+
+Aucune migration.
+
 ## [1.56.0] — 2026-10-02
 
 Retour de Gersom : « la photo reste où la demande reste, je ne peux pas la supprimer... à 20 approbations, ça va polluer la page sans pouvoir réduire le nombre. » Vérification du code existant avant d'écrire quoi que ce soit : la suppression d'une demande déjà décidée (admin uniquement, `statut !== 'en_attente'`) existe déjà depuis v1.53.6/v1.53.8, à la fois en swipe (`SwipeableDeleteCard`) et en bouton explicite, mais **seulement sur la liste** — la fiche détaillée (ouverte en cliquant sur une carte, où la photo est affichée en grand) n'avait aucun moyen de supprimer. C'est ce point précis, pas une question de rôle/permission, qui correspond au symptôme décrit.

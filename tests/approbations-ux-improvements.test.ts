@@ -197,13 +197,17 @@ test("le texte de /approbations/[id]/assign est raccourci en un badge Automatiqu
   assert.doesNotMatch(assignPage, /puis la table 41 \(excédentaire\), puis les autres tables de réserve/);
 });
 
-test('swipe pour supprimer une demande deja decidee, reserve a admin -- API DELETE refuse toute demande encore en_attente', () => {
+// v1.57.0 : "reserve a admin" est devenu "reserve a deleteGuestApproval"
+// (admin/directeur/placeur, voir tests/permissions.test.ts) -- retour de
+// Gersom sur un compte directeur sans acces au swipe/bouton, meme principe
+// que pour les demandes refusees. L'API DELETE applique la meme capacite.
+test('swipe pour supprimer une demande deja decidee, reserve a deleteGuestApproval -- API DELETE refuse toute demande encore en_attente', () => {
   assert.match(approbationsPage, /import \{ SwipeableDeleteCard \} from '@\/components\/SwipeableDeleteCard'/);
-  assert.match(approbationsPage, /enabled=\{role === 'admin' && r\.statut !== 'en_attente'\}/);
+  assert.match(approbationsPage, /enabled=\{!!role && hasCapability\(role, 'deleteGuestApproval'\) && r\.statut !== 'en_attente'\}/);
   assert.match(approbationsPage, /onDelete=\{\(\) => handleDelete\(r\.id\)\}/);
   assert.match(swipeableDeleteCard, /if \(!enabled\) return <>\{children\}<\/>;/);
   assert.match(deleteRoute, /export async function DELETE/);
-  assert.match(deleteRoute, /hasCapability\(user\.role, 'adminPanel'\)/);
+  assert.match(deleteRoute, /hasCapability\(user\.role, 'deleteGuestApproval'\)/);
   assert.match(deleteRoute, /if \(existing\.statut === 'en_attente'\)/);
   assert.match(deleteRoute, /status: 409/);
   assert.match(deleteRoute, /guest_approval_deleted/);

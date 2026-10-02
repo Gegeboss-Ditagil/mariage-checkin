@@ -8,9 +8,12 @@ import { GUEST_APPROVAL_BUCKET } from '@/lib/guestApprovalPhotos';
  * Supprime une demande d'invité surprise déjà décidée (approuvée ou
  * refusée) -- demande de Gersom le 13/09/2026 : "il y a beaucoup de refusé
  * maintenant, la liste va s'étendre. Les administrateurs ont le droit de
- * faire un swipe pour les effacer." Réservé à `adminPanel` (admin
- * uniquement, comme le reste des opérations de nettoyage/administration),
- * jamais accessible à un demandeur ou un approbateur.
+ * faire un swipe pour les effacer." Réservée à `deleteGuestApproval`
+ * (admin/directeur/placeur, `lib/permissions.ts`) -- initialement restreinte
+ * à `adminPanel` (admin uniquement, "jamais accessible à un demandeur ou un
+ * approbateur") ; revenu sur ce point le 02/10/2026, sur confirmation
+ * explicite de Gersom pour directeur ET placeur, malgré le fait que
+ * directeur soit lui-même un approbateur (`reviewGuestApproval`).
  *
  * Ne supprime JAMAIS une demande encore `en_attente` : un swipe accidentel
  * ne doit jamais faire disparaître une décision qui reste à prendre --
@@ -19,7 +22,7 @@ import { GUEST_APPROVAL_BUCKET } from '@/lib/guestApprovalPhotos';
  */
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'adminPanel')) {
+  if (!user || !hasCapability(user.role, 'deleteGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

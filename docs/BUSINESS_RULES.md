@@ -70,6 +70,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
 | Invité surprise (photo + approbation SMS/WhatsApp, `/scan`, `/approbations`) | Oui | Oui | Oui | Non | Non |
+| Supprimer une demande d'invité surprise déjà décidée (`/approbations`) | Oui | Oui (depuis v1.57.0) | Oui (depuis v1.57.0) | Non | Non |
 
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 

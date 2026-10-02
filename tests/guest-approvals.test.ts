@@ -157,7 +157,7 @@ test('les fleches precedente/suivante sont ancrees au conteneur de la photo (jam
 // refuse toujours une demande encore en_attente, teste plus haut).
 test("v1.53.6 : bouton de suppression explicite (icone poubelle) sur chaque carte, en plus du swipe, garanti cliquable independamment du geste tactile", () => {
   assert.match(approbationsPageSource, /import \{ ChevronLeftIcon, ChevronRightIcon, CloseIcon, TrashIcon \} from '@\/components\/icons'/);
-  assert.match(approbationsPageSource, /role === 'admin' && r\.statut !== 'en_attente' && \(/);
+  assert.match(approbationsPageSource, /role && hasCapability\(role, 'deleteGuestApproval'\) && r\.statut !== 'en_attente' && \(/);
   assert.match(approbationsPageSource, /window\.confirm\('Supprimer définitivement la demande de ' \+ r\.nom_invite \+ ' \? Cette action est irréversible\.'\)/);
   assert.match(approbationsPageSource, /void handleDelete\(r\.id\);/);
   assert.match(approbationsPageSource, /<TrashIcon className="h-4 w-4" \/>/);
@@ -172,7 +172,7 @@ test("v1.53.6 : bouton de suppression explicite (icone poubelle) sur chaque cart
 // de liste (v1.53.6) -- pas une nouvelle capacite, juste la meme action
 // rendue aussi accessible depuis la fiche.
 test("v1.56.0 : bouton de suppression explicite sur la fiche detaillee d'une demande, en plus de la liste", () => {
-  assert.match(approbationsPageSource, /role === 'admin' && selectedRequest\.statut !== 'en_attente' && \(/);
+  assert.match(approbationsPageSource, /role && hasCapability\(role, 'deleteGuestApproval'\) && selectedRequest\.statut !== 'en_attente' && \(/);
   assert.match(approbationsPageSource, /window\.confirm\('Supprimer définitivement la demande de ' \+ selectedRequest\.nom_invite \+ ' \? Cette action est irréversible\.'\)/);
   assert.match(approbationsPageSource, /void handleDelete\(selectedRequest\.id\);/);
   assert.match(approbationsPageSource, /<TrashIcon className="h-5 w-5" \/>/);

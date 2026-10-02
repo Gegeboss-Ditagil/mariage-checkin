@@ -145,7 +145,8 @@ export default function ApprobationsPage() {
     }
   }
 
-  // Swipe pour supprimer (admin) -- voir components/SwipeableDeleteCard.tsx
+  // Swipe pour supprimer (deleteGuestApproval : admin/directeur/placeur,
+  // voir lib/permissions.ts) -- voir components/SwipeableDeleteCard.tsx
   // et l'API DELETE /api/guest-approvals/[id] (refuse toute demande encore
   // en_attente cote serveur, meme filet que cote UI ci-dessous). Retrait
   // optimiste de la liste locale ; en cas d'echec (ex: deja decidee/
@@ -226,7 +227,7 @@ export default function ApprobationsPage() {
           {requests.map((r) => (
             <SwipeableDeleteCard
               key={r.id}
-              enabled={role === 'admin' && r.statut !== 'en_attente'}
+              enabled={!!role && hasCapability(role, 'deleteGuestApproval') && r.statut !== 'en_attente'}
               onDelete={() => handleDelete(r.id)}
             >
             <div
@@ -267,7 +268,7 @@ export default function ApprobationsPage() {
                         tout comportement tactile propre à la plateforme) en
                         plus du swipe, qui reste en place au cas où il finit
                         par fonctionner sur d'autres appareils. */}
-                    {role === 'admin' && r.statut !== 'en_attente' && (
+                    {role && hasCapability(role, 'deleteGuestApproval') && r.statut !== 'en_attente' && (
                       <button
                         type="button"
                         aria-label={'Supprimer définitivement la demande de ' + r.nom_invite}
@@ -382,7 +383,7 @@ export default function ApprobationsPage() {
                     la fiche detaillee n'avait jusqu'ici aucun moyen de
                     supprimer une demande deja decidee, contrairement a la
                     liste (v1.53.6/v1.53.8). */}
-                {role === 'admin' && selectedRequest.statut !== 'en_attente' && (
+                {role && hasCapability(role, 'deleteGuestApproval') && selectedRequest.statut !== 'en_attente' && (
                   <button
                     type="button"
                     aria-label={'Supprimer définitivement la demande de ' + selectedRequest.nom_invite}
