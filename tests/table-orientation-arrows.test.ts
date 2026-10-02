@@ -84,7 +84,6 @@ test('components/TableSeatWheel.tsx dessine les deux flèches hors de la zone de
   assert.match(wheelSource, /export interface TableOrientation \{/);
   assert.match(wheelSource, /orientation\?: TableOrientation \| null;/);
   assert.match(wheelSource, /const ARROW_INNER_RADIUS = 146;/);
-  assert.match(wheelSource, /const ARROW_OUTER_RADIUS = 162;/);
   // Les sieges occupent au maximum SEAT_RADIUS (110) + SEAT_HEIGHT/2 (32) =
   // 142 -- les fleches doivent commencer au-dela, jamais chevaucher un nom.
   assert.match(wheelSource, /const SEAT_RADIUS = 110;/);
@@ -96,8 +95,29 @@ test('components/TableSeatWheel.tsx dessine les deux flèches hors de la zone de
   // rester lisible quel que soit l'angle plutot que de tourner avec la fleche.
   assert.match(wheelSource, /function OrientationArrow\(/);
   assert.match(wheelSource, /const labelX = CENTER \+ Math\.sin\(radians\) \* ARROW_LABEL_RADIUS;/);
-  assert.match(wheelSource, /<OrientationArrow angle=\{orientation\.danseAngle\} label="💃"/);
-  assert.match(wheelSource, /<OrientationArrow angle=\{orientation\.alleeAngle\} label="🚶"/);
+  assert.match(wheelSource, /<OrientationArrow angle=\{orientation\.danseAngle\} emoji="💃" label="Piste"/);
+  assert.match(wheelSource, /<OrientationArrow angle=\{orientation\.alleeAngle\} emoji="🚶" label="Allée"/);
+});
+
+// v1.58.0, retour de Gersom (capture d'ecran table 2) : "mets des signaux
+// beaucoup plus clairs... et mets nord, sud, est, ouest". Les deux fleches
+// gagnent un vrai libelle texte (pas seulement l'emoji) + un halo de fond
+// pour rester lisibles ; une boussole N/E/S/O FIXE (toujours haut=Nord,
+// jamais recalculee par table -- contrairement aux deux fleches de reperes)
+// est ajoutee, reprenant la convention schematique deja etablie ailleurs
+// dans ce projet (Couloir Nord en haut, Couloir Est a droite sur
+// components/FloorPlan.tsx ; "nord-ouest" deja utilise par Gersom des
+// v1.48.1 pour designer les tables du coin superieur gauche) -- jamais une
+// boussole magnetique reelle, le batiment n'ayant aucune orientation GPS
+// connue.
+test('v1.58.0 : libelles texte + halo de lisibilite sur les fleches, boussole N/E/S/O fixe', () => {
+  assert.match(wheelSource, /function CompassLabel\(/);
+  assert.match(wheelSource, /const COMPASS_RADIUS = 224;/);
+  assert.match(wheelSource, /paintOrder: 'stroke'/);
+  assert.match(wheelSource, /<CompassLabel angle=\{0\} label="N" \/>/);
+  assert.match(wheelSource, /<CompassLabel angle=\{90\} label="E" \/>/);
+  assert.match(wheelSource, /<CompassLabel angle=\{180\} label="S" \/>/);
+  assert.match(wheelSource, /<CompassLabel angle=\{270\} label="O" \/>/);
 });
 
 test('les quatre écrans qui affichent le dessin passent orientation={getTableOrientation(...)}', () => {
