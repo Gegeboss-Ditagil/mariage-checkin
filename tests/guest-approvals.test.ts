@@ -163,6 +163,21 @@ test("v1.53.6 : bouton de suppression explicite (icone poubelle) sur chaque cart
   assert.match(approbationsPageSource, /<TrashIcon className="h-4 w-4" \/>/);
 });
 
+// v1.56.0, retour de Gersom : la carte/photo d'une demande deja decidee
+// (notamment approuvee) ne pouvait etre supprimee que depuis la liste -- la
+// fiche detaillee (ouverte en cliquant sur une carte) n'avait aucun bouton de
+// suppression, seul moyen restant de "polluer la page" une fois plusieurs
+// dizaines de demandes approuvees accumulees. Meme garde (admin, statut
+// different de en_attente), meme confirmation, meme API DELETE que le bouton
+// de liste (v1.53.6) -- pas une nouvelle capacite, juste la meme action
+// rendue aussi accessible depuis la fiche.
+test("v1.56.0 : bouton de suppression explicite sur la fiche detaillee d'une demande, en plus de la liste", () => {
+  assert.match(approbationsPageSource, /role === 'admin' && selectedRequest\.statut !== 'en_attente' && \(/);
+  assert.match(approbationsPageSource, /window\.confirm\('Supprimer définitivement la demande de ' \+ selectedRequest\.nom_invite \+ ' \? Cette action est irréversible\.'\)/);
+  assert.match(approbationsPageSource, /void handleDelete\(selectedRequest\.id\);/);
+  assert.match(approbationsPageSource, /<TrashIcon className="h-5 w-5" \/>/);
+});
+
 test('la fiche approbation est remontee, structure ses informations et utilise des fleches iOS en verre', () => {
   assert.match(approbationsPageSource, /items-center justify-center overflow-y-auto/);
   assert.match(approbationsPageSource, /max-h-\[calc\(100dvh-2rem\)\]/);

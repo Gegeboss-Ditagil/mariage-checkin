@@ -377,14 +377,35 @@ export default function ApprobationsPage() {
                 <p className="eyebrow">Demande d'approbation</p>
                 <h2 id="approval-detail-title" className="font-display text-xl">{selectedRequest.nom_invite}</h2>
               </div>
-              <button
-                type="button"
-                aria-label="Fermer la demande"
-                onClick={dismissDetail}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/30 bg-surface/75 text-text shadow-sm backdrop-blur-xl transition-transform active:scale-90"
-              >
-                <CloseIcon className="h-6 w-6" />
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* Meme garde-fou/confirmation que le bouton de la liste --
+                    la fiche detaillee n'avait jusqu'ici aucun moyen de
+                    supprimer une demande deja decidee, contrairement a la
+                    liste (v1.53.6/v1.53.8). */}
+                {role === 'admin' && selectedRequest.statut !== 'en_attente' && (
+                  <button
+                    type="button"
+                    aria-label={'Supprimer définitivement la demande de ' + selectedRequest.nom_invite}
+                    onClick={() => {
+                      if (window.confirm('Supprimer définitivement la demande de ' + selectedRequest.nom_invite + ' ? Cette action est irréversible.')) {
+                        void handleDelete(selectedRequest.id);
+                        dismissDetail();
+                      }
+                    }}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-surface/75 text-status-over shadow-sm backdrop-blur-xl transition-transform active:scale-90"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  aria-label="Fermer la demande"
+                  onClick={dismissDetail}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-surface/75 text-text shadow-sm backdrop-blur-xl transition-transform active:scale-90"
+                >
+                  <CloseIcon className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
             {/* Photo resserree le 13/09/2026 (retour de Gersom : "recise la
