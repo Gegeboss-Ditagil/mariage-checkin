@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.65.3**
+**Version documentaire : 1.67.1**
 **Dernière mise à jour : 2026-10-03**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -76,6 +76,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 
 Depuis v1.31.1, `/agenda` est visible et modifiable avec `viewAgenda`/`manageAgenda` (`admin` et `directeur`). Nelly porte maintenant le rôle complet `directeur`, identique à Rémy, plutôt qu'une exception limitée à l'agenda. Heure, titre, département, détails, ordre, responsables et état terminé sont persistés dans `agenda_items`; les routes API revérifient chaque lecture et écriture côté serveur.
+
+Depuis v1.67.1, un rôle avec `manageAgenda` doit explicitement toucher le bouton « Modifier » (haut de `/agenda`) pour entrer en mode édition avant qu'une carte ne redevienne tapable et que les boutons « + Ajouter une activité » n'apparaissent — en mode « Vue » (par défaut à chaque ouverture de la page), toucher une carte ne fait rien, seul le défilement fonctionne. Purement une protection d'interface côté client contre une classe de bugs de fiches modales ouvertes par inadvertance (voir v1.66.2) ; `manageAgenda` reste la seule vraie barrière de sécurité, revérifiée côté serveur à chaque écriture, inchangée.
 
 Depuis v1.55.0, un élément d'agenda peut être marqué `is_private` (`agenda_items.is_private`, migration `0058`) — `GET /api/agenda` retire alors cette ligne de la réponse JSON pour tout rôle sans `manageAgenda` (agent scan, agent placeur) : un filtrage réel côté serveur, jamais un simple masquage visuel côté client. Aucune nouvelle capacité : la restriction réutilise `manageAgenda`, déjà réservée à `admin`/`directeur`.
 

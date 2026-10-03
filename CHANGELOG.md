@@ -3,6 +3,48 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.67.2] — 2026-10-03
+
+Suite directe de v1.67.1, retour de Gersom : « assure-toi que le bouton Edit soit une espèce de belle icône qui comprend qu'est-ce qu'il faut modifier. Agenda. » Le bouton « Modifier »/« Terminé » introduit en v1.67.1 n'affichait que du texte.
+
+### Ajouté
+- `EditIcon` (`components/icons.tsx`) : nouvelle icône crayon SVG, même convention « duotone » (silhouette remplie à faible opacité + contour tracé, `currentColor`) que toutes les autres icônes de ce fichier — pas le glyphe texte « ✎ » déjà utilisé ailleurs (`TopBar.tsx`, `onTitleClick`).
+- Le bouton d'entrée en mode édition de `/agenda` (`TopBar`, slot `right`) affiche désormais `<EditIcon />` + « Modifier » en mode Vue ; reste simplement « Terminé » en mode Édition (pas besoin d'icône pour sortir). Toujours gated sur `canManage` seul, jamais `canEditNow` — inchangé de v1.67.1.
+
+### Tests
+- `tests/agenda-view-edit-mode.test.ts` : 1 nouveau test verrouillant l'import et l'usage de `EditIcon` ; l'assertion existante sur le texte du bouton assouplie pour accepter le nouveau JSX (icône + texte) au lieu d'un simple ternaire de chaînes.
+
+### Documentation mise à jour
+- `CLAUDE.md`
+- `README.md`
+
+Purement un changement d'habillage visuel, aucun changement de comportement ni de logique de gate. Aucune migration.
+
+## [1.67.1] — 2026-10-03
+
+Suite directe du correctif de blocage de `/agenda` (v1.66.2, `hooks/useDismiss.ts`). Retour de Gersom : « pour éviter ce problème, voici ce qu'on va faire. On va mettre deux modes, le mode View et le mode Edit. On va mettre un petit bouton Edit en haut... comme ça, ça fait que quand on est sur View, la seule chose qu'on peut faire, c'est scroll down. Quand on appuie, ça fera rien. Ça va éviter le problème. »
+
+### Ajouté — mode Vue/Édition sur `/agenda`
+- Nouvel état `editMode` (`app/agenda/page.tsx`), toujours désactivé (« Vue ») à chaque ouverture de la page.
+- Bouton « Modifier »/« Terminé » dans `TopBar` (slot `right`), visible dès que le rôle a `manageAgenda` (`canManage`) — jamais lui-même conditionné par `editMode`, sinon impossible de repasser de « Terminé » à « Modifier ».
+- `canEditNow = canManage && editMode` remplace `canManage` seul comme garde sur tout déclencheur d'ouverture ou de modification : la carte entière d'une activité, la case « terminé », et les deux boutons « + Ajouter une activité ». En mode Vue, un tap sur n'importe lequel de ces éléments ne fait strictement rien — seul le défilement reste actif, exactement comme demandé.
+- Fermer une fiche déjà ouverte reste toujours possible, jamais conditionné par `editMode` : seule l'**ouverture** d'une nouvelle fiche l'est.
+
+Durcit l'application contre toute une classe de bugs de fiches modales ouvertes par inadvertance en faisant défiler rapidement — **en plus** du vrai correctif de v1.66.2, jamais à sa place. Les rôles sans `manageAgenda` (agent scan, agent placeur) étaient déjà en lecture seule avant ce lot, rien ne change pour eux. Purement une protection d'interface côté client : le serveur revérifie toujours `manageAgenda` indépendamment de cet état à chaque écriture.
+
+### Tests
+- `tests/agenda-view-edit-mode.test.ts` (nouveau, 5 tests).
+- `tests/agenda-form.test.ts` : deux assertions `canManage` → `canEditNow` mises à jour (devenues obsolètes par ce changement).
+
+### Documentation mise à jour
+- `docs/BUSINESS_RULES.md`
+- `CLAUDE.md`
+
+### Non vérifié
+Pas de test manuel dans un navigateur réel pour ce lot — contraintes de cet environnement (aucun identifiant de test en clair disponible sans modifier des comptes réels en production). Validation par `tsc`/tests source/`npm run build` uniquement, même rigueur que le reste de ce dépôt.
+
+Aucune migration.
+
 ## [1.66.1] — 2026-10-03
 
 Bug de processus réel signalé par Gersom : « il y a quelque chose qui ne fonctionne pas au niveau du README. On est rendu à 1.66... ça veut dire que tu ne mettais pas à jour le README à chaque fois... je ne comprends pas comment tu as raté de 1.55 jusqu'à 1.66... on n'est plus avec le processus en place pour que ce soit bien testé. »
