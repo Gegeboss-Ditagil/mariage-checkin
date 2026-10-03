@@ -67,6 +67,23 @@ import clsx from 'clsx';
 // deja implicitement cette meme correspondance (leur angle est calcule
 // directement depuis les coordonnees du plan, appliquees telles quelles a
 // la rotation de la roue) -- la boussole ne fait que la rendre explicite.
+//
+// v1.66.0, retour de Gersom (dessin a main levee sur une capture d'ecran de
+// /plan-table) : les deux reperes danse/allee restent compris mais trop
+// discrets -- "il serait interessant qu'en allant sur les tables, on voit
+// vraiment mieux un espece de carre ou rectangle qui signifie la piste...
+// l'emoji de la personne qui danse devrait etre beaucoup plus grand...
+// l'allee, ca devrait etre un espece de petit rectangle... un emoji d'une
+// personne qui marche beaucoup plus grande." Le simple libelle texte
+// (emoji+mot sur une ligne, 15px) devient une vraie pastille rectangulaire
+// (voir LandmarkTile) : fond colore + bordure, emoji isole et agrandi au-
+// dessus d'une legende. Piste = pastille carree (forme compacte, comme la
+// piste de danse reelle) ; Allee = pastille plus large qu'haute (forme
+// allongee, comme une allee) -- les deux formes different volontairement.
+// "Pour mieux resize l'element, baisse la table... un peu plus d'espace
+// dans ce carre-la pour les emojis" : HUB_RADIUS (le cercle central avec le
+// numero de table) reduit de 56 a 44 pour degager de la place visuelle.
+// Toujours PUREMENT INFORMATIF, jamais une donnee ecrite en base.
 export interface TableOrientation {
   danseAngle: number;
   alleeAngle: number;
@@ -87,7 +104,11 @@ interface TableSeatWheelProps {
 
 const VIEW_SIZE = 320;
 const CENTER = VIEW_SIZE / 2;
-const HUB_RADIUS = 56;
+// v1.66.0, retour de Gersom : "baisse la table... tu as un peu plus
+// d'espace dans ce carré-là pour justement les emojis" -- reduit de 56 a 44
+// pour degager de la place visuelle au profit des reperes (voir plus bas),
+// sans toucher au rayon des sieges.
+const HUB_RADIUS = 44;
 // Distance du CENTRE de chaque etiquette de siege au centre de la table.
 const SEAT_RADIUS = 110;
 // Cote court (tangent au cercle) et cote long (radial, vers l'exterieur) --
@@ -104,14 +125,32 @@ const MAX_LINE_CHARS = 8;
 // (sans deplacer aucune coordonnee existante) pour leur faire de la place.
 const ARROW_INNER_RADIUS = 146;
 const ARROW_OUTER_RADIUS = 172;
-const ARROW_LABEL_RADIUS = 188;
-// Repere cardinal (N/S/E/O), plus loin encore que les libelles des fleches
-// de reperes pour ne jamais s'y superposer.
-const COMPASS_RADIUS = 224;
-// Marge assez large pour que meme le plus long libelle de fleche ("Allee
-// centrale" tronque en "Allee", voir plus bas) ne deborde jamais du viewBox
-// quel que soit l'angle (y compris a l'horizontale, le cas le plus large).
-const VIEW_MARGIN = 80;
+// v1.66.0, retour de Gersom (dessin a main levee sur une capture d'ecran) :
+// "un espece de carre ou rectangle qui signifie la piste... l'emoji de la
+// personne qui danse devrait etre beaucoup plus grand... un espece de
+// petit rectangle [pour] l'allee... un emoji d'une personne qui marche
+// beaucoup plus grande." Remplace le simple libelle texte (emoji+mot en
+// 15px) par une vraie pastille rectangulaire (voir LandmarkTile) centree a
+// ce rayon, avec l'emoji isole en grand. Piste = carre (forme compacte,
+// comme la piste de danse reelle) ; Allee = rectangle plus large qu'haut
+// (forme allongee, comme une allee). Les deux formes different donc
+// volontairement, pas une simple reutilisation du meme gabarit.
+const TILE_RADIUS = 190;
+const PISTE_TILE_WIDTH = 54;
+const PISTE_TILE_HEIGHT = 54;
+const ALLEE_TILE_WIDTH = 78;
+const ALLEE_TILE_HEIGHT = 44;
+// "Beaucoup plus grand" : l'ancien libelle combine emoji+texte tenait sur
+// 15px pour les deux ; l'emoji seul passe desormais a 26px (~1.7x), le
+// libelle texte (Piste/Allee) reste une legende discrete sous l'emoji.
+const EMOJI_FONT_SIZE = 26;
+// Repere cardinal (N/S/E/O), repousse au-dela des nouvelles pastilles (plus
+// larges que l'ancien libelle texte) pour ne jamais s'y superposer.
+const COMPASS_RADIUS = 248;
+// Marge assez large pour que meme la pastille "Allee" (la plus large) ne
+// deborde jamais du viewBox quel que soit l'angle (y compris a
+// l'horizontale, le cas le plus large).
+const VIEW_MARGIN = 104;
 
 function truncateLine(s: string): string {
   return s.length > MAX_LINE_CHARS ? s.slice(0, MAX_LINE_CHARS) + '…' : s;
@@ -128,22 +167,38 @@ function splitSeatLabel(name: string): [string, string | null] {
   return [truncateLine(words[0]), truncateLine(words.slice(1).join(' '))];
 }
 
-// Une fleche : trait + pointe dessines "vers le haut" en coordonnees locales
-// (comme un siege a l'angle 0), puis pivotes autour du centre -- meme
-// technique que les etiquettes de siege. Le libelle reste volontairement
-// hors de ce groupe pivote, place directement par trigonometrie, pour rester
-// lisible quel que soit l'angle plutot que de tourner avec la fleche.
-//
-// v1.58.0 : fleche epaissie/allongee (stroke 2->4, pointe agrandie) et vrai
-// libelle texte EN PLUS de l'emoji (pas seulement l'emoji seul, juge trop
-// discret) ; `paint-order="stroke"` + un trait de la couleur de fond derriere
-// le texte cree un halo qui garde le libelle lisible quel que soit ce qui se
-// trouve juste derriere sur le dessin (siege, fond de carte...), sans avoir a
-// mesurer/dessiner un rectangle de fond a la largeur du texte.
-function OrientationArrow({ angle, emoji, label, title }: { angle: number; emoji: string; label: string; title: string }) {
+// Une fleche (trait + pointe, meme technique de rotation que les etiquettes
+// de siege) pointant vers une pastille rectangulaire -- jamais tournee avec
+// la fleche, placee directement par trigonometrie pour rester lisible quel
+// que soit l'angle. v1.58.0 : fleche epaissie/allongee. v1.66.0, retour de
+// Gersom (dessin a main levee) : le simple libelle texte (emoji+mot en
+// 15px) devient une vraie pastille -- rectangle de fond (couleur accent,
+// comme une mini-etiquette de lieu) avec l'emoji isole et agrandi au-dessus
+// d'une legende texte, au lieu d'une seule ligne emoji+mot. `tileWidth`/
+// `tileHeight` different entre Piste (carre) et Allee (rectangle plus
+// large), chacun refletant la forme reelle du lieu qu'il designe.
+function LandmarkTile({
+  angle,
+  emoji,
+  label,
+  title,
+  tileWidth,
+  tileHeight,
+}: {
+  angle: number;
+  emoji: string;
+  label: string;
+  title: string;
+  tileWidth: number;
+  tileHeight: number;
+}) {
   const radians = (angle * Math.PI) / 180;
-  const labelX = CENTER + Math.sin(radians) * ARROW_LABEL_RADIUS;
-  const labelY = CENTER - Math.cos(radians) * ARROW_LABEL_RADIUS;
+  const tileX = CENTER + Math.sin(radians) * TILE_RADIUS;
+  const tileY = CENTER - Math.cos(radians) * TILE_RADIUS;
+  // L'emoji occupe la bande superieure de la pastille, la legende la bande
+  // inferieure -- jamais tournes avec la fleche (voir plus haut).
+  const emojiY = tileY - tileHeight * 0.15;
+  const labelY = tileY + tileHeight * 0.3;
   return (
     <g>
       <title>{title}</title>
@@ -160,25 +215,30 @@ function OrientationArrow({ angle, emoji, label, title }: { angle: number; emoji
           className="fill-accent"
         />
       </g>
-      <text
-        x={labelX}
-        y={labelY}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        className="fill-text text-[15px] font-bold stroke-bg"
-        style={{ paintOrder: 'stroke', strokeWidth: 5, strokeLinejoin: 'round' }}
-      >
-        {emoji} {label}
+      <rect
+        x={tileX - tileWidth / 2}
+        y={tileY - tileHeight / 2}
+        width={tileWidth}
+        height={tileHeight}
+        rx={12}
+        className="fill-accent-tint stroke-accent stroke-2"
+      />
+      <text x={tileX} y={emojiY} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: EMOJI_FONT_SIZE }}>
+        {emoji}
+      </text>
+      <text x={tileX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="fill-text text-[11px] font-bold">
+        {label}
       </text>
     </g>
   );
 }
 
 // Repere cardinal fixe (toujours haut=Nord, jamais recalcule par table --
-// voir le commentaire plus haut sur cette convention schematique). Memes
-// halo de lisibilite que OrientationArrow, texte plus discret
-// (`text-text-faint`) pour rester secondaire par rapport aux deux fleches de
-// reperes, qui restent l'indication principale demandee a l'origine.
+// voir le commentaire plus haut sur cette convention schematique). Meme
+// halo de lisibilite (paint-order: stroke) que le libelle des pastilles de
+// LandmarkTile, texte plus discret (`text-text-faint`) pour rester
+// secondaire par rapport a Piste/Allee, qui restent l'indication principale
+// demandee a l'origine.
 function CompassLabel({ angle, label }: { angle: number; label: string }) {
   const radians = (angle * Math.PI) / 180;
   const x = CENTER + Math.sin(radians) * COMPASS_RADIUS;
@@ -280,8 +340,22 @@ export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelec
 
       {orientation && (
         <>
-          <OrientationArrow angle={orientation.danseAngle} emoji="💃" label="Piste" title="Direction de la piste de danse et des mariés" />
-          <OrientationArrow angle={orientation.alleeAngle} emoji="🚶" label="Allée" title="Direction de l'allée centrale" />
+          <LandmarkTile
+            angle={orientation.danseAngle}
+            emoji="💃"
+            label="Piste"
+            title="Direction de la piste de danse et des mariés"
+            tileWidth={PISTE_TILE_WIDTH}
+            tileHeight={PISTE_TILE_HEIGHT}
+          />
+          <LandmarkTile
+            angle={orientation.alleeAngle}
+            emoji="🚶"
+            label="Allée"
+            title="Direction de l'allée centrale"
+            tileWidth={ALLEE_TILE_WIDTH}
+            tileHeight={ALLEE_TILE_HEIGHT}
+          />
           <CompassLabel angle={0} label="N" />
           <CompassLabel angle={90} label="E" />
           <CompassLabel angle={180} label="S" />

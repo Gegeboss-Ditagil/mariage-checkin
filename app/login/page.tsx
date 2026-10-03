@@ -199,16 +199,22 @@ function LoginForm() {
         Merci pour vos efforts :) Vous êtes la meilleure équipe !
       </p>
 
-      {/* v1.65.1, retour de Gersom : "vraiment en bas à droite" -- même
-          traitement que le badge du splash (components/SplashScreen.tsx,
-          v1.42.1) : décalé d'environ 1 cm vers le nord-ouest (315°) au lieu
-          de rester collé dans l'angle exact de l'écran. */}
-      <span
-        className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-text-faint"
-        style={{ transform: 'translate(-0.71cm, -0.71cm)' }}
-      >
+      {/* v1.65.3, retour de Gersom (capture d'écran) : "tout plein de textes
+          qui se chevauchent" en bas de /login -- le badge de version
+          (v1.60.0) restait en position absolue dans le coin bas-droit
+          (même après le décalage diagonal de v1.65.1), exactement où
+          components/InstallAppButton.tsx flotte en permanence sur cette
+          même page ("Installer l'app", fixed bottom-5 right-5) : les deux
+          se superposaient dès que ce bouton est visible (navigateur non
+          installé -- le cas le plus courant). Root cause commune aux trois
+          signalements successifs sur ce bas de page : accumuler des
+          éléments en position absolute/fixed dans le même coin. Sorti du
+          positionnement absolu pour de bon, rejoint le flux normal juste
+          sous "Merci pour vos efforts" -- ne peut plus entrer en collision
+          avec un élément fixed quel que soit son état. */}
+      <p className="relative mt-2 text-center text-[11px] font-medium text-text-faint">
         v{version}
-      </span>
+      </p>
     </div>
   );
 }

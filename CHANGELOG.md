@@ -3,6 +3,38 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.66.0] — 2026-10-03
+
+Retour de Gersom (capture d'écran de `/plan-table`, dessin à main levée) : « il serait intéressant qu'en allant sur les tables, on voit vraiment mieux un espèce de carré ou rectangle qui signifie la piste. Et puis l'emoji de la personne qui danse devrait être beaucoup plus grand. Et puis l'allée, ça devrait être un espèce de petit rectangle... et avoir un emoji d'une personne qui marche beaucoup plus grande. Pour mieux resize l'élément, fais juste baisser la table. Comme ça, tu as un peu plus d'espace dans ce carré-là pour justement les emojis. »
+
+### Changé — repères « Piste »/« Allée » du dessin « vu sur le plan photographié »
+Les deux repères d'orientation (`components/TableSeatWheel.tsx`, v1.53.15/v1.58.0) n'étaient qu'un simple libellé texte (emoji + mot sur une ligne, 15px), jugé trop discret. Remplacés par une vraie pastille rectangulaire (`LandmarkTile`, fond coloré + bordure) avec l'emoji isolé et agrandi (15px → 26px) au-dessus d'une légende texte séparée. **Piste** (💃) : pastille carrée (54×54, forme compacte reflétant la piste de danse réelle). **Allée** (🚶) : pastille plus large que haute (78×44, forme allongée reflétant une allée) — les deux formes diffèrent volontairement, jamais le même gabarit réutilisé. `COMPASS_RADIUS` repoussé (224 → 248) pour ne jamais chevaucher ces nouvelles pastilles, plus larges que l'ancien libellé.
+
+### Changé — table centrale réduite pour dégager de la place
+`HUB_RADIUS` (le cercle central affichant le numéro de table) réduit de 56 à 44, comme demandé explicitement (« baisse la table... un peu plus d'espace dans ce carré-là pour les emojis »).
+
+Toujours **purement informatif** (voir `lib/floorPlanSeats.ts`) : aucune donnée écrite en base, `invitations.table_id` reste l'unique source de placement.
+
+### Tests
+- `tests/table-orientation-arrows.test.ts` : nouveau test verrouillant les pastilles rectangulaires (dimensions, forme carrée vs allongée, emoji agrandi, rectangle de fond réel) et le `HUB_RADIUS` réduit ; assertions existantes mises à jour sur le renommage `OrientationArrow` → `LandmarkTile` et le nouveau `COMPASS_RADIUS`.
+
+### Documentation mise à jour
+- `CLAUDE.md`
+
+Aucune migration.
+
+## [1.65.3] — 2026-10-03
+
+Troisième retour de Gersom le même jour (capture d'écran `/login`) : « regarde mon bas de page, il y a tout plein de textes qui se chevauchent, c'est pas beau au niveau UI. »
+
+### Corrigé — chevauchement avec le bouton flottant « Installer l'app »
+La capture montrait le badge de version (`v{version}`, encore en position absolue dans le coin bas-droit malgré le décalage diagonal de v1.65.1) chevauchant visuellement `components/InstallAppButton.tsx` (« ⬇ Installer l'app », `fixed bottom-5 right-5`, affiché en permanence sur `/login` tant que l'app n'est pas installée — le cas le plus courant pour un premier accès). Root cause commune aux trois signalements successifs sur ce bas de page (v1.65.1, v1.65.2, celui-ci) : accumuler plusieurs éléments en position `absolute`/`fixed` dans le même coin de l'écran, qui ne peuvent alors qu'entrer en collision selon l'état de chacun. Le badge de version rejoint à son tour le flux normal de la page, juste sous « Merci pour vos efforts » — ne peut plus chevaucher un élément `fixed` quel que soit son état, puisqu'il n'est lui-même plus positionné hors du flux. Seul `InstallAppButton` reste `fixed` (nécessaire : doit rester joignable même si le reste du contenu défile ou change de hauteur).
+
+### Tests
+Aucun changement d'assertion nécessaire (`tests/login-splash-version.test.ts` vérifie uniquement la présence de `v{version}`, pas sa position).
+
+Aucune migration.
+
 ## [1.65.2] — 2026-10-03
 
 Deuxième retour de Gersom le même jour, sur ce même bouton « Mot de passe oublié ? » (v1.65.0) une fois réellement vu en production : « il était aussi en bas à gauche, non visible... il faut qu'il soit beaucoup plus visible et dans un endroit accessible. »

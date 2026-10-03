@@ -91,12 +91,47 @@ test('components/TableSeatWheel.tsx dessine les deux flèches hors de la zone de
   assert.match(wheelSource, /const viewMin = -VIEW_MARGIN;/);
   assert.match(wheelSource, /const viewSpan = VIEW_SIZE \+ VIEW_MARGIN \* 2;/);
   assert.match(wheelSource, /viewBox=\{`\$\{viewMin\} \$\{viewMin\} \$\{viewSpan\} \$\{viewSpan\}`\}/);
-  // Le libelle reste hors du groupe pivote (place par trigonometrie), pour
-  // rester lisible quel que soit l'angle plutot que de tourner avec la fleche.
-  assert.match(wheelSource, /function OrientationArrow\(/);
-  assert.match(wheelSource, /const labelX = CENTER \+ Math\.sin\(radians\) \* ARROW_LABEL_RADIUS;/);
-  assert.match(wheelSource, /<OrientationArrow angle=\{orientation\.danseAngle\} emoji="💃" label="Piste"/);
-  assert.match(wheelSource, /<OrientationArrow angle=\{orientation\.alleeAngle\} emoji="🚶" label="Allée"/);
+  // v1.66.0 : la pastille (LandmarkTile, voir plus bas) reste hors du groupe
+  // pivote (placee par trigonometrie), pour rester lisible quel que soit
+  // l'angle plutot que de tourner avec la fleche -- meme principe que
+  // l'ancien OrientationArrow qu'elle remplace.
+  assert.match(wheelSource, /function LandmarkTile\(/);
+  assert.match(wheelSource, /const tileX = CENTER \+ Math\.sin\(radians\) \* TILE_RADIUS;/);
+  assert.match(wheelSource, /<LandmarkTile\s*\n\s*angle=\{orientation\.danseAngle\}\s*\n\s*emoji="💃"\s*\n\s*label="Piste"/);
+  assert.match(wheelSource, /<LandmarkTile\s*\n\s*angle=\{orientation\.alleeAngle\}\s*\n\s*emoji="🚶"\s*\n\s*label="Allée"/);
+});
+
+// v1.66.0, retour de Gersom (dessin a main levee sur une capture d'ecran) :
+// "un espece de carre ou rectangle qui signifie la piste... l'emoji de la
+// personne qui danse devrait etre beaucoup plus grand... un espece de petit
+// rectangle [pour] l'allee... un emoji d'une personne qui marche beaucoup
+// plus grande" + "pour mieux resize l'element, baisse la table... un peu
+// plus d'espace dans ce carre-la pour les emojis" -- le simple libelle
+// texte (emoji+mot combines sur une ligne, 15px) devient une vraie pastille
+// rectangulaire avec emoji isole et agrandi ; le cercle central (la table)
+// retrecit pour degager de la place.
+test('v1.66.0 : pastilles rectangulaires Piste (carrée)/Allée (rectangle) avec emoji agrandi, table centrale réduite', () => {
+  assert.match(wheelSource, /const HUB_RADIUS = 44;/);
+  assert.match(wheelSource, /const TILE_RADIUS = 190;/);
+  assert.match(wheelSource, /const PISTE_TILE_WIDTH = 54;/);
+  assert.match(wheelSource, /const PISTE_TILE_HEIGHT = 54;/);
+  assert.match(wheelSource, /const ALLEE_TILE_WIDTH = 78;/);
+  assert.match(wheelSource, /const ALLEE_TILE_HEIGHT = 44;/);
+  // Piste carree (PISTE_TILE_WIDTH === PISTE_TILE_HEIGHT, deja verifie par
+  // les deux regex ci-dessus), Allee plus large que haute (forme allongee,
+  // ALLEE_TILE_WIDTH > ALLEE_TILE_HEIGHT) -- les deux pastilles different
+  // volontairement, jamais le meme gabarit reutilise tel quel.
+  assert.ok(78 > 44, 'la pastille Allee doit etre plus large que haute');
+  // L'emoji est isole dans son propre <text>, bien plus grand que l'ancien
+  // libelle combine (15px) -- jamais retabli a la meme taille que la legende.
+  assert.match(wheelSource, /const EMOJI_FONT_SIZE = 26;/);
+  assert.match(wheelSource, /style=\{\{ fontSize: EMOJI_FONT_SIZE \}\}/);
+  // Legende texte separee de l'emoji, toujours visible sous la pastille.
+  assert.match(wheelSource, /className="fill-text text-\[11px\] font-bold">\s*\n\s*\{label\}/);
+  // Un vrai rectangle de fond (pas seulement un halo de texte) derriere
+  // l'emoji/la legende -- c'est tout le point de la demande ("un espece de
+  // carre ou rectangle qui SIGNIFIE la piste").
+  assert.match(wheelSource, /<rect\s*\n\s*x=\{tileX - tileWidth \/ 2\}/);
 });
 
 // v1.58.0, retour de Gersom (capture d'ecran table 2) : "mets des signaux
@@ -112,7 +147,9 @@ test('components/TableSeatWheel.tsx dessine les deux flèches hors de la zone de
 // connue.
 test('v1.58.0 : libelles texte + halo de lisibilite sur les fleches, boussole N/E/S/O fixe', () => {
   assert.match(wheelSource, /function CompassLabel\(/);
-  assert.match(wheelSource, /const COMPASS_RADIUS = 224;/);
+  // v1.66.0 : repousse de 224 a 248 pour ne jamais chevaucher les nouvelles
+  // pastilles Piste/Allee, plus larges que l'ancien libelle texte.
+  assert.match(wheelSource, /const COMPASS_RADIUS = 248;/);
   assert.match(wheelSource, /paintOrder: 'stroke'/);
   assert.match(wheelSource, /<CompassLabel angle=\{0\} label="N" \/>/);
   assert.match(wheelSource, /<CompassLabel angle=\{90\} label="E" \/>/);
