@@ -3,6 +3,32 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.67.0] — 2026-10-03
+
+Retour de Gersom (message vocal) : « rajouter un processus de sécurité pour ne pas qu'on puisse brute force les tentatives... au cas où il y a un petit génie parmi les utilisateurs... maximum 10 tentatives de suite erronées... pour pas se faire pirater facilement, pour pas qu'il y ait quelqu'un qui nous sabote. »
+
+### Contexte
+Le PIN de connexion (`mode: 'pin'`, nom_affichage + 4 chiffres) n'a que 10 000 combinaisons possibles et n'était protégé par aucune limite de tentatives — brute-forçable par un script en quelques minutes, sans aucune trace.
+
+### Décision confirmée par Gersom avant de coder (`AskUserQuestion`)
+Durée du verrouillage une fois les 10 tentatives consécutives atteintes — enjeu réel pour le jour du mariage (un agent qui se trompe par stress ne doit jamais rester bloqué toute la soirée). Confirmé : **verrouillage temporaire de 15 minutes**, auto-déverrouillé, plutôt qu'un verrouillage permanent nécessitant une réinitialisation manuelle par un admin/directeur.
+
+### Ajouté — verrouillage de compte après tentatives de connexion échouées
+- `users.failed_login_attempts`/`users.locked_until` (migration `0060_users_login_lockout.sql`, exécutée et vérifiée en production Supabase le 03/10/2026).
+- `lib/loginLockout.ts` (nouveau) : politique centralisée — 10 tentatives consécutives → verrouillage 15 minutes. Portée volontairement **par compte** (`nom_affichage`/`email`), jamais par adresse IP : la menace décrite (« un petit génie parmi les utilisateurs ») est quelqu'un qui connaît déjà un nom valide et devine son PIN, pas un script qui pulvérise toute la liste des comptes — un verrou par IP risquerait en plus de bloquer tout le staff d'un coup s'il partage le même Wi-Fi de la salle. Le compteur se remet à zéro après une connexion réussie, ou tout seul une fois le verrouillage expiré (jamais un reverrouillage immédiat dès la tentative suivante).
+- `POST /api/auth/login` applique la même protection aux deux modes (`pin` **et** `password` — même compte, même protection), avant même de vérifier le secret. Réponse `423` avec le nombre de minutes restantes une fois verrouillé ; le message ordinaire (« Nom ou PIN incorrect ») reste inchangé tant que le seuil n'est pas atteint, pour ne jamais révéler à un attaquant combien de tentatives il lui reste.
+- Un verrouillage déclenché est journalisé (`app_logs`, niveau `warn`, via `logServerEvent`) — consultable sur `/admin/logs`, pour que Gersom puisse distinguer une vraie tentative de sabotage d'une simple erreur de saisie répétée.
+
+### Tests
+- `tests/login-lockout.test.ts` (nouveau, 11 tests) : verrouille la machine à états (incrémentation, seuil exact, remise à zéro après expiration ou succès), le câblage des deux modes de `POST /api/auth/login`, la journalisation, et l'absence de fuite du nombre de tentatives restantes avant verrouillage.
+
+### Documentation mise à jour
+- `docs/BUSINESS_RULES.md`
+- `CLAUDE.md`
+
+### Migrations
+`0060_users_login_lockout.sql` — exécutée et vérifiée en production Supabase le 03/10/2026.
+
 ## [1.66.1] — 2026-10-03
 
 Bug de processus réel signalé par Gersom : « il y a quelque chose qui ne fonctionne pas au niveau du README. On est rendu à 1.66... ça veut dire que tu ne mettais pas à jour le README à chaque fois... je ne comprends pas comment tu as raté de 1.55 jusqu'à 1.66... on n'est plus avec le processus en place pour que ce soit bien testé. »
