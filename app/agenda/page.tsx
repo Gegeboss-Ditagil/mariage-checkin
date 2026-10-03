@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { BottomNav } from '@/components/BottomNav';
 import { TopBar } from '@/components/TopBar';
-import { CloseIcon, ChevronRightIcon } from '@/components/icons';
+import { CloseIcon, ChevronRightIcon, EditIcon } from '@/components/icons';
 import { ResponsablePicker } from '@/components/ResponsablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { usePolling } from '@/hooks/usePolling';
@@ -225,9 +225,14 @@ export default function AgendaPage() {
               <button
                 type="button"
                 onClick={() => setEditMode((v) => !v)}
-                className="text-sm font-semibold text-accent"
+                className="flex items-center gap-1.5 text-sm font-semibold text-accent"
               >
-                {editMode ? 'Terminé' : 'Modifier'}
+                {editMode ? 'Terminé' : (
+                  <>
+                    <EditIcon className="h-5 w-5" />
+                    Modifier
+                  </>
+                )}
               </button>
             )
           }

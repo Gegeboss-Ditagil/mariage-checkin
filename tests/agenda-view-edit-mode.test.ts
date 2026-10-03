@@ -26,7 +26,22 @@ test('le bouton Modifier/Terminé (TopBar, slot "right") reste visible dès que 
   assert.match(topBarBlock, /canManage && \(/);
   assert.doesNotMatch(topBarBlock, /canEditNow/);
   assert.match(topBarBlock, /onClick=\{\(\) => setEditMode\(\(v\) => !v\)\}/);
-  assert.match(topBarBlock, /\{editMode \? 'Terminé' : 'Modifier'\}/);
+  assert.match(topBarBlock, /\{editMode \? 'Terminé' : \(/);
+  assert.match(topBarBlock, /Modifier/);
+});
+
+// v1.67.2, retour de Gersom : "assure-toi que le bouton Edit soit une
+// espèce de belle icône qui comprend qu'est-ce qu'il faut modifier" -- une
+// vraie icone SVG (meme convention duotone que le reste de l'app, voir
+// components/icons.tsx), jamais seulement le texte "Modifier" ni le glyphe
+// "✎" deja utilise ailleurs (TopBar.tsx, onTitleClick).
+test("le bouton d'entrée en mode édition porte une icône crayon dédiée (EditIcon), pas seulement du texte", () => {
+  assert.match(agendaPage, /import \{ CloseIcon, ChevronRightIcon, EditIcon \} from '@\/components\/icons';/);
+  const topBarBlock = agendaPage.slice(agendaPage.indexOf('<TopBar'), agendaPage.indexOf('<div className="flex-1 overflow-y-auto'));
+  assert.match(topBarBlock, /<EditIcon className="h-5 w-5" \/>/);
+
+  const iconSource = readFileSync(new URL('../components/icons.tsx', import.meta.url), 'utf8');
+  assert.match(iconSource, /export function EditIcon\(\{ className \}: IconProps\)/);
 });
 
 // "La seule chose qu'on peut faire [en View], c'est scroll down. Quand on

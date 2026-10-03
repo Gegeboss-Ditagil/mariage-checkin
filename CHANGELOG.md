@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.67.2] — 2026-10-03
+
+Suite directe de v1.67.1, retour de Gersom : « assure-toi que le bouton Edit soit une espèce de belle icône qui comprend qu'est-ce qu'il faut modifier. Agenda. » Le bouton « Modifier »/« Terminé » introduit en v1.67.1 n'affichait que du texte.
+
+### Ajouté
+- `EditIcon` (`components/icons.tsx`) : nouvelle icône crayon SVG, même convention « duotone » (silhouette remplie à faible opacité + contour tracé, `currentColor`) que toutes les autres icônes de ce fichier — pas le glyphe texte « ✎ » déjà utilisé ailleurs (`TopBar.tsx`, `onTitleClick`).
+- Le bouton d'entrée en mode édition de `/agenda` (`TopBar`, slot `right`) affiche désormais `<EditIcon />` + « Modifier » en mode Vue ; reste simplement « Terminé » en mode Édition (pas besoin d'icône pour sortir). Toujours gated sur `canManage` seul, jamais `canEditNow` — inchangé de v1.67.1.
+
+### Tests
+- `tests/agenda-view-edit-mode.test.ts` : 1 nouveau test verrouillant l'import et l'usage de `EditIcon` ; l'assertion existante sur le texte du bouton assouplie pour accepter le nouveau JSX (icône + texte) au lieu d'un simple ternaire de chaînes.
+
+### Documentation mise à jour
+- `CLAUDE.md`
+- `README.md`
+
+Purement un changement d'habillage visuel, aucun changement de comportement ni de logique de gate. Aucune migration.
+
 ## [1.67.1] — 2026-10-03
 
 Suite directe du correctif de blocage de `/agenda` (v1.66.2, `hooks/useDismiss.ts`). Retour de Gersom : « pour éviter ce problème, voici ce qu'on va faire. On va mettre deux modes, le mode View et le mode Edit. On va mettre un petit bouton Edit en haut... comme ça, ça fait que quand on est sur View, la seule chose qu'on peut faire, c'est scroll down. Quand on appuie, ça fera rien. Ça va éviter le problème. »

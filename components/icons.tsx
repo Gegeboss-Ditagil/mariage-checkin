@@ -127,3 +127,20 @@ export function TrashIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+// Crayon -- bouton "Modifier" (entrée en mode édition) sur /agenda, v1.67.2 :
+// "assure-toi que le bouton Edit soit une espèce de belle icône qui comprend
+// qu'est-ce qu'il faut modifier" (retour de Gersom). Meme convention duotone
+// que les autres icones de ce fichier (silhouette remplie a faible opacite +
+// contour trace) plutot que le glyphe texte "✎" utilise ailleurs (ex.
+// TopBar.tsx, onTitleClick) -- demande explicitement une "belle icone", pas
+// un caractere.
+export function EditIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <path d="M16.3 3.8a2.05 2.05 0 0 1 2.9 2.9L8.5 17.4l-4 1 1-4L16.3 3.8Z" fill="currentColor" opacity="0.16" />
+      <path d="M16.3 3.8a2.05 2.05 0 0 1 2.9 2.9L8.5 17.4l-4 1 1-4L16.3 3.8Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14.5 5.6 17.4 8.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
