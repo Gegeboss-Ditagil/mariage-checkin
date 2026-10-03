@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.66.1] — 2026-10-03
+
+Bug de processus réel signalé par Gersom : « il y a quelque chose qui ne fonctionne pas au niveau du README. On est rendu à 1.66... ça veut dire que tu ne mettais pas à jour le README à chaque fois... je ne comprends pas comment tu as raté de 1.55 jusqu'à 1.66... on n'est plus avec le processus en place pour que ce soit bien testé. »
+
+### Investigation (`docs/QE_QA_PROCESS.md` section 2, "chercher les cas similaires par une requête groupée")
+Audit groupé des 11 « documents versionnés » (`docs/VERSIONING.md`) contre `package.json` (1.66.0) : `README.md` affichait encore « Version actuelle : 1.53.0 » (texte, dernière révision réelle le 15/09/2026) **et**, indépendamment, un badge shields.io bloqué sur **1.46.1** — deux copies de la même affirmation, dérivées séparément sur plus de dix versions, jamais détectées faute d'un test. `DEPLOIEMENT.md` et `ASSIGNATION_TABLES.md` (vérifiés manuellement, contenu relu en entier) portent eux aussi un numéro antérieur à 1.66.0, mais leur contenu reste factuellement exact pour l'état actuel de l'application — conforme à la règle déjà écrite dans `docs/VERSIONING.md` (« un merge qui modifie uniquement du texte sans changer le comportement peut conserver la version courante ») : **pas un bug**, contrairement à `README.md` dont la « Version actuelle » est une promesse factuelle explicite, jamais une simple date de relecture.
+
+### Corrigé — `README.md`
+- Version/date et badge shields.io réalignés sur 1.66.1.
+- La section « Transmission rapide à Claude AI » (copie indépendante, dans un état encore pire, de la section « Reprise rapide pour Claude AI » de `CLAUDE.md` — c'était exactement la cause du bug : deux copies du même fait qui finissent par diverger) remplacée par un simple renvoi vers `CLAUDE.md`.
+- L'énorme bloc figé « État fonctionnel v1.41.0 » (plus de 90 lignes de bullets ponctuels, doublon à moitié périmé du contenu déjà tenu à jour dans `CHANGELOG.md`) remplacé par un résumé concis de l'état structurel actuel, avec renvoi explicite vers `CHANGELOG.md` comme seule source de vérité pour l'historique détaillé.
+- **Vraie fausse affirmation corrigée** : « les sessions sont liées au déploiement courant; après un nouveau déploiement, une ancienne session est invalidée à la prochaine requête protégée » décrivait le comportement d'AVANT v1.53.19 — soit l'inverse exact du comportement réel depuis cette version (« Corrigé en v1.53.19 »). Une documentation qui affirme le contraire du comportement réel est pire qu'une documentation simplement datée.
+- La section « Release actuelle » épinglait encore un numéro de version en dur (« v1.37.0 », déjà périmé une fois) — remplacé par un renvoi non daté vers `CHANGELOG.md`/`package.json`, pour ne plus jamais pouvoir driver silencieusement à cet endroit précis.
+
+### Ajouté — garde-fou mécanique contre la récidive
+`tests/readme-version-sync.test.ts` (nouveau, 3 tests) : vérifie que la « Version actuelle » et le badge shields.io de `README.md` correspondent exactement à `package.json`, et qu'aucun numéro de version n'est plus épinglé en dur dans la section « Release actuelle ». Intégré à `node --test tests/*.test.ts`, déjà obligatoire avant tout push (`CLAUDE.md`) — ce type de dérive ne peut plus repasser inaperçu : le test échoue désormais à chaque bump de version tant que `README.md` n'a pas été mis à jour en conséquence.
+
+### Trouvé en regardant les logs, signalé mais non corrigé dans ce lot (hors périmètre de cette demande)
+En répondant à la demande explicite de Gersom de « mieux regarder les logs », `app_logs` montre que l'erreur « View transition update callback timed out » (root cause diagnostiquée en v1.62.0, censée déclencher une reconnexion) continue de se reproduire sur `/dashboard` le 02/10/2026 et le 03/10/2026 — **après** les correctifs v1.62.0 et v1.63.0. Root cause trouvée : `isStaleDeploymentError` (`lib/staleDeployment.ts`) ne reconnaît que les erreurs `ChunkLoadError`/« Loading chunk »/« Failed to fetch dynamically imported module », jamais ce message précis — la reconnexion ajoutée en v1.62.0 ne s'est donc probablement jamais déclenchée pour l'erreur exacte qui l'a motivée. Nécessite sa propre investigation (device réel, nouvelle PR) — signalé explicitement plutôt que découvert puis tu, conformément à la demande.
+
+### Documentation mise à jour
+- `docs/QE_QA_PROCESS.md` (nouveau garde-fou transverse, section 5)
+- `docs/VERSIONING.md` (distinction explicite : `README.md` doit toujours égaler `package.json` ; les autres documents versionnés reflètent leur dernière révision substantielle, pas la version applicative)
+- `CLAUDE.md`
+
+Aucune migration.
+
 ## [1.66.0] — 2026-10-03
 
 Retour de Gersom (capture d'écran de `/plan-table`, dessin à main levée) : « il serait intéressant qu'en allant sur les tables, on voit vraiment mieux un espèce de carré ou rectangle qui signifie la piste. Et puis l'emoji de la personne qui danse devrait être beaucoup plus grand. Et puis l'allée, ça devrait être un espèce de petit rectangle... et avoir un emoji d'une personne qui marche beaucoup plus grande. Pour mieux resize l'élément, fais juste baisser la table. Comme ça, tu as un peu plus d'espace dans ce carré-là pour justement les emojis. »

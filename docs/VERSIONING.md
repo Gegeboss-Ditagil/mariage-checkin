@@ -1,7 +1,7 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.55.0**
-**Dernière mise à jour : 2026-09-17**
+**Version documentaire : 1.66.1**
+**Dernière mise à jour : 2026-10-03**
 
 ## Source de vérité
 
@@ -45,6 +45,8 @@ Les documents suivants décrivent l'état courant et doivent rester alignés :
 - `docs/QA_SCENARIOS.md`
 - `docs/VERSIONING.md`
 - `CHANGELOG.md`
+
+**Distinction importante (clarifiée le 03/10/2026, après un vrai bug trouvé sur `README.md`, voir `docs/QE_QA_PROCESS.md` section 5)** : pour la plupart de ces documents, le numéro de version affiché reflète la dernière release où leur **contenu** a été substantiellement révisé — il est normal et attendu qu'il soit antérieur à `package.json` la plupart du temps (règle déjà énoncée ci-dessus : « un merge qui modifie uniquement du texte sans changer le comportement peut conserver la version courante »). **`README.md` fait exception** : sa ligne « Version actuelle : X.Y.Z » et son badge shields.io sont une promesse factuelle explicite sur l'état de l'app (pas une date de dernière relecture) — ils doivent toujours être strictement égaux à `package.json`, vérifié mécaniquement par `tests/readme-version-sync.test.ts` à chaque exécution de `node --test tests/*.test.ts`. Un échec de ce test avant un push signifie que `README.md` n'a pas suivi le dernier bump de version.
 
 ## Procédure pour Claude / agents IA
 
