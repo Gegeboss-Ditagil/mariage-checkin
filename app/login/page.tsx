@@ -7,6 +7,11 @@ import { GoldSeal } from '@/components/BrandMotif';
 import { landingPathForRole } from '@/lib/permissions';
 import { Role } from '@/lib/types';
 import { useTheme } from '@/hooks/useTheme';
+// Meme besoin de tracabilite que le splash (app/page.tsx, v1.40.0/v1.42.1) --
+// retour de Gersom le 02/10/2026 : /login est justement l'ecran que revoit un
+// agent deja deconnecte, donc le seul endroit ou ce repere est encore utile
+// une fois le splash passe.
+import { version } from '@/package.json';
 
 const THEME_CHOSEN_KEY = 'checkin-theme-chosen';
 
@@ -163,6 +168,10 @@ function LoginForm() {
       <p className="relative mt-8 max-w-xs text-center text-sm text-text-faint">
         Merci pour vos efforts :) Vous êtes la meilleure équipe !
       </p>
+
+      <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-text-faint">
+        v{version}
+      </span>
     </div>
   );
 }
