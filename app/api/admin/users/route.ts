@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
 import { hashSecret } from '@/lib/auth';
+import { canResetPassword, canViewPasswordHint } from '@/lib/permissions';
 
 export async function GET() {
   const user = getSessionUser();
@@ -10,12 +11,29 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('users')
-    .select('id, nom_affichage, role, email, active, created_at')
+    .select('id, nom_affichage, role, email, active, created_at, pin_reset_hint')
     .eq('event_id', user.event_id)
     .order('created_at');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ users: data });
+
+  // v1.67.4, retour de Gersom : "réinitialiser"/"modifier" doivent être le
+  // même choix, au même endroit (/admin/users), plutôt que réinitialiser
+  // vivant seulement sur l'écran séparé /mots-de-passe -- mêmes fonctions
+  // canResetPassword/canViewPasswordHint (lib/permissions.ts, seule source
+  // de vérité) que cet autre écran, jamais recréées ici.
+  const canViewHints = canViewPasswordHint(user);
+  const users = (data || []).map((row) => ({
+    id: row.id,
+    nom_affichage: row.nom_affichage,
+    role: row.role,
+    email: row.email,
+    active: row.active,
+    created_at: row.created_at,
+    canReset: canResetPassword(user, row.role),
+    hint: canViewHints ? row.pin_reset_hint : undefined,
+  }));
+  return NextResponse.json({ users, canViewHints });
 }
 
 export async function POST(req: NextRequest) {

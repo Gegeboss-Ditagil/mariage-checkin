@@ -153,6 +153,11 @@ export interface UserRow {
   email: string | null;
   active: boolean;
   created_at: string;
+  // Calculés côté serveur (canResetPassword/canViewPasswordHint,
+  // lib/permissions.ts) pour le bouton "Réinitialiser" de /admin/users,
+  // v1.67.4 -- jamais recalculés côté client.
+  canReset?: boolean;
+  hint?: string | null;
 }
 
 export interface AuditLogRow {
