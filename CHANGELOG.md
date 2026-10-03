@@ -3,6 +3,27 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.67.3] — 2026-10-03
+
+Retour de Gersom (2 captures d'écran, navigateur mobile NON installé — `/scan` et `/admin/users`) : « quand on est sur un browser, ajuste pour que justement tout fait sur un écran. Là, je vois que le dernier élément, il est coupé. Le truc du tableau de bord, la barre de progression. Et sur toutes les pages, justement. »
+
+### Corrigé — dernier élément coupé par la barre d'outils du navigateur (onglet non installé)
+- **Root cause** : les 11 écrans principaux (`fixed inset-0`, v1.45.0) laissaient le navigateur calculer la hauteur automatiquement (`top:0`/`bottom:0`) — sur mobile, cet « auto » se résout contre le GRAND viewport (barres d'adresse/outils supposées repliées), jamais contre la zone réellement visible quand ces barres sont déployées (onglet de navigateur ordinaire, pas une PWA installée). Le dernier élément du flex (`BottomNav`, avec sa barre de progression) se retrouvait donc physiquement sous la vraie barre d'outils, dans une zone que `overflow-hidden` empêche de faire défiler jusque-là — classique bug `100vh` mobile, réintroduit via l'auto-height de `inset-0` plutôt que via un `100vh` explicite.
+- Remplacé par une hauteur **explicite** `h-[100svh]` (petit viewport — la plus petite zone garantie visible) sur les 11 écrans (`dashboard`, `scan`, `plan-table`, `search`, `staff`, `agenda`, `approbations`, `exceptions`, `history`, `placement`, `admin`) : jamais plus grand que ce qui est réellement visible, donc plus jamais de contenu caché sous le navigateur.
+- Délibérément `svh`, jamais `dvh` : `dvh` se recalcule dynamiquement pendant le défilement (barres qui se replient/déploient), ce qui réintroduirait exactement le problème que `fixed inset-0` avait corrigé en v1.45.0 (coquille instable, bouton central momentanément injoignable). `svh` est une valeur statique, jamais recalculée en cours d'interaction — cumule donc les deux propriétés : jamais trop grand (ce correctif) ET jamais instable (acquis de v1.45.0, préservé).
+- Le repère paysage iPad (`landscape:bottom-[env(safe-area-inset-bottom)]`, v1.45.2) devient `landscape:h-[calc(100svh-env(safe-area-inset-bottom))]` — une fois `top`/`height` tous deux explicites, le moteur CSS ignore `bottom`, donc l'ancien ajustement par décalage du bord bas n'avait plus aucun effet ; même résultat obtenu en ajustant directement la hauteur.
+- Aucun changement pour le mode PWA installé (petit et grand viewport y sont identiques, aucune barre de navigateur réelle) — déjà fonctionnel, non affecté.
+
+### Tests
+- `tests/scroll-fixed-shell.test.ts` : 2 assertions mises à jour (nouvelle classe exacte, nouveau repère paysage) + 1 nouveau test verrouillant `h-[100svh]` sur les 11 écrans et l'absence de `h-[100dvh]`.
+- `tests/navigation-resilience.test.ts` : 1 assertion mise à jour (nouvelle classe exacte).
+
+### Documentation mise à jour
+- `CLAUDE.md`
+- `README.md`
+
+Purement un changement de dimensionnement CSS, aucun changement de logique ni de contenu. Aucune migration.
+
 ## [1.66.1] — 2026-10-03
 
 Bug de processus réel signalé par Gersom : « il y a quelque chose qui ne fonctionne pas au niveau du README. On est rendu à 1.66... ça veut dire que tu ne mettais pas à jour le README à chaque fois... je ne comprends pas comment tu as raté de 1.55 jusqu'à 1.66... on n'est plus avec le processus en place pour que ce soit bien testé. »
