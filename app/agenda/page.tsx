@@ -106,6 +106,17 @@ export default function AgendaPage() {
   const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
   const [newCustomAssignees, setNewCustomAssignees] = useState<string[]>([]);
   const [canManage, setCanManage] = useState(false);
+  // v1.67.1, retour de Gersom (suite directe du correctif de blocage de
+  // v1.66.2) : "on va mettre deux modes, View et Edit... un petit bouton
+  // Edit en haut... quand on est sur View, la seule chose qu'on peut faire,
+  // c'est scroll down. Quand on appuie, ça fera rien." Mode explicite,
+  // jamais activé par défaut (toujours View à l'ouverture de la page) --
+  // réservé aux rôles avec `canManage` (admin/directeur) : les autres rôles
+  // étaient déjà en lecture seule de toute façon, rien ne change pour eux.
+  // Durcit l'app contre une classe entière de bugs de fiches modales
+  // accidentellement ouvertes par un tap rapide en faisant défiler, en plus
+  // (pas à la place) du vrai correctif de v1.66.2 (hooks/useDismiss.ts).
+  const [editMode, setEditMode] = useState(false);
   // Fiche plein ecran de recherche des responsables -- demande de Gersom le
   // 02/09/2026 : "au lieu d'avoir toute la liste des responsables a
   // defiler... un champ" (voir components/ResponsablePicker.tsx). Fermee a
@@ -115,6 +126,11 @@ export default function AgendaPage() {
   const [responsablePickerOpen, setResponsablePickerOpen] = useState(false);
   const { closing: insertClosing, dismiss: dismissInsert } = useDismiss(() => setInsertAt(null));
   const { closing: editClosing, dismiss: dismissEdit } = useDismiss(() => openEditing(null));
+  // Remplace `canManage` seul comme garde sur toute action qui modifie/ouvre
+  // une fiche -- "la seule chose qu'on peut faire [en View], c'est scroll
+  // down. Quand on appuie, ça fera rien." `canManage` reste la garde
+  // ultime (aucun rôle sans elle ne peut jamais entrer en mode édition).
+  const canEditNow = canManage && editMode;
 
   function openEditing(item: AgendaItem | null) {
     // Meme garde qu'a la fermeture (hooks/useDismiss.ts) : un champ deja
@@ -201,7 +217,21 @@ export default function AgendaPage() {
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar title="Agenda du jour J" backHref="/dashboard" />
+        <TopBar
+          title="Agenda du jour J"
+          backHref="/dashboard"
+          right={
+            canManage && (
+              <button
+                type="button"
+                onClick={() => setEditMode((v) => !v)}
+                className="text-sm font-semibold text-accent"
+              >
+                {editMode ? 'Terminé' : 'Modifier'}
+              </button>
+            )
+          }
+        />
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="card mb-4 space-y-2">
             <p className="eyebrow">Samedi 24 octobre 2026</p>
@@ -230,11 +260,11 @@ export default function AgendaPage() {
                   ...(item.custom_assignees || []),
                 ];
                 return <li key={item.id}>
-                  {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
+                  {canEditNow && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
                   <article
                     className={clsx(
                       'card flex gap-3 py-3',
-                      canManage && 'cursor-pointer transition-transform active:scale-[0.99]',
+                      canEditNow && 'cursor-pointer transition-transform active:scale-[0.99]',
                       // v1.64.0, retour de Gersom : un élément privé ou
                       // m'étant assigné doit se reconnaître "sans avoir à
                       // cliquer sur la carte" -- recolore toute la carte
@@ -248,14 +278,14 @@ export default function AgendaPage() {
                         ? 'border-2 border-accent/40 bg-accent-tint'
                         : assignedToMe && 'border-2 border-status-complete/40 bg-status-complete/5'
                     )}
-                    onClick={() => canManage && openEditing(item)}
-                    role={canManage ? 'button' : undefined}
-                    tabIndex={canManage ? 0 : undefined}
-                    aria-label={canManage ? 'Modifier ' + item.title : undefined}
-                    onKeyDown={canManage ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditing(item); } } : undefined}
+                    onClick={() => canEditNow && openEditing(item)}
+                    role={canEditNow ? 'button' : undefined}
+                    tabIndex={canEditNow ? 0 : undefined}
+                    aria-label={canEditNow ? 'Modifier ' + item.title : undefined}
+                    onKeyDown={canEditNow ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditing(item); } } : undefined}
                   >
                     {/* Case a part (pas dans la zone cliquable de la carte) : appuyer dessus coche/decoche sans ouvrir la modification. */}
-                    {canManage && (
+                    {canEditNow && (
                       <button
                         type="button"
                         aria-label={item.completed ? 'Marquer à faire' : 'Marquer terminé'}
@@ -282,7 +312,7 @@ export default function AgendaPage() {
                   </article>
                 </li>;
               })}
-              {canManage && <li><button type="button" className="mx-auto block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt((items.at(-1)?.sort_order || 0) + 10)}>+ Ajouter une activité à la fin</button></li>}
+              {canEditNow && <li><button type="button" className="mx-auto block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt((items.at(-1)?.sort_order || 0) + 10)}>+ Ajouter une activité à la fin</button></li>}
             </ol>
           )}
         </div>
