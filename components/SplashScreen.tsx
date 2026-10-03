@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
-const SPLASH_DURATION_MS = 3000;
+// Raccourci de 3000 a 2400ms le 02/10/2026 (retour de Gersom : "un tout petit
+// peu plus court") -- le prefetch de la destination + le prechargement des
+// approbations (juste en dessous) restent lances au montage, inchanges.
+const SPLASH_DURATION_MS = 2400;
 
 export function SplashScreen({
   next,

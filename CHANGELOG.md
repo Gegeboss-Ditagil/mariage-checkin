@@ -3,7 +3,7 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
-## [1.59.0] — 2026-10-02
+## [1.62.0] — 2026-10-03
 
 Retour de Gersom : « l'application reste souvent figée, ça prend du temps avant de répondre, surtout à la page approbation » et « des fois, 5-10-30 minutes passent sans me reloguer... quand je reviens, ça ne demande même pas de login, et là je sais que ça va buguer. »
 
@@ -23,6 +23,27 @@ Une seule occurrence loggée à ce jour — pas une preuve définitive que la co
 - `tests/error-boundary-reconnect.test.ts` : étendu pour couvrir `lib/staleDeployment.ts` et le nouveau comportement de `GlobalErrorLogger.tsx`.
 - `tests/pending-approvals-request.test.ts` (nouveau) : comportemental, confirme que des appels concurrents partagent une seule requête réseau.
 - `tests/guest-approvals.test.ts` : assertions mises à jour pour le nouveau point de partage.
+
+Aucune migration.
+
+## [1.60.0] — 2026-10-02
+
+Retour de Gersom (message vocal) : « ajouter le numéro de version sur la page de login, en plus du splash page. Faire le splash page au début, juste un tout petit peu plus court. » Troisième unité de travail distincte du jour (PR #101 orientation, PR #102 freeze/session), sur sa propre branche conformément à la règle « une demande = une PR ».
+
+### Ajouté — numéro de version sur `/login`
+`app/login/page.tsx` affiche désormais `v{version}` en bas à droite (même position/style discret que le splash, `text-text-faint`), lu depuis `package.json` comme seule source de vérité (`docs/VERSIONING.md`) — jamais une variable dupliquée. Utile précisément à l'écran que revoit un agent déjà déconnecté, une fois le splash passé.
+
+### Changé — splash légèrement raccourci
+`components/SplashScreen.tsx` : `SPLASH_DURATION_MS` passe de 3000 à 2400ms (« un tout petit peu plus court », pas une coupe drastique) — le `prefetch` de la destination et le préchargement des approbations lancés au montage sont inchangés.
+
+### Recherché sans trouver — texte « loading » isolé
+Gersom signale « un petit mot, un petit endroit, ça dit loading » quelque part dans l'app. Recherche exhaustive dans `app/`, `components/`, `lib/`, `hooks/`, `public/` (toutes extensions pertinentes, mot entier, insensible à la casse) : aucune occurrence du mot anglais isolé affichée à l'utilisateur — partout ailleurs le texte est en français (« Chargement… »). Vérifié aussi que ce projet utilise `Html5Qrcode` (bare) et non le widget `Html5QrcodeScanner` de la librairie `html5-qrcode`, qui lui injecterait un texte « Loading image... » — donc pas la source. Hypothèse la plus probable, non confirmée : un bundle PWA périmé encore en cache sur l'appareil (voir la correction de reconnexion de PR #102) montrant un ancien texte déjà corrigé depuis côté source — à reconfirmer avec Gersom (capture d'écran ou emplacement précis) plutôt que deviner plus loin.
+
+### Non interprété
+Le fragment « Place page » du message vocal reste incompris (transcription probablement incomplète) — signalé à Gersom plutôt que deviné.
+
+### Tests
+- `tests/login-splash-version.test.ts` (nouveau) : verrouille l'import/affichage de la version sur `/login` et la nouvelle durée du splash (< 3000ms, ≥ 1500ms).
 
 Aucune migration.
 
