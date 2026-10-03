@@ -111,9 +111,13 @@ test('le PIN généré ne part jamais vers les logs serveur en clair -- seulemen
 
 const loginSource = readFileSync(new URL('../app/login/page.tsx', import.meta.url), 'utf8');
 
-test('/login propose "Mot de passe oublié ?" qui révèle un texte statique, sans appel réseau', () => {
+test('/login propose "Mot de passe oublié ?" qui révèle un texte statique nommant des directeurs, sans appel réseau', () => {
   assert.match(loginSource, /Mot de passe oublié \?/);
-  assert.match(loginSource, /Allez voir les directeurs de festin\. Ils vous donneront un nouveau mot de passe\./);
+  // v1.65.1, retour de Gersom : noms explicites plutôt que le terme générique
+  // "les directeurs de festin" -- Rémy Landu et Tuzola Saviera, les deux
+  // directeurs qu'il a nommés (confirmés actifs en base, rôle directeur).
+  assert.match(loginSource, /Rémy Landu ou Tuzola Saviera/);
+  assert.match(loginSource, /Ils vous donneront un nouveau mot de passe\./);
   // Purement informatif : jamais de fetch déclenché par ce bouton.
   const buttonBlock = loginSource.slice(loginSource.indexOf('Mot de passe oublié'), loginSource.indexOf('Mot de passe oublié') + 600);
   assert.doesNotMatch(buttonBlock, /fetch\(/);

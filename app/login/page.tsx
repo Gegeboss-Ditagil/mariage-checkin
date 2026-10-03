@@ -170,7 +170,14 @@ function LoginForm() {
         Merci pour vos efforts :) Vous êtes la meilleure équipe !
       </p>
 
-      <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-text-faint">
+      {/* v1.65.1, retour de Gersom : "vraiment en bas à droite" -- même
+          traitement que le badge du splash (components/SplashScreen.tsx,
+          v1.42.1) : décalé d'environ 1 cm vers le nord-ouest (315°) au lieu
+          de rester collé dans l'angle exact de l'écran. */}
+      <span
+        className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-text-faint"
+        style={{ transform: 'translate(-0.71cm, -0.71cm)' }}
+      >
         v{version}
       </span>
 
@@ -179,7 +186,12 @@ function LoginForm() {
           fait... un petit texte disant, allez voir les directeurs de
           festin." Purement informatif -- aucun flux de reinitialisation en
           libre-service, la personne doit demander a un humain habilite
-          (voir lib/permissions.ts, canResetPassword). */}
+          (voir lib/permissions.ts, canResetPassword). v1.65.1 : noms
+          explicites sur demande de Gersom plutôt que le terme générique
+          "les directeurs de festin" -- Rémy Landu et Tuzola Saviera
+          confirmés directeurs actifs en base au moment de l'écriture ; les
+          deux autres directeurs (Nelly Dos, Sem Landu) ne sont pas cités
+          -- Gersom n'a nommé que ces deux-là. */}
       <button
         type="button"
         onClick={() => setForgotOpen((v) => !v)}
@@ -189,7 +201,7 @@ function LoginForm() {
       </button>
       {forgotOpen && (
         <div className="absolute bottom-10 left-4 right-4 max-w-xs rounded-xl2 border border-hairline bg-surface p-3 text-xs text-text-muted shadow-elev-2 dark:backdrop-blur-xl">
-          Allez voir les directeurs de festin. Ils vous donneront un nouveau mot de passe.
+          Allez voir un directeur de festin : Rémy Landu ou Tuzola Saviera. Ils vous donneront un nouveau mot de passe.
         </div>
       )}
     </div>

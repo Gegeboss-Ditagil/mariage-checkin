@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.65.1] — 2026-10-03
+
+Retour de Gersom (capture d'écran `/login`, thème Maison) : « je m'attendais à voir mieux disposer la version... il est vraiment en bas à droite » + « ajoute aussi le petit bouton mot de passe oublié avec un petit message... un des directeurs de festin, et là tu mets leur nom, Rémy Landu ou Tuzola. »
+
+### Corrigé — badge de version `/login` trop collé dans l'angle
+Le badge `v{version}` de `/login` (ajouté en v1.60.0) n'avait jamais reçu le décalage appliqué au même badge du splash en v1.42.1 (« c'est trop en bas à droite... une translation d'à peu près 1 cm à l'angle 315° ») — seul le splash avait ce traitement. Même `transform: translate(-0.71cm, -0.71cm)` appliqué ici, par cohérence. Le bouton « Mot de passe oublié ? » existait déjà depuis v1.65.0 (vraisemblablement pas encore vu par Gersom au moment de la capture, le build affiché étant encore v1.64.0) ; aucun changement de position pour lui.
+
+### Changé — directeurs nommés explicitement dans le texte « Mot de passe oublié »
+Le texte générique « Allez voir les directeurs de festin » devient « Allez voir un directeur de festin : Rémy Landu ou Tuzola Saviera » — les deux noms donnés explicitement par Gersom (vérifiés en base : tous deux `role = 'directeur'`, actifs ; les deux autres directeurs, Nelly Dos et Sem Landu, ne sont pas cités, Gersom n'ayant nommé que ces deux-là).
+
+### Tests
+- `tests/password-management.test.ts` : assertion mise à jour sur le nouveau texte nommant les directeurs.
+
+### Documentation mise à jour
+- `docs/BUSINESS_RULES.md`
+
+Aucune migration.
+
 ## [1.65.0] — 2026-10-03
 
 Retour de Gersom (message vocal, 03/10/2026) : « l'admin principal... peut changer les mots de passe... et même voir les mots de passe [avec anonymisation]... les directeurs de festin... peuvent faire la réinitialisation... sauf aux admins. Les admins peuvent faire la même chose et... réinitialiser les mots de passe des directeurs de festin. Et l'admin principal... peut le faire pour tout le monde... la seule personne qui a de la visibilité sur tout... c'est Gersom. » Deux comptes admin trouvés en production ; confirmé explicitement par Gersom que « Admin » (gersomdos@gmail.com) est l'admin principal, « Dos » (son compte perso) reste un admin ordinaire — « l'objectif est de pouvoir séparer les pouvoirs... et pouvoir un jour si nécessaire déléguer l'admin principal ».
