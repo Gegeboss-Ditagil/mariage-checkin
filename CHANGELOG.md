@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.65.2] — 2026-10-03
+
+Deuxième retour de Gersom le même jour, sur ce même bouton « Mot de passe oublié ? » (v1.65.0) une fois réellement vu en production : « il était aussi en bas à gauche, non visible... il faut qu'il soit beaucoup plus visible et dans un endroit accessible. »
+
+### Corrigé — bouton « Mot de passe oublié ? » peu visible
+Le bouton vivait en position absolue dans le coin bas-gauche de l'écran (`text-[11px] text-faint`, même traitement discret que le badge de version) — facilement manqué, en particulier sous la ligne de texte "Merci pour vos efforts" et le badge de version qui occupent déjà cette zone. Sorti du positionnement absolu pour rejoindre le flux normal de la page, juste sous la carte de connexion : texte plus grand (`text-sm font-semibold`), couleur accent soulignée — même style de lien visible déjà utilisé ailleurs dans l'app (ex. les liens "Gérer"/"Fusionner" de `/checkin/[invitationId]`), au lieu du gris discret réservé jusque-là aux mentions purement cosmétiques (version). Le texte révélé au clic (noms de Rémy Landu et Tuzola Saviera, v1.65.1) suit le bouton dans le flux au lieu d'un popover absolu.
+
+### Tests
+Aucun changement d'assertion nécessaire (`tests/password-management.test.ts` vérifie déjà uniquement le texte, pas la position/le style).
+
+Aucune migration.
+
 ## [1.65.1] — 2026-10-03
 
 Retour de Gersom (capture d'écran `/login`, thème Maison) : « je m'attendais à voir mieux disposer la version... il est vraiment en bas à droite » + « ajoute aussi le petit bouton mot de passe oublié avec un petit message... un des directeurs de festin, et là tu mets leur nom, Rémy Landu ou Tuzola. »

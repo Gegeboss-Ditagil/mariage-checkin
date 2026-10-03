@@ -166,6 +166,35 @@ function LoginForm() {
         </form>
       </div>
 
+      {/* v1.65.0, retour de Gersom : "mettre un petit bouton... écrire mot
+          de passe oublié. Quand tu cliques dessus, ça fait... un petit
+          texte disant, allez voir les directeurs de festin." v1.65.2,
+          deuxième retour sur ce même bouton : "il était en bas à gauche,
+          non visible... il faut qu'il soit beaucoup plus visible et dans
+          un endroit accessible" -- sorti du coin absolu en bas de l'écran
+          (text-[11px] text-faint, facile à manquer) pour rejoindre le flux
+          normal juste sous la carte de connexion, avec le même style de
+          lien visible (texte accent souligné) déjà utilisé ailleurs dans
+          l'app (ex. app/checkin/[invitationId]/page.tsx). Purement
+          informatif -- aucun flux de reinitialisation en libre-service, la
+          personne doit demander a un humain habilite (voir
+          lib/permissions.ts, canResetPassword). Noms explicites (v1.65.1) :
+          Rémy Landu et Tuzola Saviera, confirmés directeurs actifs en base
+          -- les deux autres directeurs (Nelly Dos, Sem Landu) ne sont pas
+          cités, Gersom n'ayant nommé que ces deux-là. */}
+      <button
+        type="button"
+        onClick={() => setForgotOpen((v) => !v)}
+        className="relative mt-6 text-sm font-semibold text-accent underline decoration-accent/35 underline-offset-4"
+      >
+        Mot de passe oublié ?
+      </button>
+      {forgotOpen && (
+        <div className="relative mt-3 w-full max-w-sm rounded-xl2 border border-hairline bg-surface p-4 text-sm text-text-muted shadow-elev-2 dark:backdrop-blur-xl">
+          Allez voir un directeur de festin : Rémy Landu ou Tuzola Saviera. Ils vous donneront un nouveau mot de passe.
+        </div>
+      )}
+
       <p className="relative mt-8 max-w-xs text-center text-sm text-text-faint">
         Merci pour vos efforts :) Vous êtes la meilleure équipe !
       </p>
@@ -180,30 +209,6 @@ function LoginForm() {
       >
         v{version}
       </span>
-
-      {/* v1.65.0, retour de Gersom : "mettre un petit bouton en bas à
-          gauche... écrire mot de passe oublié. Quand tu cliques dessus, ça
-          fait... un petit texte disant, allez voir les directeurs de
-          festin." Purement informatif -- aucun flux de reinitialisation en
-          libre-service, la personne doit demander a un humain habilite
-          (voir lib/permissions.ts, canResetPassword). v1.65.1 : noms
-          explicites sur demande de Gersom plutôt que le terme générique
-          "les directeurs de festin" -- Rémy Landu et Tuzola Saviera
-          confirmés directeurs actifs en base au moment de l'écriture ; les
-          deux autres directeurs (Nelly Dos, Sem Landu) ne sont pas cités
-          -- Gersom n'a nommé que ces deux-là. */}
-      <button
-        type="button"
-        onClick={() => setForgotOpen((v) => !v)}
-        className="absolute bottom-3 left-4 text-[11px] font-medium text-text-faint underline-offset-2 hover:underline"
-      >
-        Mot de passe oublié ?
-      </button>
-      {forgotOpen && (
-        <div className="absolute bottom-10 left-4 right-4 max-w-xs rounded-xl2 border border-hairline bg-surface p-3 text-xs text-text-muted shadow-elev-2 dark:backdrop-blur-xl">
-          Allez voir un directeur de festin : Rémy Landu ou Tuzola Saviera. Ils vous donneront un nouveau mot de passe.
-        </div>
-      )}
     </div>
   );
 }
