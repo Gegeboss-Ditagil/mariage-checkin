@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.65.3] — 2026-10-03
+
+Troisième retour de Gersom le même jour (capture d'écran `/login`) : « regarde mon bas de page, il y a tout plein de textes qui se chevauchent, c'est pas beau au niveau UI. »
+
+### Corrigé — chevauchement avec le bouton flottant « Installer l'app »
+La capture montrait le badge de version (`v{version}`, encore en position absolue dans le coin bas-droit malgré le décalage diagonal de v1.65.1) chevauchant visuellement `components/InstallAppButton.tsx` (« ⬇ Installer l'app », `fixed bottom-5 right-5`, affiché en permanence sur `/login` tant que l'app n'est pas installée — le cas le plus courant pour un premier accès). Root cause commune aux trois signalements successifs sur ce bas de page (v1.65.1, v1.65.2, celui-ci) : accumuler plusieurs éléments en position `absolute`/`fixed` dans le même coin de l'écran, qui ne peuvent alors qu'entrer en collision selon l'état de chacun. Le badge de version rejoint à son tour le flux normal de la page, juste sous « Merci pour vos efforts » — ne peut plus chevaucher un élément `fixed` quel que soit son état, puisqu'il n'est lui-même plus positionné hors du flux. Seul `InstallAppButton` reste `fixed` (nécessaire : doit rester joignable même si le reste du contenu défile ou change de hauteur).
+
+### Tests
+Aucun changement d'assertion nécessaire (`tests/login-splash-version.test.ts` vérifie uniquement la présence de `v{version}`, pas sa position).
+
+Aucune migration.
+
 ## [1.65.2] — 2026-10-03
 
 Deuxième retour de Gersom le même jour, sur ce même bouton « Mot de passe oublié ? » (v1.65.0) une fois réellement vu en production : « il était aussi en bas à gauche, non visible... il faut qu'il soit beaucoup plus visible et dans un endroit accessible. »
