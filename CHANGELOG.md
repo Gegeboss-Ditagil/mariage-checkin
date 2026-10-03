@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.66.0] — 2026-10-03
+
+Retour de Gersom (capture d'écran de `/plan-table`, dessin à main levée) : « il serait intéressant qu'en allant sur les tables, on voit vraiment mieux un espèce de carré ou rectangle qui signifie la piste. Et puis l'emoji de la personne qui danse devrait être beaucoup plus grand. Et puis l'allée, ça devrait être un espèce de petit rectangle... et avoir un emoji d'une personne qui marche beaucoup plus grande. Pour mieux resize l'élément, fais juste baisser la table. Comme ça, tu as un peu plus d'espace dans ce carré-là pour justement les emojis. »
+
+### Changé — repères « Piste »/« Allée » du dessin « vu sur le plan photographié »
+Les deux repères d'orientation (`components/TableSeatWheel.tsx`, v1.53.15/v1.58.0) n'étaient qu'un simple libellé texte (emoji + mot sur une ligne, 15px), jugé trop discret. Remplacés par une vraie pastille rectangulaire (`LandmarkTile`, fond coloré + bordure) avec l'emoji isolé et agrandi (15px → 26px) au-dessus d'une légende texte séparée. **Piste** (💃) : pastille carrée (54×54, forme compacte reflétant la piste de danse réelle). **Allée** (🚶) : pastille plus large que haute (78×44, forme allongée reflétant une allée) — les deux formes diffèrent volontairement, jamais le même gabarit réutilisé. `COMPASS_RADIUS` repoussé (224 → 248) pour ne jamais chevaucher ces nouvelles pastilles, plus larges que l'ancien libellé.
+
+### Changé — table centrale réduite pour dégager de la place
+`HUB_RADIUS` (le cercle central affichant le numéro de table) réduit de 56 à 44, comme demandé explicitement (« baisse la table... un peu plus d'espace dans ce carré-là pour les emojis »).
+
+Toujours **purement informatif** (voir `lib/floorPlanSeats.ts`) : aucune donnée écrite en base, `invitations.table_id` reste l'unique source de placement.
+
+### Tests
+- `tests/table-orientation-arrows.test.ts` : nouveau test verrouillant les pastilles rectangulaires (dimensions, forme carrée vs allongée, emoji agrandi, rectangle de fond réel) et le `HUB_RADIUS` réduit ; assertions existantes mises à jour sur le renommage `OrientationArrow` → `LandmarkTile` et le nouveau `COMPASS_RADIUS`.
+
+### Documentation mise à jour
+- `CLAUDE.md`
+
+Aucune migration.
+
 ## [1.65.3] — 2026-10-03
 
 Troisième retour de Gersom le même jour (capture d'écran `/login`) : « regarde mon bas de page, il y a tout plein de textes qui se chevauchent, c'est pas beau au niveau UI. »
