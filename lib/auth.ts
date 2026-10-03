@@ -77,6 +77,7 @@ export function verifySessionToken(token: string | undefined | null): SessionUse
       nom_complet: payload.nom_complet ?? null,
       role: payload.role,
       event_id: payload.event_id,
+      is_super_admin: payload.is_super_admin === true,
     };
   } catch {
     return null;

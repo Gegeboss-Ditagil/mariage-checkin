@@ -29,7 +29,8 @@ export type Capability =
   | 'assignGuestApproval'
   | 'deleteGuestApproval'
   | 'exportData'
-  | 'adminPanel';
+  | 'adminPanel'
+  | 'managePasswords';
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
@@ -37,7 +38,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'messageContacts',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
-  'deleteGuestApproval', 'exportData', 'adminPanel',
+  'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords',
 ];
 
 // viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
@@ -78,7 +79,12 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // par Gersom que directeur (deja approbateur via reviewGuestApproval)
   // doit malgre tout pouvoir supprimer une demande deja decidee, au meme
   // titre qu'admin.
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation'],
+  // managePasswords ajoutee le 03/10/2026 (retour de Gersom, message vocal) :
+  // "les directeurs de festin... peuvent faire la reinitialisation du mot de
+  // passe... sauf aux admins" -- voir canResetPassword ci-dessous, qui
+  // applique cette exclusion (jamais cette seule capacite, qui ne porte que
+  // sur l'acces a l'ecran/l'API, pas sur la cible autorisee).
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords'],
   // viewAgenda ajoutee le 14/09/2026 (retour de Gersom sur Agent001, verifie
   // en base -- role reellement `placeur` : la barre du bas calque
   // desormais le comportement contextuel de directeur -- voir
@@ -130,6 +136,27 @@ export function hasCapability(role: Role | null | undefined, capability: Capabil
   return !!role && ROLE_CAPABILITIES[role].includes(capability);
 }
 
+// ---------------------------------------------------------------------------
+// Gestion des mots de passe/PIN (v1.65.0, retour de Gersom le 03/10/2026) :
+//   - admin/directeur (managePasswords) peuvent reinitialiser (generer un
+//     nouveau PIN aleatoire) n'importe quel compte SAUF un autre admin ;
+//   - le compte "admin principal" (is_super_admin, un seul compte, confirme
+//     par Gersom -- jamais un sixieme role) peut reinitialiser n'importe
+//     qui, y compris un autre admin, et est seul a pouvoir consulter
+//     l'indice masque (derniers caracteres) du PIN actif d'un compte.
+// Les deux fonctions ci-dessous sont le SEUL point de decision : ne jamais
+// recreer `role === 'admin'`/`is_super_admin` ailleurs (API ou page).
+// ---------------------------------------------------------------------------
+export function canResetPassword(actor: { role: Role; is_super_admin?: boolean }, targetRole: Role): boolean {
+  if (!hasCapability(actor.role, 'managePasswords')) return false;
+  if (actor.is_super_admin) return true;
+  return targetRole !== 'admin';
+}
+
+export function canViewPasswordHint(actor: { is_super_admin?: boolean }): boolean {
+  return actor.is_super_admin === true;
+}
+
 export function landingPathForRole(role: Role): string {
   return role === 'directeur' || role === 'visibilite' ? '/dashboard' : '/scan';
 }
@@ -144,9 +171,12 @@ export function landingPathForRole(role: Role): string {
 // defaut du role, comme n'importe quel chemin hors matrice.
 // '/approbations' est aussi ouvert a visibilite : ce role peut approuver ou
 // refuser dans l'application, sans recevoir les autres droits operationnels.
+// '/mots-de-passe' ajoute le 03/10/2026 (directeur gagne managePasswords) --
+// reste filtre plus bas par hasCapability(role, 'managePasswords'), jamais
+// atteignable par placeur (meme liste) sans cette capacite.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/api',
+  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/mots-de-passe', '/api',
 ];
 
 // '/agenda' ajoute le 03/09/2026 (agent_checkin gagne viewAgenda en lecture
@@ -180,6 +210,7 @@ export function canAccessPath(role: Role, pathname: string): boolean {
 
   if (matchesPrefix(pathname, '/agenda') && !hasCapability(role, 'viewAgenda')) return false;
   if (matchesPrefix(pathname, '/approbations') && !hasCapability(role, 'viewGuestApprovals')) return false;
+  if (matchesPrefix(pathname, '/mots-de-passe') && !hasCapability(role, 'managePasswords')) return false;
 
   if (role === 'agent_checkin') {
     // Note : /checkin/[invitationId]/merge n'est PAS dans cette liste --

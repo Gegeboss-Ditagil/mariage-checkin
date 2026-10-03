@@ -37,6 +37,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [nextHref, setNextHref] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   useEffect(() => {
     if (!welcomeName || !nextHref) return;
@@ -172,6 +173,25 @@ function LoginForm() {
       <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-medium text-text-faint">
         v{version}
       </span>
+
+      {/* v1.65.0, retour de Gersom : "mettre un petit bouton en bas à
+          gauche... écrire mot de passe oublié. Quand tu cliques dessus, ça
+          fait... un petit texte disant, allez voir les directeurs de
+          festin." Purement informatif -- aucun flux de reinitialisation en
+          libre-service, la personne doit demander a un humain habilite
+          (voir lib/permissions.ts, canResetPassword). */}
+      <button
+        type="button"
+        onClick={() => setForgotOpen((v) => !v)}
+        className="absolute bottom-3 left-4 text-[11px] font-medium text-text-faint underline-offset-2 hover:underline"
+      >
+        Mot de passe oublié ?
+      </button>
+      {forgotOpen && (
+        <div className="absolute bottom-10 left-4 right-4 max-w-xs rounded-xl2 border border-hairline bg-surface p-3 text-xs text-text-muted shadow-elev-2 dark:backdrop-blur-xl">
+          Allez voir les directeurs de festin. Ils vous donneront un nouveau mot de passe.
+        </div>
+      )}
     </div>
   );
 }

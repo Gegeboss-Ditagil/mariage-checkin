@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, event_id, nom_affichage, nom_complet, role, password_hash, active')
+      .select('id, event_id, nom_affichage, nom_complet, role, password_hash, active, is_super_admin')
       .eq('email', email)
       .maybeSingle();
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, event_id, nom_affichage, nom_complet, role, pin_hash, active')
+      .select('id, event_id, nom_affichage, nom_complet, role, pin_hash, active, is_super_admin')
       .eq('nom_affichage', nom_affichage)
       .maybeSingle();
 
@@ -60,6 +60,7 @@ function setSessionAndRespond(user: {
   nom_affichage: string;
   nom_complet: string | null;
   role: Role;
+  is_super_admin?: boolean | null;
 }) {
   const token = createSessionToken({
     id: user.id,
@@ -67,6 +68,7 @@ function setSessionAndRespond(user: {
     nom_affichage: user.nom_affichage,
     nom_complet: user.nom_complet,
     role: user.role,
+    is_super_admin: user.is_super_admin === true,
   });
 
   const displayName = user.nom_complet || user.nom_affichage;
