@@ -3,6 +3,21 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.61.0] — 2026-10-03
+
+Retour de Gersom (capture d'écran de la table 2, dessin « Vu sur le plan photographié ») : « mets des signaux beaucoup plus clairs pour dire piste de danse et l'allée centrale... et mets nord, sud, est, ouest. »
+
+### Changé — repères d'orientation beaucoup plus visibles
+`components/TableSeatWheel.tsx` : les deux flèches de repères (piste de danse/mariés, allée centrale — v1.53.15) gagnent un vrai libellé texte (« Piste », « Allée »), pas seulement un emoji isolé jugé trop discret pour être compris sans explication ; trait et pointe agrandis/épaissis ; un halo de fond (`paint-order: stroke`) garde chaque libellé lisible quel que soit ce qui se trouve derrière sur le dessin, sans avoir à mesurer/dessiner un rectangle à la largeur du texte.
+
+### Ajouté — repère cardinal N/E/S/O
+Une boussole fixe (toujours haut = Nord, jamais recalculée par table — contrairement aux deux flèches de repères, qui pointent chacune vers un lieu réel et tournent donc différemment selon la table affichée). **Jamais une boussole magnétique réelle** : le bâtiment n'a aucune orientation GPS connue, et `components/FloorPlan.tsx` documente explicitement que ses propres étiquettes « Zone nord »/« Zone sud » ne sont pas une interprétation de boussole. Reprend telle quelle la convention schématique déjà utilisée partout ailleurs dans ce projet pour ce plan précis : `components/FloorPlan.tsx` place « Couloir Nord » en haut et « Couloir Est » à droite, et Gersom lui-même décrit depuis v1.48.1 les tables 22/23 (première colonne du bloc du haut) comme étant au « nord-ouest » — haut=Nord/droite=Est est donc déjà sa propre grille mentale pour ce plan, pas une invention de ce lot. Les deux flèches de repères existantes supposaient d'ailleurs déjà implicitement cette même correspondance (leur angle, calculé depuis les coordonnées réelles du plan, est appliqué tel quel à la rotation de la roue) — la boussole ne fait que la rendre explicite.
+
+### Tests
+- `tests/table-orientation-arrows.test.ts` : nouveau test verrouillant les libellés, le halo de lisibilité et les quatre repères cardinaux.
+
+Aucune migration.
+
 ## [1.60.0] — 2026-10-02
 
 Retour de Gersom (message vocal) : « ajouter le numéro de version sur la page de login, en plus du splash page. Faire le splash page au début, juste un tout petit peu plus court. » Troisième unité de travail distincte du jour (PR #101 orientation, PR #102 freeze/session), sur sa propre branche conformément à la règle « une demande = une PR ».

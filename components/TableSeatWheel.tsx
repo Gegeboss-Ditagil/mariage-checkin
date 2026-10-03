@@ -46,6 +46,27 @@ import clsx from 'clsx';
 // sur components/FloorPlan.tsx), meme convention de rotation que les sieges
 // (0° = en haut, sens horaire). Optionnel : absent pour une table sans
 // position connue sur le plan.
+//
+// v1.58.0, retour de Gersom (capture d'ecran table 2) : "mets des signaux
+// beaucoup plus clairs... et mets nord, sud, est, ouest" -- les deux fleches
+// emoji seules etaient trop discretes pour etre comprises sans explication.
+// Fleches agrandies/epaissies + vrai libelle texte (pas seulement l'emoji),
+// halo de fond (`paint-order: stroke`) pour rester lisibles par-dessus
+// n'importe quel siege/fond. Repere cardinal (N/S/E/O) ajoute en plus : une
+// boussole FIXE (toujours "haut = Nord", jamais recalculee par table),
+// contrairement aux deux fleches ci-dessus qui pointent chacune vers un
+// repere reel et tournent donc differemment par table. Ceci reprend tel
+// quel la convention schematique deja utilisee partout ailleurs dans ce
+// projet -- jamais une boussole magnetique reelle (le batiment n'a aucune
+// orientation GPS connue) : `components/FloorPlan.tsx` place "Couloir Nord"
+// en haut (y proche de 0) et "Couloir Est" a droite, et Gersom lui-meme
+// decrit depuis le debut les tables 22/23 (premiere colonne du bloc du
+// haut) comme etant au "nord-ouest" (v1.48.1) -- donc haut=Nord/droite=Est
+// est deja la grille mentale utilisee pour CE plan precis, pas une
+// invention de ce lot. Les deux fleches de reperes (danse/allee) supposaient
+// deja implicitement cette meme correspondance (leur angle est calcule
+// directement depuis les coordonnees du plan, appliquees telles quelles a
+// la rotation de la roue) -- la boussole ne fait que la rendre explicite.
 export interface TableOrientation {
   danseAngle: number;
   alleeAngle: number;
@@ -82,9 +103,15 @@ const MAX_LINE_CHARS = 8;
 // ne jamais chevaucher un nom. VIEW_MARGIN elargit le viewBox d'autant
 // (sans deplacer aucune coordonnee existante) pour leur faire de la place.
 const ARROW_INNER_RADIUS = 146;
-const ARROW_OUTER_RADIUS = 162;
-const ARROW_LABEL_RADIUS = 176;
-const VIEW_MARGIN = 42;
+const ARROW_OUTER_RADIUS = 172;
+const ARROW_LABEL_RADIUS = 188;
+// Repere cardinal (N/S/E/O), plus loin encore que les libelles des fleches
+// de reperes pour ne jamais s'y superposer.
+const COMPASS_RADIUS = 224;
+// Marge assez large pour que meme le plus long libelle de fleche ("Allee
+// centrale" tronque en "Allee", voir plus bas) ne deborde jamais du viewBox
+// quel que soit l'angle (y compris a l'horizontale, le cas le plus large).
+const VIEW_MARGIN = 80;
 
 function truncateLine(s: string): string {
   return s.length > MAX_LINE_CHARS ? s.slice(0, MAX_LINE_CHARS) + '…' : s;
@@ -106,7 +133,14 @@ function splitSeatLabel(name: string): [string, string | null] {
 // technique que les etiquettes de siege. Le libelle reste volontairement
 // hors de ce groupe pivote, place directement par trigonometrie, pour rester
 // lisible quel que soit l'angle plutot que de tourner avec la fleche.
-function OrientationArrow({ angle, label, title }: { angle: number; label: string; title: string }) {
+//
+// v1.58.0 : fleche epaissie/allongee (stroke 2->4, pointe agrandie) et vrai
+// libelle texte EN PLUS de l'emoji (pas seulement l'emoji seul, juge trop
+// discret) ; `paint-order="stroke"` + un trait de la couleur de fond derriere
+// le texte cree un halo qui garde le libelle lisible quel que soit ce qui se
+// trouve juste derriere sur le dessin (siege, fond de carte...), sans avoir a
+// mesurer/dessiner un rectangle de fond a la largeur du texte.
+function OrientationArrow({ angle, emoji, label, title }: { angle: number; emoji: string; label: string; title: string }) {
   const radians = (angle * Math.PI) / 180;
   const labelX = CENTER + Math.sin(radians) * ARROW_LABEL_RADIUS;
   const labelY = CENTER - Math.cos(radians) * ARROW_LABEL_RADIUS;
@@ -119,17 +153,47 @@ function OrientationArrow({ angle, label, title }: { angle: number; label: strin
           y1={CENTER - ARROW_INNER_RADIUS}
           x2={CENTER}
           y2={CENTER - ARROW_OUTER_RADIUS}
-          className="stroke-accent stroke-2"
+          className="stroke-accent stroke-[4]"
         />
         <polygon
-          points={`${CENTER - 5},${CENTER - ARROW_OUTER_RADIUS + 7} ${CENTER + 5},${CENTER - ARROW_OUTER_RADIUS + 7} ${CENTER},${CENTER - ARROW_OUTER_RADIUS - 5}`}
+          points={`${CENTER - 8},${CENTER - ARROW_OUTER_RADIUS + 10} ${CENTER + 8},${CENTER - ARROW_OUTER_RADIUS + 10} ${CENTER},${CENTER - ARROW_OUTER_RADIUS - 9}`}
           className="fill-accent"
         />
       </g>
-      <text x={labelX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="text-[16px]">
-        {label}
+      <text
+        x={labelX}
+        y={labelY}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        className="fill-text text-[15px] font-bold stroke-bg"
+        style={{ paintOrder: 'stroke', strokeWidth: 5, strokeLinejoin: 'round' }}
+      >
+        {emoji} {label}
       </text>
     </g>
+  );
+}
+
+// Repere cardinal fixe (toujours haut=Nord, jamais recalcule par table --
+// voir le commentaire plus haut sur cette convention schematique). Memes
+// halo de lisibilite que OrientationArrow, texte plus discret
+// (`text-text-faint`) pour rester secondaire par rapport aux deux fleches de
+// reperes, qui restent l'indication principale demandee a l'origine.
+function CompassLabel({ angle, label }: { angle: number; label: string }) {
+  const radians = (angle * Math.PI) / 180;
+  const x = CENTER + Math.sin(radians) * COMPASS_RADIUS;
+  const y = CENTER - Math.cos(radians) * COMPASS_RADIUS;
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      className="fill-text-faint text-[14px] font-bold stroke-bg"
+      style={{ paintOrder: 'stroke', strokeWidth: 4, strokeLinejoin: 'round' }}
+    >
+      {label}
+    </text>
   );
 }
 
@@ -216,8 +280,12 @@ export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelec
 
       {orientation && (
         <>
-          <OrientationArrow angle={orientation.danseAngle} label="💃" title="Direction de la piste de danse et des mariés" />
-          <OrientationArrow angle={orientation.alleeAngle} label="🚶" title="Direction de l'allée centrale" />
+          <OrientationArrow angle={orientation.danseAngle} emoji="💃" label="Piste" title="Direction de la piste de danse et des mariés" />
+          <OrientationArrow angle={orientation.alleeAngle} emoji="🚶" label="Allée" title="Direction de l'allée centrale" />
+          <CompassLabel angle={0} label="N" />
+          <CompassLabel angle={90} label="E" />
+          <CompassLabel angle={180} label="S" />
+          <CompassLabel angle={270} label="O" />
         </>
       )}
     </svg>
