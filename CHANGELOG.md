@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.63.0] — 2026-10-03
+
+Retour de Gersom — « quand je change de page rapidement, quand je clique partout, des fois je vois des flashs et parfois ça se fige et ça se déconnecte. » Investigué avec des données réelles (pas seulement par lecture du code, `docs/QE_QA_PROCESS.md`) : v1.62.0 (reconnexion + dedup du sondage) est déjà en production au moment du signalement (déploiement confirmé via Vercel), donc pas un retour en arrière de ce correctif. Logs Vercel (24h) propres, aucune erreur serveur — le symptôme est entièrement côté client.
+
+### Trouvé en recoupant `app_logs` par requête groupée (pas un cas isolé)
+**7 des 10 dernières lignes de `app_logs` avant ce correctif** étaient exactement le même message, dont une capturée sur l'iPhone de Gersom (rôle admin, `/admin`) quelques minutes avant son signalement : *« Skipping view transition because skipTransition() was called. »* (et sa variante *« View transition was skipped because document visibility state is hidden. »*). Ce n'est **jamais un bug** : le navigateur lui-même annule (`skipTransition()`) une View Transition encore en vol dès qu'une nouvelle en démarre pendant qu'elle anime — exactement ce qui arrive en cliquant/naviguant plusieurs fois de suite rapidement (« je clique partout »). La spécification garantit que cette annulation nettoie immédiatement le pseudo-arbre de la transition précédente.
+
+**Le vrai problème** : la promesse rejetée par le navigateur remonte comme `unhandledrejection` (confirmé : rien dans notre propre code n'appelle `document.startViewTransition` directement, tout passe par `next-view-transitions`, qui ne capture pas cette rejection précise) — et `components/GlobalErrorLogger.tsx` la journalisait jusqu'ici inconditionnellement comme une vraie `error`, noyant les signaux réels (dont la timeout authentique corrigée en v1.62.0) sous ce bruit très fréquent, **et** déclenchant au passage un `sendBeacon`/`fetch` (sérialisation JSON + requête réseau) exactement pendant la fenêtre où un clic rapide peut déjà faire flasher l'écran — donc pas juste un problème de journalisation, un vrai travail inutile sur le fil principal au pire moment.
+
+### Corrigé
+`lib/viewTransitionNoise.ts` (nouveau) : `isBenignViewTransitionRejection(message)` reconnaît précisément ces deux messages standard du navigateur (jamais produits par notre propre code, donc une correspondance de texte est fiable), sans jamais reconnaître la vraie timeout ni une erreur de bundle périmé. `components/GlobalErrorLogger.tsx` : le gestionnaire `unhandledrejection` appelle `event.preventDefault()` et court-circuite **avant** `reportClientError` quand ce rejet est reconnu comme bénin — le chemin `onError` (erreurs de rendu synchrones) et la reconnexion sur bundle périmé (`isStaleDeploymentError`) restent entièrement inchangés et inconditionnels.
+
+### Honnêteté sur l'incertitude
+Ce correctif élimine une vraie source de bruit et de travail réseau inutile exactement pendant le scénario décrit, mais ne garantit pas à lui seul la disparition complète du flash/gel ressenti — aucune erreur serveur ni timeout n'a été capturée dans la fenêtre du signalement au-delà de ce bruit, donc il n'y a pas d'autre piste concrète à ce stade. Si le signalement persiste après ce lot, il faudra des données plus précises (capture d'écran au moment du blocage, ou une nouvelle occurrence loggée après ce déploiement).
+
+### Tests
+- `tests/view-transition-noise.test.ts` (nouveau) : verrouille la classification (les deux messages bénins vs la vraie timeout/ChunkLoadError), l'ordre du garde avant `reportClientError`, l'appel à `preventDefault()`, et la non-régression du chemin `onError`.
+
+Aucune migration.
+
 ## [1.62.0] — 2026-10-03
 
 Retour de Gersom : « l'application reste souvent figée, ça prend du temps avant de répondre, surtout à la page approbation » et « des fois, 5-10-30 minutes passent sans me reloguer... quand je reviens, ça ne demande même pas de login, et là je sais que ça va buguer. »
