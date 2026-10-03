@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.64.0] — 2026-10-03
+
+Retour de Gersom (capture d'écran `/agenda`, message vocal en deux parties) : « quand j'appuie sur les cartes... le clavier apparaît, c'est pas normal. Il y avait déjà ce problème avant » + deux demandes de couleur : les éléments privés reconnaissables sans ouvrir la carte, et un élément où je suis responsable reconnaissable pour moi (« si Scotty est à l'accueil de 17h à 17h30... quand Scotty va appuyer sur l'agenda... il va avoir une différence de couleur pour lui »).
+
+### Corrigé (non confirmé) — clavier natif apparaissant en touchant une carte
+`openEditing`/`openInsertAt` (`app/agenda/page.tsx`) appellent déjà `blur()` sur l'élément actif avant d'ouvrir une fiche (v1.55.2) — insuffisant seul d'après ce nouveau signalement. Root cause probable (diagnostic par lecture du code, aucun appareil iOS disponible dans cet environnement, à reconfirmer par Gersom) : monter un nouveau champ focalisable (le premier `<input>` de la fiche) dans le MÊME tick que ce `blur()` peut faire « recoller » le clavier natif au champ le plus proche sur WebKit. Le montage de la fiche (`setEditing(item)`/`setInsertAt(sortOrder)`) est désormais différé d'un tick (`setTimeout(..., 0)`) après le blur — la fermeture (`item === null`) reste immédiate, aucun nouveau champ n'entrant alors dans le DOM.
+
+### Ajouté — couleur distincte pour un élément privé
+La carte entière (pas seulement le badge « Privé » déjà existant, conservé pour l'accessibilité) prend un fond/bordure teintés (`border-accent/40`/`bg-accent-tint`, même langage que le badge) quand `item.is_private` — reconnaissable au premier coup d'œil sans toucher la carte, comme demandé. Reçu uniquement par admin/directeur, le filtrage serveur (`GET /api/agenda`, v1.55.0) étant inchangé — aucune fuite possible vers un autre rôle.
+
+### Ajouté — couleur distincte pour un élément où « moi » je suis responsable
+`GET /api/agenda` renvoie désormais `currentUserId` (l'id du compte connecté, déjà disponible côté serveur) en plus de `items`/`people`/`canManage`. Côté client, un élément dont `assignee_ids` contient ce `currentUserId` (jamais `custom_assignees`, des noms libres sans compte associé — ex. un prestataire) reçoit un fond/bordure distincts (vert `status-complete`, différent de l'accent doré/violet déjà utilisé pour « Privé ») plus un badge texte « Vous êtes assigné » — fonctionne pour n'importe quel rôle avec `viewAgenda` (ex. un agent scanner comme Scotty), pas seulement admin/directeur. Quand un élément est à la fois privé et assigné au viewer, le traitement « Privé » reste prioritaire sur la carte (confidentialité avant tout) mais le badge « Vous êtes assigné » reste visible dans tous les cas — aucun conflit, les deux signaux sont indépendants.
+
+### Tests
+- `tests/agenda-colored-highlights.test.ts` (nouveau) : verrouille `currentUserId` dans la réponse API, le calcul d'`assignedToMe` (jamais via `custom_assignees`), la priorité du traitement « Privé », le badge « Vous êtes assigné », et le différé `setTimeout` à l'ouverture (jamais à la fermeture) des deux fiches.
+
+Aucune migration (`is_private`/`assignee_ids` existent déjà depuis v1.50.0/v1.55.0).
+
 ## [1.63.0] — 2026-10-03
 
 Retour de Gersom — « quand je change de page rapidement, quand je clique partout, des fois je vois des flashs et parfois ça se fige et ça se déconnecte. » Investigué avec des données réelles (pas seulement par lecture du code, `docs/QE_QA_PROCESS.md`) : v1.62.0 (reconnexion + dedup du sondage) est déjà en production au moment du signalement (déploiement confirmé via Vercel), donc pas un retour en arrière de ce correctif. Logs Vercel (24h) propres, aucune erreur serveur — le symptôme est entièrement côté client.
