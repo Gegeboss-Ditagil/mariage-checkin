@@ -604,8 +604,15 @@ test('le compte d\'approbations en attente est explicitement exclu du cache HTTP
     createRouteSource,
     /pending_count: count \|\| 0, latest: latest \|\| null \},\s*\n\s*\{ headers: \{ 'Cache-Control': 'private, no-store' \} \}/
   );
+  // v1.58.0 : les trois appelants partagent desormais une seule requete en
+  // vol (lib/pendingApprovalsRequest.ts, voir tests/pending-approvals-request.test.ts)
+  // au lieu de chacun faire son propre fetch('cache: no-store') -- le
+  // no-store reste garanti, juste centralise a un seul endroit.
+  const pendingRequestSource = readFileSync(new URL('../lib/pendingApprovalsRequest.ts', import.meta.url), 'utf8');
+  assert.match(pendingRequestSource, /fetch\('\/api\/guest-approvals\?count=pending', \{ cache: 'no-store' \}\)/);
   for (const source of [accountMenuSource, bottomNavSource, guestApprovalsShortcutSource]) {
-    assert.match(source, /fetch\('\/api\/guest-approvals\?count=pending', \{ cache: 'no-store' \}\)/);
+    assert.match(source, /import \{ fetchPendingApprovalsCount \} from '@\/lib\/pendingApprovalsRequest';/);
+    assert.match(source, /fetchPendingApprovalsCount\(\)/);
   }
 });
 

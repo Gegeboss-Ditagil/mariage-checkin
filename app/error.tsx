@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { reportClientError } from '@/lib/clientLog';
+import { isStaleDeploymentError, reconnectAfterStaleDeployment } from '@/lib/staleDeployment';
 
 // Une erreur non capturee QUELQUE PART dans l'app (n'importe quel composant,
 // n'importe quelle page) remonte ici -- c'est le filet generique de Next.js.
@@ -17,25 +18,10 @@ import { reportClientError } from '@/lib/clientLog';
 // le JS charge ne correspond plus au HTML servi par le nouveau deploiement)
 // doit desormais forcer une reconnexion -- toute autre erreur affiche un
 // ecran recuperable (Reessayer) sans jamais toucher a la session.
-function isStaleDeploymentError(error: Error & { digest?: string }): boolean {
-  if (error.name === 'ChunkLoadError') return true;
-  const message = error.message || '';
-  return (
-    /Loading chunk [\w-]+ failed/i.test(message) ||
-    /Failed to fetch dynamically imported module/i.test(message) ||
-    /error loading dynamically imported module/i.test(message)
-  );
-}
-
-async function reconnect() {
-  try {
-    await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' });
-  } catch {
-    // Meme si le logout reseau echoue, le rechargement vers /login permet
-    // au middleware de revalider/nettoyer la session au prochain acces.
-  }
-  window.location.replace('/login?reason=update');
-}
+// v1.58.0 : detection/reconnexion extraites dans lib/staleDeployment.ts,
+// desormais partagees avec components/GlobalErrorLogger.tsx (meme type
+// d'erreur, mais qui survient parfois hors de tout rendu React -- voir ce
+// fichier).
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const staleDeployment = isStaleDeploymentError(error);
@@ -46,7 +32,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     // forcent une reconnexion -- utile pour confirmer qu'un correctif a
     // reellement fait baisser leur frequence.
     reportClientError({ message: error.message, stack: error.stack, digest: error.digest, level: 'error' });
-    if (staleDeployment) void reconnect();
+    if (staleDeployment) void reconnectAfterStaleDeployment();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staleDeployment]);
 
@@ -57,7 +43,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         <p className="max-w-sm text-sm text-text-muted">
           Une nouvelle version est disponible. Votre session est en cours de réinitialisation pour éviter une erreur d'affichage.
         </p>
-        <button className="btn-primary mt-2" onClick={() => void reconnect()}>
+        <button className="btn-primary mt-2" onClick={() => void reconnectAfterStaleDeployment()}>
           Se reconnecter
         </button>
       </div>
@@ -77,7 +63,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <button className="btn-primary mt-2" onClick={reset}>
         Réessayer
       </button>
-      <button className="text-xs text-text-faint underline" onClick={() => void reconnect()}>
+      <button className="text-xs text-text-faint underline" onClick={() => void reconnectAfterStaleDeployment()}>
         Se reconnecter à la place
       </button>
     </div>

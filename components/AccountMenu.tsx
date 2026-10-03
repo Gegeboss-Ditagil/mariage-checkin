@@ -10,6 +10,7 @@ import { usePolling } from '@/hooks/usePolling';
 import { hasCapability } from '@/lib/permissions';
 import { ROLE_LABELS } from '@/lib/types';
 import { clearGuestApprovalsCache } from '@/lib/guestApprovalClientCache';
+import { fetchPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
 import { syncAppBadge, clearAppBadge } from '@/lib/appBadge';
 
 const THEME_CHOICES: { pref: ThemePref; label: string }[] = [
@@ -52,12 +53,14 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   }, [open]);
 
   const loadPendingApprovals = useCallback(async () => {
-    // cache: 'no-store' -- sans ca, Safari/PWA pouvait reutiliser une
-    // reponse HTTP mise en cache pour cette meme URL sondee toutes les 5s,
-    // figeant le badge (retour Gersom du 02/09/2026, valeur "hard coded").
-    const response = await fetch('/api/guest-approvals?count=pending', { cache: 'no-store' }).catch(() => null);
-    if (!response?.ok) return;
-    const data = await response.json();
+    // Requete partagee avec BottomNav/GuestApprovalsShortcut (voir
+    // lib/pendingApprovalsRequest.ts) -- evite 2-3 requetes identiques
+    // simultanees quand les sondages de ces composants tombent au meme
+    // moment. cache: 'no-store' -- sans ca, Safari/PWA pouvait reutiliser
+    // une reponse HTTP mise en cache pour cette meme URL sondee toutes les
+    // 5s, figeant le badge (retour Gersom du 02/09/2026, valeur "hard coded").
+    const data = await fetchPendingApprovalsCount();
+    if (!data) return;
     const nextCount = data.pending_count || 0;
     if (previousPendingRef.current !== null && nextCount > previousPendingRef.current && data.latest?.id) {
       setApprovalAlert({ id: data.latest.id, name: data.latest.nom_invite || 'Nouvel invité' });
