@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.65.0] — 2026-10-03
+
+Retour de Gersom (message vocal, 03/10/2026) : « l'admin principal... peut changer les mots de passe... et même voir les mots de passe [avec anonymisation]... les directeurs de festin... peuvent faire la réinitialisation... sauf aux admins. Les admins peuvent faire la même chose et... réinitialiser les mots de passe des directeurs de festin. Et l'admin principal... peut le faire pour tout le monde... la seule personne qui a de la visibilité sur tout... c'est Gersom. » Deux comptes admin trouvés en production ; confirmé explicitement par Gersom que « Admin » (gersomdos@gmail.com) est l'admin principal, « Dos » (son compte perso) reste un admin ordinaire — « l'objectif est de pouvoir séparer les pouvoirs... et pouvoir un jour si nécessaire déléguer l'admin principal ».
+
+### Ajouté — système de gestion des mots de passe/PIN
+- `users.is_super_admin` (migration `0059`, exécutée et vérifiée en production Supabase le 03/10/2026) : booléen, jamais un sixième rôle — un seul compte élevé (confirmé « Admin »), transférable plus tard par simple mise à jour de cette colonne. `users.pin_reset_hint` : indice masqué (derniers caractères, `lib/passwordReset.ts`) du dernier PIN généré par ce système — jamais le PIN en clair ni une valeur réversible.
+- `lib/permissions.ts` : nouvelle capacité `managePasswords` (admin, directeur) + `canResetPassword(actor, targetRole)`/`canViewPasswordHint(actor)`, seule source de vérité. Un admin ou directeur « normal » réinitialise n'importe qui sauf un autre admin ; le compte `is_super_admin` réinitialise tout le monde y compris un autre admin, et seul lui peut consulter l'indice.
+- `/mots-de-passe` (nouvel écran, capacité `managePasswords`) : réinitialiser génère un code à 4 chiffres aléatoire (`POST /api/passwords`), affiché une seule fois à qui vient de le générer pour qu'il le communique directement — jamais une saisie manuelle. L'indice masqué n'est renvoyé par `GET /api/passwords` que si `canViewPasswordHint` est vrai pour l'appelant — filtrage réel côté serveur, jamais un masquage visuel. Additif à `/admin/users` (création de compte, changement de rôle, édition libre du PIN), qui reste inchangé et réservé à `role === 'admin'`.
+- Sur `/login`, un bouton « Mot de passe oublié ? » révèle un texte statique : « Allez voir les directeurs de festin. Ils vous donneront un nouveau mot de passe. » — aucun flux de réinitialisation en libre-service.
+- `session.is_super_admin` ajouté au jeton signé (`lib/auth.ts`, `createSessionToken`/`verifySessionToken`) et renseigné par `/api/auth/login` dans les deux modes (`pin`/`password`).
+
+### Tests
+- `tests/password-management.test.ts` (nouveau) : verrouille la matrice `canResetPassword`/`canViewPasswordHint` (admin/directeur normal vs `is_super_admin`, exclusion des admins, rôles sans `managePasswords`), le format du PIN/de l'indice masqué, le filtrage côté serveur de l'API, l'absence du PIN en clair dans les logs serveur, et le bouton « Mot de passe oublié ? ».
+
+### Documentation mise à jour
+- `docs/BUSINESS_RULES.md` (nouvelle ligne de capacité + paragraphe explicatif)
+- `docs/CLAUDE_HANDOFF_STAFF_ACCESS.md` (mention du nouvel écran)
+
 ## [1.64.0] — 2026-10-03
 
 Retour de Gersom (capture d'écran `/agenda`, message vocal en deux parties) : « quand j'appuie sur les cartes... le clavier apparaît, c'est pas normal. Il y avait déjà ce problème avant » + deux demandes de couleur : les éléments privés reconnaissables sans ouvrir la carte, et un élément où je suis responsable reconnaissable pour moi (« si Scotty est à l'accueil de 17h à 17h30... quand Scotty va appuyer sur l'agenda... il va avoir une différence de couleur pour lui »).

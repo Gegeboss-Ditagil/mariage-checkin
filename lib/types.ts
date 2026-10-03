@@ -177,6 +177,12 @@ export interface SessionUser {
   nom_complet: string | null;
   role: Role;
   event_id: string;
+  // v1.65.0 : distingue UN SEUL compte admin (confirme par Gersom) habilite
+  // a reinitialiser le mot de passe d'un autre admin et a voir l'indice
+  // masque d'un PIN -- jamais un sixieme role, voir migration 0059. Absent
+  // (undefined) sur un jeton de session cree avant cette version -- traite
+  // comme false par lib/permissions.ts.
+  is_super_admin?: boolean;
 }
 
 export type GuestApprovalStatut = 'en_attente' | 'approuve' | 'refuse';

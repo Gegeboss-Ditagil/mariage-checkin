@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.55.0**
-**Dernière mise à jour : 2026-09-17**
+**Version documentaire : 1.65.0**
+**Dernière mise à jour : 2026-10-03**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -69,6 +69,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+| Réinitialiser un mot de passe/PIN (`/mots-de-passe`) | Oui (sauf voir ci-dessous) | Oui (sauf admin) | Non | Non | Non |
 | Invité surprise (photo + approbation SMS/WhatsApp, `/scan`, `/approbations`) | Oui | Oui | Oui | Non | Non |
 | Supprimer une demande d'invité surprise déjà décidée (`/approbations`) | Oui | Oui (depuis v1.57.0) | Oui (depuis v1.57.0) | Non | Non |
 
@@ -77,6 +78,8 @@ Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory
 Depuis v1.31.1, `/agenda` est visible et modifiable avec `viewAgenda`/`manageAgenda` (`admin` et `directeur`). Nelly porte maintenant le rôle complet `directeur`, identique à Rémy, plutôt qu'une exception limitée à l'agenda. Heure, titre, département, détails, ordre, responsables et état terminé sont persistés dans `agenda_items`; les routes API revérifient chaque lecture et écriture côté serveur.
 
 Depuis v1.55.0, un élément d'agenda peut être marqué `is_private` (`agenda_items.is_private`, migration `0058`) — `GET /api/agenda` retire alors cette ligne de la réponse JSON pour tout rôle sans `manageAgenda` (agent scan, agent placeur) : un filtrage réel côté serveur, jamais un simple masquage visuel côté client. Aucune nouvelle capacité : la restriction réutilise `manageAgenda`, déjà réservée à `admin`/`directeur`.
+
+Depuis v1.65.0 (03/10/2026), un écran dédié `/mots-de-passe` (capacité `managePasswords`, admin/directeur) permet de réinitialiser le PIN d'un autre compte en générant un code à 4 chiffres aléatoire — jamais une saisie manuelle, jamais consultable en clair une fois généré. La portée exacte (`lib/permissions.ts`, `canResetPassword`) : un admin ou un directeur « normal » peut réinitialiser n'importe quel compte **sauf un autre admin** ; un seul compte admin (`users.is_super_admin`, migration `0059`, confirmé explicitement par Gersom comme le compte « Admin » / gersomdos@gmail.com — son compte personnel « Dos » reste un admin ordinaire, séparation volontaire des pouvoirs) peut réinitialiser n'importe qui, y compris un autre admin, **et** consulter un indice anonymisé (`pin_reset_hint`, seulement les deux derniers chiffres, le reste en astérisques) du dernier code généré pour un compte — jamais le PIN réel ni une valeur réversible, uniquement pour rappeler un code déjà communiqué avant de réinitialiser pour de bon. `/admin/users` (création de compte, changement de rôle, édition libre du PIN/email/mot de passe) reste inchangé et réservé à `role === 'admin'` — ce nouvel écran est additif, pas un remplacement. Sur `/login`, un bouton « Mot de passe oublié ? » révèle un texte statique renvoyant vers un directeur de festin — aucun flux de réinitialisation en libre-service.
 
 Depuis v1.40.0, `agent_checkin` a aussi `viewAgenda` (jamais `manageAgenda`) — retour de Gersom sur Agent001 : « il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ». Ce rôle consulte donc le chronogramme sans le modifier ; `/staff` reste par ailleurs atteignable pour lui via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre du bas remplace Staff par Agenda.
 

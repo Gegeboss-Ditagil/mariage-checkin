@@ -1,7 +1,7 @@
 # Transmission Claude — accès sécurisé à `/staff`
 
-**Version documentaire : 1.54.2**
-**Dernière mise à jour : 2026-09-17**
+**Version documentaire : 1.65.0**
+**Dernière mise à jour : 2026-10-03**
 
 Ce fichier explique la logique d'accès Staff à conserver lors des prochains changements. Il ne contient volontairement aucun code PIN ni secret.
 
@@ -42,7 +42,7 @@ La clé `SUPABASE_SERVICE_ROLE_KEY` reste exclusivement dans `lib/supabase/admin
 
 ## Comptes et PIN
 
-Les noms de comptes peuvent être documentés pour l'exploitation. Les PIN, mots de passe, hash et jetons de session ne doivent jamais être ajoutés dans Git, README, `docs/`, changelog, PR, ticket ou message collectif. Ils restent gérés depuis `/admin/users` et stockés dans Supabase.
+Les noms de comptes peuvent être documentés pour l'exploitation. Les PIN, mots de passe, hash et jetons de session ne doivent jamais être ajoutés dans Git, README, `docs/`, changelog, PR, ticket ou message collectif. Ils restent gérés depuis `/admin/users` (création de compte, changement de rôle) et, depuis v1.65.0, `/mots-de-passe` (réinitialisation, voir `docs/BUSINESS_RULES.md`) — toujours stockés uniquement sous forme hachée dans Supabase.
 
 ## Checklist obligatoire pour Claude
 
