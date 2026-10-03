@@ -52,7 +52,11 @@ export async function GET() {
   const normalized = (items || []).map(normalizeAgendaItem);
   const visible = canManage ? normalized : normalized.filter((item) => !item.is_private);
   return NextResponse.json(
-    { items: visible, people: users || [], canManage },
+    // currentUserId (v1.64.0) : permet au client de reconnaitre, pour
+    // n'importe quel role, les elements ou son propre compte figure dans
+    // assignee_ids -- jamais les noms libres de custom_assignees, qui ne
+    // correspondent a aucun compte.
+    { items: visible, people: users || [], canManage, currentUserId: user.id },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
 }

@@ -102,6 +102,7 @@ export default function AgendaPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<AgendaItem | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
   const [newCustomAssignees, setNewCustomAssignees] = useState<string[]>([]);
   const [canManage, setCanManage] = useState(false);
@@ -122,7 +123,19 @@ export default function AgendaPage() {
     // qu'aucun tap ne l'ait demande -- retour de Gersom le 17/09/2026.
     (document.activeElement as HTMLElement | null)?.blur?.();
     setResponsablePickerOpen(false);
-    setEditing(item);
+    if (item === null) {
+      setEditing(null);
+      return;
+    }
+    // v1.64.0, retour de Gersom ("le clavier apparaît" en touchant simplement
+    // une carte, "il y avait déjà ce problème avant") : le blur() ci-dessus
+    // ne suffit visiblement pas seul -- root cause probable (diagnostic par
+    // lecture du code, aucun appareil iOS disponible, à reconfirmer) : monter
+    // un nouveau champ focalisable (le premier <input> de la fiche) dans le
+    // MEME tick que ce blur() peut faire "recoller" le clavier natif au
+    // champ le plus proche sur WebKit. Differer le montage d'un tick laisse
+    // la fermeture du clavier se terminer avant que la fiche n'arrive.
+    setTimeout(() => setEditing(item), 0);
   }
 
   function openInsertAt(sortOrder: number) {
@@ -130,7 +143,7 @@ export default function AgendaPage() {
     setResponsablePickerOpen(false);
     setNewAssigneeIds([]);
     setNewCustomAssignees([]);
-    setInsertAt(sortOrder);
+    setTimeout(() => setInsertAt(sortOrder), 0);
   }
 
   const load = useCallback(async () => {
@@ -144,6 +157,7 @@ export default function AgendaPage() {
     setItems(data.items || []);
     setPeople(data.people || []);
     setCanManage(data.canManage === true);
+    setCurrentUserId(data.currentUserId || null);
     setLoading(false);
   }, []);
 
@@ -198,6 +212,12 @@ export default function AgendaPage() {
           {loading ? <p className="py-10 text-center text-text-muted">Chargement de l’agenda…</p> : (
             <ol className="space-y-2" aria-label="Chronogramme du mariage">
               {items.map((item, index) => {
+                // v1.64.0, retour de Gersom : "si mon nom est sur une tâche...
+                // je veux que la couleur soit différente pour moi" -- ne
+                // compare jamais custom_assignees (noms libres, ex: un
+                // prestataire sans compte), seulement assignee_ids (comptes
+                // reels), seul champ ou "moi" a un sens.
+                const assignedToMe = !!currentUserId && item.assignee_ids.includes(currentUserId);
                 const assignees = item.assignee_ids.map((id) => peopleById.get(id)).filter(Boolean) as Person[];
                 // Noms de compte + noms libres (ex: prestataires sans compte
                 // dans l'appli) affiches ensemble, sans les distinguer visuellement.
@@ -212,7 +232,22 @@ export default function AgendaPage() {
                 return <li key={item.id}>
                   {canManage && <button type="button" className="mx-auto mb-2 block rounded-full border border-dashed border-accent/50 px-3 py-1 text-xs font-semibold text-accent" onClick={() => openInsertAt(index === 0 ? item.sort_order - 5 : (items[index - 1].sort_order + item.sort_order) / 2)}>+ Ajouter une activité ici</button>}
                   <article
-                    className={clsx('card flex gap-3 py-3', canManage && 'cursor-pointer transition-transform active:scale-[0.99]')}
+                    className={clsx(
+                      'card flex gap-3 py-3',
+                      canManage && 'cursor-pointer transition-transform active:scale-[0.99]',
+                      // v1.64.0, retour de Gersom : un élément privé ou
+                      // m'étant assigné doit se reconnaître "sans avoir à
+                      // cliquer sur la carte" -- recolore toute la carte
+                      // plutôt qu'un simple badge (déjà présent, conservé en
+                      // plus pour l'accessibilité/le mode sans couleur).
+                      // Privé reste prioritaire visuellement quand les deux
+                      // s'appliquent (confidentialité avant tout), le badge
+                      // "Vous êtes assigné" plus bas reste visible dans tous
+                      // les cas.
+                      item.is_private
+                        ? 'border-2 border-accent/40 bg-accent-tint'
+                        : assignedToMe && 'border-2 border-status-complete/40 bg-status-complete/5'
+                    )}
                     onClick={() => canManage && openEditing(item)}
                     role={canManage ? 'button' : undefined}
                     tabIndex={canManage ? 0 : undefined}
@@ -235,6 +270,7 @@ export default function AgendaPage() {
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <p className={item.completed ? 'font-semibold line-through opacity-60' : 'font-semibold'}>{item.title}</p>
                         <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                          {assignedToMe && <span className="rounded-full border border-status-complete/40 bg-status-complete/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-status-complete">Vous êtes assigné</span>}
                           {/* Rendue seulement pour admin/directeur (API 0058) -- jamais renvoyee aux autres roles, ce n'est pas un masquage cote client. */}
                           {item.is_private && <span className="rounded-full border border-accent/40 bg-accent-tint px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Privé</span>}
                           <span className="rounded-full border border-hairline bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">{item.department}</span>
