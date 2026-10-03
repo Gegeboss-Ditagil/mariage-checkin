@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { reportClientError } from '@/lib/clientLog';
 import { isStaleDeploymentError, reconnectAfterStaleDeployment } from '@/lib/staleDeployment';
+import { isBenignViewTransitionRejection } from '@/lib/viewTransitionNoise';
 
 /**
  * Capture les erreurs qui n'atteignent JAMAIS un error boundary React
@@ -46,6 +47,16 @@ export function GlobalErrorLogger() {
     function onRejection(event: PromiseRejectionEvent) {
       const reason = event.reason;
       const message = reason instanceof Error ? reason.message : String(reason);
+      // v1.63.0 : une navigation rapide (plusieurs clics avant la fin du
+      // fondu) fait annuler la View Transition precedente par le
+      // navigateur lui-meme -- attendu, jamais un bug. La signaler comme
+      // une vraie erreur (en plus du travail de serialisation/sendBeacon
+      // que ca declenche, exactement pendant la fenetre ou le clic rapide
+      // peut deja faire flasher l'ecran) noyait les signaux reels.
+      if (isBenignViewTransitionRejection(message)) {
+        event.preventDefault();
+        return;
+      }
       reportClientError({
         message,
         stack: reason instanceof Error ? reason.stack : undefined,
