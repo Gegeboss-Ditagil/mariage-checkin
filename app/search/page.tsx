@@ -267,7 +267,7 @@ function SearchInner() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
+    <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar title="Rechercher un invité" backHref={readOnly ? '/dashboard' : '/scan'} />
 

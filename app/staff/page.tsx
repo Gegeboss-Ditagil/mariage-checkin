@@ -105,7 +105,7 @@ export default function StaffPage() {
   const arrive = activeStaff.reduce((s, i) => s + i.nombre_arrive, 0);
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-[env(safe-area-inset-bottom)]">
+    <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Staff"
