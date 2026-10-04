@@ -3,7 +3,7 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
-## [1.67.7] — 2026-10-03
+## [1.67.11] — 2026-10-03
 
 Bug réel signalé par Gersom (capture d'écran `/agenda`) : « quand j'appuie sur une activité, des fois, tu as la page pour modifier l'activité qui va sortir. Après, ça va être fermé. Après, ça bug. Je ne suis plus capable d'appuyer sur rien. Les logs expliquent pourquoi ? »
 
@@ -22,6 +22,23 @@ Partagé par 7 panneaux modaux depuis v1.53.18 (`GuestApprovalCaptureFlow`, `Pho
 
 ### Tests
 - `tests/sheet-transitions.test.ts` (2 nouveaux tests) : verrouillent `setClosing(false)` après `onCloseRef.current()` et `pointer-events: none` sur les trois classes `-closing` — vérifiés en échouant sur l'ancien code avant d'appliquer le correctif, pas seulement après.
+
+Aucune migration.
+
+## [1.67.5] — 2026-10-03
+
+Retour de Gersom (message vocal) : « réduis la longueur du splash page de une seconde. Non, de trois quarts de seconde » + « pendant le splash, dis-moi s'il y a quelque chose qu'on peut optimiser, comme profiter de ce temps où c'est inutile, pour télécharger des informations... c'est même bête. »
+
+### Changé — splash raccourci
+`components/SplashScreen.tsx` : `SPLASH_DURATION_MS` 2400ms → 1650ms (-750ms), deuxième raccourci après celui de v1.60.0 (3000ms → 2400ms).
+
+### Investigation — question d'optimisation posée par Gersom
+Le splash profite déjà de ce temps, depuis v1.40.0/v1.42.0 : `router.prefetch(next)` précharge le bundle Next.js de la destination pour tout le monde, et `warmGuestApprovals()` (`lib/guestApprovalClientCache.ts`) précharge la liste des demandes en attente **et** les six premières photos pour les rôles avec `viewGuestApprovals` — ce n'était donc pas du temps perdu pour ces rôles.
+
+Aucun mécanisme équivalent n'existe en revanche pour `/dashboard` (destination d'admin/directeur) : `app/dashboard/page.tsx` relit ses trois tables (`invitations`/`tables`/`overflow_assignments`) directement via le client Supabase à chaque montage, sans cache partagé comparable à `guestApprovalClientCache.ts`. Construire l'équivalent est un ajout net (nouveau module de cache, branchement dans `/dashboard`, tests) plutôt qu'une extension triviale de ce lot — proposé à Gersom, pas construit sans confirmation explicite.
+
+### Tests
+Aucun changement d'assertion nécessaire (`tests/login-splash-version.test.ts` vérifie seulement `SPLASH_DURATION_MS < 3000 && >= 1500` — 1650 respecte toujours cette fenêtre).
 
 Aucune migration.
 
