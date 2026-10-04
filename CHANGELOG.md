@@ -3,7 +3,7 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
-## [1.66.2] — 2026-10-03
+## [1.67.7] — 2026-10-03
 
 Bug réel signalé par Gersom (capture d'écran `/agenda`) : « quand j'appuie sur une activité, des fois, tu as la page pour modifier l'activité qui va sortir. Après, ça va être fermé. Après, ça bug. Je ne suis plus capable d'appuyer sur rien. Les logs expliquent pourquoi ? »
 
@@ -24,6 +24,28 @@ Partagé par 7 panneaux modaux depuis v1.53.18 (`GuestApprovalCaptureFlow`, `Pho
 - `tests/sheet-transitions.test.ts` (2 nouveaux tests) : verrouillent `setClosing(false)` après `onCloseRef.current()` et `pointer-events: none` sur les trois classes `-closing` — vérifiés en échouant sur l'ancien code avant d'appliquer le correctif, pas seulement après.
 
 Aucune migration.
+
+## [1.67.4] — 2026-10-03
+
+Retour de Gersom (capture d'écran `/admin/users`) : « ajuster la fonction de réinitialisation de mot de passe pour qu'elle soit ajoutée à la page de gestion de compte et non qu'elle soit juste un bouton pour gérer les pages, les mots de passe de tout le monde. On peut réinitialiser, on peut aussi modifier. On a le choix. »
+
+### Ajouté — bouton « Réinitialiser » dans la fiche d'édition de `/admin/users`
+- Même route `POST /api/passwords`, mêmes `canResetPassword`/`canViewPasswordHint` (`lib/permissions.ts`, seule source de vérité) que l'écran dédié `/mots-de-passe` — `GET /api/admin/users` renvoie désormais aussi `canReset`/`hint` par compte, calculés avec les mêmes fonctions.
+- Dans la fiche d'édition d'un compte, admin voit désormais les deux options côte à côte : « Réinitialiser » (code aléatoire généré, affiché une seule fois) **et** le champ manuel « Nouveau mot de passe/PIN » déjà existant (« Modifier ») — le choix demandé.
+- **Additif, jamais un remplacement** : `/mots-de-passe` reste entièrement inchangé et atteignable — c'est la SEULE porte d'entrée de `directeur` vers la réinitialisation (`managePasswords` sans jamais `adminPanel`, donc sans accès à `/admin/users`).
+
+### Corrigé — bug réel trouvé en préparant ce lot
+`POST /api/passwords` écrivait toujours `pin_hash`, même pour une cible `role === 'admin'` — un champ que la connexion admin (`email` + `password_hash`, `/api/auth/login`) ne lit jamais. Réinitialiser un admin (réservé au compte `is_super_admin`) affichait donc un « nouveau code » qui n'avait en réalité **aucun effet** sur la connexion réelle de ce compte. Corrigé en branchant sur `target.role === 'admin'` pour écrire `password_hash` dans ce cas, `pin_hash` sinon (inchangé).
+
+### Tests
+- `tests/password-management.test.ts` : 4 nouveaux tests (branchement `password_hash`/`pin_hash` selon le rôle cible — vérifié qu'il échoue sans le correctif —, calcul `canReset`/`hint` dans `GET /api/admin/users`, présence du bouton dans `/admin/users`, `/mots-de-passe` toujours seul accès pour directeur).
+
+### Documentation mise à jour
+- `docs/BUSINESS_RULES.md`
+- `CLAUDE.md`
+- `README.md`
+
+Aucune migration (aucun changement de schéma, uniquement des routes/pages existantes).
 
 ## [1.66.1] — 2026-10-03
 
