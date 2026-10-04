@@ -5,9 +5,11 @@ import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 
 // Raccourci de 3000 a 2400ms le 02/10/2026 (retour de Gersom : "un tout petit
-// peu plus court") -- le prefetch de la destination + le prechargement des
-// approbations (juste en dessous) restent lances au montage, inchanges.
-const SPLASH_DURATION_MS = 2400;
+// peu plus court"), puis de 2400 a 1650ms le 03/10/2026 (retour de Gersom :
+// "reduis la longueur... de trois quarts de seconde", soit -750ms) -- le
+// prefetch de la destination + le prechargement des approbations (juste en
+// dessous) restent lances au montage, inchanges.
+const SPLASH_DURATION_MS = 1650;
 
 export function SplashScreen({
   next,
