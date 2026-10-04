@@ -1,7 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createSessionToken, verifySecret, SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from '@/lib/auth';
+import { isLockedOut, lockoutRemainingMinutes, nextStateAfterFailure, RESET_LOCKOUT_STATE } from '@/lib/loginLockout';
+import { logServerEvent } from '@/lib/serverLog';
 import { Role } from '@/lib/types';
+
+// v1.67.0, retour de Gersom : "rajouter un processus de sécurité pour ne pas
+// qu'on puisse brute force les tentatives... maximum 10 tentatives de suite
+// erronées... pour pas se faire pirater facilement." Voir lib/loginLockout.ts
+// pour la politique (par compte, 15 min, jamais par IP). S'applique aux deux
+// modes (pin ET password) : même compte, même protection, même si le mode
+// 'password' reste vestigial côté UI actuelle (voir lib/types.ts).
+interface LockoutRow {
+  id: string;
+  failed_login_attempts: number;
+  locked_until: string | null;
+}
+
+function lockedResponse(row: LockoutRow) {
+  const minutes = lockoutRemainingMinutes(row);
+  return NextResponse.json(
+    { error: `Trop de tentatives échouées. Réessayez dans ${minutes} minute${minutes > 1 ? 's' : ''}.` },
+    { status: 423 }
+  );
+}
+
+async function recordFailedAttempt(
+  supabase: ReturnType<typeof createAdminClient>,
+  row: LockoutRow,
+  nom_affichage: string
+) {
+  const next = nextStateAfterFailure(row);
+  await supabase
+    .from('users')
+    .update({ failed_login_attempts: next.failed_login_attempts, locked_until: next.locked_until })
+    .eq('id', row.id);
+  if (next.justLocked) {
+    void logServerEvent({
+      source: 'server',
+      level: 'warn',
+      path: '/api/auth/login',
+      message: 'Compte verrouillé après 10 tentatives de connexion échouées',
+      context: { nom_affichage },
+    });
+  }
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -20,12 +63,23 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, event_id, nom_affichage, nom_complet, role, password_hash, active, is_super_admin')
+      .select(
+        'id, event_id, nom_affichage, nom_complet, role, password_hash, active, is_super_admin, failed_login_attempts, locked_until'
+      )
       .eq('email', email)
       .maybeSingle();
 
+    if (user && isLockedOut(user)) {
+      return lockedResponse(user);
+    }
+
     if (!user || !user.active || !user.password_hash || !verifySecret(password, user.password_hash)) {
+      if (user) await recordFailedAttempt(supabase, user, user.nom_affichage);
       return NextResponse.json({ error: 'Identifiants incorrects' }, { status: 401 });
+    }
+
+    if (user.failed_login_attempts > 0 || user.locked_until) {
+      await supabase.from('users').update(RESET_LOCKOUT_STATE).eq('id', user.id);
     }
 
     return setSessionAndRespond(user);
@@ -40,12 +94,23 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('id, event_id, nom_affichage, nom_complet, role, pin_hash, active, is_super_admin')
+      .select(
+        'id, event_id, nom_affichage, nom_complet, role, pin_hash, active, is_super_admin, failed_login_attempts, locked_until'
+      )
       .eq('nom_affichage', nom_affichage)
       .maybeSingle();
 
+    if (user && isLockedOut(user)) {
+      return lockedResponse(user);
+    }
+
     if (!user || !user.active || !user.pin_hash || !verifySecret(pin, user.pin_hash)) {
+      if (user) await recordFailedAttempt(supabase, user, user.nom_affichage);
       return NextResponse.json({ error: 'Nom ou PIN incorrect' }, { status: 401 });
+    }
+
+    if (user.failed_login_attempts > 0 || user.locked_until) {
+      await supabase.from('users').update(RESET_LOCKOUT_STATE).eq('id', user.id);
     }
 
     return setSessionAndRespond(user);
