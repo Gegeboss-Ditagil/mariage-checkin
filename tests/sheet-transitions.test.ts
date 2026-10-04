@@ -24,6 +24,41 @@ test('useDismiss expose closing/dismiss et respecte prefers-reduced-motion', () 
   assert.match(hookSource, /onCloseRef\.current\(\)/);
 });
 
+// v1.67.1, bug réel signalé par Gersom (capture d'écran /agenda) : "la fiche
+// pour modifier l'activité va sortir... après ça va être fermé... après ça
+// bug, je ne suis plus capable d'appuyer sur rien." Root cause : `closing`
+// n'était jamais remis à `false` après le timer de sortie -- pour un
+// consommateur PERSISTANT qui rouvre/referme le même panneau plusieurs fois
+// sans jamais démonter le composant entier (AgendaPage, /approbations,
+// InstallAppButton -- tous les trois un simple state interne, `useDismiss`
+// appelé une seule fois pour toute la vie du composant), `closing` restait
+// collé à `true` dès la toute première fermeture : la réouverture suivante
+// remontait directement en classes "-closing" (opacity 0 via `animation:
+// ... both`, jamais démonté) -- invisible mais toujours en `fixed inset-0
+// z-50`, bloquant tout le reste de l'écran, ET `dismiss()` refusait alors
+// de rouvrir le cycle (`if (closing) return;`, déjà vrai) : le bouton de
+// fermeture devenait un no-op silencieux, aucune sortie possible sans
+// recharger la page. Les consommateurs démontés entièrement entre deux
+// ouvertures (GuestApprovalCaptureFlow/PhotoCaptureCamera/ResponsablePicker,
+// `onClose` reçu en prop d'un parent qui conditionne leur montage) n'étaient
+// jamais touchés -- un nouvel appel à `useDismiss` repart de `closing=false`.
+test("useDismiss remet closing à false après le timer de sortie -- jamais collé à true après le tout premier cycle ouverture/fermeture", () => {
+  const timerBlock = hookSource.slice(hookSource.indexOf('timerRef.current = setTimeout'));
+  // setClosing(false) doit survenir APRES onCloseRef.current(), dans le
+  // meme callback de timeout -- jamais avant, et jamais absent.
+  const closeIdx = timerBlock.indexOf('onCloseRef.current()');
+  const resetIdx = timerBlock.indexOf('setClosing(false)');
+  assert.ok(closeIdx >= 0, 'onCloseRef.current() doit rester appelé dans le timer');
+  assert.ok(resetIdx > closeIdx, 'setClosing(false) doit suivre onCloseRef.current(), jamais le precéder ni être absent');
+});
+
+test('filet de sécurité CSS : un panneau "-closing" ne peut plus jamais intercepter un tap, quelle que soit la cause d\'un futur blocage similaire', () => {
+  for (const cls of ['.sheet-panel-closing', '.sheet-card-closing', '.sheet-backdrop-closing']) {
+    const block = cssSource.slice(cssSource.indexOf(cls), cssSource.indexOf(cls) + 200);
+    assert.match(block, /pointer-events:\s*none/, cls + ' doit poser pointer-events: none');
+  }
+});
+
 test('globals.css definit les classes sheet-panel/sheet-card/sheet-backdrop (entree et sortie) avec un garde reduced-motion', () => {
   assert.match(cssSource, /@keyframes sheet-panel-in/);
   assert.match(cssSource, /@keyframes sheet-panel-out/);
