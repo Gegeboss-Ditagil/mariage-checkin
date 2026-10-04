@@ -75,11 +75,14 @@ test('le selecteur de responsables utilise une coche personnalisee (rond accent)
 // rien. La case a cocher "termine" (qui doit continuer a fonctionner sans
 // ouvrir la modification) etait le seul autre element interactif.
 test('toute la carte d\'une activite ouvre la modification (pas seulement le bloc de texte), la case terminee reste independante, et le lien jaune redondant a disparu', () => {
-  assert.match(agendaPage, /role=\{canManage \? 'button' : undefined\}/);
-  assert.match(agendaPage, /onClick=\{\(\) => canManage && openEditing\(item\)\}/);
+  // v1.67.1 : canManage seul a ete remplace par canEditNow (= canManage &&
+  // editMode, voir tests/agenda-view-edit-mode.test.ts) comme garde sur
+  // l'ouverture d'une fiche -- toujours la carte entiere qui porte le onClick.
+  assert.match(agendaPage, /role=\{canEditNow \? 'button' : undefined\}/);
+  assert.match(agendaPage, /onClick=\{\(\) => canEditNow && openEditing\(item\)\}/);
   // La carte entiere porte le onClick -- l'ancien <button> qui n'enveloppait
   // que le texte est redevenu un simple <div>.
-  assert.doesNotMatch(agendaPage, /<button type="button" onClick=\{\(\) => canManage && (setEditing|openEditing)\(item\)\}/);
+  assert.doesNotMatch(agendaPage, /<button type="button" onClick=\{\(\) => canEditNow && (setEditing|openEditing)\(item\)\}/);
   // La case cochee stoppe la propagation pour ne pas aussi ouvrir la carte.
   assert.match(agendaPage, /onClick=\{\(e\) => \{ e\.stopPropagation\(\); void patchItem\(item\.id, \{ completed: !item\.completed \}\); \}\}/);
   // Le lien texte en accent devenu redondant (la carte entiere s'ouvre déjà)
