@@ -196,7 +196,9 @@ function LoginForm() {
       )}
 
       <p className="relative mt-8 max-w-xs text-center text-sm text-text-faint">
-        Merci pour vos efforts :) Vous êtes la meilleure équipe !
+        Merci beaucoup! Vous êtes les meilleurs 🙏🏽
+        <br />
+        ✈️Bienvenue à bord✈️
       </p>
 
       {/* v1.65.3, retour de Gersom (capture d'écran) : "tout plein de textes
