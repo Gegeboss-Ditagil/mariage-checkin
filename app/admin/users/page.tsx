@@ -36,13 +36,46 @@ export default function UsersAdminPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // v1.67.4, retour de Gersom : "ajuster la fonction de réinitialisation...
+  // pour qu'elle soit ajoutée à la page de gestion de compte... on peut
+  // réinitialiser, on peut aussi modifier. On a le choix." -- même action
+  // que /mots-de-passe (POST /api/passwords, canResetPassword en seule
+  // source de vérité), directement dans la fiche d'édition de ce compte,
+  // additif : /mots-de-passe reste la seule page atteignable par directeur
+  // (sans accès à /admin/users), inchangée.
+  const [canViewHints, setCanViewHints] = useState(false);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetResult, setResetResult] = useState<{ nom_affichage: string; pin: string } | null>(null);
+
   function load() {
     fetch('/api/admin/users')
       .then((r) => r.json())
-      .then((d) => setUsers(d.users || []));
+      .then((d) => {
+        setUsers(d.users || []);
+        setCanViewHints(d.canViewHints === true);
+      });
   }
 
   useEffect(load, []);
+
+  async function resetPassword(u: UserRow) {
+    setResetError(null);
+    setResettingId(u.id);
+    const res = await fetch('/api/passwords', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: u.id }),
+    });
+    const data = await res.json();
+    setResettingId(null);
+    if (!res.ok) {
+      setResetError(data.error || 'Réinitialisation impossible');
+      return;
+    }
+    setResetResult({ nom_affichage: data.nom_affichage, pin: data.pin });
+    load();
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -84,11 +117,13 @@ export default function UsersAdminPage() {
     setEditPassword('');
     setEditPin('');
     setEditError(null);
+    setResetError(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditError(null);
+    setResetError(null);
   }
 
   async function saveEdit(u: UserRow) {
@@ -229,6 +264,23 @@ export default function UsersAdminPage() {
                     : false;
                   return (
                     <div className="mt-3 space-y-2 rounded-xl2 border border-hairline bg-surface-2 p-3">
+                      {u.canReset && (
+                        <div className="space-y-2 rounded-xl2 border border-hairline bg-surface p-3">
+                          <p className="text-sm text-text-muted">
+                            Réinitialiser génère un nouveau code aléatoire, affiché une seule fois — ou saisissez-en un vous-même ci-dessous.
+                            {canViewHints && (u.hint ? ' Dernier indice : ' + u.hint : ' Aucun indice (jamais réinitialisé depuis cet écran).')}
+                          </p>
+                          <button
+                            type="button"
+                            className="w-full rounded-full border border-hairline bg-surface-2 px-3 py-2 text-sm font-semibold text-accent disabled:opacity-50"
+                            disabled={resettingId === u.id}
+                            onClick={() => resetPassword(u)}
+                          >
+                            {resettingId === u.id ? '…' : 'Réinitialiser'}
+                          </button>
+                          {resetError && <p className="text-sm text-status-over">{resetError}</p>}
+                        </div>
+                      )}
                       <input
                         className={inputClass}
                         placeholder="Nom affiché"
@@ -303,6 +355,19 @@ export default function UsersAdminPage() {
           ))}
         </ul>
       </div>
+
+      {resetResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+          <div className="card w-full max-w-sm space-y-3 text-center">
+            <p className="font-semibold">Nouveau code pour {resetResult.nom_affichage}</p>
+            <p className="font-display text-3xl tracking-[0.3em]">{resetResult.pin}</p>
+            <p className="text-sm text-text-muted">Communiquez-le directement à la personne — il ne sera plus jamais affiché en clair.</p>
+            <button type="button" className="btn-primary w-full" onClick={() => setResetResult(null)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
