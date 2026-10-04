@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.67.10",
+  "version": "1.67.11",
   "private": true,
   "scripts": {
     "dev": "next dev",

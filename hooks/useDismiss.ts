@@ -36,7 +36,32 @@ export function useDismiss(onClose: () => void) {
     setClosing(true);
     const reducedMotion =
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    timerRef.current = setTimeout(() => onCloseRef.current(), reducedMotion ? 0 : SHEET_EXIT_MS);
+    timerRef.current = setTimeout(() => {
+      onCloseRef.current();
+      // v1.67.1, bug réel signalé par Gersom (capture d'écran /agenda) :
+      // "la fiche pour modifier l'activité va sortir... après ça va être
+      // fermé... après ça bug, je ne suis plus capable d'appuyer sur rien."
+      // `closing` n'était JAMAIS remis à false ici -- pour un consommateur
+      // persistant qui rouvre/referme le MEME panneau plusieurs fois sans
+      // démonter tout le composant (ex. AgendaPage : `editing`/`insertAt`
+      // sont un simple state interne, `useDismiss` n'est appelé qu'une
+      // seule fois pour toute la vie de la page), `closing` restait collé à
+      // `true` dès la toute première fermeture. À la réouverture suivante,
+      // le panneau remontait directement avec les classes CSS "-closing"
+      // (`sheet-backdrop-closing`/`sheet-card-closing`, `animation: ...
+      // both` -- termine et reste à `opacity: 0`, jamais `pointer-events:
+      // none`) : invisible mais toujours présent en `fixed inset-0 z-50`,
+      // bloquant tout le reste de l'écran. Pire : `dismiss()` lui-même
+      // refusait alors de rouvrir le cycle (`if (closing) return;`, déjà
+      // vrai) -- le bouton de fermeture (X) devenait un no-op silencieux,
+      // sans aucun moyen de s'en sortir autrement qu'en rechargeant la
+      // page. Un composant qui démonte entièrement entre deux ouvertures
+      // (nouvel appel à useDismiss, `closing` reparti à `false`) n'était
+      // jamais touché -- seuls les consommateurs persistants l'étaient
+      // (AgendaPage pour ses deux panneaux, la fiche détaillée de
+      // `/approbations`, `InstallAppButton`).
+      setClosing(false);
+    }, reducedMotion ? 0 : SHEET_EXIT_MS);
   }
 
   return { closing, dismiss };

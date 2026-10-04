@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.67.11] — 2026-10-03
+
+Bug réel signalé par Gersom (capture d'écran `/agenda`) : « quand j'appuie sur une activité, des fois, tu as la page pour modifier l'activité qui va sortir. Après, ça va être fermé. Après, ça bug. Je ne suis plus capable d'appuyer sur rien. Les logs expliquent pourquoi ? »
+
+### Investigation (`docs/QE_QA_PROCESS.md` — vérifier les vraies données avant de conclure)
+`app_logs` vérifié en premier : **rien de nouveau n'y correspond** — contrairement aux précédents signalements de freeze (v1.62.0/v1.63.0, qui laissaient une vraie erreur capturée), ce bug-ci ne génère aucune trace dans les logs. Root cause trouvée par lecture directe du code.
+
+### Corrigé — `hooks/useDismiss.ts` : panneau modal qui se bloque après une première fermeture
+Partagé par 7 panneaux modaux depuis v1.53.18 (`GuestApprovalCaptureFlow`, `PhotoCaptureCamera`, `ResponsablePicker`, `InstallAppButton`, la fiche détaillée de `/approbations`, les deux modales de `/agenda`). `closing` (l'état « en train de jouer l'animation de sortie ») n'était **jamais remis à `false`** après le délai de 200ms. Sans conséquence pour un panneau entièrement démonté entre deux ouvertures (`GuestApprovalCaptureFlow`/`PhotoCaptureCamera`/`ResponsablePicker` : `onClose` reçu en prop d'un parent qui conditionne leur montage — chaque ouverture appelle `useDismiss` à neuf). Mais pour un consommateur **persistant** qui rouvre/referme le même panneau via un simple state interne sans jamais démonter le composant entier (`AgendaPage` pour ses deux modales, `/approbations` pour sa fiche détaillée, `InstallAppButton`) : `closing` restait collé à `true` dès la toute première fermeture.
+
+À la réouverture suivante, le panneau remontait directement avec les classes CSS `-closing` (`animation: ... both` — termine et reste à `opacity: 0`, jamais `pointer-events: none`) : invisible, mais toujours présent en `fixed inset-0 z-50`, bloquant tout le reste de l'écran. Pire : `dismiss()` lui-même refusait alors de rouvrir le cycle (`if (closing) return;`, déjà vrai) — le bouton de fermeture (X) devenait un no-op silencieux, sans aucun moyen de s'en sortir autrement qu'en rechargeant la page. Exactement le symptôme décrit : la fiche « sort », « se ferme », puis plus rien ne répond.
+
+**Corrigé** : `setClosing(false)` ajouté juste après `onCloseRef.current()` dans le timer de sortie — `closing` ne représente plus que les ~200ms réels de l'animation, jamais un état qui persiste après.
+
+### Ajouté — filet de sécurité CSS
+`.sheet-panel-closing`/`.sheet-card-closing`/`.sheet-backdrop-closing` (`app/globals.css`) posent désormais `pointer-events: none` — un panneau « en train de partir » ne peut plus jamais intercepter un tap, quelle que soit la cause d'un futur blocage similaire à celui-ci.
+
+### Tests
+- `tests/sheet-transitions.test.ts` (2 nouveaux tests) : verrouillent `setClosing(false)` après `onCloseRef.current()` et `pointer-events: none` sur les trois classes `-closing` — vérifiés en échouant sur l'ancien code avant d'appliquer le correctif, pas seulement après.
+
+Aucune migration.
+
 ## [1.67.10] — 2026-10-03
 
 Retour de Gersom (message vocal) : « rajouter un processus de sécurité pour ne pas qu'on puisse brute force les tentatives... au cas où il y a un petit génie parmi les utilisateurs... maximum 10 tentatives de suite erronées... pour pas se faire pirater facilement, pour pas qu'il y ait quelqu'un qui nous sabote. »
