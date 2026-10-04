@@ -109,6 +109,57 @@ test('le PIN généré ne part jamais vers les logs serveur en clair -- seulemen
   assert.match(logCall, /targetId: target\.id/);
 });
 
+// v1.67.4, retour de Gersom (capture d'écran /admin/users) : "ajuster la
+// fonction de réinitialisation de mot de passe pour qu'elle soit ajoutée à
+// la page de gestion de compte et non qu'elle soit juste un bouton pour
+// gérer les pages, les mots de passe de tout le monde. On peut réinitialiser,
+// on peut aussi modifier. On a le choix." -- POST /api/passwords (déjà
+// réutilisé tel quel par /admin/users, aucune route dupliquée) écrivait
+// TOUJOURS pin_hash, même pour une cible admin -- un champ que la connexion
+// admin (email + password_hash, /api/auth/login) ne lit jamais. Réinitialiser
+// un admin (réservé au compte is_super_admin) affichait donc "un nouveau
+// code" qui n'avait en réalité aucun effet sur la connexion réelle de ce
+// compte -- bug réel trouvé en préparant ce lot, corrigé dans la même route.
+const passwordsRouteSource = routeSource;
+
+test('POST /api/passwords écrit password_hash (jamais pin_hash) pour une cible admin -- la connexion admin ne lit jamais pin_hash', () => {
+  const postBlock = passwordsRouteSource.slice(passwordsRouteSource.indexOf('export async function POST'));
+  assert.match(postBlock, /target\.role === 'admin'/);
+  assert.match(postBlock, /\?\s*\{ password_hash: hashSecret\(pin\), pin_reset_hint: maskPinForHint\(pin\) \}/);
+  assert.match(postBlock, /:\s*\{ pin_hash: hashSecret\(pin\), pin_reset_hint: maskPinForHint\(pin\) \}/);
+});
+
+const adminUsersRouteSource = readFileSync(new URL('../app/api/admin/users/route.ts', import.meta.url), 'utf8');
+
+test('GET /api/admin/users calcule canReset/hint par compte avec les mêmes fonctions que /api/passwords (canResetPassword/canViewPasswordHint), jamais recréées localement', () => {
+  const getBlock = adminUsersRouteSource.slice(adminUsersRouteSource.indexOf('export async function GET'), adminUsersRouteSource.indexOf('export async function POST'));
+  assert.match(getBlock, /canResetPassword\(user, row\.role\)/);
+  assert.match(getBlock, /canViewPasswordHint\(user\)/);
+  assert.match(getBlock, /hint: canViewHints \? row\.pin_reset_hint : undefined/);
+});
+
+const adminUsersPageSource = readFileSync(new URL('../app/admin/users/page.tsx', import.meta.url), 'utf8');
+
+test("/admin/users expose un bouton Réinitialiser dans la fiche d'édition (POST /api/passwords réutilisé, jamais une route dupliquée), gated sur u.canReset -- additif à la saisie manuelle existante (Modifier), jamais un remplacement", () => {
+  assert.match(adminUsersPageSource, /async function resetPassword\(u: UserRow\) \{/);
+  const resetFn = adminUsersPageSource.slice(adminUsersPageSource.indexOf('async function resetPassword'), adminUsersPageSource.indexOf('async function add'));
+  assert.match(resetFn, /fetch\('\/api\/passwords', \{/);
+  assert.match(resetFn, /method: 'POST'/);
+  assert.match(adminUsersPageSource, /\{u\.canReset && \(/);
+  assert.match(adminUsersPageSource, /onClick=\{\(\) => resetPassword\(u\)\}/);
+  // Le champ "Nouveau mot de passe/PIN" manuel (Modifier, préexistant) reste
+  // présent à côté -- les deux chemins coexistent, jamais l'un à la place de
+  // l'autre.
+  assert.match(adminUsersPageSource, /Nouveau mot de passe \(laisser vide pour ne pas changer\)/);
+  assert.match(adminUsersPageSource, /Nouveau PIN \(laisser vide pour ne pas changer\)/);
+});
+
+test('/admin/users : /mots-de-passe reste intact et atteignable -- directeur (managePasswords mais jamais adminPanel) n\'a aucun autre accès à la réinitialisation', () => {
+  assert.equal(hasCapability('directeur', 'adminPanel'), false);
+  assert.equal(canAccessPath('directeur', '/admin/users'), false);
+  assert.equal(canAccessPath('directeur', '/mots-de-passe'), true);
+});
+
 const loginSource = readFileSync(new URL('../app/login/page.tsx', import.meta.url), 'utf8');
 
 test('/login propose "Mot de passe oublié ?" qui révèle un texte statique nommant des directeurs, sans appel réseau', () => {
