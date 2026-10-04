@@ -167,7 +167,7 @@ function SideLink({ item, active }: { item: NavItem; active: boolean }) {
 // En paysage (telephone tourne, ou iPad), la pilule horizontale devient une
 // bande verticale fixee au bord droit -- "les boutons vont a la droite au
 // lieu de rester en bas", le contenu de la page reste seul responsable du
-// defilement vertical (voir le patron de page h-dvh + landscape:flex-row
+// defilement vertical (voir le patron de page h-[100svh] + landscape:flex-row
 // applique aux ecrans qui utilisent ce composant). Le bouton central se
 // souleve alors vers la gauche (vers le contenu) plutot que vers le haut.
 export function BottomNav({ role, onCentralAction }: { role: Role; onCentralAction?: () => void }) {

@@ -70,14 +70,51 @@ const LANDSCAPE_SHELL_PAGES = [
   '../app/agenda/page.tsx',
 ];
 
-test("chaque ecran principal est ancre au viewport reel (position fixed + inset-0) plutot que seulement dimensionne par h-dvh, sans changer le flex interne (BottomNav garde sa place, aucun padding a ajouter)", () => {
+test("chaque ecran principal est ancre au viewport reel (position fixed + hauteur explicite 100svh) plutot que seulement dimensionne par h-dvh, sans changer le flex interne (BottomNav garde sa place, aucun padding a ajouter)", () => {
   for (const relPath of LANDSCAPE_SHELL_PAGES) {
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
     assert.match(
       source,
-      /className="fixed inset-0 flex flex-col overflow-hidden bg-bg landscape:flex-row landscape:bottom-\[env\(safe-area-inset-bottom\)\]"/,
+      /className="fixed inset-x-0 top-0 flex h-\[100svh\] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-\[calc\(100svh-env\(safe-area-inset-bottom\)\)\]"/,
       relPath
     );
+  }
+});
+
+// v1.67.3, retour de Gersom (2 captures d'écran, navigateur mobile NON
+// installé -- `/scan` et `/admin/users`) : "quand on est sur un browser,
+// ajuste pour que justement tout fait sur un écran. Là, je vois que le
+// dernier élément, il est coupé... et sur toutes les pages." Root cause :
+// `fixed inset-0` (v1.45.0 ci-dessus) laisse le navigateur calculer la
+// hauteur automatiquement a partir du haut ET du bas (top:0, bottom:0) --
+// pour un element `position: fixed` sans hauteur explicite, Safari mobile
+// resout cet "auto" contre le GRAND viewport (barre d'adresse + barre
+// d'outils EN BAS supposees deja repliees), jamais contre la zone REELLEMENT
+// visible quand ces barres sont affichees (onglet de navigateur ordinaire,
+// jamais installe en PWA) -- exactement le classique bug `100vh` mobile,
+// reintroduit ici via l'auto-height de `inset-0` plutot que via un `100vh`
+// explicite. Le dernier element du flex (BottomNav) se retrouve alors
+// physiquement sous la vraie barre d'outils du navigateur, dans la zone que
+// `overflow-hidden` empeche de jamais faire defiler jusque-la. Corrige en
+// remplacant l'auto-height de `inset-0` par une hauteur EXPLICITE
+// `h-[100svh]` (petit viewport -- la plus petite zone garantie visible,
+// barres d'outils supposees deployees) : jamais plus grand que ce qui est
+// reellement visible, donc plus jamais de contenu cache sous le navigateur.
+// Deliberement `svh` et PAS `dvh` (qui se recalcule dynamiquement pendant le
+// defilement quand les barres se replient/deploient) : `dvh` reintroduirait
+// exactement le probleme que `fixed inset-0` avait corrige en v1.45.0 (la
+// coquille qui bouge legerement en cours de geste, rendant le bouton central
+// momentanement injoignable) -- `svh` est une valeur STATIQUE, jamais
+// recalculee en cours d'interaction, qui cumule donc les deux proprietes :
+// jamais trop grand (correctif de ce lot) ET jamais instable (acquis de
+// v1.45.0, preserve). En mode PWA installee, petit et grand viewport sont
+// identiques (aucune barre de navigateur reelle) : aucun changement de
+// comportement pour ce cas deja fonctionnel.
+test("chaque ecran principal utilise une hauteur explicite 100svh (petit viewport, jamais plus grand que la zone reellement visible derriere un navigateur non installe) plutot que l'auto-height de inset-0 seul, et jamais 100dvh (qui se recalculerait en cours de defilement, regression de v1.45.0)", () => {
+  for (const relPath of LANDSCAPE_SHELL_PAGES) {
+    const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
+    assert.match(source, /h-\[100svh\]/, relPath);
+    assert.doesNotMatch(source, /h-\[100dvh\]/, relPath + ' ne doit jamais utiliser dvh (recalcul instable pendant le defilement, regression de v1.45.0)');
   }
 });
 
@@ -126,9 +163,17 @@ test("html et body posent explicitement background-color (pas seulement via la c
 // plutôt que `0`), qui protège d'un coup le contenu ET le dernier onglet
 // de la bande verticale, sans toucher au padding interne d'aucune des 11
 // pages.
-test("en paysage, la coquille de chaque page reserve aussi l'espace du bas (env(safe-area-inset-bottom)) -- la barre gestuelle systeme (iPad) reste horizontale meme tourne, rien ne la protegeait avant", () => {
+//
+// v1.67.3 : `landscape:bottom-[env(...)]` est devenu sans effet une fois la
+// hauteur fixée explicitement (`top` + `height` tous deux spécifiés force le
+// moteur CSS à ignorer `bottom`, qui ne fait plus que participer au calcul
+// si l'un des deux autres est `auto`) -- remplacé par un ajustement
+// équivalent de la HAUTEUR elle-même en paysage (`landscape:h-[calc(100svh-env(safe-area-inset-bottom))]`,
+// verrouillé par le test précédent), même effet (la coquille laisse la même
+// marge en bas), toujours actif.
+test("en paysage, la coquille de chaque page reserve aussi l'espace du bas (env(safe-area-inset-bottom)) via la hauteur elle-meme -- la barre gestuelle systeme (iPad) reste horizontale meme tourne, rien ne la protegeait avant", () => {
   for (const relPath of LANDSCAPE_SHELL_PAGES) {
     const source = readFileSync(new URL(relPath, import.meta.url), 'utf8');
-    assert.match(source, /landscape:bottom-\[env\(safe-area-inset-bottom\)\]/, relPath);
+    assert.match(source, /landscape:h-\[calc\(100svh-env\(safe-area-inset-bottom\)\)\]/, relPath);
   }
 });
