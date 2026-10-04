@@ -66,9 +66,19 @@ export async function POST(req: NextRequest) {
   }
 
   const pin = generateRandomPin();
+  // Les comptes admin se connectent avec email + mot de passe (password_hash),
+  // jamais un PIN (voir /api/auth/login) -- bug reel trouve en v1.67.4 :
+  // cette route ecrivait TOUJOURS pin_hash, meme pour une cible admin, un
+  // champ que la connexion admin ne lit jamais. Reinitialiser un admin
+  // (reserve au compte is_super_admin, canResetPassword ci-dessus) generait
+  // donc un code affiche comme "nouveau code" qui n'avait en realite AUCUN
+  // effet sur la connexion reelle de ce compte.
+  const updates = target.role === 'admin'
+    ? { password_hash: hashSecret(pin), pin_reset_hint: maskPinForHint(pin) }
+    : { pin_hash: hashSecret(pin), pin_reset_hint: maskPinForHint(pin) };
   const { error: updateError } = await supabase
     .from('users')
-    .update({ pin_hash: hashSecret(pin), pin_reset_hint: maskPinForHint(pin) })
+    .update(updates)
     .eq('id', id)
     .eq('event_id', user.event_id);
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
