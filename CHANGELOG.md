@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.67.14] — 2026-10-04
+
+Retour de Gersom — remplacer le message de remerciement affiché sous le bouton « Mot de passe oublié ? » sur `/login`.
+
+### Changé — texte de remerciement sur `/login`
+- « Merci pour vos efforts :) Vous êtes la meilleure équipe ! » devient :
+  > Merci beaucoup! Vous êtes les meilleurs 🙏🏽
+  > ✈️Bienvenue à bord✈️
+- Purement un changement de texte statique (`app/login/page.tsx`), aucun comportement ni capacité touchée.
+
+Aucune migration.
+
 ## [1.67.13] — 2026-10-03
 
 Retour de Gersom (2 captures d'écran, navigateur mobile NON installé — `/scan` et `/admin/users`) : « quand on est sur un browser, ajuste pour que justement tout fait sur un écran. Là, je vois que le dernier élément, il est coupé. Le truc du tableau de bord, la barre de progression. Et sur toutes les pages, justement. »
