@@ -68,12 +68,13 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
 
 const PULL_THRESHOLD = 70;
 
-// Cible actuelle (mise à jour le 14/09/2026, v1.47.0) : 42 tables max (41
-// officielles, dont la nouvelle table 41 "Houston" + 1 seule réserve, table
-// 42 "Johannesburg"), donc 410 invités "officiels" — le reste (jusqu'à ce
-// qu'on coupe la liste au prochain import) passe dans l'unique table de
-// réserve, clairement marquée "excédentaire".
-const CAPACITE_OFFICIELLE = 410;
+// Cible actuelle (mise à jour le 05/10/2026, v1.68.0, nouveau plan de table
+// final seatplan.io) : 41 tables max (40 officielles + 1 seule réserve,
+// table 41 "excédentaire" -- la table 42 "Johannesburg" n'existe plus dans
+// ce plan, voir supabase/migrations/0061), donc 400 invités "officiels" —
+// le reste passe dans l'unique table de réserve, clairement marquée
+// "excédentaire".
+const CAPACITE_OFFICIELLE = 400;
 
 export default function PlanTablePage() {
   return (
@@ -354,9 +355,10 @@ function PlanTablePageInner() {
   }, [invitations, filtre, coteFiltre]);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
-  // Tables presentes sur le plan interactif -- les 42 tables (v1.48.0,
-  // disposition en deux zones nord/sud reconstruite depuis les photos de
-  // Gersom, voir FLOOR_PLAN_TABLE_POSITIONS dans components/FloorPlan.tsx).
+  // Tables presentes sur le plan interactif -- les 41 tables (v1.68.0,
+  // disposition en 4 zones cardinales NE/NO/SE/SO reconstruite depuis les
+  // photos de Gersom, voir FLOOR_PLAN_TABLE_POSITIONS dans
+  // components/FloorPlan.tsx).
   const tablesSurLePlan = new Set(Object.keys(FLOOR_PLAN_TABLE_POSITIONS).map(Number));
   const occupiedNumbers = new Set(
     tables.filter((t) => (invitationsByTable.get(t.id) || []).length > 0).map((t) => t.number)
@@ -779,7 +781,7 @@ function PlanTablePageInner() {
               </div>
 
               {reserveVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-text-faint">
-                Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 410</span>
+                Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 400</span>
               </p>}
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {reserveVisibles.map((t) => (

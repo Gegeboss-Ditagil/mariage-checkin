@@ -3,27 +3,31 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { TABLE_SEAT_NAMES } from '../lib/floorPlanSeats.ts';
 
-// v1.48.0 (14/09/2026) : noms de sieges lus par OCR sur les deux photos du
-// plan de table transmises par Gersom (nouvelle configuration), pour la
-// surbrillance optionnelle des chaises sur /plan-table -- explicitement
-// laissee a discretion ("a toi de decider... tu pourras meme comparer avec
-// les noms de With Joy pour te donner une idee"). PUREMENT INFORMATIF : ne
-// doit jamais devenir une source de placement (celle-ci reste
+// v1.68.0 (05/10/2026) : noms de sieges lus par OCR sur les 4 photos de
+// zones du plan de table FINAL seatplan.io (41 tables), pour la surbrillance
+// optionnelle des chaises sur /plan-table -- explicitement laissee a
+// discretion ("a toi de decider... tu pourras meme comparer avec les noms
+// de With Joy pour te donner une idee"). PUREMENT INFORMATIF : ne doit
+// jamais devenir une source de placement (celle-ci reste
 // invitations.table_id, cf. docs/DATA_CHANGE_INSTRUCTIONS.md section 6).
 
-test('TABLE_SEAT_NAMES couvre exactement les 42 tables, dix sieges chacune', () => {
+test('TABLE_SEAT_NAMES couvre exactement les 41 tables, au moins dix sieges chacune', () => {
   const keys = Object.keys(TABLE_SEAT_NAMES).map(Number);
-  assert.equal(keys.length, 42, 'doit couvrir exactement les 42 tables');
-  for (let n = 1; n <= 42; n++) {
+  assert.equal(keys.length, 41, 'doit couvrir exactement les 41 tables');
+  for (let n = 1; n <= 41; n++) {
     assert.ok(TABLE_SEAT_NAMES[n], `table ${n} doit avoir une entree`);
-    assert.equal(TABLE_SEAT_NAMES[n].length, 10, `table ${n} doit avoir 10 sieges (vides ou nommes)`);
+    // Certaines tables comptent plus de 10 membres reels (ex. un invite
+    // surprise approuve apres coup, un accompagnant non capture sur la
+    // photo) -- ajoutes en fin de liste plutot que perdus, jamais tronques.
+    assert.ok(TABLE_SEAT_NAMES[n].length >= 10, `table ${n} doit avoir au moins 10 sieges`);
   }
+  assert.ok(!TABLE_SEAT_NAMES[42], 'la table 42 ne doit plus exister (decommissionnee, migration 0061)');
 });
 
-test('la table 42 (Johannesburg, excedentaire) est entierement vide sur la photo', () => {
-  // Coherent avec v1.47.0 : aucune invitation n'y etait encore placee au
-  // moment de la photo, elle sert de reserve.
-  assert.ok(TABLE_SEAT_NAMES[42].every((seat) => seat === null));
+test('la table 41 (nouvelle reserve "excedentaire") est entierement vide sur la photo', () => {
+  // Coherent avec le nouveau plan : aucune invitation n'y est placee, elle
+  // sert de reserve (voir supabase/migrations/0061).
+  assert.ok(TABLE_SEAT_NAMES[41].every((seat) => seat === null));
 });
 
 test("un siege vide est represente par null, jamais une chaine vide ou 'Accompagnant'", () => {
@@ -59,13 +63,6 @@ test('reinitialise la surbrillance de siege a chaque changement de table (jamais
   assert.ok(setSelectedCalls.length >= 2, 'selectTableByNumber et locateOnPlan doivent tous deux reinitialiser highlightedSeats');
 });
 
-// v1.48.5, retour de Gersom : toucher une invitation dans la liste de la
-// table selectionnee (au-dessus du dessin) surlignait tous ses membres
-// retrouves d'un coup, sans naviguer vers /tables/[tableId] -- "j'appuie
-// vraiment sur la table, ça m'amène dans la prochaine page... [mais]
-// j'appuie sur le nom, ça descend en bas". v1.53.15 revient sur ce choix
-// (voir tests/table-seat-wheel.test.ts) : ce comportement n'existe plus,
-// toucher un nom navigue de nouveau normalement.
 test("toucher un siege sur le dessin de la table selectionnee surligne l'invitation correspondante (sens siege -> nom, seul restant)", () => {
   const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(pageSource, /onSelectInvitation/);
@@ -73,47 +70,20 @@ test("toucher un siege sur le dessin de la table selectionnee surligne l'invitat
   assert.match(pageSource, /selectedTableCardRef\.current\?\.scrollIntoView/);
 });
 
-// v1.53.3, retour de Gersom (16/09/2026, capture d'écran table 4) : "Fiston,
-// c'est écrit Fixton [Fixon]... fais un dernier assessment sur toutes les
-// chaises... vu que tu sais déjà sur quelle table, ça va être facile de
-// faire un match". Recoupement systématique (table par table) des 393
-// sièges nommés avec les invitations réellement en base -- 75 corrections
-// de lecture OCR confiantes appliquées (spot-check ci-dessous).
-test('v1.53.3 : corrige plusieurs lectures OCR confirmées par recoupement avec la base (ex. "Fixon Zola" -> "Fiston Zola")', () => {
-  assert.equal(TABLE_SEAT_NAMES[4][9], 'Fiston Zola');
-  assert.equal(TABLE_SEAT_NAMES[1][1], 'Jean-Clivens Le Caous');
-  assert.equal(TABLE_SEAT_NAMES[3][9], 'Edo Tukula');
-  assert.equal(TABLE_SEAT_NAMES[41][0], 'Jacquie Menga');
-  // Les anciennes lectures fautives ne doivent plus apparaître nulle part.
+// v1.68.0 : reconstruction complete depuis le plan de table final
+// seatplan.io (41 tables, voir CHANGELOG) -- les membres reellement places
+// a chaque table (invitations.table_id, apres la mise a jour groupee de ce
+// lot) servent de "menu" ferme de noms exacts, la photo ne donnant que
+// l'ORDRE des sieges. Quelques verifications ponctuelles plutot qu'une
+// couverture exhaustive (393 sieges, deja verifiees une a une pendant la
+// construction du fichier).
+test('v1.68.0 : quelques sieges verifies correspondent aux vrais occupants de leur table (nouveau plan)', () => {
+  assert.equal(TABLE_SEAT_NAMES[4][0], 'Fiston Zola');
+  assert.equal(TABLE_SEAT_NAMES[26][4], 'Jean-Clivens Le Caous');
+  assert.equal(TABLE_SEAT_NAMES[36][9], 'Luzolo Patrick Menga');
+  assert.equal(TABLE_SEAT_NAMES[15][8], 'Tio Godart Culumbu');
+  // Un nom lu sur l'ancien plan (42 tables) mais dont la famille a disparu
+  // du nouveau plan de table (table 40, v1.68.0) ne doit plus apparaitre.
   const flat = Object.values(TABLE_SEAT_NAMES).flat();
-  assert.ok(!flat.includes('Fixon Zola'));
-  assert.ok(!flat.includes('Jean-Ciben Ca ous'));
-});
-
-// v1.53.11, retour de Gersom (captures d'écran seatplan.io en bien meilleure
-// résolution) : "analyse, extrait bien les données... pour pouvoir refaire
-// la même chose" -- la base (272 invitations, requête groupée par table)
-// sert désormais de "menu" fermé de noms exacts par table, la photo ne
-// donnant plus que l'ORDRE des sièges. Corrige de vraies erreurs de
-// contamination croisée entre tables voisines (36/40/41, 1/11), jamais de
-// simples reformulations -- voir le commentaire en tête de
-// lib/floorPlanSeats.ts et CHANGELOG v1.53.11 pour le détail complet.
-test("v1.53.11 : corrige la contamination croisée entre tables 1/11 (Diego Ramos/Jade Magnus n'étaient jamais réellement à la table 41)", () => {
-  assert.equal(TABLE_SEAT_NAMES[1][3], 'Ketsia Neves');
-  assert.equal(TABLE_SEAT_NAMES[1][7], 'Teresa Ndani');
-  assert.equal(TABLE_SEAT_NAMES[11][0], 'Diego Ramos');
-  assert.equal(TABLE_SEAT_NAMES[41][6], 'Luzolo Patrick Menga');
-  const flat = Object.values(TABLE_SEAT_NAMES).flat();
-  assert.ok(!flat.includes('Jade Magnus'), "Jade Magnus n'est plus invitée depuis v1.50.0");
-  assert.ok(!flat.includes('Deusdedit Dos Goncalves'));
-  assert.ok(!flat.includes('Femme Michaud'));
-  assert.ok(!flat.includes('Michaud Cujumbu'));
-  assert.ok(!flat.includes('Invité n.n. (338)'));
-});
-
-test('v1.53.11 : table 36 et table 40 retrouvent leurs vrais occupants respectifs (les deux avaient des noms de tables voisines mélangés)', () => {
-  assert.equal(TABLE_SEAT_NAMES[36][7], 'Huguette Matondo');
-  assert.equal(TABLE_SEAT_NAMES[36][8], 'Julianna Matondo');
-  assert.equal(TABLE_SEAT_NAMES[40][0], 'Tio Godart Culumbu');
-  assert.equal(TABLE_SEAT_NAMES[40][1], 'Epouse Godart');
+  assert.ok(!flat.includes('Dany Lukoki'), "cette famille n'est pas parmi les membres reels places a la table 40");
 });

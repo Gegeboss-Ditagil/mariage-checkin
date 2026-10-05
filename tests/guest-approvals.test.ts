@@ -235,7 +235,7 @@ test('la page montre les statuts et exige une destination suffisante avant de co
   assert.match(assignPageSource, /!relocationReady/);
 });
 
-test('le choix rapide ne montre que les tables réellement libres et priorise la table du groupe arrivé-avec, puis le même côté, puis la table 42', () => {
+test('le choix rapide ne montre que les tables réellement libres et priorise la table du groupe arrivé-avec, puis le même côté, puis la table de réserve', () => {
   assert.match(assignPageSource, /Tables disponibles/);
   assert.match(assignPageSource, /libresEstimees >= needed/);
   // Priorité 0 ajoutée le 13/09/2026 : la table du groupe avec qui l'invité
@@ -243,8 +243,8 @@ test('le choix rapide ne montre que les tables réellement libres et priorise la
   // voir tests/approbations-ux-improvements.test.ts pour la présélection
   // automatique associée. Priorité 1 (même côté) ajoutée le 16/09/2026, voir
   // tests/guest-approval-cote-priority.test.ts pour le détail (0056) --
-  // passe désormais devant la table 42/réserve (`usage.table.is_reserve`,
-  // seule réserve depuis le 14/09/2026, v1.47.0).
+  // passe désormais devant la table de réserve (`usage.table.is_reserve`,
+  // table 41 depuis le 05/10/2026, v1.68.0 -- la table 42 n'existe plus).
   assert.match(assignPageSource, /return usage\.table\.is_reserve \? 2 : 3;/);
   // Texte raccourci le 13/09/2026 (retour de Gersom : "le texte est
   // long... plus intuitif") -- voir tests/approbations-ux-improvements.test.ts.

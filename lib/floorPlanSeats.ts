@@ -1,121 +1,72 @@
-// Noms de sieges lus par OCR sur les deux photos du plan de table transmises
-// par Gersom le 14/09/2026 (nouvelle configuration, v1.48.0). PUREMENT
-// INFORMATIF -- ce n'est PAS la source de placement de l'application (qui reste
-// invitations.table_id, seule source ecrite/autoritative, cf.
-// docs/DATA_CHANGE_INSTRUCTIONS.md section 6). Sert uniquement a afficher, a
-// titre indicatif, qui la famille avait prevu de faire asseoir a cette table
-// au moment de la photo -- jamais ecrit en base, jamais utilise pour decider
-// une assignation. Ordre des sieges : dans le sens horaire en partant du haut,
-// tel que visible sur chaque photo (schema circulaire a 10 places). `null` =
-// siege vide sur la photo (numerote mais sans etiquette de nom).
+// Noms de sieges lus par OCR sur les 4 photos de zones (Nord-Est, Nord-Ouest,
+// Sud-Est, Sud-Ouest) transmises par Gersom le 04-05/10/2026 (plan de table
+// FINAL seatplan.io, 41 tables, voir supabase/migrations/0061 et le
+// CHANGELOG v1.68.0). PUREMENT INFORMATIF -- ce n'est PAS la source de placement
+// de l'application (qui reste invitations.table_id, seule source
+// ecrite/autoritative, cf. docs/DATA_CHANGE_INSTRUCTIONS.md section 6). Sert
+// uniquement a afficher, a titre indicatif, qui la famille avait prevu de
+// faire asseoir a cette table au moment de la photo -- jamais ecrit en base,
+// jamais utilise pour decider une assignation. Ordre des sieges : dans
+// l'ordre de lecture de chaque photo (schema circulaire a 8-12 places selon
+// la table). `null` = siege vide ou personne de la photo introuvable parmi
+// les invitations reellement placees a cette table.
 //
-// Extraction methodique (OCR zoome table par table) puis recoupee avec la base
-// (voir tests/floor-plan-seats.test.ts) : ~87% des noms nommes retrouvent une
-// invitation existante (memes table, ou table differente si la famille a
-// reorganise depuis, ou parmi les 19 invitations recemment ajoutees sans table
-// -- cf. CHANGELOG v1.47.0). Le reste (accompagnants non nommes, ou personnes
-// dont seul le nom de famille groupe existe en base) n'invalide pas la lecture,
-// juste hors de portee d'une correspondance nom a nom automatique.
-//
-// v1.53.3, dernier assessment demande par Gersom (16/09/2026, capture d'ecran
-// table 4 -- "Fiston, c'est ecrit Fixton [Fixon]... fais un dernier
-// assessment sur toutes les chaises... vu que tu sais deja sur quelle table,
-// ca va etre facile de faire un match") : recoupement systematique des 393
-// sieges nommes avec les 250 invitations actuellement en base (nom_affichage
-// + membres detailles des notes), TABLE PAR TABLE uniquement (jamais entre
-// deux tables differentes -- deux personnes peuvent avoir des noms tres
-// proches sur des tables distinctes, voir plus haut). 75 corrections de
-// lecture OCR appliquees, chacune la seule candidate plausible sur SA table
-// avec une marge de confiance nette au-dessus de la deuxieme meilleure
-// correspondance (ex. "Fixon Zola" -> "Fiston Zola", "Jean-Ciben Ca ous" ->
-// "Jean-Clivens Le Caous", deja identifiee en v1.48.0 mais jamais reportee
-// ici). 13 cas restaient ambigus et 5 sans aucun candidat -- volontairement
-// PAS devines a l'epoque (voir CHANGELOG v1.53.3), faute d'un moyen fiable
-// de trancher.
-//
-// v1.53.11 : Gersom transmet des captures d'ecran seatplan.io en bien
-// meilleure resolution (les memes tables, mais lisibles sans ambiguite) --
-// "voici une meilleure resolution avec tous les noms... analyse, extrait
-// bien les donnees pour pouvoir refaire la meme chose". Nouvelle methode,
-// plus fiable que l'OCR seul : les 272 invitations reellement en base
-// (requete SQL groupee par table.number) servent de "menu" ferme de noms
-// exacts pour CHAQUE table -- au lieu de deviner l'orthographe depuis une
-// photo, on retrouve quelle personne CONNUE de cette table occupe quelle
-// position (la photo ne sert plus qu'a l'ORDRE des sieges, jamais a
-// l'orthographe). Corrige plusieurs erreurs reelles decouvertes par ce
-// recoupement (pas de simples reformulations) : (1) tables 1/11 --
-// "Teresa Ndani"/"Ketsia Neves" attribuees par erreur a la table 11
-// (aucune des deux n'y a de reservation) alors qu'elles sont reellement
-// table 1 (qui, elle, avait ces deux sieges a tort vides) ; "Diego Ramos"
-// (reellement table 11) et "Jade Magnus" (n'est plus invitee depuis
-// v1.50.0) occupaient a tort les deux derniers sieges de la table 41 --
-// remplaces par "Luzolo Patrick Menga"/"Jennifer Bembo"/"Joël Bembo"/
-// "Jessiline Mateus", les vrais membres de la table 41 visibles sur la
-// photo. (2) table 36 -- "Femme Michaud"/"Michaud Cujumbu" (en realite des
-// membres de la table 41) remplaces par les vrais occupants de la table 36
-// ("Huguette Matondo"/"Julianna Matondo", absents de l'ancienne lecture).
-// (3) table 40 -- meme contamination croisee, la table ne contenait en
-// realite que les 7 membres reels de "Tio Godart Culumbu"/"Famille
-// Matondo"/"Famille Lumbu", pas les noms de la table 36/41 qui s'y
-// etaient glisses. (4) table 2 -- "Deusdedit Dos Goncalves" (aucune
-// invitation de ce nom) corrige en "DeMbala Dos Goncalves" (vrai membre de
-// "Famille Dos Goncalves"). (5) table 8 -- "Luzolo P. Menga" (qui est en
-// realite a la table 41) corrige en "Epoux Nzuzi Culumbu" (vrai membre de
-// "Famille Nzuzi Culumbu" a cette table). (6) table 3 -- "Invité n.n.
-// (338)" (placeholder generique) resolu en "Epouse Mvovi" (vrai nom du
-// membre manquant de "Famille Mvovi"). (7) table 14 -- coquille "Garile
-// Bulaki" corrigee en "Gaelle Bulaki". (8) table 4 -- les deux "candidats
-// ambigus" de v1.53.3 tranches avec certitude par la base : "Henri
-// Onatshungu Momba"/"Henriela Onatshungu Momba" (jamais "Henricia"),
-// "Staicy Mbiyavanga Mavinga" (jamais "Stacky"). Toutes les autres tables
-// verifiees correspondent deja exactement a la base, aucun changement.
-// Cette methode resout ainsi la quasi-totalite des 13 cas ambigus et 5 cas
-// sans candidat de v1.53.3 -- les rares noms encore non retrouves sont des
-// accompagnants jamais nommes individuellement en base (ex. "Accompagnant
-// non-nommé"), hors de portee de toute methode de recoupement par nom.
+// Methode (v1.68.0, remplace entierement les donnees v1.48.0-v1.53.11 --
+// ancienne structure a 42 tables, zones nord/sud) : pour chaque table, les
+// MEMBRES REELS actuellement places a cette table (invitations.table_id,
+// apres la mise a jour groupee de ce lot) servent de "menu" ferme de noms
+// exacts -- la photo ne sert plus qu'a determiner l'ORDRE des sieges, jamais
+// l'orthographe (meme principe que v1.53.11, applique ici au nouveau plan).
+// Correspondance par recouvrement de mots (jamais une tolerance approchee
+// qui risquerait un mauvais siege), TABLE PAR TABLE uniquement. Les noms de
+// la photo sans aucune correspondance parmi les membres reels de cette table
+// (famille non retrouvee en base, ex. "Dany Lukoki" table 40, ou person
+// genuinement absente de notre liste, ex. "Kai Choy"/"Alyson Choy" table 27)
+// restent `null` -- jamais devines. A l'inverse, un membre reellement place
+// a une table mais absent de la lecture photo (ex. accompagnants non nommes
+// individuellement) est ajoute en fin de liste plutot que perdu.
 export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
-  1: ["Herve Menga", "Jean-Clivens Le Caous", "Hadelin Yezi", "Ketsia Neves", "Domingas Ferreira", "Deborah Yezi", "Lys Landu", "Teresa Ndani", "David-Junior Lukau", "Eutyche Lukau"],
-  2: ["Erika Dos Goncalves", "Isabel Vemba", "Mona Vemba", "DeMbala Dos Goncalves", "Jael Dos Goncalves", "Luis Dos", "Gaby Dos", null, null, null],
-  3: ["Neves Kiombi Nzuzi", "Leverry Kinzi", "Jonas Mpindi", "Henry Kiadi Ndiongo", "Sumali Ndiongo", "Diton Kiala Diamena", "Oredezo Blancky", "Costa Mvovi", "Epouse Mvovi", "Edo Tukula"],
-  4: ["Michela Teka Sanda", "Henri Onatshungu Momba", "Henriela Onatshungu Momba", "Thierry Mbiyavanga Mavinga", "Dorothée Deborah Nsingani", "Staicy Mbiyavanga Mavinga", "Kelcy Mbiyavanga Mavinga", "Jessy Buka Mbiyavanga Mavinga", "Taylor Mbiyavanga Mavinga", "Fiston Zola"],
-  5: ["Maria Mputuilu", "Graça Inacio", "André Neves", "Chantal Neves", "Papa David Lukau", "Maman Josefina Lukau", "Edouard Kiaku Mbuta", "femme edo kiaku mbuta", "Elisa Jean", "Alfred Jean"],
-  6: ["Nsimba Mambakasa", "Helder Vemba", "Kupesa Lando Ferreira", "Eugenia Sengo Chipala", "Mbulu Esamba", "Tchecka Mbulu", "Papy Mamona", "Adriano Vemba", "Merveille Makaya", "Pajos Mpapa"],
-  7: ["Filho 1 Culumbu", "Epoux Tia Sonia", "Sarah Tahan", "Seda Tahan", "Tia Sonia Culumbu", "Femme Culumbu", "Filho 4 Culumbu", "Tio Gilie Culumbu", "Filho 3 Culumbu", "Filho 5 Culumbu"],
-  8: ["Lale Culumbu", "Celestina Yezi", "Mahjo Yezi", "Odette Culumbu", "Waku Menga", "Julie Indanda", "Simao Guilherme", "Michelina Guilherme", "Epoux Nzuzi Culumbu", "Tia Nzuzi Culumbu"],
-  9: ["Mamita Ndani", "Eric Lema", "Lotine André", "André Nsiangangu", "Femme Nsiangangu", "Enfant Nsiangangu", "Maurice Ndani Ndoba", "Keyris Ndani", "Giresse Juliano Nzengo", "Grace Tshisungu"],
-  10: ["Stephanie Buluka Mituele", "Rose-marie Kumba", "Qeren Moba-Mbemba", "Naomie Ghansi", "Kevin GHANSI", "Josué Ghansi", "Fyra Biyoudi", "Chindelle Moba-Mbemba", "Ruth Mwimba", "Ted Mwinba"],
-  11: ["Diego Ramos", "Zoya Inacio", "Loïc Neves", "Gloire André", "Gabriel Skoty Sanda", "Andrea Neves", "Jonathan Ndani", "Bontee Tercia Ndani", null, null],
-  12: ["Sylvie Bulisi", "Louise Ngonda Nsenga", "Nana Mabumba", "Felix Luboya", "Tatiana Bitumazala", "Yvon Bitumazala", "Diane Eberhorn", "Rose Bulisi", "Joana Lusuena", "Fifi Lusuena"],
-  13: ["Simon Mbidi", "Mona Guygson Vemba", "Suzie Vemba", "Abeti Okito", "Johny Okito", "Bijou Mambakasa", "Gisèle Mambakasa", "Rolly Makaya Mvemba", "Johny Kiala", "Danyl Mbidi"],
-  14: ["Jordy Ungeli", "Dorcas Massamba", "Hugo Massamba", "Imeon Massamba", "Ludovic Eckomband", "Sita Muzemba", "Stephenson Bulaki", "Gaelle Bulaki", "Carl Aye", "Enricka Aye"],
-  15: ["Tuzola Saviera", "Keith Saviera", "Riffick Saviera", "Mercia Saviera", "Sister 2 Malungu", "Ruben Kinanga Malungu", "Maguy Malungu", "Sister 1 Malungu", "Keziah Malungu", null],
-  16: ["Djessus Steano Tulomba", "Yeze Zinga", "Sephora Tulomba", "Jessica Tulomba", "Silva Mvuemba", "Melissa Mvuemba", "Yomo Formosa", "Denzu Laisana", "Olivier Benga", null],
-  17: ["Jessica Jean", "Joelis Jean", "Jeremie Luyindula", "Lynda Luyindula", "Gloria Luyindula", "Manuela Zerrougui", "Raffik Zerrougui", "Aimé Luyindula", "Prémices Jean", "Deborah Brigitte"],
-  18: ["Furty Matuba", "Melanie Matuba", "Bernard Kadina", "Sylvie Kadina", "Regine Nkoyi", "Victor Nkoyi", "Marie-Chantal Kiangala", "Graça Lorena Gomes", "Zola Martine Gomes", "Maria Irene Gomes"],
-  19: ["Vicky Nsumbu Mvuza", "Ben Messan", "Anais Messan", "Benson Messan", "Adeline Makopa", "Kemal Makiese", "Michele Isolonge", "Christine Kaseka", "Bionic Kileki", "Tryphène Kileki"],
-  20: ["Carine Sagbo", "Dany Dasilva", "Felicia Ndedi", "Prosper Chi Nche", "Sylviane Jeanne", "Ghislain Mayemba", "Charlene Coulibaly", "Souleyman Gassama", "Divine Masiala", "Awa Kamate"],
-  21: ["Nolivia Bitsindou", "Line Kwatchou", "Additional Guest 1", "Sidney Momoh", "Onehi Momoh", "Silyann Bitouloulou", "Mamàn P. Alvero", "Papa Sam Alvero", "Sam jr. Alvero", "Shayann Alvero"],
-  22: ["Mickaël Ribeiro", "Laurie-Anne Ribeiro", "Arcange Ntokua", "Dias Ntokua", "Adrienne Mbangu", "Elina Joseph", "Valerie Joseph", "Daniel Joseph", "David Cairaschi", "Grâce Ndonga"],
-  23: ["Miguel Bemvindo", "Josly Nuamosi-Mbambu", "Melina Kiangala", "Lizéa Mbila", "Jerode Muzezenu", "Henriette Muzezenu", "Tsippora Miakukila", "Khezia Miakukila", "Erwann Kadina", "Elda Makuntima"],
-  24: ["Isaac Lotisi", "Rosie Unzitisa", "Sebastien Unzitisa", "Lily Nuamosi", "José Nuamosi", "Josian Nuamosi", "Joan Nuamosi", "Rosette Bolamba", "Koffi Bolamba", "Sévrine Lotisi"],
-  25: ["Odette Muzezenu", "Jerry Muzezenu", "Chantale Muzezenu", "Jerry Junior Muzezenu", "Maguy Mawete Makinu", "Alain Nsakala", "Anita Nsakala", "Mifi Mbiki", "Serge Mbiki", "Etienne Mawete Makinu"],
-  26: ["Ashnee Barclay", "Cedrik LeCaous", "Maman Sunette Jean-Baptiste", "Dylan Lorsold", "Maeva Lorsold", "Jonathan Kumbi", "Anne Fuema", "Mika Fleurival", "Dan Elenga", "Cédric Tyller BELINGA"],
-  27: ["Amie de Naomi", "Karl Isolokele", "Mademoissele Isokolele", "Frank Mbonda", "Sami Simon", "Jovany Germain", "Henry Karl Jeantine", "Momo Sidibe", "Naomi SHANGO", "Vanilla TJOM"],
-  28: ["Celestina Mundanda Nsita", "Amy Eiano", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Tressy Mundanda Nsita", "Pauliana M. Nsita", "Niveline Mbangu", "Nicole Mbangu", "Accompagnant non-nommé", "Accompagnant non-nommé"],
-  29: ["Rafael Opetum Isei", "Prince Nzasi", "Babel Nzasi", "Sergio Manuel", "Rene Herrera", "Ya Dany Culumbu", "Weplo Culumbu", "Accompagnant non-nommé", "Laura Humba", "Enfant Nsasi"],
-  30: ["Sem Landu", "Dorine Landu", "Roger Landu", "Nadine Landu", "Richard Landu", "Denise Landu", "Rémy Landu", "Betty Jeanne Closse", "Lucien Closse", "Daeve Landu"],
-  31: ["Debest Pello", "Claudine Pello", "Odette Manuel", "Nadine Kimbau", "Steven Kimbau", "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya"],
-  32: ["Accompagnant non-nommé", "Lucie Nzuzi", "Seba Domingos", "Lina Kumpesa", "Guillaume Mayimakanda", null, "Yves Elima", "Charlene Elima", "Maman Elima", "Clavert Domingos"],
-  33: ["Emilia Mbidi", "Esmeralda Vemba", "Plamedi Okito", "Darleine Okito", "Estelle Okito", "Anne Kaylee Mambakasa", "Kheira Mambakasa", "Kenaya Mambakasa", "Makaia Vemba Ferreira", "Isabel Ferreira"],
-  34: ["Veronique Nsenda", "Jean-Claude Nsenda", "Noel Nsenda", "Moïse Nsenda", "Aurelie Nsenda", "Augustin Nsenda", "Ruben Lopez", "Martinette Lopez", "Gladys Lopez", "Eden Lopez"],
-  35: ["Maguy Luvuasi", "Geodray Luvuasi", "Kamal Bekka", "Marta Bekka", "Ines Bekka", "Clement Luvuasi", "Brady Landu", "Victoria Landu", "Allegria Mpilingi", "Dylan Landu"],
-  36: ["Darliane Mpiassa", "Sylvia Mpiassa", "Lina Lumbu", "Helga Lumbu", "Jeansianne Mpiassa", "Lumbu Mabanza Joël", "Joeliane Elmacin", "Huguette Matondo", "Julianna Matondo", "Joao Mpiassa"],
-  37: ["Fatou Diaby", "Bangaly Souaré", "Yannick Abdoul Camara", "Tiphaine Abdoul Camara", "Thomas Wandubula", "Jean-Claude Onokoko", "Cécile Mbila", "Jean Mbila", "Denise Nkoussou", null],
-  38: ["Accompagnant non-nommé", "Nicole Tusevo", "Elvis Tusevo", "Accompagnant non-nommé", "Accompagnant non-nommé", "Divine Simao", "Dorcas Matembe", "Nadia Mabata", "Accompagnant non-nommé", null],
-  39: ["Ahicam Damuna", null, "Priscile Makuntima", "Lucien Shampe", "Isidore Luyindula", "Glody Kambwa", "Léna Vinelle Nganga", "Jeanne Tona", "Hélène Tona", "Barnabe Shungu"],
-  40: ["Tio Godart Culumbu", "Epouse Godart", "Francisco Matondo", "Eude Matondo", "Manucho Lumbu", "Dislon Lumbu", "Bob Culumbu", null, null, null],
-  41: ["Jacquie Menga", "Lambert Menga", "Bana Menga", "Bana Menga", null, null, "Luzolo Patrick Menga", "Jennifer Bembo", "Joël Bembo", "Jessiline Mateus"],
-  42: [null, null, null, null, null, null, null, null, null, null],
+  1: ["Ketsia Neves", "David-Junior Lukau", "Eutyche Lukau", "Teresa Ndani", "Herve Menga", "Hadelin Yezi", "Deborah Yezi", "Domingas Ferreira", null, "Lys Landu"],
+  2: [null, "Erika Dos Goncalves", "DeMbala Dos Goncalves", "Keith Saviera", null, "Gaby Dos", "Luis Dos", "Mona Vemba", "Tuzola SAVIERA", "Isabel Vemba", "Cedrix", "Jael Dos Goncalves"],
+  3: ["Edo Tukula", "Neves Kiombi Nzuzi", "Leverry Kinzi", "Jonas Mpindi", "Costa Mvovi", "Oredezo Blancky", "Diton Kiala Diamena", "Sumali Ndiongo", "Henry Kiadi Ndiongo", null, "Epouse Mvovi"],
+  4: ["Fiston Zola", "Michela Teka sanda", "Henri Onatshungu Momba", "Taylor Mbiyavanga Mavinga", "Henriela Onatshungu Momba", "Thierry Mbiyavanga Mavinga", "Staicy Mbiyavanga Mavinga", "Kelcy Mbiyavanga Mavinga", "Jessy Buka Mbiyavanga Mavinga", "Dorothée Deborah Nsingani"],
+  5: ["Elisa Jean", "Alfred Jean", "Maria Mputuilu", "femme edo kiaku mbuta", "Graça Inacio", "Andre Neves", "Edouard Kiaku Mbuta", "Maman Josefina Lukau", "Papa David Lukau", "Chantal Neves"],
+  6: ["Papy Mamona", null, "Adriano Vemba", "Helder Vemba", "Tchecka Mbulu", "Merveille Makaya", "Eugenia Sengo chipala", "Kupesa Lando Ferreira", null, null, "Mbulu Esamba", "Nsimba Mambakasa", "Pajos Mpapa"],
+  7: ["Filho 1 Culumbu", "Filho 4 Culumbu", null, null, null, "Tio Gilie Culumbu", "Filho 3 Culumbu", "Femme Culumbu", "Jessiline Mateus", "Filho 5 Culumbu"],
+  8: [null, "Mahjo Yezi", "Celestina Yezi", null, "Sarah Tahan", "Seda Tahan", "Lale Culumbu", "Sylvia Mpiassa", "Darliane Mpiassa", null, "Joao Mpiassa", "Jeansianne Mpiassa"],
+  9: ["Mamita Ndani", "Lotine André", "Grace Tshisungu", "Giresse Juliano Nzengo", "Andre Nsiangangu", "Femme Nsiangangu", "Keyris Ndani", "Maurice Ndani Ndoba", "Enfant Nsiangangu", null],
+  10: [null, "Stephanie Buluka mituele", "Rose-marie Kumba", null, "Chindelle Moba-Mbemba", "Fyra Biyoudi", "Josué Ghansi", "Kevin GHANSI", "Qeren Moba-Mbemba", "Naomie Ghansi", "Eric Lema"],
+  11: ["Diego Ramos", "Zoya Inacio", "Loïc Neves", "Gloire André", "Bontee Tercia Ndani", "Jonathan Ndani", "Andrea Neves", "Gabriel Skoty Sanda", null, null],
+  12: ["Fifi Lusuena", "Sylvie Bulisi", "Louise Ngonda Nsenga", "Nana Mabumba", "Joana Lusuena", "Rose Bulisi", "Yvon Bitumazala", "Diane Eberhorn", "Felix Luboya", "Tatiana Bitumazala"],
+  13: ["Johny Kiala", "Rolly Makaya Mvemba", "Mona Guygson Vemba", null, "Abeti Okito", "GISELE MAMBAKASA", "BIJOU MAMBAKASA", "Simon Mbidi", "Suzie Vemba", "Danyl Mbidi", "Johny Okito"],
+  14: ["Enricka Aye", "Jordy Ungeli", "Dorcas Massamba", "Carl Aye", "Gaelle Bulaki", "Stephenson Bulaki", "Sita Muzemba", "Ludovic Eckomband", "Hugo Massamba", "Imeon Massamba"],
+  15: ["Rafael Opetum Isei", "Weplo Culumbu", null, "Epouse Godart", "Tia Sonia Culumbu", null, "Epoux Tia Sonia", null, "Tio Godart Culumbu", null],
+  16: ["Denzu Laisana", "Djessus Steano Tulomba", "Yeze Zinga", "Olivier Benga", "Sephora Tulomba", "Yomo Formosa", "Melissa Mvuemba", "Silva Mvuemba", "Jessica Tulomba", null],
+  17: ["Déborah Brigitte", "Jessica Jean", "Joelis Jean", "Prémices Jean", "Aimé Luyindula", "Lynda Luyindula", "Manuela Zerrougui", "Raffik Zerrougui", "Jeremie Luyindula", "Gloria Luyindula"],
+  18: ["Graca Lorena Gomes", "Furty Matuba", null, "Zola Martine Gomes", "Bernard Kadina", "Maria Irène Gomes", "Sylvie Kadina", "Marie-Chantal Kiangala", "Regine Nkoyi", "Victor Nkoyi", "Melanie Matuba"],
+  19: ["Bionic Kileki", "Vicky Nsumbu Mvuza", "Ben Messan", "Anais Messan", "Tryphène Kileki", "Christine Kaseka", "Michèle Isolonge", "Kemal Makiese", "Benson Messan", "Adeline Makopa"],
+  20: ["Charlene Coulibaly", "Sylviane Jeanne", "Felicia Ndedi", "Prosper Chi Nche", "Ghislain Mayemba", "Dany Dasilva", "Souleyman Gassama", "Awa Kamate", "Divine Masiala", null, "Carine Sagbo"],
+  21: [null, "Nolivia Bitsindou", "Line Kwatchou", null, "Sam jr. Alvero", "Papa Sam Alvero", "Maman Pitchou Alvero", "Silyann Bitouloulou", "Onehi Momoh", "Sidney Momoh", "Shayann Alvero", "Additional Guest 1"],
+  22: ["Grâce Ndonga", "Mickaël Ribeiro", "Laurie-Anne Ribeiro", "Arcange Ntokua", "David Cairaschi", "Daniel joseph", "Valerie Joseph", "Elina Joseph", "Adrienne Mbangu", "Dias Ntokua"],
+  23: ["Elda Makuntima", "Miguel Bemvindo", "Josly Nuamosi-Mbambu", "Erwann Kadina", "Khezia Miakukila", "Tsippora Miakukila", "Henriette Muzezenu", "Jerode Muzezenu", "Lizéa Mbila", "Mélina Kiangala"],
+  24: ["Sevrine Lotisi", "Isaac Lotisi", "Rosie Unzitisa", "Sebastien Unzitisa", "Koffi Bolamba", "Rosette Bolamba", "Lily Nuamosi", "José Nuamosi", "Josian Nuamosi", "Joan Nuamosi"],
+  25: ["Odette Muzezenu", "Jerry Muzezenu", "Serge Mbiki", "Mifi Mbiki", "Alain Nsakala", "Anita Nsakala", "Chantale Muzezenu", "Jerry Junior Muzezenu", "Etienne Mawete Makinu", "Maguy Mawete Makinu"],
+  26: ["Anne Fuema", "Jonathan Kumbi", null, "Mika Fleurival", "Jean-Clivens Le Caous", "Dan Elenga", "Cedrik LeCaous", "Cédric Tyller BELINGA", "Dylan Lorsold", "Maeva Lorsold", "Maman Sunette Jean-Baptiste"],
+  27: [null, null, "Mademoissele Isokolele", null, "Frank Mbonda", "Sami Simon", "Jovany Germain", "Momo Sidibe", "Naomi SHANGO", "Vanilla TJOM", "Karl Isolokele", "amie de Naomi"],
+  28: [null, null, "Celestina Mundanda Nsita", null, "Nicole Mbangu", "Niveline Mbangu", "Pauliana Mundanda Nsita", "Tressy Mundanda Nsita", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Amy Eiano", "Accompagnant non-nommé", "Accompagnant non-nommé"],
+  29: ["Sergio Manuel", "Babel Nzasi", "Prince Nzasi", "Laura Humba", null, "Divine Simao", "Dorcas Matembe", "Enfant Nsasi", null, null, "Accompagnant non-nommé"],
+  30: ["Sem Landu", "Dorine Landu", "Roger Landu", "Nadine Landu", "Richard Landu", "Denise Landu", "Rémy Landu", "Betty Jeanne Closse", "Lucien Closse", null],
+  31: [null, "Odette Manuel", "Nadine Kimbau", "Debest Pello", "Claudine Pello", "Steven Kimbau", "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya"],
+  32: ["Lucie Nzuzi", "Seba Domingos", "Clavert Domingos", "Accompagnant non-nommé", null, null, "Guillaume Mayimakanda", "Yves ELIMA", "Charlene ELIMA", "Maman Elima"],
+  33: ["Isabel Ferreira", "Makaia Vemba Ferreira", "Esmeralda Vemba", "KENAYA MAMBAKASA", "Plamedi Okito", "Darleine Okito", null, "Estelle Okito", "KHEIRA MAMBAKASA", "ANNE KAYLEE MAMBAKASA", "Emilia Mbidi"],
+  34: ["Eden Lopez", "Veronique Nsenda", "Jean-Claude Nsenda", "Noel Nsenda", "Gladys Lopez", "Martinette Lopez", "Ruben Lopez", "Augustin Nsenda", "Aurelie Nsenda", "Moise Nsenda"],
+  35: ["Clement Luvuasi", "Maguy Luvuasi", "Brady Landu", "Victoria Landu", "Dylan Landu", "Allegria Mpilingi", "Geodray Luvuasi", "Kamal Bekka", "Marta Bekka", "Ines Bekka"],
+  36: ["Joeliane Elmacin", "Riffick Saviera", "Mercia Saviera", "Eude Matondo", "Bob Culumbu", "Lumbu Mabanza Joël", "Huguette Matondo", "Francisco Matondo", "Julianna Matondo", "Luzolo Patrick Menga"],
+  37: ["Fatou Diaby", "Bangaly Souare", "Denise Nkoussou", "Jean Mbila", "Cécile Mbila", "Jean-Claude Onokoko", "Thomas Wandubula", "Yannick Abdoul Camara", "Tiphaine Abdoul Camara", null],
+  38: ["Jennifer Bembo", "Jacquie Menga", "Lambert Menga", "Joël Bembo", "Bana Menga", null, "Nadia Mabata", "Accompagnant non-nommé", null, null],
+  39: ["Barnabe Shungu", "Ahicam Damuna", "Priscile Makuntima", "Daeve Landu", "Jeanne Tona", "Helène Tona", "Léna Vinelle Nganga", "Lucien Shampe", "Isidore Luyindula", "Glody Kambwa"],
+  40: [null, null, null, null, "Michaud Culumbu", null, null, "Simao Guilherme", "Michelina Guilherme", null, "Femme Michaud"],
+  41: [null, null, null, null, null, null, null, null, null, null],
 };
 
 // v1.48.5, demande de Gersom : afficher ce dessin sur la fiche d'un invité
