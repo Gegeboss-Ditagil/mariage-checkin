@@ -70,20 +70,25 @@ test("toucher un siege sur le dessin de la table selectionnee surligne l'invitat
   assert.match(pageSource, /selectedTableCardRef\.current\?\.scrollIntoView/);
 });
 
-// v1.68.0 : reconstruction complete depuis le plan de table final
-// seatplan.io (41 tables, voir CHANGELOG) -- les membres reellement places
-// a chaque table (invitations.table_id, apres la mise a jour groupee de ce
-// lot) servent de "menu" ferme de noms exacts, la photo ne donnant que
-// l'ORDRE des sieges. Quelques verifications ponctuelles plutot qu'une
-// couverture exhaustive (393 sieges, deja verifiees une a une pendant la
-// construction du fichier).
-test('v1.68.0 : quelques sieges verifies correspondent aux vrais occupants de leur table (nouveau plan)', () => {
-  assert.equal(TABLE_SEAT_NAMES[4][0], 'Fiston Zola');
-  assert.equal(TABLE_SEAT_NAMES[26][4], 'Jean-Clivens Le Caous');
-  assert.equal(TABLE_SEAT_NAMES[36][9], 'Luzolo Patrick Menga');
-  assert.equal(TABLE_SEAT_NAMES[15][8], 'Tio Godart Culumbu');
-  // Un nom lu sur l'ancien plan (42 tables) mais dont la famille a disparu
-  // du nouveau plan de table (table 40, v1.68.0) ne doit plus apparaitre.
-  const flat = Object.values(TABLE_SEAT_NAMES).flat();
-  assert.ok(!flat.includes('Dany Lukoki'), "cette famille n'est pas parmi les membres reels places a la table 40");
+// v1.68.1 : reconstruction complete depuis le PDF seatplan.io final (export
+// vectoriel, texte extrait directement via PyMuPDF -- pas une photo, voir
+// CHANGELOG), remplacant les donnees v1.68.0 obtenues par OCR de 4 photos de
+// zones. Les noms sont recoupes avec les membres reellement places en base
+// (invitations.table_id, apres la mise a jour groupee de ce lot) pour
+// reprendre l'orthographe canonique de l'application. Quelques verifications
+// ponctuelles plutot qu'une couverture exhaustive (405 sieges, deja
+// verifies un a un pendant la construction du fichier).
+test('v1.68.1 : quelques sieges verifies correspondent aux vrais occupants de leur table (PDF final)', () => {
+  assert.equal(TABLE_SEAT_NAMES[4][0], 'Henri Onatshungu Momba');
+  assert.equal(TABLE_SEAT_NAMES[2][7], 'Maguy Malungu');
+  assert.equal(TABLE_SEAT_NAMES[2][8], 'Ruben Kinanga Malungu');
+  assert.equal(TABLE_SEAT_NAMES[32][2], 'Sister 2 Malungu');
+  assert.equal(TABLE_SEAT_NAMES[32][3], 'Keziah Malungu');
+  assert.equal(TABLE_SEAT_NAMES[7][0], 'Safira Tusevo');
+  assert.equal(TABLE_SEAT_NAMES[1][3], 'Erika Dos Goncalves');
+  // La famille Lukoki, absente de la base avant ce lot, est confirmee par le
+  // PDF final comme reellement presente a la table 40 -- contrairement a la
+  // v1.68.0 (OCR de photos), qui ne l'avait pas retrouvee en base et
+  // l'excluait donc de l'affichage.
+  assert.equal(TABLE_SEAT_NAMES[40][8], 'Dany Lukoki');
 });
