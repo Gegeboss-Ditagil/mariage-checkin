@@ -24,15 +24,17 @@ function parsePositions(src: string): Map<number, [number, number]> {
   return positions;
 }
 
-test('le plan de salle couvre exactement les tables 1 a 42 (reserve incluse)', () => {
+test('le plan de salle couvre exactement les tables 1 a 41 (reserve incluse)', () => {
   const positions = parsePositions(source);
-  // v1.48.0 (14/09/2026) : disposition reconstruite en deux zones nord/sud
-  // depuis les photos de Gersom -- la nouvelle table 42 ("Johannesburg",
-  // reserve) rejoint desormais le plan, aux cotes des 41 autres.
-  assert.equal(positions.size, 42, 'doit y avoir exactement 42 tables positionnees sur le plan');
-  for (let n = 1; n <= 42; n++) {
+  // v1.68.0 (05/10/2026) : disposition reconstruite en 4 zones cardinales
+  // (NE/NO/SE/SO) depuis le plan de table final seatplan.io -- la table 42
+  // ("Johannesburg") n'existe plus (decommissionnee, migration 0061), la
+  // table 41 redevient l'unique reserve.
+  assert.equal(positions.size, 41, 'doit y avoir exactement 41 tables positionnees sur le plan');
+  for (let n = 1; n <= 41; n++) {
     assert.ok(positions.has(n), 'table ' + n + ' doit avoir une position sur le plan');
   }
+  assert.ok(!positions.has(42), 'la table 42 ne doit plus avoir de position (decommissionnee)');
 });
 
 test('les cibles tactiles des tables ne se chevauchent pas', () => {
@@ -49,10 +51,10 @@ test('les cibles tactiles des tables ne se chevauchent pas', () => {
 });
 
 test('toutes les coordonnees du plan restent dans le viewBox declare', () => {
-  assert.match(source, /viewBox="0 0 1400 1080"/);
+  assert.match(source, /viewBox="0 0 1750 1080"/);
   const positions = parsePositions(source);
   for (const [number, [x, y]] of positions) {
-    assert.ok(x >= 34 && x <= 1366, 'cible tactile de la table ' + number + ' hors du viewBox en x (' + x + ')');
+    assert.ok(x >= 34 && x <= 1716, 'cible tactile de la table ' + number + ' hors du viewBox en x (' + x + ')');
     assert.ok(y >= 34 && y <= 1046, 'cible tactile de la table ' + number + ' hors du viewBox en y (' + y + ')');
   }
 });

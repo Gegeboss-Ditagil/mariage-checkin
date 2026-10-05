@@ -3,6 +3,32 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.68.0] — 2026-10-05
+
+Retour de Gersom (4 photos de zones seatplan.io NE/NO/SE/SO + seating-chart PDF révision 3 + `guest-list_57.csv`) : plan de table final, demande explicite de corriger les placements, le plan visuel et le widget de sièges pour qu'ils correspondent tous entre eux.
+
+### Changé — nouvelle structure de table (41 tables, table 41 = réserve)
+- La table 41 ("Houston") redevient l'unique table de réserve "excédentaire" ; la table 42 ("Johannesburg") n'existe plus dans le plan. Capacité officielle 400 (40 × 10), capacité absolue 410 (avec réserve) — retour à la structure d'avant v1.47.0.
+- **Table 42 décommissionnée, pas supprimée** : 13 entrées de `audit_logs.table_id` (actions réelles du 14-17/09/2026) la référencent encore (`ON DELETE SET NULL`) — la supprimer aurait silencieusement effacé ces références historiques, contraire à la règle du projet de ne jamais toucher à l'audit. La ligne reste en base, `capacity = 0`, `is_reserve = false`, label « Supprimée (historique audit uniquement) ». Migration `0051_table_42_johannesburg_reserve.sql` ainsi partiellement réinversée par `0061_table41_reserve_remove_table42.sql`, exécutée et vérifiée en production Supabase le 05/10/2026.
+- `lib/withjoyImport.ts` : `NB_TABLES_INVITES` 41 → 40 (la réserve se déduit toujours de `NB_TABLES_INVITES + 1` = 41). `components/CapacityGauge.tsx`, `app/plan-table/page.tsx`, `app/admin/import-withjoy/page.tsx` : commentaires/constantes 410/420 → 400/410, « table 42 » → « table 41 ».
+
+### Changé — placements (38 invitations sur 261 mises à jour)
+- **Méthode : mise à jour ciblée par correspondance de nom** (`invitations.table_id`), jamais un remplacement complet via `/admin/import-withjoy` — conforme à la règle documentée depuis le 25/08/2026 (`docs/DATA_CHANGE_INSTRUCTIONS.md` section 6), pas le remplacement complet suggéré puis retiré en cours d'analyse. Correspondance via `withjoy_party_id` (stable, 241/261 invitations) en priorité, repli sur le nom exact normalisé pour le reste.
+- 23 invitations reçoivent un nouveau numéro de table ; 15 perdent leur table (`table_id = null`), dont 9 marquées `ne_viendra_pas = true` sur confirmation explicite de Gersom (Ashnee Barclay, Henry karl Jeantine, Lina Kumpesa, Rene Herrera, Ya Dany Culumbu, Famille Mwinba, Famille Nzuzi Culumbu, Famille Lumbu ×2 — absentes du nouveau CSV par nom, confirmées ne plus venir).
+- Zéro table en surcapacité après mise à jour (vérifié par recalcul complet des `nombre_prevu` par table).
+- **Laissés sans table, signalés plutôt que devinés** : « Famille Culumbu » (table 8, le CSV ne confirme qu'1 membre sur 3) et « Famille Tusevo » (table 38, confirme 3 sur 4) — composition à vérifier avec Gersom ; « Famille Malungu » (5 membres) doit en réalité être répartie entre les tables 15 et 32 selon With Joy — une invitation ne pouvant être scindée automatiquement, nécessite une action manuelle dans l'app ; 2 fiches fantômes à `nombre_prevu = 0` sur l'ex-table 42 (Nelly Dos Goncalves, Odette Muzezenu mulumba — cette dernière doublon de « Famille Muzezenu » déjà bien placée table 25) ; « Test » (donnée résiduelle, même catégorie que celles nettoyées en v1.50.0). « Cedrix » (invité surprise approuvé après coup, absent du CSV) laissé à sa table actuelle sans y toucher.
+
+### Changé — `components/FloorPlan.tsx` redessiné en 4 zones cardinales
+- Remplace la disposition à 2 zones (nord/sud, 42 tables, v1.48.0) par 4 zones Nord-Ouest/Nord-Est/Sud-Ouest/Sud-Est côte à côte (NO+NE en haut, SO+SE en bas, séparées par l'Allée centrale), reproduisant l'ordre de lecture de chaque photo. `viewBox` élargi de 1400×1080 à 1750×1080 pour loger les 2 blocs de tables côte à côte sans chevaucher les cibles tactiles (espacement ≥ 80 entre colonnes, ≥ 100 entre rangées) ; salles décoratives de droite (Couloir Est, Buffet, Espace discours, Invités, Vin d'honneur) décalées de +320 en conséquence.
+
+### Changé — `lib/floorPlanSeats.ts` reconstruit
+- Les 41 tables (ordre de lecture des 4 photos) recoupées avec les membres réellement placés après la mise à jour ci-dessus — même méthode que v1.53.11 (la base sert de "menu" fermé de noms exacts, la photo ne donne que l'ordre). Remplace entièrement les données v1.48.0-v1.53.11 (ancienne structure à 42 tables).
+
+### Tests
+- `tests/floor-plan.test.ts`, `tests/floor-plan-seats.test.ts`, `tests/table-orientation-arrows.test.ts` réécrits pour la nouvelle structure (41 tables, nouvelles coordonnées). `tests/withjoy-import.test.ts` (capacité totale 410 au lieu de 420). `tests/guest-approvals.test.ts`/`tests/approbations-ux-improvements.test.ts` : libellés de test mis à jour (table 42 → table de réserve).
+
+Migration `0061_table41_reserve_remove_table42.sql`, exécutée et vérifiée en production Supabase le 05/10/2026.
+
 ## [1.67.14] — 2026-10-04
 
 Retour de Gersom — remplacer le message de remerciement affiché sous le bouton « Mot de passe oublié ? » sur `/login`.

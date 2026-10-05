@@ -1,7 +1,7 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.53.0**
-**Dernière mise à jour : 2026-09-15**
+**Version documentaire : 1.68.0**
+**Dernière mise à jour : 2026-10-05**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
 
@@ -9,13 +9,14 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 
 **`invitations.withjoy_party_id`** (v1.48.6, migration `0052_invitations_withjoy_party_id.sql`) : valeur brute de la colonne `party` du CSV With Joy (ex. `table-002-party-006`), écrite par l'import complet (`lib/withjoyImport.ts` → `ImportGroup.withjoyPartyId`) — vérifiée stable pour la même personne/le même groupe entre deux exports différents (`guest-list_48.csv` vs `guest-list_50.csv`, transmis par Gersom le 14/09/2026), contrairement au nom. Sert uniquement à retrouver une invitation existante lors d'un futur import (au lieu de deviner par nom) — **jamais une source de placement** : le numéro qu'elle contient parfois (`table-XXX`) est un identifiant interne à l'outil de placement de With Joy, distinct de nos tables réelles (seulement ~1/3 des groupes analysés concordaient avec le vrai tag `F0xx`/`T0xx` sur `guest-list_50.csv`). Le placement continue de venir exclusivement du tag `F0xx`/`T0xx` de la colonne `tags`, inchangé.
 
-## État de référence v1.47.0 (mis à jour depuis v1.15.3)
+## État de référence v1.68.0 (mis à jour depuis v1.47.0)
 
-- 42 tables au total.
-- Tables 1 à 41 : normales (la table 41, ex-réserve, est devenue régulière et a été renommée « Houston » le 14/09/2026).
-- Table 42 (« Johannesburg ») : seule réserve, capacité 10 comme les autres.
-- Capacité officielle : 410 places.
-- Capacité absolue avec réserve : 420 places.
+- 41 tables au total (plan de table final seatplan.io, 05/10/2026).
+- Tables 1 à 40 : normales.
+- Table 41 : seule réserve « excédentaire », capacité 10 comme les autres (redevenue réserve — retour sur la structure v1.47.0 où elle était régulière).
+- Capacité officielle : 400 places.
+- Capacité absolue avec réserve : 410 places.
+- La table 42 (« Johannesburg ») n'existe plus dans ce plan. **Décommissionnée, pas supprimée** : 13 lignes de `audit_logs.table_id` la référencent encore (actions réelles du 14-17/09/2026) ; la supprimer aurait silencieusement mis ces références historiques à `null`. La ligne reste en base (`capacity = 0`, `is_reserve = false`), voir `supabase/migrations/0061`.
 - Toute évolution structurelle doit être reflétée dans une migration GitHub et dans `CHANGELOG.md`.
 
 ## Formulaires d'écriture

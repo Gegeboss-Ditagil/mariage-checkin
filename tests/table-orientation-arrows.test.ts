@@ -45,9 +45,10 @@ test('lib/floorPlanOrientation.ts calcule un angle sens horaire depuis le haut (
 // par regex) pour un controle numerique independant, sur des reperes et
 // positions de table stables et documentes dans components/FloorPlan.tsx :
 // Piste de danse {370,425,240,250} + Les mariés {260,425,100,250} -> repere
-// combiné (400,550) ; Allée centrale {610,425,420,90} -> (820,470) ; table 1
-// [644,850] (zone sud, dernière rangée) ; table 22 [644,118] (zone nord,
-// première rangée, coin nord-ouest) ; table 42 [996,118] ("Johannesburg").
+// combiné (400,550, inchangé par le nouveau plan v1.68.0) ; Allée centrale
+// {610,425,730,90} -> (975,470) ; table 17 [1290,780] (zone Sud-Est,
+// dernière rangée, coin le plus au sud) ; table 30 [644,118] (zone
+// Nord-Ouest, première rangée, coin nord-ouest).
 function angleToLandmark(tableX: number, tableY: number, [lx, ly]: [number, number]): number {
   const dx = lx - tableX;
   const dy = ly - tableY;
@@ -57,27 +58,27 @@ function angleToLandmark(tableX: number, tableY: number, [lx, ly]: [number, numb
 
 test('contrôle numérique : les deux flèches pointent dans des directions cohérentes avec la position réelle de la table sur le plan', () => {
   const DANCE: [number, number] = [400, 550];
-  const ALLEE: [number, number] = [820, 470];
+  const ALLEE: [number, number] = [975, 470];
 
-  // Table 1, tout au sud du plan : les deux repères (au centre, plus au
-  // nord) doivent être vus vers le nord -- angle proche de 0°/360°, jamais
-  // proche de 180° (sud).
-  const t1Dance = angleToLandmark(644, 850, DANCE);
-  const t1Allee = angleToLandmark(644, 850, ALLEE);
-  assert.ok(t1Dance > 270 || t1Dance < 90, `table 1 vers la piste/mariés devrait pointer au nord, obtenu ${t1Dance}°`);
-  assert.ok(t1Allee > 270 || t1Allee < 90, `table 1 vers l'allée devrait pointer au nord, obtenu ${t1Allee}°`);
+  // Table 17, coin sud-est (dernière rangée du plan) : les deux repères
+  // (plus au nord-ouest) doivent être vus vers le nord -- angle proche de
+  // 0°/360°, jamais proche de 180° (sud).
+  const t17Dance = angleToLandmark(1290, 780, DANCE);
+  const t17Allee = angleToLandmark(1290, 780, ALLEE);
+  assert.ok(t17Dance > 270 || t17Dance < 90, `table 17 vers la piste/mariés devrait pointer au nord, obtenu ${t17Dance}°`);
+  assert.ok(t17Allee > 270 || t17Allee < 90, `table 17 vers l'allée devrait pointer au nord, obtenu ${t17Allee}°`);
 
-  // Table 22, coin nord-ouest : les deux repères sont au sud-est -- angle
-  // dans le quadrant [90°, 270°].
-  const t22Dance = angleToLandmark(644, 118, DANCE);
-  const t22Allee = angleToLandmark(644, 118, ALLEE);
-  assert.ok(t22Dance > 90 && t22Dance < 270, `table 22 vers la piste/mariés devrait pointer au sud, obtenu ${t22Dance}°`);
-  assert.ok(t22Allee > 90 && t22Allee < 270, `table 22 vers l'allée devrait pointer au sud, obtenu ${t22Allee}°`);
+  // Table 30, coin nord-ouest (première rangée du plan) : les deux repères
+  // sont au sud-est -- angle dans le quadrant [90°, 270°].
+  const t30Dance = angleToLandmark(644, 118, DANCE);
+  const t30Allee = angleToLandmark(644, 118, ALLEE);
+  assert.ok(t30Dance > 90 && t30Dance < 270, `table 30 vers la piste/mariés devrait pointer au sud, obtenu ${t30Dance}°`);
+  assert.ok(t30Allee > 90 && t30Allee < 270, `table 30 vers l'allée devrait pointer au sud, obtenu ${t30Allee}°`);
 
   // Les deux flèches d'une même table ne pointent jamais exactement dans la
   // même direction (les deux repères sont à des endroits différents).
-  assert.notEqual(Math.round(t1Dance), Math.round(t1Allee));
-  assert.notEqual(Math.round(t22Dance), Math.round(t22Allee));
+  assert.notEqual(Math.round(t17Dance), Math.round(t17Allee));
+  assert.notEqual(Math.round(t30Dance), Math.round(t30Allee));
 });
 
 test('components/TableSeatWheel.tsx dessine les deux flèches hors de la zone des sièges, avec un viewBox élargi d\'autant', () => {

@@ -1,7 +1,7 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.53.0**
-**Dernière mise à jour : 2026-09-15**
+**Version documentaire : 1.68.0**
+**Dernière mise à jour : 2026-10-05**
 
 ## 1. Principe général
 
@@ -35,15 +35,16 @@ L'agent doit :
 8. prévoir un retour arrière ;
 9. déterminer l'impact de version.
 
-## 4. État de référence v1.47.0 (mis à jour depuis v1.15.3)
+## 4. État de référence v1.68.0 (mis à jour depuis v1.47.0)
 
-- 42 tables au total ;
-- tables 1 à 41 normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026) ;
-- table 42 (« Johannesburg ») seule réserve ;
-- capacité officielle : 410 places ;
-- capacité absolue : 420 places.
+- 41 tables au total (plan de table final seatplan.io, 05/10/2026) ;
+- tables 1 à 40 normales ;
+- table 41 seule réserve « excédentaire » (redevenue réserve — retour sur v1.47.0, où elle était régulière) ;
+- capacité officielle : 400 places ;
+- capacité absolue : 410 places ;
+- la table 42 (« Johannesburg ») n'existe plus dans ce plan — décommissionnée (`capacity = 0`, `is_reserve = false`) plutôt que supprimée, pour préserver 13 références historiques dans `audit_logs.table_id` (voir migration `0061`).
 
-Ces chiffres décrivent la version 1.15.3 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
+Ces chiffres décrivent la version 1.68.0 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
 
 ## 5. Identifiants
 
@@ -64,6 +65,8 @@ Un import ne doit jamais par défaut effacer les invitations absentes, remettre 
 **15/09/2026 : premier remplacement complet réellement exécuté en production** (`guest-list_56.csv`, sur autorisation explicite de Gersom — « le CSV final... écrase ce qui est dans l'app »), a révélé deux bugs jamais déclenchés avant faute d'un vrai essai : `guest_approval_requests.linked_invitation_id` bloquait le `delete from invitations` (FK sans `ON DELETE`, corrigé par la migration `0054`) et `lib/withjoyImport.ts` ne retirait pas une apostrophe de tableur parfois présente devant le numéro de téléphone (corrigé, `cleanPhone`). Voir CHANGELOG v1.52.0.
 
 **15/09/2026 (v1.53.0) : `/admin/import` (import CSV/XLSX générique par association manuelle de colonnes) supprimé** sur demande explicite de Gersom (« on va seulement garder les imports à partir du CSV de Witjoy pour simplifier les éléments »). `/admin/import-withjoy` (RPC `admin_replace_invitations`, section 6 ci-dessus) reste donc l'unique chemin d'import d'invitations dans l'application — aucun changement à ce chemin ni à ses garanties (aperçu, double confirmation, sauvegarde, transaction atomique).
+
+**05/10/2026 (v1.68.0) : plan de table final (4 photos de zones seatplan.io + CSV `guest-list_57.csv`), mise à jour ciblée plutôt qu'un remplacement complet.** Une première analyse avait recommandé `/admin/import-withjoy` (remplacement complet) — corrigée avant toute écriture en relisant cette même section : depuis le 25/08/2026, une correspondance par nom (`withjoy_party_id` stable en priorité, nom exact en repli) est la méthode sanctionnée pour une réorganisation de placement, pas un remplacement destructif. 38 des 261 invitations ont vu leur `table_id` modifié (23 nouvelle table, 15 sans table dont 9 marquées `ne_viendra_pas = true` sur confirmation explicite de Gersom — personnes absentes par nom du nouveau CSV). Plusieurs écarts signalés plutôt que devinés (groupe à scinder entre deux tables, composition de groupe divergente du CSV) : voir CHANGELOG v1.68.0 pour le détail complet.
 
 ## 7. Formulaires
 

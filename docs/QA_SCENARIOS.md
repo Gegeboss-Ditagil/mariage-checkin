@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.53.19**
-**Dernière mise à jour : 2026-09-17**
+**Version documentaire : 1.68.0**
+**Dernière mise à jour : 2026-10-05**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -24,7 +24,7 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 12. Écran Staff : accessible à admin, directeur, placeur et agent scan (consultation + check-in), ainsi qu'à visibilité (consultation seule, bouton de check-in absent); admin/directeur/visibilité voient les onglets « Sans table » et « Avec table », avec « Sans table » sélectionné par défaut; placeur/agent scan ne voient aucun onglet et seulement les personnes `notable` sans table; vérifier directement `GET /api/staff` pour confirmer que les lignes avec table ne sont pas envoyées à ces deux rôles; badge Sans table; numéro de table dans l'onglet Avec table; recherche et téléphone absent/présent; staff affiché par personne.
 13. QR `STAFF` en casse variée : redirection vers `/staff` pour admin/directeur/placeur/agent scan; visibilité ne doit jamais accéder à la caméra. Tester aussi un scan immédiatement après l'arrivée sur `/scan`, badge déjà présenté : aucun refus ne doit apparaître avant le chargement du rôle.
 14. Première création des membres : partir d'une invitation prévue à 2, retirer une ligne du brouillon avant l'enregistrement et vérifier le passage à 1 prévu avec statut recalculé; ajouter une ligne au brouillon ne doit jamais augmenter implicitement `nombre_prevu`; un second enregistrement concurrent doit recevoir `already_initialized`.
-15. Plan de salle interactif sur `/plan-table` (tous rôles ayant `viewTables`, donc les cinq) : le bouton « 🗺️ Voir le plan de salle » est replié par défaut; l'ouvrir affiche les 42 tables numérotées en deux zones nord/sud (v1.48.0, y compris la réserve, 42, qui a désormais un emplacement), aucune n'est superposée à une autre ni à un libellé de pièce; appuyer sur une table du plan la surligne en vert et fait apparaître une carte « Table sélectionnée » juste en dessous avec la bonne liste d'invités, suivie du panneau optionnel « Vu sur le plan photographié » (sièges lus par OCR, purement informatif, jamais une source de placement); le bouton 📍 sur une carte de la liste plus bas (y compris la carte de la réserve) sélectionne la même table, ouvre le plan s'il était fermé et y fait défiler la page; cliquer le reste d'une carte (hors bouton 📍) continue de naviguer normalement vers `/tables/[tableId]`, sans régression; la flèche retour du haut ramène au bon écran selon le rôle (`/scan` ou `/tables`), comme avant cette fonctionnalité.
+15. Plan de salle interactif sur `/plan-table` (tous rôles ayant `viewTables`, donc les cinq) : le bouton « 🗺️ Voir le plan de salle » est replié par défaut; l'ouvrir affiche les 41 tables numérotées en 4 zones cardinales Nord-Ouest/Nord-Est/Sud-Ouest/Sud-Est (v1.68.0, y compris la réserve, 41, qui a un emplacement), aucune n'est superposée à une autre ni à un libellé de pièce; appuyer sur une table du plan la surligne en vert et fait apparaître une carte « Table sélectionnée » juste en dessous avec la bonne liste d'invités, suivie du panneau optionnel « Vu sur le plan photographié » (sièges lus par OCR, purement informatif, jamais une source de placement); le bouton 📍 sur une carte de la liste plus bas (y compris la carte de la réserve) sélectionne la même table, ouvre le plan s'il était fermé et y fait défiler la page; cliquer le reste d'une carte (hors bouton 📍) continue de naviguer normalement vers `/tables/[tableId]`, sans régression; la flèche retour du haut ramène au bon écran selon le rôle (`/scan` ou `/tables`), comme avant cette fonctionnalité.
 16. Zoom du plan de salle sur `/plan-table` : pincer à deux doigts agrandit le plan (jusqu'à ×3) sans zoomer le reste de la page; relâcher le pincement au-dessus d'une table ne la sélectionne jamais par accident; glisser à un doigt une fois zoomé déplace le plan sans jamais laisser un bord vide apparaître dans le cadre; les boutons +/− (et ↺ une fois zoomé) fonctionnent au clic/tactile pour les appareils sans pincement; refermer puis rouvrir le plan réinitialise le zoom à 100 %; un double-tap/double-clic réinitialise aussi le zoom.
 17. Zones staff cliquables sur le plan de `/plan-table` (Cuisine, Bar, DJ et animation, Prestataires & staff) : cliquer une zone en surbrillance affiche le personnel de catégorie Staff portant le tag correspondant (Traiteur, Bar, DJ_Animation, Photographe) juste en dessous du plan, avec statut de table et bouton d'appel; sélectionner une zone efface la table sélectionnée (et inversement), un seul panneau s'affiche à la fois; une zone sans personnel rattaché affiche un message clair plutôt qu'une liste vide silencieuse; les zones sans tag (Zone enfants, Piste de danse, Stage band & chanteurs, couloirs, buffets…) restent de simples repères visuels, non cliquables.
 ## Session, déploiement et PWA
@@ -37,14 +37,14 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 - Le service worker ne doit jamais servir `/_next/*` depuis un ancien cache.
 - Vérifier qu'une PWA installée sur iPhone/Android récupère la nouvelle version après redéploiement (rechargement des assets, sans pour autant déconnecter une session en cours — les deux sont désormais découplés).
 
-## Capacité (depuis v1.1.0, mis à jour v1.47.0)
+## Capacité (depuis v1.1.0, mis à jour v1.68.0)
 
-- 42 tables présentes : 1-41 normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026), 42 (« Johannesburg ») réserve.
-- Capacité officielle affichée : 410.
-- Capacité absolue avec réserve : 420.
-- `/plan-table` : une invitation `table_id = NULL` (staff `notable` sans table) ne doit jamais être comptée en excédentaire/réserve — seule une invitation réellement placée en table 42 compte comme excédentaire.
-- `/dashboard` : la jauge « Remplissage de la salle » marque visuellement le seuil des 410 places officielles dans sa graduation sur 420.
-- Les tables 38-41 ne doivent plus être marquées réserve.
+- 41 tables présentes : 1-40 normales, 41 réserve « excédentaire » (redevenue réserve le 05/10/2026, retour sur v1.47.0). La table 42 n'existe plus dans ce plan (décommissionnée, pas supprimée — voir migration `0061`).
+- Capacité officielle affichée : 400.
+- Capacité absolue avec réserve : 410.
+- `/plan-table` : une invitation `table_id = NULL` (staff `notable` sans table) ne doit jamais être comptée en excédentaire/réserve — seule une invitation réellement placée en table 41 compte comme excédentaire.
+- `/dashboard` : la jauge « Remplissage de la salle » marque visuellement le seuil des 400 places officielles dans sa graduation sur 410.
+- Les tables 1-40 ne doivent jamais être marquées réserve ; seule la table 41 l'est.
 
 ## Concurrence et réseau
 
@@ -213,7 +213,7 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 ## Trois icônes par invitation sur la fiche d'une table — v1.51.0
 
 - Sur `/tables/[tableId]` et `/table/[tableId]` (fiche d'une table), chaque invité a jusqu'à trois icônes séparées à droite de son nom : 📍 (localiser la table dans la salle), 🪑 (mettre son siège en évidence sur le dessin « vu sur le plan photographié » plus bas), ✅ (ouvrir sa fiche `/checkin/[invitationId]`) — en plus du tap sur le nom lui-même, qui continue d'ouvrir la même fiche (inchangé, jamais remplacé).
-- Toucher 📍 → navigue vers `/plan-table`, qui s'ouvre directement avec le plan visuel déplié et cette table localisée/mise en évidence, sans avoir à la rechercher soi-même. 📍 n'apparaît pas pour une table qui n'a pas encore de position sur le plan visuel (cas théorique, les 42 tables en ont une depuis la v1.48.0).
+- Toucher 📍 → navigue vers `/plan-table`, qui s'ouvre directement avec le plan visuel déplié et cette table localisée/mise en évidence, sans avoir à la rechercher soi-même. 📍 n'apparaît pas pour une table qui n'a pas encore de position sur le plan visuel (cas théorique, les 41 tables en ont une depuis la v1.68.0).
 - Toucher 🪑 → identique à l'ancien comportement du bouton unique 📍 (v1.48.8/v1.48.9) : met en évidence le/les siège(s) de cet invité sur le dessin en bas de la même page et y fait défiler. N'apparaît que si son nom correspond exactement à un siège connu de cette table.
 - Toucher ✅ → ouvre directement `/checkin/[invitationId]`, identique au tap sur le nom.
 

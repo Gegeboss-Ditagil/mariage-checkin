@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.67.14**
-**Dernière mise à jour documentaire : 2026-10-04**
+**Version actuelle : 1.68.0**
+**Dernière mise à jour documentaire : 2026-10-05**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.67.14-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.68.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -36,7 +36,7 @@ Voir la section **« Reprise rapide pour Claude AI »** à la fin de `CLAUDE.md`
 
 Voir `CHANGELOG.md` pour l'historique complet et détaillé, version par version — c'est la seule source de vérité tenue à jour à chaque release pour « qu'est-ce qui a changé et quand ». Quelques repères structurels toujours vrais aujourd'hui :
 
-- **42 tables au total** (depuis le 14/09/2026, v1.47.0) : tables 1 à 41 normales (capacité 10 chacune, 410 places officielles), table 42 (« Johannesburg ») seule réserve (420 places absolues avec réserve). Détail complet : `ASSIGNATION_TABLES.md`.
+- **41 tables au total** (depuis le 05/10/2026, v1.68.0, plan de table final) : tables 1 à 40 normales (capacité 10 chacune, 400 places officielles), table 41 seule réserve « excédentaire » (410 places absolues avec réserve). Détail complet : `ASSIGNATION_TABLES.md`.
 - **Temps réel (Supabase Realtime)** sur les écrans principaux (`/dashboard`, `/plan-table`, `/exceptions`, fiches de table), avec application du delta plutôt qu'un refetch complet à chaque mise à jour.
 - **Invité surprise avec approbation à distance** (`/scan` → `/approbations`), placement automatique à l'approbation, réservation de table possible avant décision.
 - **Agenda partagé** (`/agenda`, admin/directeur), avec éléments privés et responsables assignables (comptes ou noms libres).
