@@ -1,6 +1,6 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.68.0**
+**Version documentaire : 1.68.1**
 **Dernière mise à jour : 2026-10-05**
 
 ## 1. Principe général
@@ -67,6 +67,8 @@ Un import ne doit jamais par défaut effacer les invitations absentes, remettre 
 **15/09/2026 (v1.53.0) : `/admin/import` (import CSV/XLSX générique par association manuelle de colonnes) supprimé** sur demande explicite de Gersom (« on va seulement garder les imports à partir du CSV de Witjoy pour simplifier les éléments »). `/admin/import-withjoy` (RPC `admin_replace_invitations`, section 6 ci-dessus) reste donc l'unique chemin d'import d'invitations dans l'application — aucun changement à ce chemin ni à ses garanties (aperçu, double confirmation, sauvegarde, transaction atomique).
 
 **05/10/2026 (v1.68.0) : plan de table final (4 photos de zones seatplan.io + CSV `guest-list_57.csv`), mise à jour ciblée plutôt qu'un remplacement complet.** Une première analyse avait recommandé `/admin/import-withjoy` (remplacement complet) — corrigée avant toute écriture en relisant cette même section : depuis le 25/08/2026, une correspondance par nom (`withjoy_party_id` stable en priorité, nom exact en repli) est la méthode sanctionnée pour une réorganisation de placement, pas un remplacement destructif. 38 des 261 invitations ont vu leur `table_id` modifié (23 nouvelle table, 15 sans table dont 9 marquées `ne_viendra_pas = true` sur confirmation explicite de Gersom — personnes absentes par nom du nouveau CSV). Plusieurs écarts signalés plutôt que devinés (groupe à scinder entre deux tables, composition de groupe divergente du CSV) : voir CHANGELOG v1.68.0 pour le détail complet.
+
+**05/10/2026 (v1.68.1) : confirmation + corrections depuis le PDF export seatplan.io final (vectoriel), suite directe de v1.68.0.** Un signalement initial (capture d'écran partielle montrant la table 41 occupée) a été clarifié avant toute action — demande explicite de confirmation du périmètre (nombre de tables vs nouvelle source complète), conformément à la section 3. Le PDF complet reçu ensuite confirme la structure déjà livrée en v1.68.0 (41 tables, aucune table 42) ; aucune migration nécessaire. Texte extrait directement du PDF vectoriel (coordonnées + police, via PyMuPDF) plutôt qu'une OCR de photos — méthode plus fiable, recoupée avec les invitations en base pour l'orthographe canonique, comme toujours. 4 corrections de placement par correspondance de nom (jamais un remplacement complet) : Erika Dos Goncalves (table 2 → 1) ; Famille Tusevo (sans table → table 7, composition corrigée à 3 membres réels) ; Famille Malungu scindée (Sister 2 + Keziah → table 32) ; le reste de ce groupe (Ruben Kinanga Malungu, Maguy Malungu, Sister 1 Malungu) laissé **sans table**, un conflit de capacité (table 2 déjà pleine avec l'invité surprise « Cedrix », hors CSV) signalé à Gersom plutôt que la table surchargée silencieusement. Capacité vérifiée après coup : 0 table en surcapacité. Voir CHANGELOG v1.68.1 pour le détail complet, incluant les personnes nouvelles trouvées dans le PDF mais non ajoutées (signalées, pas devinées).
 
 ## 7. Formulaires
 

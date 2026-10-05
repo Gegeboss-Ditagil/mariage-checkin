@@ -1,6 +1,6 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.66.1**
+**Version documentaire : 1.68.1**
 **Dernière mise à jour : 2026-10-03**
 
 ## Source de vérité
@@ -62,13 +62,14 @@ Avant toute modification :
 
 Après modification, Claude doit confirmer que le code et les documents de référence correspondent à la même version.
 
-## État v1.54.0 (mis à jour depuis v1.47.0)
+## État v1.68.1 (mis à jour depuis v1.47.0/v1.68.0)
 
-- 42 tables au total.
-- Tables 1 à 41 : tables normales (la 41, ex-réserve, renommée « Houston » le 14/09/2026).
-- Table 42 (« Johannesburg ») : seule table de réserve.
-- Capacité officielle : 410 places.
-- Capacité absolue avec réserve : 420 places.
+- 41 tables au total (plan de table final seatplan.io, 05/10/2026, confirmé par PDF export vectoriel en v1.68.1).
+- Tables 1 à 40 : tables normales.
+- Table 41 : seule réserve « excédentaire » (redevenue réserve en v1.68.0 — entre le 14/09/2026 et le 05/10/2026, elle avait été régulière sous le nom « Houston » pendant que la table 42 « Johannesburg » servait de réserve).
+- La table 42 n'existe plus dans le plan — décommissionnée (`capacity = 0`, `is_reserve = false`) plutôt que supprimée en base, pour préserver des références historiques dans `audit_logs.table_id` (migration `0061`).
+- Capacité officielle : 400 places.
+- Capacité absolue avec réserve : 410 places.
 - Session maximale : 12 heures.
 - **(Corrigé en v1.53.19)** Un déploiement n'invalide plus une session active — seule l'expiration naturelle (12 h) ou un changement du format du payload (`SESSION_SCHEMA_VERSION`) la termine. Avant cette version, chaque déploiement déconnectait instantanément toutes les sessions actives.
 - Les assets Next.js `/_next/*` ne sont pas servis depuis l'ancien cache PWA.

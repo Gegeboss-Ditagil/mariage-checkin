@@ -3,6 +3,34 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.68.1] — 2026-10-05
+
+Retour de Gersom : capture d'écran montrant la table 41 occupée (contredisant v1.68.0) + question « on revient à 42 ? », puis transmission du PDF export seatplan.io final (`seating-chart-Mariage-Nelly---Gege-2026-10-04_3.pdf`, vectoriel, 44 "tables").
+
+### Clarifié — aucun changement de structure nécessaire
+- Le PDF confirme : 41 tables numérotées + 3 groupes spéciaux non numérotés (« Table Mariés » : Nelly + Gersom ; « Table DJ » : Messie Matoko + DJ Alain Diakuanu ; « No Table Staff » : prestataires sans table) = 44 « tables » seatplan.io. **Aucune table 42 n'existe** ; la table 41 est bien vide (réserve), confirmant la structure déjà livrée en v1.68.0. La capture montrant la table 41 occupée reflétait une manipulation en cours sur seatplan.io, pas l'état final.
+
+### Changé — nouvelle méthode d'extraction (texte vectoriel, pas OCR)
+- Le PDF est un document vectoriel généré par seatplan.io : son texte et les coordonnées de chaque étiquette sont extraits directement (PyMuPDF, `page.get_text()`), sans aucune reconnaissance d'image — fiabilité totale sur l'orthographe, contrairement à l'OCR des 4 photos de zones utilisées en v1.68.0. 405 noms extraits, recoupés avec les 261 invitations actuelles par nom (exact puis par recouvrement de mots pour les abréviations seatplan.io, ex. « Henri O. Momba » → « Henri Onatshungu Momba »).
+
+### Changé — 4 corrections de placement confirmées par le PDF (capacité vérifiée, 0 table en surcapacité)
+- **Erika Dos Goncalves** : table 2 → table 1 (confirmé par le PDF, absente de la table 2 dans ce nouvel export).
+- **Famille Tusevo** (Nicole, Elvis, Safira) : sans table → table 7, confirmant la composition exacte à 3 membres (l'ancienne fiche en comptait 4, avec un accompagnant non-nommé surnuméraire — corrigé, `nombre_prevu` 4 → 3).
+- **Famille Malungu scindée** (confirmé indépendamment par le CSV et ce PDF) : Ruben Kinanga Malungu + Maguy Malungu restent groupés mais **sans table** (le PDF les place à la table 2, mais celle-ci est déjà à capacité avec « Cedrix », invité surprise approuvé hors CSV — écrire cette table aurait créé une surcapacité silencieuse, signalé plutôt que forcé) ; Sister 2 Malungu + Keziah Malungu → table 32 (confirmé, capacité vérifiée) ; « Sister 1 Malungu » (5ᵉ membre, aucun nom réel connu) reste dans le groupe sans table.
+
+### Changé — `lib/floorPlanSeats.ts` reconstruit depuis le PDF vectoriel
+- Remplace entièrement les données v1.68.0 (OCR de photos) par une extraction directe du texte + angle exact de chaque siège autour du centre de chaque table — 405 sièges, fiabilité d'orthographe totale. Confirme au passage que la **famille Lukoki** (8 personnes, table 40) est réellement présente dans le plan de salle bien qu'absente de la base — laissée signalée plutôt qu'ajoutée (voir ci-dessous).
+
+### Signalé à Gersom plutôt que deviné (aucune écriture)
+- **Personnes réellement nouvelles, visibles sur le PDF mais absentes de toute base/CSV précédente** : famille Lukoki au complet (Edoly, Daryl, Gladys, Dany, Glavina Lukoki, Gisele Bopima, Raphael Da Silva — table 40, 7 personnes), Axel Tacita (table 30), Adriana Tsita et Ya Lale Yezi (table 8), Christelle Lema (table 10), Alyson Choy et Kai Choy (table 27), Arcanjo/Milda/Acacia Nzasi (table 29, 3 nouvelles personnes dans une famille déjà partiellement connue), « VIP 1 » (table 29, placeholder générique).
+- **Renommages possibles mais non confirmés** (le PDF pourrait donner le vrai nom de personnes déjà en base sous un nom provisoire, ex. « Weplo Antoine » vs « Weplo Culumbu », « Alonso Isey (Godard) » vs « Tio Godart Culumbu », table 15) — laissés inchangés, une mauvaise correction de nom serait pire qu'aucune correction.
+- **Table 8** : le PDF ne confirme que 2 des 4 membres de « Famille Mpiassa » (Darliane, Sylvia — pas Joao ni Jeansianne) et seulement 2 des 3 membres de « Famille Culumbu »/Odette (Odette, Julie Indanda — pas Waku Menga) à cette table, mais le PDF lui-même n'est pas exhaustif (405 sièges remplis sur 424) : absence du PDF ≠ preuve de non-venue. Composition laissée inchangée (déjà signalée en v1.68.0), ni aggravée ni résolue par ce lot.
+
+### Tests
+- `tests/floor-plan-seats.test.ts` : nouvelles assertions ponctuelles reflétant les données du PDF final (table 2/32 Malungu, table 7 Tusevo, table 1 Erika Dos Goncalves, confirmation de la famille Lukoki table 40).
+
+Aucune migration (changement de données uniquement, aucune évolution de schéma).
+
 ## [1.68.0] — 2026-10-05
 
 Retour de Gersom (4 photos de zones seatplan.io NE/NO/SE/SO + seating-chart PDF révision 3 + `guest-list_57.csv`) : plan de table final, demande explicite de corriger les placements, le plan visuel et le widget de sièges pour qu'ils correspondent tous entre eux.
