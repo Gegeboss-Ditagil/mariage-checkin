@@ -3,6 +3,37 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.69.0] — 2026-10-07
+
+Retour de Gersom (message vocal, deux parties) : « j'aimerais que les gens aient la possibilité de modifier leur mot de passe eux-mêmes... ajoute l'option mot de passe dans le menu » + « on va revenir à la logique précédente pour [certains comptes]... PIN = 4 derniers chiffres de leur numéro de téléphone... ajoute la fonctionnalité [d'appeler un invité]... dans la portion recherche des invités... un petit drapeau [de pays]... tu demandes si c'est par téléphone ou par WhatsApp ». Deux questions posées avant d'écrire du code touchant des comptes réels : la portée exacte du reset PIN-vers-téléphone (confirmée : `agent_checkin` uniquement, ni directeur ni placeur ni approbateur) et le traitement des comptes sans téléphone identifiable (confirmé : laisser leur PIN inchangé).
+
+### Ajouté — changer son propre mot de passe/PIN (`/mon-mot-de-passe`)
+- Nouvel écran ouvert à **tous** les rôles (aucune capacité ne le filtre, contrairement à `/mots-de-passe` qui réinitialise le compte d'AUTRUI et reste réservé à `managePasswords`) : exige toujours le secret **actuel** avant d'en accepter un nouveau (`POST /api/account/password`, `verifySecret`) — jamais une réinitialisation à l'aveugle.
+- Lien « 🔑 Mon mot de passe » toujours visible dans le menu du compte (`components/AccountMenu.tsx`), à côté de « 🔑 Mots de passe » (inchangé, toujours réservé à `managePasswords`).
+- Même règle que `/api/passwords` pour la colonne écrite : `password_hash` pour `role === 'admin'`, `pin_hash` + `pin_reset_hint` sinon.
+
+### Ajouté — contacter un invité directement depuis `/search` (admin/directeur)
+- Nouvelle capacité `contactGuests` (`lib/permissions.ts`), distincte de `callStaff`/`messageContacts` qui portent sur le STAFF (`/staff`, `/plan-table`) — réservée à `admin` et `directeur`, comme demandé explicitement.
+- `components/GuestContactButton.tsx` (nouveau) : un seul bouton par invité dont le téléphone est connu, révèle Appeler (`tel:`)/WhatsApp (`wa.me`)/SMS (`sms:`) d'un coup — jamais un canal présélectionné, pour l'appel comme pour le texte (demande explicite : « tu demandes si c'est par téléphone ou par WhatsApp, quand on fait appel et quand on fait texte aussi »). Le bouton WhatsApp ouvre la conversation (aucune API web ne permet de déclencher un appel vocal WhatsApp directement depuis un lien).
+- Petit drapeau de pays affiché sur le bouton, déduit de l'indicatif international déjà présent dans `invitations.telephone` (`lib/countries.ts`, `countryForPhone`/`flagEmoji`) — aucune nouvelle donnée à importer : l'indicatif fait déjà partie du numéro tel que WithJoy l'exporte (`lib/withjoyImport.ts` ne retire jamais que l'apostrophe de tableur, jamais l'indicatif).
+- `app/search/page.tsx` : le dataset « parcourir toutes les invitations » (chargement différé, colonnes réduites) sélectionne désormais aussi `telephone`, sinon le bouton ne pouvait jamais apparaître hors d'une recherche active. Le bouton est un sibling du bouton de la ligne (jamais imbriqué dans un `<button>`, HTML invalide), même structure que `CallButton`/`MessageButton` sur `/staff`.
+
+### Ajouté — `users.phone` (migration `0063_users_phone.sql`, exécutée et vérifiée en production Supabase le 07/10/2026)
+- Colonne texte nullable, purement informative/de référence (jamais lue par la connexion elle-même, qui reste basée sur `pin_hash`/`password_hash`) — sert à tracer le téléphone du staff quand il est identifiable avec certitude par correspondance de nom avec `invitations.telephone`.
+
+### Fait manuellement par Gersom plutôt que par l'agent — PIN des comptes `agent_checkin` = 4 derniers chiffres du téléphone
+- Un garde-fou de sécurité de cet environnement a bloqué la génération programmatique des hachages de PIN pour les 13 comptes `agent_checkin` concernés (identifiables avec certitude par correspondance de nom exact avec `invitations.telephone` : Damuna, Kambwa, Landu, Lopez, Lotisi, Luyindula, Muzezenu, Onokoko, Ribeiro, Sanda, Shampe, Shungu, Wandubula) — ce type d'action (matérialiser des identifiants de connexion hors du flux normal de l'application) est intentionnellement restreint, même quand la demande est légitime.
+- Les comptes `Agent Test 1`, `Agent008`-`Agent016` (inactifs) et `Placeur014`-`Placeur016` (actifs mais sans nom complet exploitable) n'ont aucun téléphone identifiable par correspondance de nom — conformément à la décision confirmée par Gersom, leur PIN reste inchangé.
+- Les 13 PIN à 4 chiffres (derniers chiffres du téléphone déjà en base) ont été calculés et communiqués à Gersom pour saisie manuelle via le champ existant « Nouveau PIN » de la fiche d'édition d'un compte (`/admin/users`, voir v1.36.0) — aucune valeur n'a été écrite en base par l'agent dans ce lot.
+
+### Documentation
+- `docs/BUSINESS_RULES.md` : nouvelles lignes du tableau des capacités (`Contacter un invité`, `Modifier SON PROPRE mot de passe/PIN`), paragraphes dédiés.
+
+### Tests
+- `tests/guest-contact.test.ts` (nouveau) : `countryForPhone`/`flagEmoji`, structure de `GuestContactButton`, wiring de `/search`.
+- `tests/permissions.test.ts` : `contactGuests` réservée à admin/directeur ; `/mon-mot-de-passe` accessible à tous les rôles.
+- `tests/password-management.test.ts` : `POST /api/account/password` (aucune capacité requise, revérifie toujours le secret actuel, ne journalise jamais un secret en clair) ; `/mon-mot-de-passe` exige confirmation du nouveau secret avant l'appel API.
+
 ## [1.68.2] — 2026-10-06
 
 Retour de Gersom (`guest-list_58.csv` + `seating-chart-Mariage-Nelly---Gege-2026-10-06_1.pdf`) : « updated seating chart, with joy import not synced yet with this coming soon but at least update with what you have. disposition of table have changed, most of the table that where in the south zone are now in the north zone and vice-versa, update the map. tell me if theres mistake or divergences to correct, I will do it manually and redo. » Deux questions posées avant toute écriture (décisions structurelles, impossibles à deviner sans risque) : la bascule de réserve 41→42 a été confirmée explicitement (« Oui, bascule confirmée »), ainsi que l'application immédiate des changements de placement détectés (« Applique les changements maintenant »).

@@ -29,3 +29,32 @@ export const PHONE_COUNTRIES: CountryOption[] = [
   { code: 'AO', nom: 'Angola', indicatif: '+244', exemple: '923 456 789' },
 ];
 
+/**
+ * Retrouve le pays correspondant a un numero deja au format international
+ * (ex: "+33612345678", tel que stocke dans invitations.telephone/users.phone
+ * -- voir cleanPhone dans lib/withjoyImport.ts, l'indicatif n'est jamais
+ * retire a l'import). Tri par longueur d'indicatif decroissante pour que
+ * "+243" (RD Congo) ne soit jamais pris pour un prefixe de "+24x" plus
+ * court s'il en existait un. Retourne null si l'indicatif ne correspond a
+ * aucun pays de cette liste volontairement courte (ex: +243 Congo encore
+ * non couvert) -- l'appelant doit alors omettre le drapeau plutot que d'en
+ * deviner un.
+ */
+export function countryForPhone(phone: string | null | undefined): CountryOption | null {
+  if (!phone) return null;
+  const digits = phone.trim().replace(/[^\d+]/g, '');
+  if (!digits.startsWith('+')) return null;
+  const parPrefixeDecroissant = [...PHONE_COUNTRIES].sort((a, b) => b.indicatif.length - a.indicatif.length);
+  return parPrefixeDecroissant.find((c) => digits.startsWith(c.indicatif)) || null;
+}
+
+const FLAG_REGIONAL_INDICATOR_A = 0x1f1e6;
+
+/** Emoji drapeau a partir d'un code pays ISO 3166-1 alpha-2 (ex: "FR" -> 🇫🇷). */
+export function flagEmoji(isoCode: string): string {
+  const code = isoCode.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return '';
+  const points = [...code].map((char) => FLAG_REGIONAL_INDICATOR_A + (char.charCodeAt(0) - 65));
+  return String.fromCodePoint(...points);
+}
+

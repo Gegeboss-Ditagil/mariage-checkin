@@ -179,3 +179,48 @@ const authSource = readFileSync(new URL('../lib/auth.ts', import.meta.url), 'utf
 test('is_super_admin est bien porté par le jeton de session (jamais lu ailleurs que depuis la session signée)', () => {
   assert.match(authSource, /is_super_admin: payload\.is_super_admin === true/);
 });
+
+// v1.69.0, demande de Gersom le 07/10/2026 : "j'aimerais que les gens aient
+// la possibilité de modifier leur mot de passe eux-mêmes" -- distinct de
+// /api/passwords (réinitialiser le compte d'AUTRUI, réservé à
+// managePasswords) : ici, tout rôle change SON PROPRE secret, en reprouvant
+// le secret actuel (comme un changement de mot de passe classique), jamais
+// une réinitialisation à l'aveugle.
+const selfPasswordRouteSource = readFileSync(new URL('../app/api/account/password/route.ts', import.meta.url), 'utf8');
+
+test('POST /api/account/password exige une session, mais AUCUNE capacité managePasswords (ouvert à tous)', () => {
+  assert.match(selfPasswordRouteSource, /const user = getSessionUser\(\);/);
+  assert.match(selfPasswordRouteSource, /if \(!user\) return NextResponse\.json/);
+  assert.doesNotMatch(selfPasswordRouteSource, /managePasswords/);
+});
+
+test('POST /api/account/password revérifie toujours le secret ACTUEL via verifySecret avant tout changement', () => {
+  assert.match(selfPasswordRouteSource, /verifySecret\(currentSecret, storedHash\)/);
+  assert.match(selfPasswordRouteSource, /status: 401/);
+});
+
+test('POST /api/account/password écrit password_hash pour un admin, pin_hash sinon -- même règle que /api/passwords', () => {
+  assert.match(selfPasswordRouteSource, /user\.role === 'admin'\s*\n\s*\? \{ password_hash: hashSecret\(newSecret\) \}/);
+  assert.match(selfPasswordRouteSource, /: \{ pin_hash: hashSecret\(newSecret\), pin_reset_hint: maskPinForHint\(newSecret\) \}/);
+});
+
+test('POST /api/account/password valide le format du nouveau secret (4 chiffres pour un PIN, 6+ caractères pour un mot de passe admin)', () => {
+  assert.match(selfPasswordRouteSource, /\/\^\\d\{4\}\$\/\.test\(newSecret\)/);
+  assert.match(selfPasswordRouteSource, /newSecret\.length < 6/);
+});
+
+test('le secret (ancien ou nouveau) ne part jamais vers les logs serveur en clair', () => {
+  const logStart = selfPasswordRouteSource.indexOf('logServerEvent({');
+  const logCall = selfPasswordRouteSource.slice(logStart, selfPasswordRouteSource.indexOf('});', logStart) + 3);
+  assert.doesNotMatch(logCall, /Secret/);
+  assert.match(logCall, /actorId: user\.id/);
+});
+
+const monMotDePasseSource = readFileSync(new URL('../app/mon-mot-de-passe/page.tsx', import.meta.url), 'utf8');
+
+test("/mon-mot-de-passe demande le secret actuel ET une confirmation du nouveau avant d'appeler l'API", () => {
+  assert.match(monMotDePasseSource, /currentSecret/);
+  assert.match(monMotDePasseSource, /confirmSecret/);
+  assert.match(monMotDePasseSource, /newSecret !== confirmSecret/);
+  assert.match(monMotDePasseSource, /fetch\('\/api\/account\/password', \{/);
+});
