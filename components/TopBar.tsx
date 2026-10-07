@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AccountMenu } from '@/components/AccountMenu';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
+import { EditIcon } from '@/components/icons';
 
 export function TopBar({
   title,
@@ -47,9 +48,16 @@ export function TopBar({
             </Link>
           )}
           {onTitleClick ? (
-            <button type="button" onClick={onTitleClick} aria-label={'Modifier « ' + title + ' »'} className="flex min-w-0 items-center gap-1.5 truncate font-display text-lg font-semibold text-text">
+            // v1.69.3, retour de Gersom : « J'aime pas l'icône [le glyphe ✎
+            // seul]... garder plus le style liquid glass... circulaire...
+            // dans un cercle. » Le crayon devient EditIcon dans une pastille
+            // ronde en verre (.glass-icon-button-sm), meme recette que la
+            // fleche Retour et le bouton Modifier de /agenda.
+            <button type="button" onClick={onTitleClick} aria-label={'Modifier « ' + title + ' »'} className="flex min-w-0 items-center gap-2 font-display text-lg font-semibold text-text">
               <span className="truncate">{title}</span>
-              <span aria-hidden className="shrink-0 text-sm text-accent">✎</span>
+              <span aria-hidden className="glass-icon-button glass-icon-button-sm">
+                <EditIcon className="h-4 w-4" />
+              </span>
             </button>
           ) : (
             <h1 className="truncate font-display text-lg font-semibold text-text">{title}</h1>

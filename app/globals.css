@@ -273,6 +273,13 @@ body {
   backdrop-filter: blur(16px) saturate(160%);
 }
 
+/* Variante compacte (v1.69.3) : crayon "Modifier le nom" a cote du titre de
+   TopBar -- meme verre que .glass-icon-button, taille reduite pour
+   accompagner un titre sans l'ecraser. */
+.glass-icon-button-sm {
+  @apply h-8 w-8;
+}
+
 /* Bascule Actif/Desactive en verre liquide (theme iOS) -- demande de
    Gersom le 02/09/2026 : "pour activer et desactiver, ca puisse etre un
    toggle avec le theme ios verre liquide", a la place de l'ancien badge
