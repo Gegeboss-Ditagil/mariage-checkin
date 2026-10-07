@@ -70,49 +70,51 @@ export default function PasswordsPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg">
-      <TopBar title="Mots de passe" backHref="/dashboard" />
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="card mb-4 space-y-2">
-          <h1 className="font-display text-xl">Gérer les mots de passe</h1>
-          <p className="text-sm text-text-muted">
-            Réinitialiser génère un nouveau code à 4 chiffres aléatoire — communiquez-le vous-même à la personne juste après.
-            {canViewHints && " Vous pouvez aussi voir un indice (les deux derniers chiffres) du dernier code généré, pour le rappeler avant de réinitialiser pour de bon."}
-          </p>
-        </div>
+    <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar title="Mots de passe" backHref="/dashboard" />
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="card mb-4 space-y-2">
+            <h1 className="font-display text-xl">Gérer les mots de passe</h1>
+            <p className="text-sm text-text-muted">
+              Réinitialiser génère un nouveau code à 4 chiffres aléatoire — communiquez-le vous-même à la personne juste après.
+              {canViewHints && " Vous pouvez aussi voir un indice (les deux derniers chiffres) du dernier code généré, pour le rappeler avant de réinitialiser pour de bon."}
+            </p>
+          </div>
 
-        {error && <p className="mb-3 rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">{error}</p>}
-        {loading ? (
-          <p className="py-10 text-center text-text-muted">Chargement…</p>
-        ) : (
-          <ul className="divide-y divide-hairline">
-            {users.map((u) => (
-              <li key={u.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className={'font-medium' + (u.active ? '' : ' opacity-50')}>{u.nom_affichage}</p>
-                  <p className="text-sm text-text-faint">{ROLE_LABELS[u.role] || u.role}</p>
-                  {canViewHints && (
-                    <p className="mt-0.5 text-xs text-text-faint">
-                      {u.hint ? 'Dernier indice : ' + u.hint : 'Aucun indice (jamais réinitialisé depuis cet écran)'}
-                    </p>
+          {error && <p className="mb-3 rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">{error}</p>}
+          {loading ? (
+            <p className="py-10 text-center text-text-muted">Chargement…</p>
+          ) : (
+            <ul className="divide-y divide-hairline">
+              {users.map((u) => (
+                <li key={u.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className={'font-medium' + (u.active ? '' : ' opacity-50')}>{u.nom_affichage}</p>
+                    <p className="text-sm text-text-faint">{ROLE_LABELS[u.role] || u.role}</p>
+                    {canViewHints && (
+                      <p className="mt-0.5 text-xs text-text-faint">
+                        {u.hint ? 'Dernier indice : ' + u.hint : 'Aucun indice (jamais réinitialisé depuis cet écran)'}
+                      </p>
+                    )}
+                  </div>
+                  {u.canReset ? (
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-full border border-hairline bg-surface-2 px-3 py-1.5 text-xs font-semibold text-accent disabled:opacity-50"
+                      disabled={resettingId === u.id}
+                      onClick={() => resetPassword(u)}
+                    >
+                      {resettingId === u.id ? '…' : 'Réinitialiser'}
+                    </button>
+                  ) : (
+                    <span className="shrink-0 text-xs text-text-faint">Non autorisé</span>
                   )}
-                </div>
-                {u.canReset ? (
-                  <button
-                    type="button"
-                    className="shrink-0 rounded-full border border-hairline bg-surface-2 px-3 py-1.5 text-xs font-semibold text-accent disabled:opacity-50"
-                    disabled={resettingId === u.id}
-                    onClick={() => resetPassword(u)}
-                  >
-                    {resettingId === u.id ? '…' : 'Réinitialiser'}
-                  </button>
-                ) : (
-                  <span className="shrink-0 text-xs text-text-faint">Non autorisé</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
       {role && <BottomNav role={role} />}
 

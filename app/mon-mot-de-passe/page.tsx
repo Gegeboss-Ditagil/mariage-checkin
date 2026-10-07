@@ -63,68 +63,70 @@ export default function MonMotDePassePage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg">
-      <TopBar title={'Mon ' + label} backHref={role ? landingPathForRole(role) : '/dashboard'} />
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="card mb-4 space-y-2">
-          <h1 className="font-display text-xl">Changer mon {label}</h1>
-          <p className="text-sm text-text-muted">
-            {isAdmin
-              ? 'Saisissez votre mot de passe actuel, puis le nouveau (au moins 6 caractères).'
-              : 'Saisissez votre PIN actuel, puis le nouveau (4 chiffres).'}
-          </p>
+    <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar title={'Mon ' + label} backHref={role ? landingPathForRole(role) : '/dashboard'} />
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="card mb-4 space-y-2">
+            <h1 className="font-display text-xl">Changer mon {label}</h1>
+            <p className="text-sm text-text-muted">
+              {isAdmin
+                ? 'Saisissez votre mot de passe actuel, puis le nouveau (au moins 6 caractères).'
+                : 'Saisissez votre PIN actuel, puis le nouveau (4 chiffres).'}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="card space-y-3">
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-text-muted">{isAdmin ? 'Mot de passe actuel' : 'PIN actuel'}</span>
+              <input
+                type={isAdmin ? 'password' : 'tel'}
+                inputMode={isAdmin ? undefined : 'numeric'}
+                maxLength={isAdmin ? undefined : 4}
+                autoComplete="current-password"
+                className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
+                value={currentSecret}
+                onChange={(e) => setCurrentSecret(e.target.value)}
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-text-muted">{isAdmin ? 'Nouveau mot de passe' : 'Nouveau PIN (4 chiffres)'}</span>
+              <input
+                type={isAdmin ? 'password' : 'tel'}
+                inputMode={isAdmin ? undefined : 'numeric'}
+                maxLength={isAdmin ? undefined : 4}
+                autoComplete="new-password"
+                className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
+                value={newSecret}
+                onChange={(e) => setNewSecret(e.target.value)}
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-text-muted">Confirmer le nouveau {label}</span>
+              <input
+                type={isAdmin ? 'password' : 'tel'}
+                inputMode={isAdmin ? undefined : 'numeric'}
+                maxLength={isAdmin ? undefined : 4}
+                autoComplete="new-password"
+                className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
+                value={confirmSecret}
+                onChange={(e) => setConfirmSecret(e.target.value)}
+                required
+              />
+            </label>
+
+            {error && <p className="rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">{error}</p>}
+            {success && <p className="rounded-xl2 bg-status-complete/10 p-3 text-sm text-status-complete">{label === 'mot de passe' ? 'Mot de passe' : 'PIN'} changé avec succès.</p>}
+
+            <button type="submit" className="btn-primary w-full" disabled={submitting}>
+              {submitting ? '…' : 'Changer mon ' + label}
+            </button>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} className="card space-y-3">
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-text-muted">{isAdmin ? 'Mot de passe actuel' : 'PIN actuel'}</span>
-            <input
-              type={isAdmin ? 'password' : 'tel'}
-              inputMode={isAdmin ? undefined : 'numeric'}
-              maxLength={isAdmin ? undefined : 4}
-              autoComplete="current-password"
-              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
-              value={currentSecret}
-              onChange={(e) => setCurrentSecret(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-text-muted">{isAdmin ? 'Nouveau mot de passe' : 'Nouveau PIN (4 chiffres)'}</span>
-            <input
-              type={isAdmin ? 'password' : 'tel'}
-              inputMode={isAdmin ? undefined : 'numeric'}
-              maxLength={isAdmin ? undefined : 4}
-              autoComplete="new-password"
-              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
-              value={newSecret}
-              onChange={(e) => setNewSecret(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-text-muted">Confirmer le nouveau {label}</span>
-            <input
-              type={isAdmin ? 'password' : 'tel'}
-              inputMode={isAdmin ? undefined : 'numeric'}
-              maxLength={isAdmin ? undefined : 4}
-              autoComplete="new-password"
-              className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-lg focus:border-accent focus:outline-none"
-              value={confirmSecret}
-              onChange={(e) => setConfirmSecret(e.target.value)}
-              required
-            />
-          </label>
-
-          {error && <p className="rounded-xl2 bg-status-over/10 p-3 text-sm text-status-over">{error}</p>}
-          {success && <p className="rounded-xl2 bg-status-complete/10 p-3 text-sm text-status-complete">{label === 'mot de passe' ? 'Mot de passe' : 'PIN'} changé avec succès.</p>}
-
-          <button type="submit" className="btn-primary w-full" disabled={submitting}>
-            {submitting ? '…' : 'Changer mon ' + label}
-          </button>
-        </form>
       </div>
       {role && <BottomNav role={role} />}
     </div>

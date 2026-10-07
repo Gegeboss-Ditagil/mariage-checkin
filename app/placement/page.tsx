@@ -111,7 +111,10 @@ export default function PlacementPage() {
         <UserMenu />
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 pt-4">
-            <h1 className="font-display text-2xl ">Placement</h1>
+            {/* v1.69.2 : meme correctif que /scan -- en paysage, le bouton
+                de compte flottant (top-left) passait par-dessus ce titre,
+                les deux partageant le meme coin haut-gauche. */}
+            <h1 className="font-display text-2xl landscape:pl-[calc(2.75rem+0.75rem+env(safe-area-inset-left))]">Placement</h1>
           </div>
 
           <div className="mb-4 mt-3 flex gap-2 px-4">
