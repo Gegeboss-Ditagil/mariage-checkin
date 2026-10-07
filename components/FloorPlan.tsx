@@ -33,6 +33,20 @@ import clsx from 'clsx';
 // (tags F/T de 002 a 041 seulement) -- signale a Gersom plutot que devine
 // (voir CHANGELOG v1.68.2) ; elle garde ici la seule case encore libre de la
 // grille plutot que de perdre toute position.
+//
+// v1.69.1 (07/10/2026) : retour de Gersom, nouveau PDF seatplan.io du
+// 07/10/2026 -- "mainly the surroundings that changed... doors etc zones...
+// vin d'honneur disposition... I also resize a bit to save". Verifie par
+// extraction du texte vectoriel (meme methode qu'en v1.68.2) : la grille de
+// tables ci-dessous (positions ET contenu des 42 tables) reste IDENTIQUE a
+// v1.68.2, confirme explicitement par Gersom ("just verify/update the
+// visual plan") -- aucun changement de placement d'invite dans ce lot.
+// Seules les SALLES/ZONES decoratives (ROOMS, plus bas) sont retouchees :
+// la zone "Vin d'honneur" retrecie (confirmee par Gersom) et sous-titree
+// "Zone de service" (nouveau PDF : "ZONE DE SERVICE VIN D'HONNEUR"),
+// "Espace discours" desormais subdivise en "Sections A . B . C" (nouveau),
+// "WCF" sous-titree "Ferme durant les discours" (nouveau). Toujours un
+// schema simplifie, jamais une trace pixel par pixel du PDF.
 export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
   // Rangees au-dessus de l'Allee centrale (6 colonnes, x:630-1130, espacement
   // 100 ; rangees y:120-405, espacement 95).
@@ -94,7 +108,10 @@ const ROOMS: Room[] = [
   { x: 10, y: 20, w: 220, h: 320, label: 'Cuisine', staffTag: 'Traiteur' },
   { x: 240, y: 20, w: 180, h: 90, label: 'CF' },
   { x: 240, y: 115, w: 180, h: 105, label: 'WCH' },
-  { x: 240, y: 225, w: 180, h: 115, label: 'WCF' },
+  // v1.69.1 (07/10/2026) : sub ajoute depuis le nouveau PDF seatplan.io du
+  // 07/10/2026, "WC FEMMES (FERME DURANT DISCOURS)" -- information nouvelle,
+  // jamais presente sur les plans precedents.
+  { x: 240, y: 225, w: 180, h: 115, label: 'WCF', sub: 'Fermé durant les discours' },
   { x: 150, y: 345, w: 270, h: 75, label: 'Bar', staffTag: 'Bar' },
   // Ancienne zone "Stockage" scindee en deux (photo annotee du 23/08/2026) :
   // une zone enfants (pas de personnel rattache, simple espace) et une zone
@@ -129,10 +146,19 @@ const ROOMS: Room[] = [
   { x: 1350, y: 20, w: 45, h: 940, label: 'Couloir Est', vertical: true },
   { x: 1405, y: 20, w: 300, h: 60, label: 'Buffet A' },
   { x: 1405, y: 90, w: 300, h: 60, label: 'Buffet B' },
-  { x: 1375, y: 160, w: 335, h: 130, label: 'Espace discours', sub: 'Orateur · Les mariés' },
+  // v1.69.1 : sub mis a jour depuis le nouveau PDF (07/10/2026) -- la zone
+  // discours est desormais explicitement subdivisee en 3 sections
+  // ("SECTION A/B/C INVITES - DISCOURS"), remplace l'ancien sous-titre
+  // generique "Orateur . Les maries".
+  { x: 1375, y: 160, w: 335, h: 130, label: 'Espace discours', sub: 'Sections A · B · C' },
   { x: 1375, y: 300, w: 130, h: 280, label: 'Invités' },
   { x: 1580, y: 300, w: 130, h: 280, label: 'Invités' },
-  { x: 1375, y: 600, w: 335, h: 340, label: "Vin d'honneur" },
+  // v1.69.1 : zone retrecie (retour de Gersom, 07/10/2026 : "I also resize a
+  // bit to save") et sous-titree "Zone de service" (nouveau PDF :
+  // "ZONE DE SERVICE VIN D'HONNEUR") -- position/largeur inchangees, seule
+  // la hauteur est reduite pour refleter le retrecissement confirme par
+  // Gersom, schema simplifie, jamais une trace pixel par pixel du PDF.
+  { x: 1375, y: 600, w: 335, h: 260, label: "Vin d'honneur", sub: 'Zone de service' },
 ];
 
 function centerOf(room: Room): [number, number] {
