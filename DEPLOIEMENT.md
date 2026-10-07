@@ -1,7 +1,7 @@
 # Guide de déploiement
 
-**Version documentaire : 1.68.0**
-**Dernière mise à jour : 2026-10-05**
+**Version documentaire : 1.68.2**
+**Dernière mise à jour : 2026-10-06**
 
 L'application est un projet Next.js déployé sur Vercel avec Supabase en backend.
 
@@ -53,14 +53,14 @@ Après un déploiement important, tester au moins une PWA déjà installée sur 
 
 Toute écriture de check-in nécessite une connexion réseau.
 
-## 5. Données et capacité de référence (v1.1.0, mis à jour v1.68.0)
+## 5. Données et capacité de référence (v1.1.0, mis à jour v1.68.2)
 
-- 41 tables au total (plan de table final seatplan.io, 05/10/2026).
-- Tables 1 à 40 : normales.
-- Table 41 : seule réserve « excédentaire » (redevenue réserve, retour sur v1.47.0).
-- Capacité officielle : 400 places.
-- Capacité absolue avec réserve : 410 places.
-- La table 42 (« Johannesburg ») n'existe plus dans ce plan — décommissionnée (pas supprimée, pour préserver des références historiques dans `audit_logs`, voir migration `0061`).
+- 42 tables au total (plan de table redessiné par Gersom sur seatplan.io, 06/10/2026).
+- Tables 1 à 41 : normales.
+- Table 42 : seule réserve « excédentaire » (redevenue réserve, retour sur v1.68.0).
+- Capacité officielle : 410 places.
+- Capacité absolue avec réserve : 420 places.
+- La table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives (voir migration `0062`, qui inverse `0061`).
 
 Toute modification structurelle des tables doit être faite via une nouvelle migration et documentée dans `CHANGELOG.md`.
 

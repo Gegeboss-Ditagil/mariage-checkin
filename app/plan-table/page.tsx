@@ -68,13 +68,12 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
 
 const PULL_THRESHOLD = 70;
 
-// Cible actuelle (mise à jour le 05/10/2026, v1.68.0, nouveau plan de table
-// final seatplan.io) : 41 tables max (40 officielles + 1 seule réserve,
-// table 41 "excédentaire" -- la table 42 "Johannesburg" n'existe plus dans
-// ce plan, voir supabase/migrations/0061), donc 400 invités "officiels" —
-// le reste passe dans l'unique table de réserve, clairement marquée
-// "excédentaire".
-const CAPACITE_OFFICIELLE = 400;
+// Cible actuelle (mise à jour le 06/10/2026, v1.68.2, bascule confirmée par
+// Gersom de la réserve 41→42, voir supabase/migrations/0062) : 42 tables max
+// (41 officielles + 1 seule réserve, table 42 "excédentaire" -- la table 41
+// est redevenue une table normale), donc 410 invités "officiels" — le reste
+// passe dans l'unique table de réserve, clairement marquée "excédentaire".
+const CAPACITE_OFFICIELLE = 410;
 
 export default function PlanTablePage() {
   return (
@@ -781,7 +780,7 @@ function PlanTablePageInner() {
               </div>
 
               {reserveVisibles.length > 0 && <p className="mb-2 text-sm font-semibold text-text-faint">
-                Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 400</span>
+                Tables de réserve <span className="font-normal text-text-faint">— excédentaire au-delà des 410</span>
               </p>}
               <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {reserveVisibles.map((t) => (
