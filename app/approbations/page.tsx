@@ -542,7 +542,8 @@ export default function ApprobationsPage() {
                 <Link href={'/approbations/' + selectedRequest.id + '/assign'} className="btn-primary block w-full text-center">
                   Oui — voir les recommandations
                 </Link>
-                {role !== 'placeur' && (
+                {/* v1.72.1 : seul un rôle qui DÉCIDE (approuve/refuse) peut laisser l'assignation au placeur -- même effet qu'avant (le placeur ne décide jamais), via la capacité centralisée. */}
+                {hasCapability(role, 'reviewGuestApproval') && (
                   <button type="button" onClick={dismissDetail} className="btn-secondary w-full">
                     Non — laisser le placeur l'assigner
                   </button>

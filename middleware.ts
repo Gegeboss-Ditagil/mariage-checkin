@@ -5,7 +5,12 @@ import { canAccessPath, landingPathForRole } from '@/lib/permissions';
 // '/approve' (page publique d'approbation SMS) et '/api/public' (ses routes
 // API) n'exigent jamais de session -- la connaissance du token (lien SMS)
 // EST l'autorisation, voir supabase/migrations/0032_guest_approvals.sql.
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js', '/approve', '/api/public'];
+// '/offline' (v1.72.1) : page statique « Hors ligne », sans aucune donnée. Le
+// service worker la met en cache à l'installation -- le plus souvent depuis
+// l'écran de connexion, donc SANS session : protégée, elle redirigeait vers
+// /login (ou /scan pour un rôle non-admin) et c'est cette page-là qui était
+// mise en cache, jamais l'écran hors ligne. Constaté en test (curl : 307).
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/manifest.json', '/sw.js', '/approve', '/api/public', '/offline'];
 
 function isPublic(pathname: string) {
   return (

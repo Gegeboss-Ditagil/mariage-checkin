@@ -11,7 +11,9 @@
 // - Seule la coquille minimale de l'app (offline, manifest, icones) est mise en
 //   cache pour fournir un ecran hors ligne propre.
 
-const CACHE_NAME = 'checkin-shell-v3';
+// v4 (v1.72.1) : force le remplacement du « /offline » mis en cache avant que
+// cette page soit publique (c'était en réalité /login ou /scan).
+const CACHE_NAME = 'checkin-shell-v4';
 const APP_SHELL = ['/', '/offline', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

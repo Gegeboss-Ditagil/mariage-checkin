@@ -222,6 +222,17 @@ export function canAccessPath(role: Role, pathname: string): boolean {
   if (matchesPrefix(pathname, '/agenda') && !hasCapability(role, 'viewAgenda')) return false;
   if (matchesPrefix(pathname, '/approbations') && !hasCapability(role, 'viewGuestApprovals')) return false;
   if (matchesPrefix(pathname, '/mots-de-passe') && !hasCapability(role, 'managePasswords')) return false;
+  // v1.72.1 (QA par rôle) : les écrans d'ÉCRITURE sous /tables étaient
+  // ouverts à tout rôle ayant le préfixe /tables -- visibilité (lecture
+  // seule) pouvait ouvrir /tables/add, /tables/move..., le placeur
+  // /tables/add, avec un formulaire que l'API refusait ensuite. Chaque écran
+  // exige désormais la capacité de l'action qu'il porte.
+  if (matchesPrefix(pathname, '/tables/add') && !hasCapability(role, 'addInvitation')) return false;
+  if (
+    (matchesPrefix(pathname, '/tables/move') || matchesPrefix(pathname, '/tables/move-multiple') || matchesPrefix(pathname, '/tables/move-guest')) &&
+    !hasCapability(role, 'moveGuests')
+  ) return false;
+  if (matchesPrefix(pathname, '/tables/overflow') && !hasCapability(role, 'manageOverflow')) return false;
 
   if (role === 'agent_checkin') {
     // Note : /checkin/[invitationId]/merge n'est PAS dans cette liste --
