@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
           reason,
         })),
         tableChanges: safe.merge.tableChanges,
+        toReview: safe.merge.toReview,
         alreadyPresent: safe.merge.alreadyPresent,
         addedPersons: safe.merge.addedPersons,
       },

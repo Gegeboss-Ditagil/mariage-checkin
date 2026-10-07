@@ -43,8 +43,20 @@ export interface SafeTableChange {
   toTable: number;
 }
 
+// Personne au nom inconnu MAIS dont le groupe With Joy (party) existe deja
+// en base : tres probablement une personne renommee dans With Joy (constate
+// sur guest-list (63).csv : « Accompagnateur Amy Eliano » devenu « Artiste
+// Amy Eliano »). Jamais ajoutee automatiquement (doublon) -- listee pour
+// verification manuelle.
+export interface SafeReview {
+  label: string;
+  size: number;
+  existingInvitationName: string;
+}
+
 export interface SafeMergePlan {
   additions: SafeAddition[];
+  toReview: SafeReview[];
   tableChanges: SafeTableChange[];
   alreadyPresent: number;
   addedPersons: number;
@@ -72,18 +84,19 @@ export function knownNamesOf(invitation: Pick<ExistingInvitation, 'nom_affichage
 
 export function buildSafeMergePlan(plan: ImportPlan, existing: ExistingInvitation[], tables: TableLoad[]): SafeMergePlan {
   const invitationByPerson = new Map<string, ExistingInvitation>();
-  const partyIds = new Set<string>();
+  const invitationByParty = new Map<string, ExistingInvitation>();
   for (const invitation of existing) {
     for (const name of knownNamesOf(invitation)) {
       const key = personKey(name);
       // « Accompagnant non-nommé » n'identifie personne : jamais une clé.
       if (key && !key.startsWith('accompagn')) invitationByPerson.set(key, invitation);
     }
-    if (invitation.withjoy_party_id) partyIds.add(invitation.withjoy_party_id);
+    if (invitation.withjoy_party_id) invitationByParty.set(invitation.withjoy_party_id, invitation);
   }
 
   const load = new Map(tables.map((table) => [table.number, { ...table }]));
   const additions: SafeAddition[] = [];
+  const toReview: SafeReview[] = [];
   const tableChanges: SafeTableChange[] = [];
   let alreadyPresent = 0;
 
@@ -94,7 +107,12 @@ export function buildSafeMergePlan(plan: ImportPlan, existing: ExistingInvitatio
     seen.add(group.gid);
     const named = group.memberNames.filter((name) => !personKey(name).startsWith('accompagn'));
     const matches = named.map((name) => invitationByPerson.get(personKey(name))).filter(Boolean) as ExistingInvitation[];
-    const present = matches.length > 0 || (!!group.withjoyPartyId && partyIds.has(group.withjoyPartyId) && named.length === 0);
+    const sameParty = group.withjoyPartyId ? invitationByParty.get(group.withjoyPartyId) : undefined;
+    const present = matches.length > 0 || (!!sameParty && named.length === 0);
+    if (!present && sameParty) {
+      toReview.push({ label: group.label, size: group.size, existingInvitationName: sameParty.nom_affichage });
+      continue;
+    }
 
     if (present) {
       alreadyPresent += 1;
@@ -137,6 +155,7 @@ export function buildSafeMergePlan(plan: ImportPlan, existing: ExistingInvitatio
 
   return {
     additions,
+    toReview,
     tableChanges,
     alreadyPresent,
     addedPersons: additions.reduce((sum, addition) => sum + addition.group.size, 0),

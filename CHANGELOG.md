@@ -3,6 +3,29 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.71.1] — 2026-10-07
+
+Suite du parcours de test demandé par Gersom (téléphone/tablette émulés, réseau faible, logs), sur la preview de v1.71.0 avec les vraies données.
+
+### Corrigé — « Mise à jour sûre » With Joy : aucun doublon pour une personne renommée
+- Testé sur `guest-list (63).csv` contre la vraie base (analyse seule, rien d'écrit) : 300 invitations reconnues, mais **2 faux nouveaux** — « Artiste Amy Eliano » ×2, qui existent déjà en base comme « Accompagnateur Amy Eliano » dans « Roger (Amy Eliano) Culumbu » (même groupe With Joy `table-028-party-167`, simplement renommés dans With Joy). Ils auraient été ajoutés en double dans la réserve.
+- Désormais : nom inconnu **mais** groupe With Joy déjà présent → liste « À vérifier, non ajouté » (jamais d'ajout automatique). Les vraies nouvelles personnes (groupe inconnu) restent ajoutées comme avant.
+
+### Corrigé — réseau faible : plus d'écran figé pendant les changements de page
+- `app_logs` montre « View transition update callback timed out » à répétition (3 fois encore le 07/10 sur `/dashboard`, déjà relevé en v1.62.0/v1.65.x, jamais résolu) : pendant une View Transition le navigateur fige l'ancien écran jusqu'à ce que la page suivante soit prête, et abandonne vers 4 s — écran gelé puis saut.
+- Nouveau `lib/viewTransitionGuard.ts` : les transitions sont coupées pour la session **dès qu'une a expiré une fois**, ou **d'emblée** si le navigateur signale une connexion lente (2G/3G) ou l'économie de données (Chrome/Android ; iOS n'expose pas l'information, la première règle s'applique). `next-view-transitions` retombe alors sur une navigation normale (il teste `'startViewTransition' in document` à chaque navigation). Script synchrone dans `<head>` (avant hydratation) + coupure immédiate dans `GlobalErrorLogger`.
+
+### Vérifié sur la preview v1.71.0 (vraies données, lecture seule)
+- Téléphone (375×812, Android Chrome émulé) : tableau de bord « 0 / 400 (+10 réserve) » et réserve « Table 1 » ; plan de salle lisible, tap réel sur la table 1 → sélection + fiche « Libre pour le débordement du jour J » ; table 42 absente ; `/search` « Makongo » → Roger Makongo table 30 (événement clavier le plus long : 80 ms, contre 1 108 ms avant v1.70.0) ; fiche de Roger avec son siège surligné et les flèches Piste/Allée ; `/scan` caméra refusée → message clair + « Réessayer ».
+- Tablette (768×1024) : lien 📍 `?table=1` ouvre le plan avec la table 1 localisée.
+- Console : aucune erreur. `app_logs` (14 jours) : aucune erreur serveur, uniquement des messages de View Transition (traités ci-dessus).
+- Limite : le vrai Safari iOS ne peut pas être émulé ici — seule la taille d'écran l'est.
+
+### Tests
+- `tests/weak-network-v1-71-1.test.ts` (nouveau) ; `tests/withjoy-safe-merge.test.ts` (cas du renommage).
+
+Aucune migration.
+
 ## [1.71.0] — 2026-10-07
 
 Retour de Gersom avec le nouvel export seatplan.io (« seating-chart … (7).pdf ») et `guest-list (63).csv` : « la table 42 n'existe plus, appeler table 1 Maquela do Zombo la table excédentaire maintenant… 42 ne sera plus utilisé » ; « Roger Makongo a été ajouté… et Luzolo déplacé à la table 31 » ; « corrige bien les éléments comme la map donnée et aligne les tables… change les noms des objets de la salle » ; « assure-toi qu'un import With Joy de dernière minute à partir de l'app fonctionnera » ; « connectivité peut-être réduite sur place ».

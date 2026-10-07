@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { reportClientError } from '@/lib/clientLog';
 import { isStaleDeploymentError, reconnectAfterStaleDeployment } from '@/lib/staleDeployment';
 import { isBenignViewTransitionRejection } from '@/lib/viewTransitionNoise';
+import { disableViewTransitions, isViewTransitionTimeout } from '@/lib/viewTransitionGuard';
 
 /**
  * Capture les erreurs qui n'atteignent JAMAIS un error boundary React
@@ -57,6 +58,10 @@ export function GlobalErrorLogger() {
         event.preventDefault();
         return;
       }
+      // v1.71.1 : une transition a expiré (réseau lent) -- on coupe les
+      // transitions pour le reste de la session : plus d'écran figé ensuite.
+      // L'erreur reste journalisée ci-dessous (signal réel de lenteur).
+      if (isViewTransitionTimeout(message)) disableViewTransitions(true);
       reportClientError({
         message,
         stack: reason instanceof Error ? reason.stack : undefined,
