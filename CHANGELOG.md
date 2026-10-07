@@ -16,6 +16,12 @@ Retour de Gersom (avec l'export seatplan.io du 07/10/2026) : « assure-toi que l
 - **Interprétations à confirmer par Gersom** : « WH » affiché comme « WC hommes » (entre WC handicapés et WC femmes) ; « PO », « SO », « CO », « RP » repris tels quels (libellés tronqués dans le PDF lui-même) ; « Accès vers la S… » idem.
 - Les flèches Piste/Allée des dessins de table sont recalculées automatiquement depuis les nouvelles positions exactes (`lib/floorPlanOrientation.ts`, aucun changement de code).
 
+### Corrigé — `/plan-table` : toucher une table ou une zone sur le plan ne faisait rien (souris, Chrome/Android)
+- Trouvé en testant le plan sur la preview : `ZoomableFloorPlan` appelait `setPointerCapture` à CHAQUE appui. Dans Chrome, la capture redirige `pointerup` **et** le `click` vers le conteneur du zoom : l'`onClick` de la table ou de la zone touchée n'était jamais déclenché (constaté : `pointerdown` reçu par la zone DJ, puis `pointerup`/`click` reçus par le `<div>` du zoom). Bug présent depuis v1.11.0.
+- La capture n'est plus prise que lorsqu'un vrai geste commence (deuxième doigt pour le pincement, ou glissement de plus de 4 px une fois zoomé) ; un pointeur principal purge tout pointeur orphelin pour ne jamais simuler un faux pincement.
+- Libellés : « Couloir Est · câble rouge · accès WC » n'est plus coupé en bas ; « Les mariées » tient dans sa petite zone.
+- Régression verrouillée par `tests/floor-plan.test.ts`.
+
 ### Tests
 - `tests/floor-plan.test.ts` : nouveau viewBox ; présence de toutes les zones et sorties du PDF ; aucune zone hors viewBox ; **aucune table ne chevauche une zone** ; table 1 hors plan ; grille de tables conforme au PDF ; zones de personnel remappées (Buffets → Traiteur, Table staff → Photographe).
 
