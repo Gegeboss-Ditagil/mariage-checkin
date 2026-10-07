@@ -202,9 +202,13 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
               </Link>
             )}
             {canHistory && <Link role="menuitem" href="/history" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">≡ Historique</Link>}
+            {/* "Mon mot de passe" (v1.69.0) : ouvert a TOUS les roles, sans
+                capacite -- changer SON PROPRE secret, distinct de
+                "Mots de passe" ci-dessous (reinitialiser le compte
+                d'AUTRUI, reserve a managePasswords). */}
+            <Link role="menuitem" href="/mon-mot-de-passe" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">🔑 Mon mot de passe</Link>
             {canManagePasswords && <Link role="menuitem" href="/mots-de-passe" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">🔑 Mots de passe</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Administration</Link>}
-            {!canGuestApproval && !canHistory && !canAdmin && !canManagePasswords && <p className="px-3 py-2 text-xs text-text-faint">Aucun raccourci supplémentaire</p>}
           </div>
           <button role="menuitem" type="button" onClick={handleLogout} disabled={loggingOut} className="mt-2 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-status-over hover:bg-status-over/10 disabled:opacity-40">
             {loggingOut ? 'Déconnexion…' : '⏻ Se déconnecter'}

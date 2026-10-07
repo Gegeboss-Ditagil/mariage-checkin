@@ -12,6 +12,7 @@ import { PHONE_COUNTRIES } from '@/lib/countries';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
+import { GuestContactButton } from '@/components/GuestContactButton';
 
 interface Result extends InvitationRow {
   table?: TableRow | null;
@@ -37,6 +38,10 @@ function SearchInner() {
   const router = useRouter();
   const role = useSessionRole();
   const readOnly = !hasCapability(role, 'checkin');
+  // contactGuests : admin/directeur uniquement -- appeler/texter un INVITE
+  // directement depuis cette page (retour de Gersom le 07/10/2026), distinct
+  // de callStaff/messageContacts qui portent sur le STAFF (/staff).
+  const canContactGuests = hasCapability(role, 'contactGuests');
   const params = useSearchParams();
   const modeParam = params.get('mode');
   const initialMode: Mode = modeParam === 'telephone' || modeParam === 'email' ? modeParam : 'nom';
@@ -178,7 +183,7 @@ function SearchInner() {
     const supabase = createClient();
     supabase
       .from('invitations')
-      .select('id, nom_affichage, groupe, category, tags, notes, statut, nombre_prevu, nombre_arrive, cote, table:tables(id, number, label)')
+      .select('id, nom_affichage, groupe, category, tags, notes, statut, nombre_prevu, nombre_arrive, cote, telephone, table:tables(id, number, label)')
       .order('nom_affichage')
       .then(({ data }) => {
         if (!active) return;
@@ -200,24 +205,32 @@ function SearchInner() {
 
     return (
       <li>
-        <button
-          type="button"
-          className="flex w-full items-center justify-between gap-3 py-4 text-left"
-          onClick={() => setExpandedId(expanded ? null : r.id)}
-        >
-          <div className="min-w-0">
-            <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
-            {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
-            <p className="text-sm text-text-faint">
-              {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
-              {r.nombre_prevu > 1 ? 's' : ''}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <StatusBadge statut={r.statut} />
-            <span className={'text-lg text-text-faint transition-transform' + (expanded ? ' rotate-180' : '')}>⌄</span>
-          </div>
-        </button>
+        <div className="flex items-center gap-1 py-4">
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+            onClick={() => setExpandedId(expanded ? null : r.id)}
+          >
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold">{r.nom_affichage}</p>
+              {prenoms && <p className="truncate text-xs font-medium text-accent">{prenoms}</p>}
+              <p className="text-sm text-text-faint">
+                {r.table ? 'Table ' + r.table.number : 'Sans table'} · {r.nombre_prevu} personne
+                {r.nombre_prevu > 1 ? 's' : ''}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <StatusBadge statut={r.statut} />
+              <span className={'text-lg text-text-faint transition-transform' + (expanded ? ' rotate-180' : '')}>⌄</span>
+            </div>
+          </button>
+          {/* Bouton contact SIBLING du bouton de la ligne (pas imbrique dedans
+              -- un <button>/<a> a l'interieur d'un <button> est invalide en
+              HTML, meme pattern que CallButton/MessageButton sur /staff) --
+              empeche sa propre propagation pour ne pas ouvrir/fermer la fiche
+              au passage. Reserve admin/directeur (capacite contactGuests). */}
+          {canContactGuests && r.telephone && <GuestContactButton telephone={r.telephone} name={r.nom_affichage} />}
+        </div>
 
         {expanded && (
           <div className="mb-4 rounded-xl2 bg-surface p-3 text-sm shadow-card">

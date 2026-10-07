@@ -264,3 +264,31 @@ test("l'historique (/history) est reserve a l'admin", () => {
   assert.doesNotMatch(historyRouteSource, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
 });
 
+test('contacter un invite (appel/WhatsApp/SMS) est reserve a admin et directeur', () => {
+  // v1.69.0, demande de Gersom le 07/10/2026 : "ajouter la fonctionnalite
+  // seulement pour les directeurs de festin et admin de pouvoir [contacter]
+  // un invite... dans la portion recherche des invites".
+  assert.equal(hasCapability('admin', 'contactGuests'), true);
+  assert.equal(hasCapability('directeur', 'contactGuests'), true);
+  for (const role of ['placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(hasCapability(role, 'contactGuests'), false, role + ' ne doit pas avoir contactGuests');
+  }
+
+  const searchPageSource = readFileSync(new URL('../app/search/page.tsx', import.meta.url), 'utf8');
+  assert.match(searchPageSource, /const canContactGuests = hasCapability\(role, ['"]contactGuests['"]\)/);
+  assert.match(searchPageSource, /\{canContactGuests && r\.telephone && </);
+});
+
+test("tous les roles peuvent acceder a /mon-mot-de-passe (changer son propre secret)", () => {
+  // Distinct de /mots-de-passe (reinitialiser le compte d'AUTRUI, reserve a
+  // managePasswords) -- aucune capacite ne filtre /mon-mot-de-passe.
+  for (const role of ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(canAccessPath(role, '/mon-mot-de-passe'), true, role + ' doit atteindre /mon-mot-de-passe');
+  }
+
+  const accountMenuSource = readFileSync(new URL('../components/AccountMenu.tsx', import.meta.url), 'utf8');
+  assert.match(accountMenuSource, /href="\/mon-mot-de-passe"/);
+  // Le lien n'est derriere aucune garde canXxx &&.
+  assert.doesNotMatch(accountMenuSource, /canManagePasswords && <Link role="menuitem" href="\/mon-mot-de-passe"/);
+});
+

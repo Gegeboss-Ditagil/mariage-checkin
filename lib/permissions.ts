@@ -17,6 +17,7 @@ export type Capability =
   | 'manageTags'
   | 'callStaff'
   | 'messageContacts'
+  | 'contactGuests'
   | 'markNoShow'
   | 'addInvitation'
   | 'viewHistory'
@@ -35,7 +36,7 @@ export type Capability =
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
   'moveGuests', 'mergeInvitations', 'assignOverflow', 'manageOverflow', 'manageMembers', 'manageTags', 'callStaff',
-  'messageContacts',
+  'messageContacts', 'contactGuests',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
   'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords',
@@ -84,7 +85,12 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // passe... sauf aux admins" -- voir canResetPassword ci-dessous, qui
   // applique cette exclusion (jamais cette seule capacite, qui ne porte que
   // sur l'acces a l'ecran/l'API, pas sur la cible autorisee).
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords'],
+  // contactGuests ajoutee le 07/10/2026 (retour de Gersom) : "ajouter la
+  // fonctionnalite seulement pour les directeurs de festin et admin de
+  // pouvoir [appeler/texter] un invite, un peu comme les gens du staff" --
+  // appeler/texter un INVITE (/search), distincte de callStaff/
+  // messageContacts qui portent sur le STAFF (/staff, /plan-table).
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'contactGuests'],
   // viewAgenda ajoutee le 14/09/2026 (retour de Gersom sur Agent001, verifie
   // en base -- role reellement `placeur` : la barre du bas calque
   // desormais le comportement contextuel de directeur -- voir
@@ -174,9 +180,14 @@ export function landingPathForRole(role: Role): string {
 // '/mots-de-passe' ajoute le 03/10/2026 (directeur gagne managePasswords) --
 // reste filtre plus bas par hasCapability(role, 'managePasswords'), jamais
 // atteignable par placeur (meme liste) sans cette capacite.
+// '/mon-mot-de-passe' ajoute le 07/10/2026 : changer SON PROPRE mot de
+// passe/PIN, ouvert a TOUS les roles (present dans les trois listes de
+// prefixes ci-dessous) -- aucune capacite ne le filtre, contrairement a
+// '/mots-de-passe' (reinitialiser le mot de passe d'AUTRUI, reserve a
+// managePasswords).
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/mots-de-passe', '/api',
+  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/mots-de-passe', '/mon-mot-de-passe', '/api',
 ];
 
 // '/agenda' ajoute le 03/09/2026 (agent_checkin gagne viewAgenda en lecture
@@ -186,10 +197,10 @@ const FULL_STAFF_PREFIXES = [
 // facon par hasCapability(role, 'viewGuestApprovals').
 const SCAN_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/agenda', '/approbations', '/api',
+  '/plan-table', '/exceptions', '/agenda', '/approbations', '/mon-mot-de-passe', '/api',
 ];
 
-const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/approbations', '/api'];
+const READ_ONLY_PREFIXES = ['/dashboard', '/tables', '/plan-table', '/staff', '/search', '/approbations', '/mon-mot-de-passe', '/api'];
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(prefix + '/');

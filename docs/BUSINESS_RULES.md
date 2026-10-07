@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.68.2**
-**Dernière mise à jour : 2026-10-05**
+**Version documentaire : 1.69.0**
+**Dernière mise à jour : 2026-10-07**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -59,7 +59,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Voir les étiquettes déjà posées | Oui | Oui | Oui | Oui | Oui |
 | Ajouter/retirer une étiquette | Oui | Non | Non | Non | Non |
 | Fusionner deux invitations | Oui | Non | Non | Non | Non |
-| Envoyer un message WhatsApp/SMS | Oui | Non | Non | Non | Non |
+| Envoyer un message WhatsApp/SMS (au staff, `/staff`/`/plan-table`) | Oui | Non | Non | Non | Non |
+| Contacter un invité — appel/WhatsApp/SMS (`/search`) | Oui | Oui | Non | Non | Non |
 | Utiliser l'écran Placement | Oui | Oui | Oui | Non | Non |
 | Écran Staff (consultation + check-in) | Oui | Oui | Oui | Oui | Oui (lecture seule) |
 | Agenda du jour J (`/agenda`), lecture | Oui | Oui | Non | Oui (depuis v1.40.0) | Non |
@@ -68,7 +69,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
-| Réinitialiser un mot de passe/PIN (`/mots-de-passe`) | Oui (sauf voir ci-dessous) | Oui (sauf admin) | Non | Non | Non |
+| Réinitialiser le mot de passe/PIN d'AUTRUI (`/mots-de-passe`) | Oui (sauf voir ci-dessous) | Oui (sauf admin) | Non | Non | Non |
+| Modifier SON PROPRE mot de passe/PIN (`/mon-mot-de-passe`) | Oui | Oui | Oui | Oui | Oui |
 | Invité surprise (photo + approbation SMS/WhatsApp, `/scan`, `/approbations`) | Oui | Oui | Oui | Non | Non |
 | Supprimer une demande d'invité surprise déjà décidée (`/approbations`) | Oui | Oui (depuis v1.57.0) | Oui (depuis v1.57.0) | Non | Non |
 
@@ -83,6 +85,10 @@ Depuis v1.55.0, un élément d'agenda peut être marqué `is_private` (`agenda_i
 Depuis v1.65.0 (03/10/2026), un écran dédié `/mots-de-passe` (capacité `managePasswords`, admin/directeur) permet de réinitialiser le PIN d'un autre compte en générant un code à 4 chiffres aléatoire — jamais une saisie manuelle, jamais consultable en clair une fois généré. La portée exacte (`lib/permissions.ts`, `canResetPassword`) : un admin ou un directeur « normal » peut réinitialiser n'importe quel compte **sauf un autre admin** ; un seul compte admin (`users.is_super_admin`, migration `0059`, confirmé explicitement par Gersom comme le compte « Admin » / gersomdos@gmail.com — son compte personnel « Dos » reste un admin ordinaire, séparation volontaire des pouvoirs) peut réinitialiser n'importe qui, y compris un autre admin, **et** consulter un indice anonymisé (`pin_reset_hint`, seulement les deux derniers chiffres, le reste en astérisques) du dernier code généré pour un compte — jamais le PIN réel ni une valeur réversible, uniquement pour rappeler un code déjà communiqué avant de réinitialiser pour de bon. `/admin/users` (création de compte, changement de rôle, édition libre du PIN/email/mot de passe) reste réservé à `role === 'admin'` (directeur n'y a jamais accès, `adminPanel` lui manque — `/mots-de-passe` reste donc sa SEULE porte d'entrée vers la réinitialisation). Sur `/login`, un bouton « Mot de passe oublié ? » révèle un texte statique renvoyant vers un directeur de festin — aucun flux de réinitialisation en libre-service. Depuis v1.65.1, ce texte nomme explicitement Rémy Landu et Tuzola Saviera (demande de Gersom), plutôt que le terme générique « les directeurs de festin ».
 
 Depuis v1.67.4 (retour de Gersom sur `/admin/users` : « on peut réinitialiser, on peut aussi modifier. On a le choix »), la fiche d'édition d'un compte sur `/admin/users` gagne elle aussi un bouton « Réinitialiser » (même route `POST /api/passwords`, même `canResetPassword`/`canViewPasswordHint` en seule source de vérité, gated par le `canReset`/`hint` désormais aussi renvoyés par `GET /api/admin/users`) — admin choisit directement, au même endroit, entre réinitialiser (code aléatoire généré) ou modifier manuellement (champ existant depuis toujours). Additif : `/mots-de-passe` reste entièrement inchangé et atteignable. **Bug réel trouvé et corrigé au passage** : `POST /api/passwords` écrivait toujours `pin_hash`, même pour une cible `admin` — un champ que la connexion admin (`email` + `password_hash`) ne lit jamais ; réinitialiser un admin (réservé à `is_super_admin`) affichait donc un « nouveau code » sans aucun effet réel sur sa connexion. Corrigé en branchant sur `target.role === 'admin'` pour écrire `password_hash` dans ce cas.
+
+Depuis v1.69.0 (07/10/2026, retour de Gersom : « j'aimerais que les gens aient la possibilité de modifier leur mot de passe eux-mêmes »), un écran `/mon-mot-de-passe` (aucune capacité — ouvert à **tous** les rôles) permet à chaque compte de changer SON PROPRE secret, en reprouvant d'abord le secret **actuel** (`POST /api/account/password`, `verifySecret` avant tout changement — jamais une réinitialisation à l'aveugle comme `/mots-de-passe`). Lien « 🔑 Mon mot de passe » toujours visible dans le menu du compte, distinct du lien « 🔑 Mots de passe » (réservé à `managePasswords`, réinitialise le compte d'AUTRUI).
+
+Depuis v1.69.0, `admin` et `directeur` peuvent aussi **contacter directement un invité** (capacité dédiée `contactGuests`, distincte de `callStaff`/`messageContacts` qui portent sur le STAFF) depuis `/search` : un bouton unique sur chaque ligne d'invité dont le téléphone est connu révèle le choix Appeler/WhatsApp/SMS (jamais un canal présélectionné), précédé d'un petit drapeau du pays déduit de l'indicatif international déjà stocké dans `invitations.telephone` (`lib/countries.ts`, `countryForPhone`/`flagEmoji` — aucune nouvelle donnée à importer, l'indicatif fait déjà partie du numéro tel que WithJoy l'exporte). `users.phone` (migration `0063`, nouvelle colonne nullable) stocke par ailleurs le téléphone du STAFF quand il est identifiable avec certitude par correspondance de nom avec `invitations.telephone` — purement une donnée de référence, jamais lue par la connexion elle-même.
 
 Depuis v1.67.0 (03/10/2026), `POST /api/auth/login` verrouille un compte (les deux modes, `pin` et `password`) après **10 tentatives de connexion consécutives échouées** — voir `lib/loginLockout.ts`. Portée volontairement **par compte** (`nom_affichage`/`email`), jamais par adresse IP (éviterait de bloquer tout le staff partageant le même Wi-Fi de la salle). Verrouillage de **15 minutes**, confirmé explicitement par Gersom plutôt que deviné — un verrouillage permanent nécessitant une réinitialisation manuelle aurait risqué de bloquer durablement un agent distrait le jour du mariage. Le compteur se remet à zéro après une connexion réussie, ou tout seul une fois le verrouillage expiré (jamais un reverrouillage immédiat à la première tentative suivante). Un verrouillage déclenché est journalisé (`app_logs`, niveau `warn`, consultable sur `/admin/logs`) pour que Gersom puisse repérer une vraie tentative de sabotage, jamais seulement une erreur de saisie.
 
