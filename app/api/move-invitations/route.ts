@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
+import { hasCapability } from '@/lib/permissions';
 
 /**
  * Variante en lot de /api/move-invitation : deplace plusieurs invitations
@@ -10,7 +11,9 @@ import { getSessionUser } from '@/lib/session';
  */
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !['admin', 'directeur', 'placeur'].includes(user.role)) {
+  // v1.72.1 : capacité centralisée (lib/permissions.ts) au lieu d'une liste
+  // de rôles recopiée ici -- mêmes rôles autorisés qu'avant.
+  if (!user || !hasCapability(user.role, 'moveGuests')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

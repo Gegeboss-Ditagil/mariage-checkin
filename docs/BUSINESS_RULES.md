@@ -35,7 +35,7 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 
 ## Étiquettes d'une invitation
 
-- Depuis `/checkin/[invitationId]`, la section « 🏷️ Étiquettes » permet d'ajouter/retirer n'importe quelle étiquette (capacité dédiée `manageTags` — admin, directeur, placeur; **pas agent scan**, retiré le 23/08/2026 sur demande explicite de Gersom : ce rôle est là pour scanner/checker, pas pour reclassifier les invités), avec des raccourcis pour les étiquettes courantes : `Côté_Gege`, `Côté_Nelly`, `SERVICES` (Staff), `Photographe`, `Prestataire`, `DJ_Animation` (Animation) et `notable` (Sans table). But : pouvoir marquer sur place (photographe, prestataire, animation trouvés le jour J...) qui fait partie du staff, sans attendre un réimport CSV. `manageTags` était auparavant confondu avec `manageMembers` (renommer, gérer les membres du groupe) — les deux capacités restent identiques pour admin/directeur/placeur ; agent scan n'a plus ni l'une ni l'autre depuis le 14/09/2026 (`manageMembers` retirée ce jour-là, `manageTags` déjà retirée le 23/08/2026).
+- Depuis `/checkin/[invitationId]`, la section « 🏷️ Étiquettes » permet d'ajouter/retirer n'importe quelle étiquette (capacité dédiée `manageTags` — admin et directeur uniquement depuis v1.30.1, **ni placeur ni agent scan**, retiré le 23/08/2026 sur demande explicite de Gersom : ce rôle est là pour scanner/checker, pas pour reclassifier les invités), avec des raccourcis pour les étiquettes courantes : `Côté_Gege`, `Côté_Nelly`, `SERVICES` (Staff), `Photographe`, `Prestataire`, `DJ_Animation` (Animation) et `notable` (Sans table). But : pouvoir marquer sur place (photographe, prestataire, animation trouvés le jour J...) qui fait partie du staff, sans attendre un réimport CSV. `manageTags` était auparavant confondu avec `manageMembers` (renommer, gérer les membres du groupe) — `manageMembers` appartient à admin/directeur/placeur, `manageTags` à admin/directeur seulement ; agent scan n'a plus ni l'une ni l'autre depuis le 14/09/2026 (`manageMembers` retirée ce jour-là, `manageTags` déjà retirée le 23/08/2026).
 - `Côté_Gege` et `Côté_Nelly` sont mutuellement exclusifs et synchronisent directement la colonne `cote` (comme à l'import With Joy) ; ajouter l'un retire automatiquement l'autre.
 - Ajouter une étiquette de rôle (tout ce qui n'est ni un tag de table `Txxx`/`Fxxx` ni un tag « non-rôle » connu — `notable`, les tags de côté, SMS, cortège, etc. — voir `scripts/build_plan_from_csv.py`) place automatiquement l'invitation en `category = 'Staff'`, exactement comme à l'import. Retirer une étiquette de rôle ne repasse `category` à `null` que si c'était la **dernière** étiquette de rôle restante — jamais si l'invitation garde un autre rôle, pour ne pas désindividualiser silencieusement un vrai membre du staff.
 - `notable` n'a aucun effet automatique sur `category` ou `cote` : il sert uniquement à afficher « Sans table » sur `/staff`, indépendamment du fait que l'invitation soit déjà `category = 'Staff'` ou non.
@@ -43,27 +43,30 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 
 ## Rôles
 
+**Tableau vérifié ligne par ligne contre `lib/permissions.ts` le 07/10/2026 (v1.72.1)** — il contenait plusieurs lignes périmées (ajout d'invitation, renommage, étiquettes, agenda du placeur). Il est désormais verrouillé par `tests/qa-role-matrix.test.ts` : toute évolution de droits doit modifier le code, ce tableau et ce test dans le même lot. « Approbateur » = rôle technique `visibilite`, « Agent scanner » = `agent_checkin`.
+
 | Capacité | Admin | Directeur | Placeur | Agent scanner | Approbateur |
 |---|---:|---:|---:|---:|---:|
 | Destination après connexion | Scan | Dashboard | Scan | Scan | Dashboard |
 | Scanner un QR | Oui | Oui | Oui | Oui | Non |
 | Rechercher et consulter tables/invités | Oui | Oui | Oui | Oui | Oui |
 | Confirmer/corriger/annuler un check-in | Oui | Oui | Oui | Oui | Non |
-| Gérer les membres et absences | Oui | Oui | Oui | Oui | Non |
+| Marquer une absence (« ne viendra pas ») | Oui | Oui | Oui | Oui | Non |
+| Renommer une invitation / gérer les membres du groupe | Oui | Oui | Oui | Non (depuis le 14/09/2026) | Non |
 | Affecter un débordement pendant le check-in | Oui | Oui | Oui | Oui | Non |
-| Déplacer un groupe | Oui | Oui | Oui | Non | Non |
+| Déplacer un groupe ou une personne | Oui | Oui | Oui | Non | Non |
 | Transférer/échanger plusieurs invitations en lot | Oui | Oui | Oui | Non | Non |
 | Réorganiser un débordement déjà affecté | Oui | Oui | Oui | Non | Non |
-| Ajouter une invitation individuelle | Oui | Non | Non | Non | Non |
-| Renommer une invitation | Oui | Oui | Oui | Oui | Non |
+| Ajouter une invitation (`/tables/add`, « + Invité ») | Oui | Oui (depuis le 02/09/2026) | Non | Non | Non |
 | Voir les étiquettes déjà posées | Oui | Oui | Oui | Oui | Oui |
-| Ajouter/retirer une étiquette | Oui | Non | Non | Non | Non |
+| Ajouter/retirer une étiquette | Oui | Oui (v1.30.1) | Non | Non | Non |
 | Fusionner deux invitations | Oui | Non | Non | Non | Non |
-| Envoyer un message WhatsApp/SMS (au staff, `/staff`/`/plan-table`) | Oui | Non | Non | Non | Non |
+| Appeler le staff (`/staff`, `/plan-table`) | Oui | Oui | Non | Non | Non |
+| Envoyer un message WhatsApp/SMS au staff | Oui | Non | Non | Non | Non |
 | Contacter un invité — appel/WhatsApp/SMS (`/search`) | Oui | Oui | Non | Non | Non |
 | Utiliser l'écran Placement | Oui | Oui | Oui | Non | Non |
-| Écran Staff (consultation + check-in) | Oui | Oui | Oui | Oui | Oui (lecture seule) |
-| Agenda du jour J (`/agenda`), lecture | Oui | Oui | Non | Oui (depuis v1.40.0) | Non |
+| Écran Staff (consultation + check-in) | Oui (tous) | Oui (tous) | Oui (sans table) | Oui (sans table) | Oui (tous, lecture seule) |
+| Agenda du jour J (`/agenda`), lecture | Oui | Oui | Oui (depuis le 14/09/2026) | Oui (depuis le 03/09/2026) | Non |
 | Agenda du jour J (`/agenda`), modification | Oui | Oui | Non | Non | Non |
 | Historique (`/history`) | Oui | Non | Non | Non | Non |
 | Exceptions | Oui | Oui | Oui | Oui | Non |
@@ -71,8 +74,13 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
 | Réinitialiser le mot de passe/PIN d'AUTRUI (`/mots-de-passe`) | Oui (sauf voir ci-dessous) | Oui (sauf admin) | Non | Non | Non |
 | Modifier SON PROPRE mot de passe/PIN (`/mon-mot-de-passe`) | Oui | Oui | Oui | Oui | Oui |
-| Invité surprise (photo + approbation SMS/WhatsApp, `/scan`, `/approbations`) | Oui | Oui | Oui | Non | Non |
+| Invité surprise — prendre la photo et soumettre (`/scan`, `/checkin`) | Oui | Oui | Oui | Non (renvoie vers un placeur) | Non |
+| Invité surprise — consulter les demandes (`/approbations`) | Oui | Oui | Oui | Oui (lecture) | Oui |
+| Invité surprise — approuver/refuser dans l'app | Oui | Oui | Non | Non | Oui |
+| Invité surprise — choisir/assigner la table | Oui | Oui | Oui | Non | Oui |
 | Supprimer une demande d'invité surprise déjà décidée (`/approbations`) | Oui | Oui (depuis v1.57.0) | Oui (depuis v1.57.0) | Non | Non |
+
+Depuis v1.72.1, les écrans d'écriture sous `/tables` exigent la capacité de leur action (et plus seulement le préfixe `/tables`) : `/tables/add` → ajout d'invitation, `/tables/move…`/`/tables/move-multiple`/`/tables/move-guest` → déplacement, `/tables/overflow` → réorganisation d'un débordement. Un rôle sans la capacité est renvoyé vers son écran d'arrivée, comme pour tout chemin hors matrice.
 
 Depuis le 30/08/2026 (v1.26.0), `Historique` (`/history`, capacité `viewHistory`) est réservé à l'admin — demande explicite de Gersom, retiré du socle commun directeur/placeur/agent scan qui l'avaient jusque-là comme `Exceptions`. Un accès direct par URL pour un autre rôle est renvoyé vers l'écran par défaut de ce rôle par le middleware.
 
