@@ -171,7 +171,7 @@ export default function ImportWithJoyPage() {
 
             <div className="card space-y-1 p-4 text-sm text-text-muted">
               <p>{report.officiellesCount} / 400 places officielles</p>
-              <p>{report.reserveCount} personnes en réserve (table 1, excédentaire)</p>
+              <p>{report.reserveCount} personnes en réserve (tables 1 et 42, excédentaires)</p>
               <p>{report.withFixedTable} invitations confirmées par tag T/Fxxx</p>
               <p>{report.withoutTable} personnes volontairement sans table</p>
               <p>{report.declinedCount} personnes ayant décliné, exclues de l’import</p>

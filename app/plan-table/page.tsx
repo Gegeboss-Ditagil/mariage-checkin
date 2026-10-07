@@ -68,11 +68,11 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
 
 const PULL_THRESHOLD = 70;
 
-// Cible actuelle (v1.71.0, 07/10/2026, migration 0064, demande de Gersom) :
-// la table 1 « Maquela do Zombo » est l'unique réserve « excédentaire »
-// (vide), les tables normales sont 2 à 41 et la table 42 est désactivée
-// (capacité 0, masquée). 40 tables officielles x 10 = 400 invités
-// « officiels » — le reste passe dans la réserve, table 1.
+// Cible actuelle (v1.72.0, 07/10/2026, migration 0066, demande de Gersom) :
+// les tables 1 « Maquela do Zombo » et 42 sont les deux réserves
+// « excédentaires » (vides), les tables normales sont 2 à 41. 40 tables
+// officielles x 10 = 400 invités « officiels » — le reste passe dans les
+// réserves (420 places au total).
 const CAPACITE_OFFICIELLE = 400;
 
 export default function PlanTablePage() {

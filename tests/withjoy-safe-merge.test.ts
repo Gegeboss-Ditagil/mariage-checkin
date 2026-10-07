@@ -118,3 +118,12 @@ test('nom inconnu mais groupe With Joy déjà présent : à vérifier, jamais aj
   assert.equal(merge.toReview.length, 1);
   assert.equal(merge.toReview[0].existingInvitationName, 'Roger (Amy Eliano) Culumbu');
 });
+
+// v1.72.0 : deux réserves -- table 1 d'abord, puis table 42.
+test('mise à jour sûre : table du tag pleine et table 1 pleine -> réserve table 42', () => {
+  const withReserve42 = [...tables({ 30: 10, 1: 10 }), { number: 42, capacity: 10, used: 0 }];
+  const plan = buildImportPlan(parseCsvText(csv([['p-new', 'Roger', 'Makongo', '', '', 'Oui', 'T030']])));
+  const merge = buildSafeMergePlan(plan, existing, withReserve42);
+  assert.equal(merge.additions[0].tableNumber, 42);
+  assert.equal(merge.additions[0].reason, 'reserve');
+});

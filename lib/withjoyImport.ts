@@ -6,11 +6,15 @@
 // table 42 est desactivee (capacite 0, masquee). 40 x 10 = 400 places
 // officielles, 410 avec la reserve.
 export const NB_TABLES_INVITES = 40;
-export const NB_TABLES_RESERVE = 1;
-export const RESERVE_TABLE_NUMBER = 1;
-export const TOTAL_TABLE_NUMBERS = NB_TABLES_INVITES + NB_TABLES_RESERVE;
+// v1.72.0 (migration 0066) : DEUX réserves excédentaires -- la table 1
+// « Maquela do Zombo » et la table 42 (réactivée, sous la table 1 sur le PDF
+// seatplan.io (8)). Tables normales 2 à 41 : 400 places officielles, 420 avec
+// les réserves. La table 1 est remplie avant la 42.
+export const NB_TABLES_RESERVE = 2;
+export const RESERVE_TABLE_NUMBERS: readonly number[] = [1, 42];
+export const TOTAL_TABLE_NUMBERS = 42;
 export function isReserveTableNumber(table: number): boolean {
-  return table === RESERVE_TABLE_NUMBER;
+  return RESERVE_TABLE_NUMBERS.includes(table);
 }
 export const CAPACITY = 10;
 export const CAPACITE_OFFICIELLE = NB_TABLES_INVITES * CAPACITY;
@@ -376,7 +380,7 @@ export function buildImportPlan(rows: Record<string, string>[]): ImportPlan {
   // Tables normales 2-41 d abord, la reserve (table 1) en tout dernier recours.
   const pool = Array.from({ length: TOTAL_TABLE_NUMBERS }, (_, index) => index + 1)
     .filter((table) => !isReserveTableNumber(table) && !labeledTables.has(table));
-  const reserve = [RESERVE_TABLE_NUMBER];
+  const reserve = [...RESERVE_TABLE_NUMBERS];
   const clusterEntries = Array.from(clusters.entries()).sort((a, b) =>
     b[1].reduce((sum, group) => sum + group.size, 0) - a[1].reduce((sum, group) => sum + group.size, 0)
   );
@@ -406,7 +410,7 @@ export function buildImportPlan(rows: Record<string, string>[]): ImportPlan {
   allGroups.forEach((group) => { parCote[group.cote] += group.size; });
   const overCapacity = Array.from(tableUsed.entries()).filter(([, used]) => used > CAPACITY).map(([table, used]) => ({ table, used }));
   const officiellesCount = Array.from(tableUsed.entries()).filter(([table]) => !isReserveTableNumber(table)).reduce((sum, [, used]) => sum + used, 0);
-  const reserveCount = tableUsed.get(RESERVE_TABLE_NUMBER) || 0;
+  const reserveCount = RESERVE_TABLE_NUMBERS.reduce((sum, table) => sum + (tableUsed.get(table) || 0), 0);
 
   return {
     report: {

@@ -10,11 +10,11 @@ import { TABLE_SEAT_NAMES } from '../lib/floorPlanSeats.ts';
 // (celle-ci reste invitations.table_id, cf.
 // docs/DATA_CHANGE_INSTRUCTIONS.md section 6).
 
-test('TABLE_SEAT_NAMES couvre exactement les 41 tables (plus de table 42, v1.71.0)', () => {
+test('TABLE_SEAT_NAMES couvre exactement les 42 tables (réserves 1 et 42 vides, v1.72.0)', () => {
   const keys = Object.keys(TABLE_SEAT_NAMES).map(Number);
-  assert.equal(keys.length, 41, 'doit couvrir exactement les 41 tables');
-  assert.equal(TABLE_SEAT_NAMES[42], undefined, 'la table 42 est desactivee (migration 0064)');
-  for (let n = 1; n <= 41; n++) {
+  assert.equal(keys.length, 42, 'doit couvrir exactement les 42 tables');
+  assert.ok(TABLE_SEAT_NAMES[42].every((seat) => seat === null), 'la table 42 (réserve) est vide');
+  for (let n = 1; n <= 42; n++) {
     assert.ok(TABLE_SEAT_NAMES[n], `table ${n} doit avoir une entree`);
     assert.ok(TABLE_SEAT_NAMES[n].length >= 1, `table ${n} doit avoir au moins un siege`);
   }

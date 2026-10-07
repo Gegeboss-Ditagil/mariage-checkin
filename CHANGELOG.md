@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.72.0] — 2026-10-07
+
+Demande explicite de Gersom, avec le nouvel export seatplan.io (« seating-chart … (8).pdf ») : « on va remettre la table 1 comme excédentaire, donc 1 et 42 excédentaires ».
+
+### Données — production Supabase (migration `0066`, exécutée et vérifiée le 07/10/2026)
+- **Deux réserves « excédentaires » : table 1 « Maquela do Zombo » et table 42** (vides, capacité 10 chacune). La table 42, désactivée par `0064` (capacité 0) le matin même, est réactivée (capacité 10, réserve, libellé effacé). Tables 2 à 41 normales : **400 places officielles, 420 avec les réserves**. Aucune invitation déplacée.
+- Sauvegarde préalable : `import_backups` (`snapshot->>'kind' = 'v1.72.0_reserves_1_42'`).
+
+### Changé — plan de salle (PDF (8))
+- Comparaison complète avec le PDF (7) (projection géométrique d'un PDF sur l'autre) : **toutes les zones et les 41 autres tables sont identiques**, seuls changent **l'ajout de la table 42** (colonne de droite du bloc Sud, juste sous la table 1) et le **Couloir Sud – Chapiteau, réduit en bande** pour lui laisser la place.
+- Table 42 dessinée sous la table 1, même colonne, contour en pointillés et mention « réserve » (comme la table 1).
+
+### Changé — réserves dans l'app
+- Import With Joy : réserves `RESERVE_TABLE_NUMBERS = [1, 42]` (table 1 remplie avant la 42), tags T001 à T042 acceptés (T043 hors plage), 420 places au total.
+- Mise à jour sûre : un nouvel invité dont la table est pleine va en table 1, puis en table 42.
+- Textes : « tables 1 et 42, excédentaires » (import), commentaire de capacité de `/plan-table` (400 officielles inchangées). Le filtre `capacity > 0` des listes reste en place (sans effet sur la 42 désormais active).
+
+### Tests
+- `tests/floor-plan.test.ts`, `tests/floor-plan-seats.test.ts`, `tests/withjoy-import.test.ts`, `tests/withjoy-safe-merge.test.ts`, `tests/table1-reserve-v1-71.test.ts` mis à jour (42 tables, réserves 1 puis 42).
+
+Migration : `0066_table42_reserve_again_with_table1.sql` (exécutée et vérifiée en production le 07/10/2026).
+
 ## [1.71.2] — 2026-10-07
 
 Demandes explicites de Gersom : « supprime Cedrix » ; « Ya Maguy est en réalité Celestina Mundanda Nsita » (capture With Joy : « Maguy Celestina Mundanda Nsita », titulaire de la famille, table T028).

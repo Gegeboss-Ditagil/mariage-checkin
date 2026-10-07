@@ -1,6 +1,6 @@
 # Données, Supabase, Google Sheets et formulaires
 
-**Version documentaire : 1.71.0**
+**Version documentaire : 1.72.0**
 **Dernière mise à jour : 2026-10-07**
 
 Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant toute modification. Supabase est la source utilisée en production; Google Sheets sert à préparer et réviser le placement. Il n'existe pas de synchronisation automatique implicite.
@@ -11,11 +11,11 @@ Lire `BUSINESS_RULES.md`, `VERSIONING.md` et `DATA_CHANGE_INSTRUCTIONS.md` avant
 
 ## État de référence v1.68.2 (mis à jour depuis v1.47.0/v1.68.0)
 
-- 41 tables actives (v1.71.0, 07/10/2026, migration `0064`) ; la table 42 est désactivée (capacité 0, masquée).
+- 42 tables actives (v1.72.0, 07/10/2026, migration `0066`).
 - Tables 2 à 41 : normales.
-- Table 1 « Maquela do Zombo » : seule réserve « excédentaire », vide, capacité 10.
+- Tables 1 « Maquela do Zombo » et 42 : réserves « excédentaires », vides, capacité 10 chacune.
 - Capacité officielle : 400 places.
-- Capacité absolue avec réserve : 410 places.
+- Capacité absolue avec réserves : 420 places.
 - La table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives — voir `supabase/migrations/0062`, qui inverse `0061` sans perte des 13 références historiques dans `audit_logs.table_id` (la table 42 n'avait jamais été supprimée, seulement décommissionnée).
 - Toute évolution structurelle doit être reflétée dans une migration GitHub et dans `CHANGELOG.md`.
 

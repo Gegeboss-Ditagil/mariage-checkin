@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.71.2**
+**Version documentaire : 1.72.0**
 **Dernière mise à jour : 2026-10-07**
 
 Avant toute modification, lire dans cet ordre :
@@ -148,6 +148,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.71.0 : **table 1 « Maquela do Zombo » = unique réserve excédentaire (vide), tables 2-41 normales (400 places officielles, 410 avec réserve), table 42 désactivée (capacité 0) et masquée partout** (`gt('capacity', 0)` sur toutes les listes de tables) — migration `0064` exécutée et vérifiée en production le 07/10/2026 (sauvegarde `import_backups` kind `v1.71.0_table1_reserve`), avec Roger Makongo ajouté (table 30), Luzolo Patrick Menga 36 → 31, Steven Kimbau retiré (PDF). Ne pas réexécuter manuellement. Plan de salle refait sur l'export Tabloid du 07/10 (`pdfToPlan` origine (200,70) ×1,5, noms des objets du PDF, grille alignée, table 1 « réserve »). Import With Joy : nouvelle « mise à jour sûre » (`lib/withjoySafeMerge.ts`, mode API `safe-apply`) qui n'ajoute que les absents, ne supprime ni ne remet rien à zéro et fonctionne le jour J ; le remplacement complet reste réservé à Préparation/Test. Lectures Supabase navigateur limitées à 15 s (`fetchWithTimeout`) pour les réseaux faibles.
 - v1.71.1 : « mise à jour sûre » With Joy — nom inconnu mais groupe With Joy déjà en base → « À vérifier », jamais ajouté (évite les doublons de personnes renommées, ex. « Artiste Amy Eliano ») ; réseau faible — `lib/viewTransitionGuard.ts` coupe les View Transitions pour la session dès qu'une expire (« update callback timed out ») ou si la connexion est lente (script dans `<head>` + `GlobalErrorLogger`). Aucune migration.
 - v1.71.2 : migration `0065` exécutée et vérifiée en production le 07/10/2026 (sauvegarde `import_backups` kind `v1.71.2_cedrix_maguy`) — « Cedrix » supprimé (table 2 → 10/10), doublon « Ya Maguy Mundanda Nsita » supprimé (= « Maguy Celestina Mundanda Nsita » de la Famille Mundanda Nsita, table 28 → 10/10). Plus aucune table en surcapacité. Ne pas réexécuter manuellement. `gh` installé sur le poste.
+- v1.72.0 : **réserves = tables 1 « Maquela do Zombo » et 42** (migration `0066` exécutée et vérifiée en production le 07/10/2026, sauvegarde `import_backups` kind `v1.72.0_reserves_1_42`) — la 42 est réactivée (capacité 10) et dessinée sous la table 1 (PDF seatplan.io (8), qui ne change par ailleurs que le Couloir Sud, réduit en bande). Tables 2-41 normales : 400 places officielles, 420 absolues. `RESERVE_TABLE_NUMBERS = [1, 42]` / `isReserveTableNumber` dans `lib/withjoyImport.ts` (import, mise à jour sûre, plan). Ne pas réexécuter la migration manuellement.
 
 ## Reprise rapide pour Claude AI
 
