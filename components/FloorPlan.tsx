@@ -1,87 +1,102 @@
 'use client';
 
 import clsx from 'clsx';
+import { TABLE_SEAT_NAMES } from '@/lib/floorPlanSeats';
 
-// Coordonnees du plan de la salle, redessinees a la main a partir des photos
-// annotees fournies par Gersom (23/08/2026, puis mise a jour du 23/08/2026
-// avec numerotation ajustee + nouvelles zones ; puis correctif du 24/08/2026
-// sur l'emplacement des tables 34/35/36/37, confirme par Gersom apres
-// relecture du rendu) -- schema simplifie, pas une trace pixel par pixel de
-// la photo, que l'app ne peut pas embarquer.
-// Systeme de coordonnees SVG propre a ce composant, en unites arbitraires
-// (viewBox 0 0 1750 1080, elargi de 1400 en v1.68.0 pour les 2 blocs de
-// tables cote a cote), sans rapport avec les coordonnees Supabase.
+// Plan de la salle. Systeme de coordonnees SVG propre a ce composant, sans
+// rapport avec les coordonnees Supabase.
 //
-// v1.68.2 (06/10/2026) : disposition entierement reconstruite depuis le
-// nouvel export seatplan.io (seating-chart-...-2026-10-06_1.pdf, vectoriel)
-// + guest-list_58.csv, remplacant la disposition en 4 zones cardinales de
-// v1.68.0 -- retour de Gersom : "disposition of table have changed, most of
-// the table that where in the south zone are now in the north zone and
-// vice-versa". Le nouveau PDF dessine une seule grille de 6 colonnes x 8
-// rangees (pas 2 blocs cote a cote), separee en deux moities par l'Allee
-// centrale deja dessinee ci-dessous -- schema simplifie reprenant l'ORDRE de
-// lecture exact des coordonnees du PDF (texte vectoriel, pas une photo),
-// jamais une trace pixel par pixel :
-//   Au-dessus de l'allee (rangees 1-4) : 25,24,39,14,19,17 / 11,3,10,18,34,37
-//                                        / 4,12,16,22,23 / 5,9,21,20,35
-//   Au-dessous de l'allee (rangees 5-8) : 2,6,13,29,40 / 33,32,8,28,38
-//                                        / 30,36,7,15,42 / 31,41,26,27
-// Confirme avec Gersom avant d'ecrire quoi que ce soit : la table 42 reprend
-// le role de reserve "excedentaire" (vide sur ce PDF), la table 41 devient
-// une table normale desormais occupee -- voir migration 0062, qui inverse
-// 0061. La table 1 n'apparait nulle part sur ce nouveau PDF ni dans le CSV
-// (tags F/T de 002 a 041 seulement) -- signale a Gersom plutot que devine
-// (voir CHANGELOG v1.68.2) ; elle garde ici la seule case encore libre de la
-// grille plutot que de perdre toute position.
+// Historique : schema redessine a la main depuis des photos annotees
+// (23-24/08/2026), puis reconstruit depuis les exports seatplan.io en
+// v1.68.2 (06/10/2026 -- grille de 6 colonnes x 8 rangees separee par
+// l'Allee centrale, table 42 = reserve, table 41 = table normale, voir
+// migration 0062 ; la table 1 n'apparait nulle part sur le PDF ni dans le
+// CSV, signale a Gersom plutot que devine) et retouche en v1.69.1
+// (07/10/2026, zones peripheriques seulement, grille inchangee).
 //
-// v1.69.1 (07/10/2026) : retour de Gersom, nouveau PDF seatplan.io du
-// 07/10/2026 -- "mainly the surroundings that changed... doors etc zones...
-// vin d'honneur disposition... I also resize a bit to save". Verifie par
-// extraction du texte vectoriel (meme methode qu'en v1.68.2) : la grille de
-// tables ci-dessous (positions ET contenu des 42 tables) reste IDENTIQUE a
-// v1.68.2, confirme explicitement par Gersom ("just verify/update the
-// visual plan") -- aucun changement de placement d'invite dans ce lot.
-// Seules les SALLES/ZONES decoratives (ROOMS, plus bas) sont retouchees :
-// la zone "Vin d'honneur" retrecie (confirmee par Gersom) et sous-titree
-// "Zone de service" (nouveau PDF : "ZONE DE SERVICE VIN D'HONNEUR"),
-// "Espace discours" desormais subdivise en "Sections A . B . C" (nouveau),
-// "WCF" sous-titree "Ferme durant les discours" (nouveau). Toujours un
-// schema simplifie, jamais une trace pixel par pixel du PDF.
+// v1.70.0 (07/10/2026) : retour de Gersom, avec le PDF seatplan.io du jour
+// -- « assure-toi que la map est pareille dans l'app, il manque des détails
+// surtout dans les à-côtés, on dirait une mauvaise reproduction... fais-le
+// en détail, mets les sorties et autres comme dans ce plan. » Le plan n'est
+// plus un schema redessine a la main : chaque zone, porte, sortie et table
+// est reprise de la GEOMETRIE VECTORIELLE du PDF (position et taille de
+// chaque image de zone mesurees par pdf.js, puis ajustees aux pixels
+// colores reels ; position du texte des portes/sorties), convertie par une
+// seule transformation uniforme (pdfToPlan : origine (146, 70) en points
+// PDF, echelle x2.2 sur les DEUX axes -- proportions du PDF conservees,
+// l'ancien plan etait etire d'environ 9 % en largeur). Couleurs = palette
+// seatplan.io relevee sur le PDF. Ajouts : sorties d'urgence (x3), porte
+// d'acces chapiteau, acces toilettes, acces vers la S..., couloir Est
+// delimite par cable rouge, long rideau blanc, barre « garder acces libre »,
+// separations temporaires, extension de piste pour le show, espace
+// orchestre, sections A/B/C, Sangria, RP, PO, SO, CO, « Les mariées »,
+// mini-tables des maries / du DJ / du staff, et les chaises autour de
+// chaque table (vides en pointilles, comme les chaises vides du PDF). Les
+// zones « Cuisine » et « Zone enfants », absentes du PDF, disparaissent ;
+// les zones cliquables de personnel sont conservees sur leur equivalent du
+// PDF (Bar, DJ et animation, Buffets A/B pour le traiteur, Table staff pour
+// le photographe et les autres prestataires).
+const PLAN_ORIGIN_X = 146;
+const PLAN_ORIGIN_Y = 70;
+const PLAN_SCALE = 2.2;
+
+// Points PDF (repere de l'export seatplan.io, A4 paysage 842 x 595) ->
+// unites du plan. Seule source de conversion -- les tables ci-dessous sont
+// deja converties (litteraux entiers, relus par tests/floor-plan.test.ts).
+function pdfToPlan(x: number, y: number, w = 0, h = 0): { x: number; y: number; w: number; h: number } {
+  return {
+    x: Math.round((x - PLAN_ORIGIN_X) * PLAN_SCALE),
+    y: Math.round((y - PLAN_ORIGIN_Y) * PLAN_SCALE),
+    w: Math.round(w * PLAN_SCALE),
+    h: Math.round(h * PLAN_SCALE),
+  };
+}
+
+// Centres des tables = centre du cercle de chaque table dans le PDF du
+// 07/10/2026, passes par pdfToPlan. Meme grille et meme contenu que
+// v1.68.2/v1.69.1 -- seule la precision change.
 export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
-  // Rangees au-dessus de l'Allee centrale (6 colonnes, x:630-1130, espacement
-  // 100 ; rangees y:120-405, espacement 95).
-  25: [630, 120], 24: [730, 120], 39: [830, 120], 14: [930, 120], 19: [1030, 120], 17: [1130, 120],
-  11: [630, 215], 3: [730, 215], 10: [830, 215], 18: [930, 215], 34: [1030, 215], 37: [1130, 215],
-  // Table 1 : absente du PDF/CSV (voir en-tete) -- placee dans l'unique
-  // emplacement encore libre de la grille (colonne la plus a gauche, rangee
-  // 3), jamais isolee hors grille.
-  1: [630, 310], 4: [730, 310], 12: [830, 310], 16: [930, 310], 22: [1030, 310], 23: [1130, 310],
-  5: [730, 405], 9: [830, 405], 21: [930, 405], 20: [1030, 405], 35: [1130, 405],
-  // Rangees au-dessous de l'Allee centrale (y:540-825, espacement 95).
-  2: [730, 540], 6: [830, 540], 13: [930, 540], 29: [1030, 540], 40: [1130, 540],
-  33: [730, 635], 32: [830, 635], 8: [930, 635], 28: [1030, 635], 38: [1130, 635],
-  30: [730, 730], 36: [830, 730], 7: [930, 730], 15: [1030, 730], 42: [1130, 730],
-  31: [730, 825], 41: [830, 825], 26: [930, 825], 27: [1030, 825],
+  // Rangees au-dessus de l'Allee centrale.
+  25: [282, 95], 24: [378, 91], 39: [475, 91], 14: [572, 91], 19: [673, 91], 17: [772, 86],
+  11: [280, 197], 3: [379, 191], 10: [477, 189], 18: [573, 191], 34: [673, 190], 37: [772, 182],
+  4: [379, 287], 12: [476, 287], 16: [572, 288], 22: [672, 287], 23: [771, 282],
+  5: [379, 386], 9: [475, 385], 21: [572, 388], 20: [672, 386], 35: [773, 386],
+  // Rangees au-dessous de l'Allee centrale.
+  2: [379, 547], 6: [474, 546], 13: [573, 548], 29: [673, 548], 40: [779, 549],
+  33: [378, 649], 32: [476, 647], 8: [574, 647], 28: [674, 651], 38: [777, 649],
+  30: [381, 752], 36: [477, 750], 7: [574, 750], 15: [674, 749], 42: [775, 748],
+  31: [381, 857], 41: [478, 857], 26: [574, 858], 27: [674, 861],
+  // Table 1 : absente du PDF et du CSV depuis v1.68.2 -- gardee HORS PLAN,
+  // sous le cadre de la salle, plutot que posee sur une zone qui n'existe
+  // pas (dessinee en pointilles, libellee « hors plan »).
+  1: [60, 962],
 };
+export const OFF_PLAN_TABLES = new Set([1]);
 
-// En-tetes de zone purement decoratifs (pas de tag staff, pas de clic) --
-// distincts de ROOMS pour ne jamais etre confondus avec une zone
-// selectionnable de personnel.
+// En-tetes de zone purement decoratifs (pas de tag staff, pas de clic).
+// v1.70.0 : le PDF n'a plus d'en-tete Nord/Sud dessine -- la « zone Nord »
+// n'y apparait que dans le libelle des buffets, repris tel quel.
 export interface ZoneLabel {
   x: number;
   y: number;
   label: string;
 }
 
-export const FLOOR_PLAN_ZONE_LABELS: ZoneLabel[] = [
-  // v1.68.2 : une seule grille de tables desormais (plus 2 blocs cote a
-  // cote), donc 2 labels (Nord/Sud) au lieu des 4 zones cardinales de
-  // v1.68.0 -- places dans l'espace libre a gauche de la grille (x:420-630,
-  // meme gap que v1.68.0/v1.48.0), centres verticalement sur leur moitie de
-  // grille respective.
-  { x: 520, y: 260, label: 'Nord' },
-  { x: 520, y: 680, label: 'Sud' },
-];
+export const FLOOR_PLAN_ZONE_LABELS: ZoneLabel[] = [];
+
+// Palette seatplan.io relevee sur le PDF (pixels de chaque zone).
+export type PlanColor = 'cyan' | 'amber' | 'pink' | 'purple' | 'orange' | 'indigo' | 'lime' | 'emerald' | 'red';
+export const PLAN_COLORS: Record<PlanColor, { fill: string; text: string }> = {
+  cyan: { fill: '#06b6d4', text: '#083344' },
+  amber: { fill: '#f59e0b', text: '#451a03' },
+  pink: { fill: '#ec4899', text: '#ffffff' },
+  purple: { fill: '#a855f7', text: '#ffffff' },
+  orange: { fill: '#f97316', text: '#431407' },
+  indigo: { fill: '#6366f1', text: '#ffffff' },
+  lime: { fill: '#84cc16', text: '#1a2e05' },
+  emerald: { fill: '#10b981', text: '#022c22' },
+  red: { fill: '#ef4444', text: '#ffffff' },
+};
 
 export interface Room {
   x: number;
@@ -90,79 +105,134 @@ export interface Room {
   h: number;
   label: string;
   sub?: string;
-  // Etiquette pivotee a 90 deg : pour les couloirs/colonnes trop etroits
-  // pour un texte horizontal (ex. "Couloir Est", 45 unites de large) --
-  // sans ca le texte deborde sur les pieces voisines.
+  color: PlanColor;
+  // Cercle (Sangria, RP) au lieu d'un rectangle -- comme sur le PDF.
+  round?: boolean;
+  // Libelle pivote a 90 deg pour les bandes verticales etroites.
   vertical?: boolean;
+  // Taille du libelle principal (unites du plan) -- les bandes fines
+  // (couloirs, separations) ont un libelle plus petit pour tenir dedans.
+  labelSize?: number;
+  // Decalage vertical du libelle (unites du plan) quand le centre de la
+  // zone est occupe -- mini-table des maries/DJ, barre de sortie d'urgence
+  // qui traverse le couloir Est (meme position que le texte du PDF).
+  labelDy?: number;
   // Tag staff (deja present sur les invitations en base, voir lib/tags) --
   // present uniquement sur les zones cliquables. Cliquer la zone affiche le
   // personnel portant ce tag, sous le plan (voir app/plan-table/page.tsx).
-  // Demande de Gersom le 23/08/2026 : DJ et animation, Cuisine (traiteur),
-  // Bar et Prestataires/staff (photographe et autres) doivent pouvoir
-  // s'ouvrir ainsi, sans dupliquer de liste de roles -- on reutilise les
-  // tags deja poses lors de l'import CSV.
   staffTag?: string;
 }
 
+function room(
+  pdf: [number, number, number, number],
+  label: string,
+  color: PlanColor,
+  extra: Partial<Omit<Room, 'x' | 'y' | 'w' | 'h' | 'label' | 'color'>> = {}
+): Room {
+  const { x, y, w, h } = pdfToPlan(...pdf);
+  return { x, y, w, h, label, color, ...extra };
+}
+
+// Zones dans l'ordre de dessin du PDF. Chaque quadruplet = [x, y, largeur,
+// hauteur] en points PDF, mesure sur l'export du 07/10/2026.
 const ROOMS: Room[] = [
-  { x: 10, y: 20, w: 220, h: 320, label: 'Cuisine', staffTag: 'Traiteur' },
-  { x: 240, y: 20, w: 180, h: 90, label: 'CF' },
-  { x: 240, y: 115, w: 180, h: 105, label: 'WCH' },
-  // v1.69.1 (07/10/2026) : sub ajoute depuis le nouveau PDF seatplan.io du
-  // 07/10/2026, "WC FEMMES (FERME DURANT DISCOURS)" -- information nouvelle,
-  // jamais presente sur les plans precedents.
-  { x: 240, y: 225, w: 180, h: 115, label: 'WCF', sub: 'Fermé durant les discours' },
-  { x: 150, y: 345, w: 270, h: 75, label: 'Bar', staffTag: 'Bar' },
-  // Ancienne zone "Stockage" scindee en deux (photo annotee du 23/08/2026) :
-  // une zone enfants (pas de personnel rattache, simple espace) et une zone
-  // prestataires/staff cliquable (photographe et autres, tag Photographe).
-  { x: 10, y: 425, w: 240, h: 280, label: 'Zone enfants' },
-  {
-    x: 10,
-    y: 705,
-    w: 240,
-    h: 280,
-    label: 'Prestataires & staff',
-    sub: 'Photographe et autres',
-    staffTag: 'Photographe',
-  },
-  { x: 260, y: 425, w: 100, h: 250, label: 'Les mariés', vertical: true },
-  { x: 260, y: 680, w: 100, h: 305, label: 'DJ et animation', vertical: true, staffTag: 'DJ_Animation' },
-  // Ancienne zone "Piste de danse" scindee en deux (photo annotee du
-  // 23/08/2026) : la piste retrecit et une zone "Stage band & chanteurs"
-  // occupe le reste (pas de tag staff : aucun tag dedie en base pour
-  // l'instant, purement indicatif).
-  { x: 370, y: 425, w: 240, h: 250, label: 'Piste de danse' },
-  { x: 370, y: 675, w: 240, h: 310, label: 'Stage band & chanteurs' },
-  // v1.68.0 : "Allée centrale"/"Couloir Nord"/"Couloir Sud" elargis pour
-  // couvrir toute la largeur des 2 blocs de tables cote a cote (NO+NE en
-  // haut, SO+SE en bas, voir FLOOR_PLAN_TABLE_POSITIONS) -- la zone de
-  // tables s'etend desormais jusqu'a x=1324 au lieu de x=1030.
-  { x: 610, y: 425, w: 730, h: 90, label: 'Allée centrale' },
-  { x: 630, y: 20, w: 710, h: 60, label: 'Couloir Nord' },
-  { x: 440, y: 950, w: 900, h: 55, label: 'Couloir Sud' },
-  // Colonne/salles decoratives de droite, decalees de +320 (v1.68.0) pour
-  // degager la place necessaire aux 2 blocs de tables Nord-Est/Sud-Est.
-  { x: 1350, y: 20, w: 45, h: 940, label: 'Couloir Est', vertical: true },
-  { x: 1405, y: 20, w: 300, h: 60, label: 'Buffet A' },
-  { x: 1405, y: 90, w: 300, h: 60, label: 'Buffet B' },
-  // v1.69.1 : sub mis a jour depuis le nouveau PDF (07/10/2026) -- la zone
-  // discours est desormais explicitement subdivisee en 3 sections
-  // ("SECTION A/B/C INVITES - DISCOURS"), remplace l'ancien sous-titre
-  // generique "Orateur . Les maries".
-  { x: 1375, y: 160, w: 335, h: 130, label: 'Espace discours', sub: 'Sections A · B · C' },
-  { x: 1375, y: 300, w: 130, h: 280, label: 'Invités' },
-  { x: 1580, y: 300, w: 130, h: 280, label: 'Invités' },
-  // v1.69.1 : zone retrecie (retour de Gersom, 07/10/2026 : "I also resize a
-  // bit to save") et sous-titree "Zone de service" (nouveau PDF :
-  // "ZONE DE SERVICE VIN D'HONNEUR") -- position/largeur inchangees, seule
-  // la hauteur est reduite pour refleter le retrecissement confirme par
-  // Gersom, schema simplifie, jamais une trace pixel par pixel du PDF.
-  { x: 1375, y: 600, w: 335, h: 260, label: "Vin d'honneur", sub: 'Zone de service' },
+  // -- Cote ouest (gauche) ---------------------------------------------
+  room([161, 84, 51.5, 56], 'WC handicapés', 'cyan', { labelSize: 14 }),
+  // « WH » sur le PDF, entre le WC handicapes et le WC femmes.
+  room([162, 142.5, 57, 32], 'WC hommes', 'cyan', { sub: 'WH' }),
+  room([160, 176, 60, 36], 'WC femmes', 'cyan', { sub: 'Fermé durant les discours', labelSize: 15 }),
+  room([186, 212.5, 34, 22.5], 'Bar', 'amber', { sub: 'Repas & soirée', staffTag: 'Bar', labelSize: 15 }),
+  room([155, 269, 41, 101], 'Les mariés', 'pink', { vertical: true, labelDy: 46, labelSize: 16 }),
+  room([155.5, 373, 40.3, 109.3], 'DJ et animation', 'purple', { vertical: true, staffTag: 'DJ_Animation', labelDy: 38, labelSize: 14 }),
+  room([200, 268.5, 94, 184.5], 'Extension piste', 'orange', { sub: 'Pour le show' }),
+  room([221.5, 197.5, 76, 70], 'Piste de danse', 'orange'),
+  room([199.8, 455.5, 74.3, 25.5], 'Espace orchestre', 'indigo', { sub: 'Chanteurs · band & instruments', labelSize: 14 }),
+  // -- Circulations ----------------------------------------------------
+  room([197, 76, 340, 6.8], 'Couloir Nord', 'lime', { labelSize: 11 }),
+  room([296.8, 269.3, 224.5, 24.5], 'Allée centrale', 'lime'),
+  room([521.8, 88.8, 7.5, 344.3], 'Long rideau blanc', 'red', { vertical: true, labelSize: 11 }),
+  room([530.3, 76, 8.8, 240.5], 'Couloir Est', 'lime', { vertical: true, labelSize: 11, sub: 'câble rouge · accès WC', labelDy: 120 }),
+  room([473, 440, 56.5, 43.3], 'CO', 'lime'),
+  // -- Cote est (droite) -----------------------------------------------
+  room([550.8, 78.5, 112.3, 7.3], 'Buffet B · tables zone Nord', 'orange', { labelSize: 11, staffTag: 'Traiteur' }),
+  room([550.3, 88.8, 113.8, 7.8], 'Buffet A · tables zone Nord', 'orange', { labelSize: 11, staffTag: 'Traiteur' }),
+  room([595.5, 100, 20, 19], 'PO', 'indigo'),
+  room([592.3, 138, 24, 6.3], 'Les mariées', 'amber', { labelSize: 10 }),
+  room([644.8, 123.5, 17, 12], 'SO', 'cyan'),
+  room([525, 168.5, 143.5, 13.8], 'Garder accès libre · sortie d’urgence', 'red', { labelSize: 12 }),
+  room([547.5, 184.3, 42, 129], 'Section A', 'emerald', { sub: 'Invités · discours', labelSize: 15 }),
+  room([611.3, 186.5, 60.3, 71.5], 'Section B', 'emerald', { sub: 'Invités · discours' }),
+  room([609.5, 289.3, 62.5, 24.8], 'Section C', 'emerald', { sub: 'Si l’espace le permet', labelSize: 14 }),
+  room([530.5, 335, 148.3, 148], "Vin d'honneur", 'amber', { sub: 'Zone de service' }),
+  room([574.5, 353.3, 76.5, 6.8], 'Séparation temporaire', 'red', { labelSize: 10 }),
+  room([657.8, 361.8, 7.3, 97.3], 'Séparation temporaire', 'red', { vertical: true, labelSize: 10 }),
+  room([548.8, 468.8, 104.8, 6.5], 'Séparation temporaire', 'red', { labelSize: 10 }),
+  room([651.3, 338.5, 20.5, 20.5], 'Sangria', 'purple', { round: true, labelSize: 12 }),
+  room([656.8, 461.3, 20.5, 20.3], 'RP', 'purple', { round: true }),
 ];
 
-function centerOf(room: Room): [number, number] {
-  return [room.x + room.w / 2, room.y + room.h / 2];
+// Mini-tables hors grille dessinees sur le PDF (table des maries dans la
+// zone rose, table du DJ dans la zone violette, table du staff sous le
+// bar) -- [x, y, largeur, hauteur] en points PDF, nombre de chaises du PDF.
+interface MiniTable {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label: string;
+  seats: number;
+  // La table staff porte la zone cliquable du photographe et des autres
+  // prestataires (« No Table Staff » du PDF : assistants photo, Carla...).
+  staffTag?: string;
+}
+function miniTable(pdf: [number, number, number, number], label: string, seats: number, staffTag?: string): MiniTable {
+  const { x, y, w, h } = pdfToPlan(...pdf);
+  return { x, y, w, h, label, seats, staffTag };
+}
+const MINI_TABLES: MiniTable[] = [
+  miniTable([180.6, 243.3, 44.2, 17.1], 'Table staff', 8, 'Photographe'),
+  miniTable([170, 285, 12, 27.3], 'Mariés', 2),
+  miniTable([167.5, 382.6, 12, 27.2], 'DJ', 2),
+];
+
+// Room equivalente a la table staff, transmise a l'appelant quand on la
+// touche (app/plan-table/page.tsx affiche label/sub de la zone choisie).
+const STAFF_TABLE_ROOM: Room = {
+  x: MINI_TABLES[0].x,
+  y: MINI_TABLES[0].y,
+  w: MINI_TABLES[0].w,
+  h: MINI_TABLES[0].h,
+  label: 'Prestataires & staff',
+  sub: 'Photographe et autres',
+  color: 'amber',
+  staffTag: 'Photographe',
+};
+
+// Portes, sorties et acces ecrits sur le PDF (texte seul sur le plan
+// seatplan.io, sans zone dessinee) -- position du texte en points PDF.
+export interface PlanMarker {
+  x: number;
+  y: number;
+  icon: string;
+  label: string;
+  kind: 'exit' | 'door';
+  rotate?: number;
+}
+function marker(pdfX: number, pdfY: number, icon: string, label: string, kind: PlanMarker['kind'], rotate?: number): PlanMarker {
+  const { x, y } = pdfToPlan(pdfX, pdfY);
+  return { x, y, icon, label, kind, rotate };
+}
+export const PLAN_MARKERS: PlanMarker[] = [
+  marker(236, 88, '🚪', 'Accès toilettes', 'door'),
+  marker(292, 488, '🚨', 'Sortie d’urgence', 'exit'),
+  marker(500, 490, '🚪', 'Porte accès chapiteau', 'door'),
+  marker(662, 160, '🚨', 'Sortie d’urgence', 'exit'),
+  marker(668, 276, '➜', 'Accès vers la S…', 'door'),
+  marker(690, 420, '🚨', 'Sortie d’urgence', 'exit', 90),
+];
+
+function centerOf(r: Room): [number, number] {
+  return [r.x + r.w / 2, r.y + r.h / 2];
 }
 
 // v1.53.15, retour de Gersom (repère d'orientation sur le dessin "vu sur le
@@ -196,6 +266,15 @@ export function tableCoteClass(counts: TableCoteCounts | undefined): string {
   return 'fill-surface-2 stroke-hairline';
 }
 
+// Chaises autour de chaque table, comme sur le PDF : occupees (pleines) ou
+// vides (pointilles). Source = TABLE_SEAT_NAMES (meme export PDF, purement
+// informatif, voir lib/floorPlanSeats.ts). Anneau limite a ~46 unites du
+// centre pour ne jamais toucher les chaises de la table voisine (~96-100).
+const TABLE_RADIUS = 27;
+const SEAT_RING_RADIUS = 39;
+const SEAT_W = 10;
+const SEAT_H = 14;
+
 interface FloorPlanProps {
   selectedNumber: number | null;
   onSelectNumber: (number: number) => void;
@@ -208,6 +287,21 @@ interface FloorPlanProps {
   coteByNumber?: Map<number, TableCoteCounts>;
 }
 
+function zoneHandlers(clickable: boolean, select: () => void) {
+  if (!clickable) return {};
+  return {
+    onClick: select,
+    onKeyDown: (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        select();
+      }
+    },
+    role: 'button' as const,
+    tabIndex: 0,
+  };
+}
+
 export function FloorPlan({
   selectedNumber,
   onSelectNumber,
@@ -218,90 +312,129 @@ export function FloorPlan({
 }: FloorPlanProps) {
   return (
     <svg
-      viewBox="0 0 1750 1080"
+      viewBox="0 0 1220 1005"
       className="h-auto w-full select-none rounded-xl2 border-2 border-hairline bg-surface"
       role="img"
-      aria-label="Plan interactif de la salle : appuyez sur une table pour la sélectionner, ou sur une zone (Bar, Cuisine, DJ et animation, Prestataires) pour voir le personnel associé"
+      aria-label="Plan interactif de la salle : appuyez sur une table pour la sélectionner, ou sur une zone (Bar, Buffets, DJ et animation, Table staff) pour voir le personnel associé"
     >
-      {ROOMS.map((room, idx) => {
-        const clickable = Boolean(room.staffTag && onSelectZone);
-        const selected = clickable && selectedZoneTag === room.staffTag;
+      {ROOMS.map((r, idx) => {
+        const clickable = Boolean(r.staffTag && onSelectZone);
+        const selected = clickable && selectedZoneTag === r.staffTag;
+        const palette = PLAN_COLORS[r.color];
+        const [cx, cy0] = centerOf(r);
+        const cy = cy0 + (r.labelDy ?? 0);
+        const size = r.labelSize ?? 17;
         return (
           <g
             key={idx}
             className={clsx(clickable && 'cursor-pointer focus:outline-none')}
-            onClick={clickable ? () => onSelectZone?.(room) : undefined}
-            onKeyDown={
-              clickable
-                ? (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onSelectZone?.(room);
-                    }
-                  }
-                : undefined
-            }
-            role={clickable ? 'button' : undefined}
-            tabIndex={clickable ? 0 : undefined}
-            aria-label={clickable ? 'Voir le personnel : ' + room.label : undefined}
+            {...zoneHandlers(clickable, () => onSelectZone?.(r))}
+            aria-label={clickable ? 'Voir le personnel : ' + r.label : undefined}
           >
-            <rect
-              x={room.x}
-              y={room.y}
-              width={room.w}
-              height={room.h}
-              rx={6}
-              className={clsx(
-                selected
-                  ? 'fill-accent-tint stroke-accent'
-                  : clickable
-                    ? 'fill-surface-2 stroke-accent/50'
-                    : 'fill-surface-2 stroke-hairline'
-              )}
-              strokeWidth={selected ? 3 : 1.5}
-            />
+            {r.round ? (
+              <circle cx={cx} cy={cy0} r={r.w / 2} fill={palette.fill} />
+            ) : (
+              <rect
+                x={r.x}
+                y={r.y}
+                width={r.w}
+                height={r.h}
+                rx={Math.min(8, r.w / 3, r.h / 3)}
+                fill={palette.fill}
+                className={clsx(selected ? 'stroke-accent' : clickable ? 'stroke-white/80' : 'stroke-none')}
+                strokeWidth={selected ? 5 : clickable ? 2.5 : 0}
+                strokeDasharray={clickable && !selected ? '8 5' : undefined}
+              />
+            )}
             <text
-              x={room.x + room.w / 2}
-              y={room.y + room.h / 2 - (room.sub ? 8 : 0)}
+              x={cx}
+              y={cy - (r.sub && !r.vertical ? size * 0.55 : 0)}
               textAnchor="middle"
               dominantBaseline="middle"
-              transform={
-                room.vertical
-                  ? 'rotate(-90 ' + (room.x + room.w / 2) + ' ' + (room.y + room.h / 2) + ')'
-                  : undefined
-              }
-              className={clsx(
-                'text-[13px] font-semibold uppercase tracking-wide',
-                selected ? 'fill-accent' : 'fill-text-faint'
-              )}
+              transform={r.vertical ? 'rotate(-90 ' + cx + ' ' + cy + ')' : undefined}
+              fill={palette.text}
+              style={{ fontSize: size }}
+              className="font-bold uppercase tracking-wide"
             >
-              {room.label}
+              {r.label}
+              {r.vertical && r.sub ? ' · ' + r.sub : ''}
             </text>
-            {room.sub && (
+            {r.sub && !r.vertical && (
               <text
-                x={room.x + room.w / 2}
-                y={room.y + room.h / 2 + 14}
+                x={cx}
+                y={cy + size * 0.75}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-text-faint text-[10px]"
+                fill={palette.text}
+                style={{ fontSize: Math.max(10, size * 0.72) }}
+                className="font-medium"
               >
-                {room.sub}
+                {r.sub}
               </text>
             )}
           </g>
         );
       })}
 
-      {FLOOR_PLAN_ZONE_LABELS.map((zone, idx) => (
+      {MINI_TABLES.map((t, idx) => {
+        const clickable = Boolean(t.staffTag && onSelectZone);
+        const selected = clickable && selectedZoneTag === t.staffTag;
+        const horizontal = t.w >= t.h;
+        const seatsPerSide = Math.ceil(t.seats / 2);
+        return (
+          <g
+            key={'mini-' + idx}
+            className={clsx(clickable && 'cursor-pointer focus:outline-none')}
+            {...zoneHandlers(clickable, () => onSelectZone?.(STAFF_TABLE_ROOM))}
+            aria-label={clickable ? 'Voir le personnel : ' + STAFF_TABLE_ROOM.label : undefined}
+          >
+            {Array.from({ length: t.seats }, (_, i) => {
+              const before = i < seatsPerSide;
+              const k = i % seatsPerSide;
+              const along = (horizontal ? t.w : t.h) * ((k + 0.5) / seatsPerSide);
+              const sx = horizontal ? t.x + along - 6 : before ? t.x - 15 : t.x + t.w + 3;
+              const sy = horizontal ? (before ? t.y - 15 : t.y + t.h + 3) : t.y + along - 6;
+              return <rect key={i} x={sx} y={sy} width={12} height={12} rx={3} className="fill-surface-2 stroke-text-faint" strokeWidth={1.5} />;
+            })}
+            <rect
+              x={t.x}
+              y={t.y}
+              width={t.w}
+              height={t.h}
+              rx={5}
+              fill="#d6b98c"
+              stroke={selected ? undefined : '#a3845a'}
+              className={clsx(selected && 'stroke-accent')}
+              strokeWidth={selected ? 4 : 1.5}
+            />
+            <text
+              x={t.x + t.w / 2}
+              y={t.y + t.h / 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              transform={horizontal ? undefined : 'rotate(-90 ' + (t.x + t.w / 2) + ' ' + (t.y + t.h / 2) + ')'}
+              fill="#3b2a12"
+              style={{ fontSize: 11 }}
+              className="font-bold"
+            >
+              {t.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {PLAN_MARKERS.map((m, idx) => (
         <text
-          key={idx}
-          x={zone.x}
-          y={zone.y}
+          key={'marker-' + idx}
+          x={m.x}
+          y={m.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="fill-text-faint text-[13px] font-semibold uppercase tracking-wide"
+          transform={m.rotate ? 'rotate(' + m.rotate + ' ' + m.x + ' ' + m.y + ')' : undefined}
+          className={clsx('font-bold uppercase stroke-bg', m.kind === 'exit' ? 'fill-status-over' : 'fill-text')}
+          style={{ fontSize: 13, paintOrder: 'stroke', strokeWidth: 4, strokeLinejoin: 'round' }}
         >
-          {zone.label}
+          {m.icon} {m.label}
         </text>
       ))}
 
@@ -310,6 +443,8 @@ export function FloorPlan({
         const selected = selectedNumber === number;
         const hasGuests = occupied?.has(number);
         const coteClass = tableCoteClass(coteByNumber?.get(number));
+        const offPlan = OFF_PLAN_TABLES.has(number);
+        const seats = offPlan ? [] : TABLE_SEAT_NAMES[number] ?? [];
         return (
           <g
             key={number}
@@ -323,23 +458,39 @@ export function FloorPlan({
             }}
             role="button"
             tabIndex={0}
-            aria-label={'Table ' + number}
+            aria-label={'Table ' + number + (offPlan ? ' (hors plan)' : '')}
           >
             {/* Zone de contact plus large que le cercle visible, pour rester
                 facile a toucher sur mobile (cible tactile ~44px minimum). */}
             <circle cx={x} cy={y} r={34} fill="transparent" />
+            {seats.map((name, idx) => (
+              <rect
+                key={idx}
+                x={x - SEAT_W / 2}
+                y={y - SEAT_RING_RADIUS - SEAT_H / 2}
+                width={SEAT_W}
+                height={SEAT_H}
+                rx={3}
+                transform={'rotate(' + (360 / seats.length) * idx + ' ' + x + ' ' + y + ')'}
+                className={name ? 'fill-text-faint stroke-none' : 'fill-none stroke-text-faint'}
+                fillOpacity={name ? 0.55 : undefined}
+                strokeWidth={name ? 0 : 1.2}
+                strokeDasharray={name ? undefined : '3 2'}
+              />
+            ))}
             {selected && (
-              <circle cx={x} cy={y} r={31} className="fill-status-complete/20 stroke-status-complete" strokeWidth={4} />
+              <circle cx={x} cy={y} r={TABLE_RADIUS + 5} className="fill-status-complete/20 stroke-status-complete" strokeWidth={4} />
             )}
             <circle
               cx={x}
               cy={y}
-              r={26}
+              r={TABLE_RADIUS}
               className={clsx(
                 'stroke-2',
                 selected ? 'fill-status-complete stroke-status-complete' : coteClass,
                 !selected && hasGuests && 'stroke-[3]'
               )}
+              strokeDasharray={offPlan && !selected ? '5 4' : undefined}
             />
             <text
               x={x}
@@ -350,6 +501,11 @@ export function FloorPlan({
             >
               {number}
             </text>
+            {offPlan && (
+              <text x={x + 40} y={y} dominantBaseline="middle" className="fill-text-faint text-[13px] font-semibold">
+                Table {number} · hors plan (absente du PDF)
+              </text>
+            )}
           </g>
         );
       })}
