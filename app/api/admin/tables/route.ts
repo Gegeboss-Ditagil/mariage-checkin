@@ -11,6 +11,8 @@ export async function GET() {
     .from('tables')
     .select('*')
     .eq('event_id', user.event_id)
+    // v1.71.0 : la table 42 desactivee (capacite 0, migration 0064) n apparait plus.
+    .gt('capacity', 0)
     .order('number');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

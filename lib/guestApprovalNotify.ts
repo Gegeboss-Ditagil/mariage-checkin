@@ -11,7 +11,7 @@ import { sendSms, sendWhatsApp, TwilioConfigError, TwilioSendError } from '@/lib
  */
 export async function getReserveRemaining(supabase: SupabaseClient, eventId: string): Promise<number> {
   const [{ data: tables }, { data: invitations }, { data: overflow }] = await Promise.all([
-    supabase.from('tables').select('*').eq('event_id', eventId),
+    supabase.from('tables').select('*').gt('capacity', 0).eq('event_id', eventId),
     supabase.from('invitations').select('*').eq('event_id', eventId),
     supabase.from('overflow_assignments').select('*').eq('event_id', eventId),
   ]);

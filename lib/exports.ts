@@ -107,6 +107,7 @@ export async function buildExport(eventId: string, type: ExportType): Promise<Ex
       .from('tables')
       .select('id, number, label, capacity, is_reserve')
       .eq('event_id', eventId)
+      .gt('capacity', 0)
       .order('number');
     const { data: invitations } = await supabase
       .from('invitations')

@@ -55,11 +55,11 @@ Toute écriture de check-in nécessite une connexion réseau.
 
 ## 5. Données et capacité de référence (v1.1.0, mis à jour v1.68.2)
 
-- 42 tables au total (plan de table redessiné par Gersom sur seatplan.io, 06/10/2026).
-- Tables 1 à 41 : normales.
-- Table 42 : seule réserve « excédentaire » (redevenue réserve, retour sur v1.68.0).
-- Capacité officielle : 410 places.
-- Capacité absolue avec réserve : 420 places.
+- 41 tables actives (v1.71.0, migration `0064`) ; table 42 désactivée et masquée.
+- Tables 2 à 41 : normales.
+- Table 1 « Maquela do Zombo » : seule réserve « excédentaire » (vide).
+- Capacité officielle : 400 places.
+- Capacité absolue avec réserve : 410 places.
 - La table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives (voir migration `0062`, qui inverse `0061`).
 
 Toute modification structurelle des tables doit être faite via une nouvelle migration et documentée dans `CHANGELOG.md`.

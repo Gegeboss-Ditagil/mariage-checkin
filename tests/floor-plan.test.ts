@@ -24,14 +24,17 @@ function parsePositions(src: string): Map<number, [number, number]> {
   return positions;
 }
 
-test('le plan de salle couvre exactement les tables 1 a 42 (reserve incluse)', () => {
+test('le plan de salle couvre exactement les tables 1 a 41 (reserve = table 1, plus de 42)', () => {
   const positions = parsePositions(source);
   // v1.68.2 (06/10/2026) : bascule confirmee par Gersom de la reserve
   // 41->42 (migration 0062, inverse 0061) -- la table 42 redevient
   // l'unique reserve et retrouve donc une position sur le plan, la table 41
   // devient une table normale (garde la sienne).
-  assert.equal(positions.size, 42, 'doit y avoir exactement 42 tables positionnees sur le plan');
-  for (let n = 1; n <= 42; n++) {
+  // v1.71.0 (migration 0064) : la table 1 « Maquela do Zombo » est la
+  // reserve excedentaire, la table 42 est desactivee et n'est plus dessinee.
+  assert.equal(positions.size, 41, 'doit y avoir exactement 41 tables positionnees sur le plan');
+  assert.ok(!positions.has(42), 'la table 42 ne doit plus apparaitre sur le plan');
+  for (let n = 1; n <= 41; n++) {
     assert.ok(positions.has(n), 'table ' + n + ' doit avoir une position sur le plan');
   }
 });
@@ -52,11 +55,12 @@ test('les cibles tactiles des tables ne se chevauchent pas', () => {
 test('toutes les coordonnees du plan restent dans le viewBox declare', () => {
   // v1.70.0 : viewBox aux proportions exactes du PDF seatplan.io (echelle
   // uniforme x2.2), remplace l'ancien 1750 x 1080 etire en largeur.
-  assert.match(source, /viewBox="0 0 1220 1005"/);
+  // v1.71.0 : nouvel export Tabloid, echelle uniforme x1.5.
+  assert.match(source, /viewBox="0 0 1220 950"/);
   const positions = parsePositions(source);
   for (const [number, [x, y]] of positions) {
     assert.ok(x >= 34 && x <= 1186, 'cible tactile de la table ' + number + ' hors du viewBox en x (' + x + ')');
-    assert.ok(y >= 34 && y <= 971, 'cible tactile de la table ' + number + ' hors du viewBox en y (' + y + ')');
+    assert.ok(y >= 34 && y <= 916, 'cible tactile de la table ' + number + ' hors du viewBox en y (' + y + ')');
   }
 });
 
@@ -65,10 +69,10 @@ test('toutes les coordonnees du plan restent dans le viewBox declare', () => {
 // reproduction... mets les sorties et autres comme dans ce plan. »
 // Geometrie reprise du PDF (points PDF convertis par pdfToPlan).
 const PDF_TO_PLAN = (x: number, y: number, w: number, h: number) => ({
-  x: Math.round((x - 146) * 2.2),
-  y: Math.round((y - 70) * 2.2),
-  w: Math.round(w * 2.2),
-  h: Math.round(h * 2.2),
+  x: Math.round((x - 200) * 1.5),
+  y: Math.round((y - 70) * 1.5),
+  w: Math.round(w * 1.5),
+  h: Math.round(h * 1.5),
 });
 function parseRooms(src: string) {
   const re = /room\(\[([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\], '((?:[^'\\]|\\.)*)'|room\(\[([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\], "([^"]*)"/g;
@@ -81,19 +85,19 @@ function parseRooms(src: string) {
   return rooms;
 }
 
-test('v1.70.0 : le plan reprend toutes les zones et sorties du PDF seatplan.io', () => {
-  assert.match(source, /const PLAN_ORIGIN_X = 146;/);
+test('v1.71.0 : le plan reprend toutes les zones, noms et sorties du PDF seatplan.io', () => {
+  assert.match(source, /const PLAN_ORIGIN_X = 200;/);
   assert.match(source, /const PLAN_ORIGIN_Y = 70;/);
-  assert.match(source, /const PLAN_SCALE = 2\.2;/);
+  assert.match(source, /const PLAN_SCALE = 1\.5;/);
   const labels = parseRooms(source).map((r) => r.label);
   for (const expected of [
     'WC handicapés',
     'WC hommes',
     'WC femmes',
-    'Bar',
+    'Bar soirée',
     'Les mariés',
     'DJ et animation',
-    'Extension piste',
+    'Zone concert et show',
     'Piste de danse',
     'Espace orchestre',
     'Couloir Nord',
@@ -103,17 +107,27 @@ test('v1.70.0 : le plan reprend toutes les zones et sorties du PDF seatplan.io',
     'Section A',
     'Section B',
     'Section C',
-    "Vin d'honneur",
+    'Section D',
+    "Vin d'honneur & buffet",
+    'Couloir Sud',
+    'Table vin d’honneur C',
+    'Table vin d’honneur D',
+    'Table vin d’honneur E',
+    'Cloison temporaire A',
     'Sangria',
     'RP',
     'PO',
     'SO',
-    'CO',
     'Les mariées',
   ]) {
     assert.ok(labels.includes(expected), 'zone manquante : ' + expected);
   }
-  assert.ok(labels.filter((l) => l === 'Séparation temporaire').length === 3, '3 séparations temporaires');
+  assert.ok(labels.some((l) => /^Cloison temporaire B/.test(l)), 'cloison B (chantier zone média)');
+  assert.ok(labels.some((l) => /zone média-buffet/.test(l)), 'cloison séparation zone média-buffet');
+  // Anciens noms remplaces par ceux du PDF (v1.71.0).
+  for (const old of ['Extension piste', 'CO', 'Séparation temporaire', "Vin d'honneur", 'Bar']) {
+    assert.ok(!labels.includes(old), 'ancien nom encore present : ' + old);
+  }
   assert.ok(labels.some((l) => /^Buffet A/.test(l)) && labels.some((l) => /^Buffet B/.test(l)));
   assert.ok(labels.some((l) => /sortie d.urgence/i.test(l)), 'barre « garder accès libre – sortie d’urgence »');
   // Portes et sorties ecrites sur le PDF.
@@ -129,7 +143,7 @@ test('v1.70.0 : toutes les zones tiennent dans le viewBox et aucune table ne che
   const rooms = parseRooms(source);
   assert.ok(rooms.length >= 29);
   for (const r of rooms) {
-    assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.w <= 1220 && r.y + r.h <= 1005, 'zone hors viewBox : ' + r.label);
+    assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.w <= 1220 && r.y + r.h <= 950, 'zone hors viewBox : ' + r.label);
   }
   const positions = parsePositions(source);
   for (const [number, [x, y]] of positions) {
@@ -142,21 +156,29 @@ test('v1.70.0 : toutes les zones tiennent dans le viewBox et aucune table ne che
   }
 });
 
-test('v1.70.0 : la table 1 (absente du PDF) est gardée hors plan, signalée comme telle', () => {
-  assert.match(source, /export const OFF_PLAN_TABLES = new Set\(\[1\]\);/);
-  assert.match(source, /hors plan \(absente du PDF\)/);
-  const [, y] = parsePositions(source).get(1)!;
-  assert.ok(y > 935, 'la table 1 doit etre sous le cadre de la salle (y ' + y + ')');
+test('v1.71.0 : la table 1 est la réserve, dessinée là où était la 42 et signalée « réserve »', () => {
+  assert.doesNotMatch(source, /OFF_PLAN_TABLES|hors plan/);
+  assert.match(source, /import \{ RESERVE_TABLE_NUMBER \} from '@\/lib\/withjoyImport';/);
+  assert.match(source, /const isReserve = number === RESERVE_TABLE_NUMBER;/);
+  assert.match(source, /strokeDasharray=\{isReserve && !selected \? '6 4' : undefined\}/);
+  assert.match(source, /réserve\s*\n\s*<\/text>/);
+  // Bas droite du bloc Sud (colonne 6, rangee 7), comme la 42 sur l'ancien PDF.
+  assert.deepEqual(parsePositions(source).get(1), [792, 770]);
 });
 
-test('v1.70.0 : les tables suivent exactement la grille du PDF (6 colonnes, allée entre les rangées 4 et 5)', () => {
+test('v1.71.0 : tables alignées sur une grille droite (6 colonnes x 8 rangées), allée entre les rangées 4 et 5', () => {
   const p = parsePositions(source);
+  // Alignement « propre » demande par Gersom : 6 x et 8 y distincts seulement.
+  const xs = new Set([...p.values()].map(([x]) => x));
+  const ys = new Set([...p.values()].map(([, y]) => y));
+  assert.deepEqual([...xs].sort((a, b) => a - b), [284, 385, 485, 585, 688, 792]);
+  assert.deepEqual([...ys].sort((a, b) => a - b), [91, 193, 293, 396, 562, 666, 770, 882]);
   // Rangee du haut, de gauche a droite, comme sur le PDF.
   const top = [25, 24, 39, 14, 19, 17].map((n) => p.get(n)![0]);
   for (let i = 1; i < top.length; i++) assert.ok(top[i] > top[i - 1], 'ordre de la rangee du haut');
-  // Toute table au nord de l'allee (y < 438), toute table au sud (y > 492).
-  for (const n of [25, 24, 39, 14, 19, 17, 11, 3, 10, 18, 34, 37, 4, 12, 16, 22, 23, 5, 9, 21, 20, 35]) assert.ok(p.get(n)![1] < 438);
-  for (const n of [2, 6, 13, 29, 40, 33, 32, 8, 28, 38, 30, 36, 7, 15, 42, 31, 41, 26, 27]) assert.ok(p.get(n)![1] > 492);
+  // Toute table au nord de l'allee (y < 460), toute table au sud (y > 492).
+  for (const n of [25, 24, 39, 14, 19, 17, 11, 3, 10, 18, 34, 37, 4, 12, 16, 22, 23, 5, 9, 21, 20, 35]) assert.ok(p.get(n)![1] < 460);
+  for (const n of [2, 6, 13, 29, 40, 33, 32, 8, 28, 38, 30, 36, 7, 15, 1, 31, 41, 26, 27]) assert.ok(p.get(n)![1] > 492);
 });
 
 test('le plan de salle est replie par defaut, derriere un bouton dedie', () => {
@@ -194,9 +216,9 @@ test('les zones staff (Bar, Cuisine, DJ et animation, Prestataires) portent un t
   // autres prestataires a la « Table staff » du PDF.
   assert.match(source, /'Buffet B · tables zone Nord', 'orange', \{ labelSize: 11, staffTag: 'Traiteur' \}/);
   assert.match(source, /'Buffet A · tables zone Nord', 'orange', \{ labelSize: 11, staffTag: 'Traiteur' \}/);
-  assert.match(source, /'Bar', 'amber', \{ sub: 'Repas & soirée', staffTag: 'Bar'/);
+  assert.match(source, /'Bar soirée', 'amber', \{ staffTag: 'Bar'/);
   assert.match(source, /vertical: true, staffTag: 'DJ_Animation'/);
-  assert.match(source, /miniTable\(\[180\.6, 243\.3, 44\.2, 17\.1\], 'Table staff', 8, 'Photographe'\)/);
+  assert.match(source, /miniTable\(\[229, 313\.5, 20, 52\], 'Staff', 8, 'Photographe'\)/);
 });
 
 test('selectionner une table efface la zone selectionnee et inversement', () => {

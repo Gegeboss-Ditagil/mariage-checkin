@@ -45,7 +45,7 @@ export default function DeplacerEnLotPage() {
         // computeTableCapacities. Avant, deux fetches sequentiels (selected
         // puis all) partaient a chaque chargement.
         supabase.from('invitations').select('*'),
-        supabase.from('tables').select('*').order('is_reserve', { ascending: true }).order('number'),
+        supabase.from('tables').select('*').gt('capacity', 0).order('is_reserve', { ascending: true }).order('number'),
         supabase.from('overflow_assignments').select('*'),
       ]);
       if (!active) return;

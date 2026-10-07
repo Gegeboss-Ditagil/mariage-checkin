@@ -65,7 +65,7 @@ export default function DeplacerGuestPage() {
       setSourceInvitation(inv);
 
       const [{ data: tables }, { data: allInvs }, { data: assignments }] = await Promise.all([
-        supabase.from('tables').select('*').order('is_reserve', { ascending: true }).order('number'),
+        supabase.from('tables').select('*').gt('capacity', 0).order('is_reserve', { ascending: true }).order('number'),
         supabase.from('invitations').select('*'),
         supabase.from('overflow_assignments').select('*'),
       ]);

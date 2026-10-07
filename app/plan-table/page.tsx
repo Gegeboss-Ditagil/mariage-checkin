@@ -68,12 +68,12 @@ function CapacityBar({ capacity, prevu, present }: { capacity: number; prevu: nu
 
 const PULL_THRESHOLD = 70;
 
-// Cible actuelle (mise à jour le 06/10/2026, v1.68.2, bascule confirmée par
-// Gersom de la réserve 41→42, voir supabase/migrations/0062) : 42 tables max
-// (41 officielles + 1 seule réserve, table 42 "excédentaire" -- la table 41
-// est redevenue une table normale), donc 410 invités "officiels" — le reste
-// passe dans l'unique table de réserve, clairement marquée "excédentaire".
-const CAPACITE_OFFICIELLE = 410;
+// Cible actuelle (v1.71.0, 07/10/2026, migration 0064, demande de Gersom) :
+// la table 1 « Maquela do Zombo » est l'unique réserve « excédentaire »
+// (vide), les tables normales sont 2 à 41 et la table 42 est désactivée
+// (capacité 0, masquée). 40 tables officielles x 10 = 400 invités
+// « officiels » — le reste passe dans la réserve, table 1.
+const CAPACITE_OFFICIELLE = 400;
 
 export default function PlanTablePage() {
   return (
@@ -150,7 +150,7 @@ function PlanTablePageInner() {
     const supabase = createClient();
     try {
       const [tablesResult, invitationsResult] = await Promise.all([
-        supabase.from('tables').select('*').order('number'),
+        supabase.from('tables').select('*').gt('capacity', 0).order('number'),
         supabase.from('invitations').select('*').order('nom_affichage'),
       ]);
       if (tablesResult.error || invitationsResult.error) {

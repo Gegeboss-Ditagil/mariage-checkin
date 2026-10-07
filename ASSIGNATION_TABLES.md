@@ -10,10 +10,11 @@ Import initial réalisé à partir de l'export With Joy `guestlist_8.csv`. Les p
 
 ## Capacité cible actuelle
 
-**42 tables au total** (depuis le 06/10/2026, v1.68.2 — plan de table redessiné par Gersom sur seatplan.io, bascule confirmée explicitement) :
-- **41 tables normales (1 à 41)**, capacité 10 chacune → **410 places officielles** ;
-- **1 seule table de réserve (42, « excédentaire »)**, capacité 10 ;
-- capacité maximale absolue : **420 places**, mais l'objectif opérationnel reste **410 personnes**.
+**41 tables actives** (depuis le 07/10/2026, v1.71.0 — migration `0064`, demande explicite de Gersom) :
+- **40 tables normales (2 à 41)**, capacité 10 chacune → **400 places officielles** ;
+- **1 seule table de réserve (table 1 « Maquela do Zombo », « excédentaire »)**, capacité 10, vide ;
+- capacité maximale absolue : **410 places**, mais l’objectif opérationnel reste **400 personnes** ;
+- la table 42 est désactivée (capacité 0, masquée dans l’app) et conservée en base pour l’historique d’audit (13 lignes de septembre).
 
 Revient sur la structure v1.68.0 (05/10/2026, 41 tables) : la table 42 redevient l'unique réserve, la table 41 devient une table normale désormais occupée par un vrai groupe de convives (confirmé par le PDF export seatplan.io du 06/10/2026 et le CSV `guest-list_58.csv`, qui ne tague plus aucune invitation sur la table 42). La table 42 n'avait jamais été supprimée en v1.68.0 (seulement décommissionnée, `capacity = 0`), précisément pour permettre ce genre de retournement sans perte des références historiques dans `audit_logs.table_id`.
 
@@ -23,7 +24,7 @@ Revient sur la structure v1.68.0 (05/10/2026, 41 tables) : la table 42 redevient
 2. **RSVP décliné = exclu.** Toute personne ayant répondu explicitement qu'elle ne viendra pas n'est pas importée.
 3. **Côté et tags** sont stockés sur chaque invitation pour expliquer le placement.
 4. **Le reste est réparti provisoirement** sur les tables disponibles sans casser un foyer sauf contradiction explicite de labels.
-5. En dernier recours, le débordement planifié peut aller vers **la table 42**, unique réserve. Les débordements du jour J peuvent néanmoins être affectés à toute table selon les règles métier.
+5. En dernier recours, le débordement planifié peut aller vers **la table 1**, unique réserve. Les débordements du jour J peuvent néanmoins être affectés à toute table selon les règles métier.
 
 ## Scripts
 

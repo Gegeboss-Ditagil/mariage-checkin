@@ -10,20 +10,21 @@ import { TABLE_SEAT_NAMES } from '../lib/floorPlanSeats.ts';
 // (celle-ci reste invitations.table_id, cf.
 // docs/DATA_CHANGE_INSTRUCTIONS.md section 6).
 
-test('TABLE_SEAT_NAMES couvre exactement les 42 tables', () => {
+test('TABLE_SEAT_NAMES couvre exactement les 41 tables (plus de table 42, v1.71.0)', () => {
   const keys = Object.keys(TABLE_SEAT_NAMES).map(Number);
-  assert.equal(keys.length, 42, 'doit couvrir exactement les 42 tables');
-  for (let n = 1; n <= 42; n++) {
+  assert.equal(keys.length, 41, 'doit couvrir exactement les 41 tables');
+  assert.equal(TABLE_SEAT_NAMES[42], undefined, 'la table 42 est desactivee (migration 0064)');
+  for (let n = 1; n <= 41; n++) {
     assert.ok(TABLE_SEAT_NAMES[n], `table ${n} doit avoir une entree`);
     assert.ok(TABLE_SEAT_NAMES[n].length >= 1, `table ${n} doit avoir au moins un siege`);
   }
 });
 
-test('la table 42 (nouvelle reserve "excedentaire") est entierement vide sur la photo', () => {
+test('la table 1 (reserve "excedentaire" depuis v1.71.0) est entierement vide sur le PDF', () => {
   // Coherent avec le nouveau plan : aucune invitation n'y est placee, elle
-  // sert de reserve (voir supabase/migrations/0062). La table 41 (ex-reserve)
-  // est desormais occupee par un vrai groupe de convives.
-  assert.ok(TABLE_SEAT_NAMES[42].every((seat) => seat === null));
+  // sert de reserve (voir supabase/migrations/0064, qui remplace 0062). La
+  // table 41 reste occupee par un vrai groupe de convives.
+  assert.ok(TABLE_SEAT_NAMES[1].every((seat) => seat === null));
   assert.ok(TABLE_SEAT_NAMES[41].some((seat) => seat !== null));
 });
 

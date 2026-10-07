@@ -45,7 +45,7 @@ export default function AddInvitationPage() {
     (async () => {
       const supabase = createClient();
       const [{ data: tbls }, { data: invs }, { data: ov }] = await Promise.all([
-        supabase.from('tables').select('*').order('number'),
+        supabase.from('tables').select('*').gt('capacity', 0).order('number'),
         supabase.from('invitations').select('*'),
         supabase.from('overflow_assignments').select('*'),
       ]);

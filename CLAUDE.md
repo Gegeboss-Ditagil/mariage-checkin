@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.70.0**
+**Version documentaire : 1.71.0**
 **Dernière mise à jour : 2026-10-07**
 
 Avant toute modification, lire dans cet ordre :
@@ -145,6 +145,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.48.1 : correctif du même jour, retour de Gersom sur capture d'écran de l'app rendue — "tu as inversé la zone sud et la zone nord... prends les 22 tables en bas, monte-les dans le nord, prends les 20 en haut, mets-les en bas... garder l'alignement... deux tables qui sont justement dans le nord-ouest (22 et 23)". Le bloc à 22 tables (6×4, avec la paire 22/23) et le bloc à 20 tables (5×4 "propre") étaient positionnés à l'envers en v1.48.0. Corrigé dans `components/FloorPlan.tsx` en permutant uniquement la bande de rangées Y entre les deux blocs (mêmes colonnes X qu'avant pour chaque table, donc même alignement/mêmes voisins) : aucune position redevinée, seul le bloc entier change de bande verticale. La paire 22/23 (première colonne du bloc nord, rangées 1-2) est bien au nord-ouest désormais. `FLOOR_PLAN_ZONE_LABELS` n'a pas eu besoin de changer (sa position dépend de la bande Y haut/bas, pas des tables qui s'y trouvent).
 
 
+- v1.71.0 : **table 1 « Maquela do Zombo » = unique réserve excédentaire (vide), tables 2-41 normales (400 places officielles, 410 avec réserve), table 42 désactivée (capacité 0) et masquée partout** (`gt('capacity', 0)` sur toutes les listes de tables) — migration `0064` exécutée et vérifiée en production le 07/10/2026 (sauvegarde `import_backups` kind `v1.71.0_table1_reserve`), avec Roger Makongo ajouté (table 30), Luzolo Patrick Menga 36 → 31, Steven Kimbau retiré (PDF). Ne pas réexécuter manuellement. Plan de salle refait sur l'export Tabloid du 07/10 (`pdfToPlan` origine (200,70) ×1,5, noms des objets du PDF, grille alignée, table 1 « réserve »). Import With Joy : nouvelle « mise à jour sûre » (`lib/withjoySafeMerge.ts`, mode API `safe-apply`) qui n'ajoute que les absents, ne supprime ni ne remet rien à zéro et fonctionne le jour J ; le remplacement complet reste réservé à Préparation/Test. Lectures Supabase navigateur limitées à 15 s (`fetchWithTimeout`) pour les réseaux faibles.
 ## Reprise rapide pour Claude AI
 
 1. Commencer par `git fetch origin main` et comparer `HEAD` à `origin/main`; ne jamais supposer qu'un diff transmis est encore manquant.

@@ -1,7 +1,7 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.68.2**
-**Dernière mise à jour : 2026-10-05**
+**Version documentaire : 1.71.0**
+**Dernière mise à jour : 2026-10-07**
 
 ## 1. Principe général
 
@@ -37,11 +37,11 @@ L'agent doit :
 
 ## 4. État de référence v1.68.2 (mis à jour depuis v1.47.0/v1.68.0/v1.68.1)
 
-- 42 tables au total (plan de table redessiné sur seatplan.io, 06/10/2026, bascule confirmée explicitement par Gersom) ;
-- tables 1 à 41 normales (la table 1 n'a provisoirement aucun occupant confirmé) ;
-- table 42 seule réserve « excédentaire » (redevenue réserve — retour sur v1.68.0, où elle était décommissionnée) ;
-- capacité officielle : 410 places ;
-- capacité absolue : 420 places ;
+- 41 tables actives (v1.71.0, migration `0064`) ; table 42 désactivée (capacité 0, masquée, gardée pour l’audit) ;
+- tables 2 à 41 normales ;
+- table 1 « Maquela do Zombo » seule réserve « excédentaire » (vide) ;
+- capacité officielle : 400 places ;
+- capacité absolue : 410 places ;
 - la table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives (voir migration `0062`, qui inverse `0061`).
 
 Ces chiffres décrivent la version 1.68.2 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
