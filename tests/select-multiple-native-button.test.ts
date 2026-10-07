@@ -24,6 +24,7 @@ for (const path of sites) {
     assert.match(topBarBlock, /right=\{/, path + ' doit passer le bouton via right={...} de TopBar');
     assert.match(topBarBlock, /canMoveGuests && !echangeAvecTableId \?/);
     assert.match(topBarBlock, /\{selectMode \? 'Annuler' : 'Sélectionner'\}/);
-    assert.match(topBarBlock, /className="whitespace-nowrap text-sm font-semibold text-accent active:opacity-60"/);
+    // v1.70.0 : pastille de verre (.glass-pill), style uniforme liquid glass.
+    assert.match(topBarBlock, /className="glass-pill"/);
   });
 }

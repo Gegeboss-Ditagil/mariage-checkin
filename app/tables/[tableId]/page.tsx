@@ -297,7 +297,7 @@ function TableDetailInner() {
             <button
               type="button"
               onClick={() => (selectMode ? annulerSelection() : setSelectMode(true))}
-              className="whitespace-nowrap text-sm font-semibold text-accent active:opacity-60"
+              className="glass-pill"
             >
               {selectMode ? 'Annuler' : 'Sélectionner'}
             </button>

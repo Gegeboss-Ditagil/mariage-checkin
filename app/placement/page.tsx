@@ -143,7 +143,11 @@ export default function PlacementPage() {
           </div>
 
           {mode === 'scan' ? (
-          <div className="px-4">
+          // v1.70.0 : en paysage, QrScanner (landscape:h-full + aspect-square)
+          // a besoin d'un parent de hauteur definie -- sans elle la camera
+          // valait 0 px de haut sur /placement (constate en testant la
+          // preview). Hauteur = ecran moins titre + onglets.
+          <div className="px-4 landscape:flex landscape:h-[calc(100svh-9.5rem)] landscape:justify-center">
             <QrScanner onScan={resolveByCode} />
           </div>
         ) : (

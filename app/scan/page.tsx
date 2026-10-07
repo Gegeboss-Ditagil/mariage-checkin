@@ -160,8 +160,11 @@ export default function ScanPage() {
               conteneur, qui englobe aussi la camera carree juste en
               dessous -- la retrecir pour degager ce coin serait une perte
               nette) : largeur du bouton (2.75rem) + un espace de securite
-              (0.75rem), plus le meme supplement d'encoche que le bouton. */}
-          <h1 className="font-display text-xl landscape:mb-1 landscape:pl-[calc(2.75rem+0.75rem+env(safe-area-inset-left))] landscape:text-base">Scanner un QR code</h1>
+              (0.75rem), plus le meme supplement d'encoche que le bouton.
+              v1.70.0 : la rangee du titre prend aussi la hauteur du bouton
+              (min-h 3.25rem) -- sinon le bouton debordait sur le coin
+              haut-gauche de la camera, juste en dessous (vu en testant). */}
+          <h1 className="font-display text-xl landscape:mb-1 landscape:flex landscape:min-h-[3.25rem] landscape:items-center landscape:pl-[calc(2.75rem+0.75rem+env(safe-area-inset-left))] landscape:text-base">Scanner un QR code</h1>
           <p className="text-xs text-text-faint landscape:hidden">Présentez le QR de l'invité devant la caméra</p>
 
           {/* Le bouton "Prendre une photo" sous la camera a ete retire le

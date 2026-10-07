@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'next-view-transitions';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -496,7 +496,11 @@ function PlanTablePageInner() {
               <button
                 type="button"
                 className="btn-secondary mb-4 block w-full text-center"
-                onClick={() => setShowFloorPlan((v) => !v)}
+                // v1.70.0 : le montage du plan (zones + ~400 chaises) se fait
+                // en transition, pour que le bouton reagisse tout de suite
+                // (INP de ~460 ms mesure sur la preview quand il etait
+                // monte de facon synchrone dans le clic).
+                onClick={() => startTransition(() => setShowFloorPlan((v) => !v))}
               >
                 {showFloorPlan ? '🗺️ Masquer le plan de salle' : '🗺️ Voir le plan de salle'}
               </button>

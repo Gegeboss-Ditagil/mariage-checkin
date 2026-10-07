@@ -22,6 +22,19 @@ Retour de Gersom (avec l'export seatplan.io du 07/10/2026) : « assure-toi que l
 - Libellés : « Couloir Est · câble rouge · accès WC » n'est plus coupé en bas ; « Les mariées » tient dans sa petite zone.
 - Régression verrouillée par `tests/floor-plan.test.ts`.
 
+### Corrigé — défauts trouvés en parcourant toute l'application (Chrome, compte admin, lecture seule)
+Parcours de tous les écrans demandé par Gersom (« clique partout… style uniforme liquid glass partout »), fait sur la preview Vercel en mode **lecture seule** : aucune écriture en base (check-in, approbation, renommage… ouverts puis annulés).
+- **`/placement` : caméra invisible en paysage.** `QrScanner` (`landscape:h-full` + `aspect-square`) n'avait aucun parent de hauteur définie : le cadre valait 0 px. Le conteneur reçoit une hauteur explicite en paysage (`landscape:h-[calc(100svh-9.5rem)]`), comme la caméra carrée de `/scan`.
+- **`/scan` : le bouton de compte flottant couvrait le coin de la caméra** en paysage. La rangée du titre prend la hauteur du bouton (`landscape:min-h-[3.25rem]`).
+- **`/search` : le champ gelait ~1,1 s à la 2e lettre** (INP mesuré par la barre Vercel). La bascule « toutes les invitations » → « résultats » démontait ~250 lignes dans le même événement clavier ; elle suit maintenant une valeur différée (`useDeferredValue`), la requête réseau reste sur la saisie immédiate.
+- **`/plan-table` : ouvrir le plan bloquait le bouton ~460 ms** ; le montage se fait désormais en transition (`startTransition`).
+- **Style uniforme liquid glass** :
+  - flèche Retour ajoutée sur `/admin` (→ tableau de bord), `/history` (→ administration) et `/exceptions` (→ scan) ;
+  - nouvelle pastille de verre `.glass-pill` pour les actions texte de la barre du haut : « + Signaler » (`/exceptions`) et « Sélectionner »/« Annuler » (`/tables/[id]`, `/table/[id]`) ;
+  - `/admin/users` : le bouton texte « Modifier » devient le crayon en verre (croix pour annuler), comme partout ailleurs.
+- **Constatés, non modifiés (données ou hors périmètre)** : capacité totale 420 < 433 invités prévus et 28 invitations sans table (assistant de préparation) ; « Cedrix » toujours sur la table 2 (11/10, voir v1.69.2) ; certaines lignes de `/history` n'affichent ni nom ni type d'action (« — ») ; icônes des tuiles de `/admin` en caractères texte ; bouton « Suppr. » texte rouge sur `/admin/tables`.
+- Tests : `tests/ui-walkthrough-v1-70.test.ts` (nouveau) ; `tests/select-multiple-native-button.test.ts` mis à jour (pastille de verre au lieu du texte nu).
+
 ### Tests
 - `tests/floor-plan.test.ts` : nouveau viewBox ; présence de toutes les zones et sorties du PDF ; aucune zone hors viewBox ; **aucune table ne chevauche une zone** ; table 1 hors plan ; grille de tables conforme au PDF ; zones de personnel remappées (Buffets → Traiteur, Table staff → Photographe).
 

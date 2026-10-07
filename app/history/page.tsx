@@ -55,7 +55,7 @@ export default function HistoryPage() {
   return (
     <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar title="Historique" />
+        <TopBar title="Historique" backHref="/admin" />
 
         {loading && <p className="p-4 text-center text-text-faint">Chargement…</p>}
 
