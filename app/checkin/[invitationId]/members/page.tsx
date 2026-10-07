@@ -6,6 +6,7 @@ import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
 import { GuestRow, InvitationRow } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
+import { EditIcon } from '@/components/icons';
 import { useOnline } from '@/hooks/useOnline';
 import { parseMembersFromNotes, newDraftKey, type DraftMember } from '@/lib/membersNotes';
 import { debounce } from '@/lib/debounce';
@@ -389,10 +390,10 @@ export default function MembresInvitationPage() {
                         <button
                           type="button"
                           aria-label="Modifier"
-                          className="text-base text-accent"
+                          className="glass-icon-button glass-icon-button-sm"
                           onClick={() => startEdit(g)}
                         >
-                          ✎
+                          <EditIcon className="h-4 w-4" />
                         </button>
                         <button
                           type="button"

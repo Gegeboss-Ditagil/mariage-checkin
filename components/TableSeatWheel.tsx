@@ -124,33 +124,101 @@ const MAX_LINE_CHARS = 8;
 // ne jamais chevaucher un nom. VIEW_MARGIN elargit le viewBox d'autant
 // (sans deplacer aucune coordonnee existante) pour leur faire de la place.
 const ARROW_INNER_RADIUS = 146;
-const ARROW_OUTER_RADIUS = 172;
-// v1.66.0, retour de Gersom (dessin a main levee sur une capture d'ecran) :
-// "un espece de carre ou rectangle qui signifie la piste... l'emoji de la
-// personne qui danse devrait etre beaucoup plus grand... un espece de
-// petit rectangle [pour] l'allee... un emoji d'une personne qui marche
-// beaucoup plus grande." Remplace le simple libelle texte (emoji+mot en
-// 15px) par une vraie pastille rectangulaire (voir LandmarkTile) centree a
-// ce rayon, avec l'emoji isole en grand. Piste = carre (forme compacte,
-// comme la piste de danse reelle) ; Allee = rectangle plus large qu'haut
-// (forme allongee, comme une allee). Les deux formes different donc
-// volontairement, pas une simple reutilisation du meme gabarit.
-const TILE_RADIUS = 190;
-const PISTE_TILE_WIDTH = 54;
-const PISTE_TILE_HEIGHT = 54;
-const ALLEE_TILE_WIDTH = 78;
-const ALLEE_TILE_HEIGHT = 44;
-// "Beaucoup plus grand" : l'ancien libelle combine emoji+texte tenait sur
-// 15px pour les deux ; l'emoji seul passe desormais a 26px (~1.7x), le
-// libelle texte (Piste/Allee) reste une legende discrete sous l'emoji.
-const EMOJI_FONT_SIZE = 26;
-// Repere cardinal (N/S/E/O), repousse au-dela des nouvelles pastilles (plus
-// larges que l'ancien libelle texte) pour ne jamais s'y superposer.
-const COMPASS_RADIUS = 248;
-// Marge assez large pour que meme la pastille "Allee" (la plus large) ne
-// deborde jamais du viewBox quel que soit l'angle (y compris a
-// l'horizontale, le cas le plus large).
-const VIEW_MARGIN = 104;
+// v1.69.3, retour de Gersom (capture d'ecran table 39) : "il ne faut pas
+// que la fleche superpose l'espece de rectangle. Il faut que ca indique
+// vers le rectangle, mais il ne faut pas que ca soit par-dessus." La pointe
+// de la fleche s'arrete a ARROW_TIP_RADIUS ; la pastille (voir
+// LandmarkTile) est ensuite placee pour que son bord le plus proche
+// commence TILE_GAP plus loin, en tenant compte de sa vraie forme dans la
+// direction de la fleche (voir tileCenterDistance). L'ancien rayon fixe
+// (TILE_RADIUS = 190, v1.66.0) faisait chevaucher la pointe et le
+// rectangle a presque tous les angles.
+const ARROW_TIP_RADIUS = 176;
+const TILE_GAP = 8;
+// v1.66.0 : vraie pastille rectangulaire (emoji isole + legende). Piste =
+// carre (forme compacte, comme la piste de danse reelle) ; Allee =
+// rectangle plus large qu'haut (forme allongee, comme une allee).
+// v1.69.3, "agrandie... les images de piste et de l'allee... pour que ca
+// soit beaucoup plus clair" : pastilles et emoji nettement agrandis
+// (54x54 / 78x44 / 26px auparavant).
+const PISTE_TILE_WIDTH = 76;
+const PISTE_TILE_HEIGHT = 76;
+const ALLEE_TILE_WIDTH = 108;
+const ALLEE_TILE_HEIGHT = 72;
+const EMOJI_FONT_SIZE = 40;
+// Repere cardinal (N/S/E/O) : v1.69.3, deplace dans l'anneau libre entre le
+// cercle central (HUB_RADIUS = 44) et le bord interieur des sieges
+// (SEAT_RADIUS - SEAT_HEIGHT/2 = 78) -- les pastilles agrandies occupent
+// desormais tout l'anneau exterieur, ou la boussole les aurait chevauchees
+// a certains angles.
+const COMPASS_RADIUS = 61;
+// Marge assez large pour contenir la pastille la plus eloignee quel que
+// soit l'angle (pire cas ~292 du centre, verifie par
+// tests/table-orientation-arrows.test.ts).
+const VIEW_MARGIN = 136;
+
+// Distance du centre de la table au centre d'une pastille w x h placee dans
+// la direction `angle` (0 deg = haut, sens horaire), de sorte que son bord
+// le plus proche soit exactement a ARROW_TIP_RADIUS + TILE_GAP. Pour un
+// rectangle centre, la distance centre->bord le long d'un vecteur unitaire
+// (sx, cy) vaut min((w/2)/|sx|, (h/2)/|cy|).
+export function tileCenterDistance(angle: number, w: number, h: number): number {
+  const radians = (angle * Math.PI) / 180;
+  const sx = Math.abs(Math.sin(radians));
+  const cy = Math.abs(Math.cos(radians));
+  const halfExtent = Math.min(sx > 1e-9 ? w / 2 / sx : Infinity, cy > 1e-9 ? h / 2 / cy : Infinity);
+  return ARROW_TIP_RADIUS + TILE_GAP + halfExtent;
+}
+
+// Rayon englobant les etiquettes de siege, coins compris
+// (sqrt((SEAT_RADIUS + SEAT_HEIGHT/2)^2 + (SEAT_WIDTH/2)^2) ~ 143.8), arrondi.
+const SEAT_EXTENT = 146;
+const VIEW_PADDING = 4;
+
+// v1.69.3, "agrandie" : le viewBox epouse le contenu reel (cercle des
+// sieges + les DEUX pastilles a leurs vrais angles) au lieu d'un carre fixe
+// prevu pour le pire cas a tous les angles a la fois -- l'espace vide
+// autour disparait, le dessin occupe donc plus de place a l'ecran sans
+// changer aucune coordonnee interne. VIEW_MARGIN reste la borne maximale
+// (jamais depassee, verifie par les tests).
+export function computeWheelViewBox(orientation?: TableOrientation | null): { x: number; y: number; width: number; height: number } {
+  let minX = CENTER - SEAT_EXTENT;
+  let maxX = CENTER + SEAT_EXTENT;
+  let minY = CENTER - SEAT_EXTENT;
+  let maxY = CENTER + SEAT_EXTENT;
+  if (orientation) {
+    const tiles: [number, number, number][] = [
+      [orientation.danseAngle, PISTE_TILE_WIDTH, PISTE_TILE_HEIGHT],
+      [orientation.alleeAngle, ALLEE_TILE_WIDTH, ALLEE_TILE_HEIGHT],
+    ];
+    for (const [angle, w, h] of tiles) {
+      const radians = (angle * Math.PI) / 180;
+      const r = tileCenterDistance(angle, w, h);
+      const cx = CENTER + Math.sin(radians) * r;
+      const cy = CENTER - Math.cos(radians) * r;
+      minX = Math.min(minX, cx - w / 2);
+      maxX = Math.max(maxX, cx + w / 2);
+      minY = Math.min(minY, cy - h / 2);
+      maxY = Math.max(maxY, cy + h / 2);
+    }
+  }
+  minX = Math.max(minX - VIEW_PADDING, -VIEW_MARGIN);
+  minY = Math.max(minY - VIEW_PADDING, -VIEW_MARGIN);
+  maxX = Math.min(maxX + VIEW_PADDING, VIEW_SIZE + VIEW_MARGIN);
+  maxY = Math.min(maxY + VIEW_PADDING, VIEW_SIZE + VIEW_MARGIN);
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+export const LANDMARK_GEOMETRY = {
+  ARROW_TIP_RADIUS,
+  TILE_GAP,
+  PISTE_TILE_WIDTH,
+  PISTE_TILE_HEIGHT,
+  ALLEE_TILE_WIDTH,
+  ALLEE_TILE_HEIGHT,
+  VIEW_SIZE,
+  VIEW_MARGIN,
+};
 
 function truncateLine(s: string): string {
   return s.length > MAX_LINE_CHARS ? s.slice(0, MAX_LINE_CHARS) + '…' : s;
@@ -193,12 +261,15 @@ function LandmarkTile({
   tileHeight: number;
 }) {
   const radians = (angle * Math.PI) / 180;
-  const tileX = CENTER + Math.sin(radians) * TILE_RADIUS;
-  const tileY = CENTER - Math.cos(radians) * TILE_RADIUS;
+  // v1.69.3 : rayon calcule selon la forme et l'angle, pour que la pastille
+  // commence toujours juste APRES la pointe de la fleche (jamais dessous).
+  const tileRadius = tileCenterDistance(angle, tileWidth, tileHeight);
+  const tileX = CENTER + Math.sin(radians) * tileRadius;
+  const tileY = CENTER - Math.cos(radians) * tileRadius;
   // L'emoji occupe la bande superieure de la pastille, la legende la bande
   // inferieure -- jamais tournes avec la fleche (voir plus haut).
-  const emojiY = tileY - tileHeight * 0.15;
-  const labelY = tileY + tileHeight * 0.3;
+  const emojiY = tileY - tileHeight * 0.12;
+  const labelY = tileY + tileHeight * 0.32;
   return (
     <g>
       <title>{title}</title>
@@ -207,12 +278,14 @@ function LandmarkTile({
           x1={CENTER}
           y1={CENTER - ARROW_INNER_RADIUS}
           x2={CENTER}
-          y2={CENTER - ARROW_OUTER_RADIUS}
+          y2={CENTER - ARROW_TIP_RADIUS + 16}
           className="stroke-accent stroke-[4]"
+          strokeLinecap="round"
         />
         <polygon
-          points={`${CENTER - 8},${CENTER - ARROW_OUTER_RADIUS + 10} ${CENTER + 8},${CENTER - ARROW_OUTER_RADIUS + 10} ${CENTER},${CENTER - ARROW_OUTER_RADIUS - 9}`}
+          points={`${CENTER - 8},${CENTER - ARROW_TIP_RADIUS + 18} ${CENTER + 8},${CENTER - ARROW_TIP_RADIUS + 18} ${CENTER},${CENTER - ARROW_TIP_RADIUS}`}
           className="fill-accent"
+          strokeLinejoin="round"
         />
       </g>
       <rect
@@ -220,13 +293,13 @@ function LandmarkTile({
         y={tileY - tileHeight / 2}
         width={tileWidth}
         height={tileHeight}
-        rx={12}
+        rx={18}
         className="fill-accent-tint stroke-accent stroke-2"
       />
       <text x={tileX} y={emojiY} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: EMOJI_FONT_SIZE }}>
         {emoji}
       </text>
-      <text x={tileX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="fill-text text-[11px] font-bold">
+      <text x={tileX} y={labelY} textAnchor="middle" dominantBaseline="middle" className="fill-text text-[14px] font-bold">
         {label}
       </text>
     </g>
@@ -249,8 +322,8 @@ function CompassLabel({ angle, label }: { angle: number; label: string }) {
       y={y}
       textAnchor="middle"
       dominantBaseline="middle"
-      className="fill-text-faint text-[14px] font-bold stroke-bg"
-      style={{ paintOrder: 'stroke', strokeWidth: 4, strokeLinejoin: 'round' }}
+      className="fill-text-faint text-[11px] font-bold stroke-bg"
+      style={{ paintOrder: 'stroke', strokeWidth: 3, strokeLinejoin: 'round' }}
     >
       {label}
     </text>
@@ -259,13 +332,12 @@ function CompassLabel({ angle, label }: { angle: number; label: string }) {
 
 export function TableSeatWheel({ tableNumber, seats, highlightedIndices, onSelectSeat, orientation }: TableSeatWheelProps) {
   const count = seats.length || 10;
-  const viewMin = -VIEW_MARGIN;
-  const viewSpan = VIEW_SIZE + VIEW_MARGIN * 2;
+  const { x: viewX, y: viewY, width: viewW, height: viewH } = computeWheelViewBox(orientation);
 
   return (
     <svg
-      viewBox={`${viewMin} ${viewMin} ${viewSpan} ${viewSpan}`}
-      className="mx-auto h-auto w-full max-w-[360px] select-none"
+      viewBox={`${viewX} ${viewY} ${viewW} ${viewH}`}
+      className="mx-auto h-auto w-full max-w-[560px] select-none"
       role="img"
       aria-label={`Places de la table ${tableNumber} vues sur le plan photographié`}
     >

@@ -3,6 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.69.3] — 2026-10-07
+
+Retour de Gersom (2 captures d'écran : fiche `/checkin` d'« Ahicam Damuna » et dessin de la table 39) : « J'aime pas l'icône [du crayon]... garder plus le style liquid glass... circulaire... dans un cercle » + « [dessin de table] agrandi, et plus les images de piste et de l'allée... il ne faut pas que la flèche superpose l'espèce de rectangle. Il faut que ça indique vers le rectangle, mais il ne faut pas que ça soit par-dessus. »
+
+### Changé — crayon « Modifier le nom » en verre liquide
+- `components/TopBar.tsx` : le glyphe texte ✎ à côté du titre (renommer une invitation sur `/checkin/[invitationId]`) devient `EditIcon` dans une pastille ronde `.glass-icon-button`, avec la nouvelle variante compacte `.glass-icon-button-sm` (`app/globals.css`, 32px) pour accompagner un titre sans l'écraser.
+- Même traitement pour le crayon de renommage d'un membre sur `/checkin/[invitationId]/members` — plus aucun ✎ texte rendu dans l'application (style uniforme).
+
+### Corrigé — dessin de table : la flèche ne chevauche plus la pastille Piste/Allée
+- **Root cause** : la pastille était centrée à un rayon fixe (`TILE_RADIUS = 190`) alors que la pointe de flèche montait jusqu'à ~181 et que la demi-taille de la pastille (22 à 39 selon l'angle) la faisait commencer bien avant — la pointe était donc dessinée sous le rectangle à presque tous les angles.
+- La pointe s'arrête désormais à `ARROW_TIP_RADIUS = 176` ; la pastille est placée par `tileCenterDistance(angle, w, h)` (distance centre→bord exacte d'un rectangle dans la direction de la flèche) pour que son bord le plus proche commence toujours `TILE_GAP = 8` plus loin, quelle que soit sa forme et l'angle.
+
+### Changé — dessin de table agrandi, repères plus clairs
+- Pastilles agrandies : Piste 54×54 → 76×76, Allée 78×44 → 108×72, emoji 26 → 40px, légende 11 → 14px.
+- Boussole N/E/S/O déplacée dans l'anneau libre entre le cercle central et les sièges (`COMPASS_RADIUS` 248 → 61) : les pastilles agrandies occupent désormais l'anneau extérieur, où elle aurait pu les chevaucher.
+- viewBox ajusté au contenu réel (`computeWheelViewBox` : cercle des sièges + les deux pastilles à leurs vrais angles) au lieu d'un carré fixe dimensionné pour le pire cas, et largeur maximale 360 → 560px : le dessin occupe nettement plus de place à l'écran.
+
+### Tests
+- `tests/table-orientation-arrows.test.ts` : constantes mises à jour + nouveau test balayant 0–360° (pas de 0,25°) qui vérifie qu'aucun point du trait/de la pointe n'est sous la pastille et que la pastille reste dans le viewBox maximal.
+- `tests/topbar-glass-pencil.test.ts` (nouveau) : crayon en verre sur `TopBar` et `/members`, variante CSS compacte.
+- Note d'environnement : sur un poste Windows avec `core.autocrlf=true`, deux tests existants (`floor-plan-seats`, `approbations-ux-improvements`) échouent localement car leurs regex attendent un saut de ligne LF ; ils passent sur un checkout LF (comportement CI) — pas un bug applicatif.
+
+Aucune migration.
+
 ## [1.69.2] — 2026-10-07
 
 Retour de Gersom (4 captures d'écran, testé sur la preview de PR #122) : bug confirmé sur `/mon-mot-de-passe` (« elle bug, on a juste une portion de la page en haut qui scroll »), bouton de compte flottant par-dessus le titre de `/scan`, demande de remplacer le bouton texte « Modifier » de `/agenda` par une icône liquid glass, retrait de « Cedrix » (faux invité de test) et mise à jour ciblée depuis `guest-list_60.csv`.
