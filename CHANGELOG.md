@@ -3,6 +3,23 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.68.3] — 2026-10-07
+
+Retour de Gersom (nouveau PDF `seating-chart-Mariage-Nelly---Gege-2026-10-07_3.pdf`) : « VOICI LE PLAN A JOURS AVEC LA DISPOSITION DES DIFFÉRENTS ÉLÉMENTS ET TABLES A JOURS », puis précision : « mainly the surroundings that changed, th details doores ect zones tables for '' vin d'honneur disposition to help the directeur de festin visualize the room. I also resize a bit to save but analyse content and reproduce. »
+
+Avant toute écriture, extraction du texte vectoriel du PDF (PyMuPDF, même méthode qu'en v1.68.1/v1.68.2) pour comparer la grille des 42 tables à la production actuelle : **positions et occupants identiques à v1.68.2**, confirmé table par table (lignes 1,2,4,5,6,7,8 de la grille), y compris la table 1 toujours absente et la table 42 toujours vide (réserve). Une question posée à Gersom avant toute action, la famille Landu semblant à première vue répartie différemment entre les tables 30 et 41 selon une première lecture du texte brut — confirmé qu'il s'agissait d'un artefact de clustering (le mot "1" et les libellés "Table Mariés"/"Table DJ" scindés par mégarde) : **aucun changement de placement, question clarifiée, portée de la demande confirmée purement visuelle** (« Juste vérifier/mettre à jour le plan visuel »).
+
+### Changé — `components/FloorPlan.tsx` : détails des zones décoratives mis à jour (aucun changement de table/placement)
+- **« Vin d'honneur » rétrécie** (hauteur 340→260, confirmé par Gersom : « I also resize a bit to save ») et sous-titrée « Zone de service » (nouveau PDF : « ZONE DE SERVICE VIN D'HONNEUR »).
+- **« Espace discours » resous-titrée** « Sections A · B · C » (remplace « Orateur · Les mariés ») — le nouveau PDF introduit explicitement 3 sections d'invités pour les discours (« SECTION A/B/C INVITÉS - DISCOURS »), absentes des plans précédents.
+- **« WCF » gagne un sous-titre** « Fermé durant les discours » (nouveau PDF : « WC FEMMES (FERMÉ DURANT DISCOURS) ») — information utile au directeur de festin, absente avant.
+- Position/taille de toutes les autres salles (Cuisine, Bar, Piste de danse, DJ et animation, Allée centrale, Couloirs, Buffets A/B, etc.) inchangées — toujours un schéma simplifié redessiné à la main, jamais une trace pixel par pixel du PDF.
+
+### Non fait dans ce lot (hors périmètre confirmé par Gersom)
+- Aucune réconciliation de placement d'invité : ce PDF n'était pas accompagné d'un CSV (contrairement à v1.68.2), et Gersom a explicitement limité la demande au plan visuel.
+
+Aucune migration, aucun test modifié (aucune assertion existante ne porte sur le contenu des `sub`/tailles de `ROOMS`).
+
 ## [1.68.2] — 2026-10-06
 
 Retour de Gersom (`guest-list_58.csv` + `seating-chart-Mariage-Nelly---Gege-2026-10-06_1.pdf`) : « updated seating chart, with joy import not synced yet with this coming soon but at least update with what you have. disposition of table have changed, most of the table that where in the south zone are now in the north zone and vice-versa, update the map. tell me if theres mistake or divergences to correct, I will do it manually and redo. » Deux questions posées avant toute écriture (décisions structurelles, impossibles à deviner sans risque) : la bascule de réserve 41→42 a été confirmée explicitement (« Oui, bascule confirmée »), ainsi que l'application immédiate des changements de placement détectés (« Applique les changements maintenant »).
