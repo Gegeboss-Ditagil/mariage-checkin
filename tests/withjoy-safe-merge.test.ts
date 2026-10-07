@@ -103,3 +103,18 @@ test('page import : section « Mise à jour sûre » et remplacement complet mas
   assert.match(page, /const replaceAllowed = eventStatus === 'setup' \|\| eventStatus === 'test';/);
   assert.match(page, /\{!blocked && replaceAllowed && \(/);
 });
+
+// Constaté en testant sur guest-list (63).csv contre la vraie base :
+// « Accompagnateur Amy Eliano » a été renommé « Artiste Amy Eliano » dans
+// With Joy (même party). Sans cette règle, la mise à jour sûre aurait créé
+// deux doublons dans la réserve.
+test('nom inconnu mais groupe With Joy déjà présent : à vérifier, jamais ajouté (renommage)', () => {
+  const base: ExistingInvitation[] = [
+    { id: 'r', nom_affichage: 'Roger (Amy Eliano) Culumbu', notes: 'RSVP: Oui | Membres: Roger (Amy Eliano) Culumbu, Accompagnateur Amy Eliano, Accompagnateur Amy Eliano', withjoy_party_id: 'table-028-party-167', table_number: 28 },
+  ];
+  const plan = buildImportPlan(parseCsvText(csv([['table-028-party-167', 'Artiste', 'Amy Eliano', '', '', 'Oui', 'T028']])));
+  const merge = buildSafeMergePlan(plan, base, tables());
+  assert.equal(merge.additions.length, 0);
+  assert.equal(merge.toReview.length, 1);
+  assert.equal(merge.toReview[0].existingInvitationName, 'Roger (Amy Eliano) Culumbu');
+});

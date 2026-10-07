@@ -6,6 +6,7 @@ import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { OnlineIndicator } from '@/components/OnlineIndicator';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { GlobalErrorLogger } from '@/components/GlobalErrorLogger';
+import { VIEW_TRANSITION_GUARD_SCRIPT } from '@/lib/viewTransitionGuard';
 
 const displayFont = Playfair_Display({
   subsets: ['latin'],
@@ -91,6 +92,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "try{var t=localStorage.getItem('checkin-theme');var d=t==='dark'||(t==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.dataset.theme='dark';var m=document.querySelector('meta[name=\"theme-color\"]');if(m)m.setAttribute('content','#14141a');}}catch(e){}",
           }}
         />
+        {/* v1.71.1 : désactive les View Transitions avant l'hydratation si
+            le réseau est lent ou si l'une d'elles a déjà expiré dans cette
+            session (voir lib/viewTransitionGuard.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: VIEW_TRANSITION_GUARD_SCRIPT }} />
       </head>
       <body>
         <ServiceWorkerRegister />

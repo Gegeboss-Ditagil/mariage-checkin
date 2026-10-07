@@ -10,6 +10,7 @@ type Status = 'idle' | 'previewing' | 'previewed' | 'importing' | 'done' | 'erro
 interface SafePreview {
   additions: { label: string; size: number; tableNumber: number | null; reason: 'tag' | 'reserve' | 'sans_table' }[];
   tableChanges: { label: string; invitationName: string; fromTable: number | null; toTable: number }[];
+  toReview?: { label: string; size: number; existingInvitationName: string }[];
   alreadyPresent: number;
   addedPersons: number;
 }
@@ -217,6 +218,18 @@ export default function ImportWithJoyPage() {
                               ? `table ${addition.tableNumber} (réserve, table demandée pleine)`
                               : `table ${addition.tableNumber}`}
                         </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(safe.toReview?.length ?? 0) > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-status-partial">
+                      À vérifier, non ajouté ({safe.toReview!.length}) — nom inconnu mais groupe With Joy déjà présent (personne probablement renommée)
+                    </p>
+                    <ul className="space-y-0.5 text-sm text-text-muted">
+                      {safe.toReview!.map((review, index) => (
+                        <li key={index}>• {review.label} ({review.size}) — même groupe que « {review.existingInvitationName} »</li>
                       ))}
                     </ul>
                   </div>
