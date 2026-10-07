@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.70.0] — 2026-10-07
+
+Retour de Gersom (avec l'export seatplan.io du 07/10/2026) : « assure-toi que la map est pareille dans l'app, il manque des détails surtout dans les à-côtés, on dirait une mauvaise reproduction... fais-le en détail, mets les sorties et autres comme dans ce plan. »
+
+### Changé — `/plan-table` : le plan de salle reproduit fidèlement le PDF seatplan.io
+- **Méthode** : plus de schéma redessiné à la main. La géométrie de chaque zone (position et taille de chaque image du PDF, mesurées avec pdf.js puis ajustées aux pixels colorés réels), le centre de chaque table (cercle de table du PDF) et la position du texte des portes/sorties sont convertis par une seule transformation uniforme (`pdfToPlan` : origine (146, 70) en points PDF, échelle ×2,2 sur les deux axes). Les proportions du PDF sont conservées (l'ancien plan était étiré d'environ 9 % en largeur, viewBox 1750×1080 → 1220×1005).
+- **Couleurs** : palette seatplan.io relevée sur le PDF (cyan WC, ambre bar/vin d'honneur, rose mariés, violet DJ/Sangria/RP, orange piste/buffets, indigo orchestre/PO, vert couloirs/allée/CO, émeraude sections, rouge rideau/séparations/sortie).
+- **Ajouté (absent de l'ancien plan)** : 3 sorties d'urgence 🚨, porte d'accès chapiteau 🚪, accès toilettes 🚪, « Accès vers la S… » ➜, Couloir Est « délimité par câble rouge · accès WC », long rideau blanc, barre « Garder accès libre · sortie d'urgence », 3 séparations temporaires, extension de piste « pour le show », espace orchestre (chanteurs · band & instruments), sections A/B/C (« si l'espace le permet » pour C), Sangria, RP, PO, SO, CO, « Les mariées », mini-tables des mariés / du DJ / du staff, et les chaises autour de chaque table (pleines = occupées, pointillés = vides, depuis `TABLE_SEAT_NAMES`, même export PDF).
+- **Retiré** : « Cuisine » et « Zone enfants » (absentes du PDF). Les zones cliquables de personnel sont conservées sur leur équivalent du PDF : Bar → `Bar`, DJ et animation → `DJ_Animation`, Buffets A et B → `Traiteur`, Table staff → `Photographe` (« No Table Staff » du PDF : assistants photo, photographe…). Une zone cliquable est signalée par un contour en pointillés.
+- **Table 1** : toujours absente du PDF et du CSV (déjà signalé en v1.68.2) — gardée **hors plan**, sous le cadre de la salle, en pointillés et libellée « hors plan (absente du PDF) », plutôt que posée sur une zone qui n'existe pas.
+- **Interprétations à confirmer par Gersom** : « WH » affiché comme « WC hommes » (entre WC handicapés et WC femmes) ; « PO », « SO », « CO », « RP » repris tels quels (libellés tronqués dans le PDF lui-même) ; « Accès vers la S… » idem.
+- Les flèches Piste/Allée des dessins de table sont recalculées automatiquement depuis les nouvelles positions exactes (`lib/floorPlanOrientation.ts`, aucun changement de code).
+
+### Tests
+- `tests/floor-plan.test.ts` : nouveau viewBox ; présence de toutes les zones et sorties du PDF ; aucune zone hors viewBox ; **aucune table ne chevauche une zone** ; table 1 hors plan ; grille de tables conforme au PDF ; zones de personnel remappées (Buffets → Traiteur, Table staff → Photographe).
+
+Aucune migration.
+
 ## [1.69.3] — 2026-10-07
 
 Retour de Gersom (2 captures d'écran : fiche `/checkin` d'« Ahicam Damuna » et dessin de la table 39) : « J'aime pas l'icône [du crayon]... garder plus le style liquid glass... circulaire... dans un cercle » + « [dessin de table] agrandi, et plus les images de piste et de l'allée... il ne faut pas que la flèche superpose l'espèce de rectangle. Il faut que ça indique vers le rectangle, mais il ne faut pas que ça soit par-dessus. »

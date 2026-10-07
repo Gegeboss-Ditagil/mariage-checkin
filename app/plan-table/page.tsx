@@ -130,7 +130,7 @@ function PlanTablePageInner() {
   const [selectedInvitationId, setSelectedInvitationId] = useState<string | null>(null);
   const seatWheelRef = useRef<HTMLDivElement>(null);
   const selectedTableCardRef = useRef<HTMLDivElement>(null);
-  // Zone staff selectionnee (Bar, Cuisine, DJ et animation, Prestataires...)
+  // Zone staff selectionnee (Bar, Buffets/traiteur, DJ et animation, Table staff...)
   // -- mutuellement exclusive avec selectedTableId : selectionner l'une
   // efface l'autre, un seul panneau s'affiche sous le plan a la fois.
   // Demande de Gersom le 23/08/2026 : cliquer une zone doit faire sortir le
@@ -512,8 +512,8 @@ function PlanTablePageInner() {
                     coteByNumber={coteByNumber}
                   />
                   <p className="mt-2 text-center text-xs text-text-faint">
-                    Appuyez sur une table pour la sélectionner, ou sur une zone en surbrillance (Bar, Cuisine, DJ et
-                    animation, Prestataires) pour voir le personnel associé · pincez avec deux doigts (ou utilisez
+                    Appuyez sur une table pour la sélectionner, ou sur une zone en pointillés (Bar, Buffets, DJ et
+                    animation, Table staff) pour voir le personnel associé · pincez avec deux doigts (ou utilisez
                     +/−) pour zoomer.
                   </p>
                   <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-text-faint">
