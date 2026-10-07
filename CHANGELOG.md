@@ -3,6 +3,35 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.69.2] — 2026-10-07
+
+Retour de Gersom (4 captures d'écran, testé sur la preview de PR #122) : bug confirmé sur `/mon-mot-de-passe` (« elle bug, on a juste une portion de la page en haut qui scroll »), bouton de compte flottant par-dessus le titre de `/scan`, demande de remplacer le bouton texte « Modifier » de `/agenda` par une icône liquid glass, retrait de « Cedrix » (faux invité de test) et mise à jour ciblée depuis `guest-list_60.csv`.
+
+### Corrigé — `/mon-mot-de-passe` et `/mots-de-passe` : mise en page effondrée en paysage
+- **Root cause confirmée** (l'hypothèse « bundle PWA périmé » de v1.69.1 est abandonnée, contredite par la capture d'écran) : ces deux écrans gardaient le patron de coquille d'avant v1.67.13 (`fixed inset-0 flex flex-col`, sans le wrapper interne ni `landscape:flex-row`) — en paysage, les classes propres à `BottomNav` (`landscape:h-full landscape:w-20`, pensées pour un parent `flex-row`) se retrouvaient à l'intérieur d'un parent resté `flex-col` : la barre revendiquait alors ~100% de la hauteur du conteneur comme taille de base flex, écrasant le formulaire à un sliver quasi invisible en haut de l'écran. `/mots-de-passe` portait la même régression latente depuis v1.65.0, jamais signalée jusqu'ici (probablement toujours utilisée en portrait).
+- Les deux écrans adoptent désormais exactement le patron des 11 écrans principaux (`fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]` + wrapper interne `flex flex-1 flex-col overflow-hidden` autour de `TopBar`/contenu).
+- `tests/scroll-fixed-shell.test.ts` : les deux fichiers rejoignent `LANDSCAPE_SHELL_PAGES`, verrouillant la régression.
+
+### Corrigé — `/scan` et `/placement` : bouton de compte flottant par-dessus le titre en paysage
+- En paysage, le bouton de compte flottant (`UserMenu`, top-left depuis v1.45.1 pour dégager la bande de navigation verticale de droite) partage le même coin haut-gauche que le titre de page (« Scanner un QR code », « Placement »), les deux calés sur le même `px-4`/`pt-*`. Seul le titre est décalé vers la droite (`landscape:pl-[calc(2.75rem+0.75rem+env(safe-area-inset-left))]`) — pas tout le conteneur, qui englobe aussi la caméra carrée sur `/scan` (la rétrécir aurait été une perte nette).
+
+### Changé — `/agenda` : bouton « Modifier »/« Terminé » devient une icône liquid glass
+- Retour de Gersom : « met une plus belle icône pour modifier au lieu de juste du texte, il faut une icône qui suit le thème liquid glass. » Le bouton texte+emoji (`✏️ Modifier` / `Terminé`, v1.67.1/v1.67.12) devient un bouton rond `.glass-icon-button` (même composant que la flèche retour de `TopBar` et `AddInvitationButton`), icône seule + `aria-label`, bascule `EditIcon`/nouvelle `CheckIcon` (`components/icons.tsx`) selon l'état.
+- `tests/agenda-view-edit-mode.test.ts` mis à jour (le libellé texte n'est plus attendu dans le DOM, remplacé par `aria-label` + classe `.glass-icon-button`).
+
+### Données — retrait de deux faux invités de test **BLOQUÉ, non résolu dans ce lot**
+- Deux invitations fantômes identifiées, créées via le parcours « invité surprise » de test (`notes` = « Invité surprise approuvé (placement automatique) », `nombre_arrive = 0` sur les deux, aucune vraie personne) : **« Cedrix »** (table 2, signalé explicitement par Gersom, cause connue de la surcapacité de cette table depuis v1.47.0/v1.53.11) et **« Test »** (`nombre_prevu = 0`, jamais eu de table), trouvées par la même requête groupée avant de corriger au cas par cas (`notes ILIKE '%Invité surprise approuvé%'`), conformément à `docs/QE_QA_PROCESS.md`.
+- **La suppression elle-même a échoué** : toute instruction `DELETE` contre ce projet Supabase, depuis cet environnement d'exécution, expire systématiquement au bout de 60s sans effet (confirmé par relecture après coup — les deux lignes sont toujours en base), y compris après que Gersom a explicitement demandé d'approuver automatiquement les exécutions SQL. `SELECT`/`UPDATE`/`INSERT` fonctionnent normalement sur ce même projet pendant la même session (voir la mise à jour CSV ci-dessous). Cause probable : un garde-fou propre au connecteur Supabase MCP sur les instructions destructrices, qui ne semble pas se satisfaire d'une autorisation donnée dans la conversation. **Ces deux invitations sont toujours présentes en production** — à supprimer manuellement par Gersom via l'éditeur SQL du tableau de bord Supabase, ou à reprendre dans une session où ce blocage ne se reproduit pas.
+
+### Données — mise à jour ciblée depuis `guest-list_60.csv`
+- Comparaison nom-par-nom (jamais un réimport complet) entre les 304 groupes du CSV et les 278 invitations existantes, en réutilisant la logique de regroupement de `lib/withjoyImport.ts` : **22 rafraîchissements de contact** (téléphone/email/`withjoy_party_id`) sur des invitations déjà présentes, reconnues par correspondance exacte de nom (avec repli sur le `withjoy_party_id` puis sur ce même identifiant pour départager un nom partagé par plusieurs invitations déjà scindées, ex. Famille Malungu/Muzezenu/MAMBAKASA, scissions déjà connues et documentées de longue date — aucune touchée).
+- **« Famille Pierrefite » → « Famille Pierrefitte »** : correction orthographique (même table 41, même tag CSV) — `nombre_prevu`/composition volontairement **non touchés** : le CSV ne liste plus que 2 des 3 membres connus (« Julia Pierrefite » absente) sans confirmation explicite que ce soit une vraie décision de ne pas venir ; signalé à Gersom plutôt que deviné.
+- **1 nouvelle invitation ajoutée sans table** : « Famille Kinanga Malungu » (Ruben Kinanga Malungu + Maguy Malungu, tag CSV T002) — **signalée plutôt que placée automatiquement** : la table 2 est déjà à 11/10 avec « Cedrix » (10/10 une fois ce dernier retiré), donc déjà pleine sans aucune place pour ces 2 personnes de plus.
+- **Vérifié avant d'écrire, pour éviter un doublon** : « Elvis Tusevo » et « Safira Tusevo » (tag CSV T029, eux aussi détectés comme catégorie "Staff" à cause du tag `Dote`, comme toute la famille Tusevo) sont déjà membres de l'invitation existante « Famille Tusevo » (`nombre_prevu = 3`, notes listant déjà les trois) sous un `withjoy_party_id` différent de celui porté par leur propre ligne CSV — **aucune invitation créée pour eux**, qui auraient sinon dupliqué des personnes déjà comptées.
+- Aucune réorganisation de table pour des invités déjà placés (hors périmètre, conformément à la règle établie depuis v1.47.0).
+
+Aucune migration (changements de données uniquement, aucun changement de schéma).
+
 ## [1.69.1] — 2026-10-07
 
 Retour de Gersom (capture d'écran du menu du compte, compte admin) sur v1.69.0 : « Il y a deux fois le l'option mot de passe... c'est pas beau esthétiquement... c'est comme un doublon... avoir deux clés dans ce menu-là. » + bug signalé : « quand je clique sur mon mot de passe, il n'y a rien qui apparaît. »

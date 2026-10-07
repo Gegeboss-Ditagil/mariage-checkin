@@ -26,8 +26,7 @@ test('le bouton Modifier/Terminé (TopBar, slot "right") reste visible dès que 
   assert.match(topBarBlock, /canManage && \(/);
   assert.doesNotMatch(topBarBlock, /canEditNow/);
   assert.match(topBarBlock, /onClick=\{\(\) => setEditMode\(\(v\) => !v\)\}/);
-  assert.match(topBarBlock, /\{editMode \? 'Terminé' : \(/);
-  assert.match(topBarBlock, /Modifier/);
+  assert.match(topBarBlock, /aria-label=\{editMode \? 'Terminer la modification' : 'Modifier le chronogramme'\}/);
 });
 
 // v1.67.2, retour de Gersom : "assure-toi que le bouton Edit soit une
@@ -35,13 +34,24 @@ test('le bouton Modifier/Terminé (TopBar, slot "right") reste visible dès que 
 // vraie icone SVG (meme convention duotone que le reste de l'app, voir
 // components/icons.tsx), jamais seulement le texte "Modifier" ni le glyphe
 // "✎" deja utilise ailleurs (TopBar.tsx, onTitleClick).
-test("le bouton d'entrée en mode édition porte une icône crayon dédiée (EditIcon), pas seulement du texte", () => {
-  assert.match(agendaPage, /import \{ CloseIcon, ChevronRightIcon, EditIcon \} from '@\/components\/icons';/);
+//
+// v1.69.2, retour de Gersom : "met une plus belle icône pour modifier au
+// lieu de juste du texte... icône qui suit le thème liquid glass" -- le
+// libellé texte "Modifier"/"Terminé" disparaît du bouton (reste en
+// aria-label, voir test ci-dessus), remplacé par .glass-icon-button (même
+// bouton rond en verre que TopBar/AddInvitationButton) avec une icône qui
+// bascule EditIcon/CheckIcon selon l'état.
+test("le bouton d'entrée en mode édition est un bouton rond .glass-icon-button, icône seule (EditIcon/CheckIcon selon l'état), jamais du texte visible", () => {
+  assert.match(agendaPage, /import \{ CloseIcon, ChevronRightIcon, EditIcon, CheckIcon \} from '@\/components\/icons';/);
   const topBarBlock = agendaPage.slice(agendaPage.indexOf('<TopBar'), agendaPage.indexOf('<div className="flex-1 overflow-y-auto'));
-  assert.match(topBarBlock, /<EditIcon className="h-5 w-5" \/>/);
+  assert.match(topBarBlock, /className="glass-icon-button"/);
+  assert.match(topBarBlock, /\{editMode \? <CheckIcon className="h-5 w-5" \/> : <EditIcon className="h-5 w-5" \/>\}/);
+  assert.doesNotMatch(topBarBlock, />\s*Modifier\s*</);
+  assert.doesNotMatch(topBarBlock, />\s*Terminé\s*</);
 
   const iconSource = readFileSync(new URL('../components/icons.tsx', import.meta.url), 'utf8');
   assert.match(iconSource, /export function EditIcon\(\{ className \}: IconProps\)/);
+  assert.match(iconSource, /export function CheckIcon\(\{ className \}: IconProps\)/);
 });
 
 // "La seule chose qu'on peut faire [en View], c'est scroll down. Quand on

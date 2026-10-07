@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { BottomNav } from '@/components/BottomNav';
 import { TopBar } from '@/components/TopBar';
-import { CloseIcon, ChevronRightIcon, EditIcon } from '@/components/icons';
+import { CloseIcon, ChevronRightIcon, EditIcon, CheckIcon } from '@/components/icons';
 import { ResponsablePicker } from '@/components/ResponsablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { usePolling } from '@/hooks/usePolling';
@@ -222,17 +222,18 @@ export default function AgendaPage() {
           backHref="/dashboard"
           right={
             canManage && (
+              // v1.69.2 (retour de Gersom, capture d'ecran) : "met une plus
+              // belle icone qui suit le theme liquid glass" au lieu du
+              // texte seul -- meme bouton rond .glass-icon-button que
+              // TopBar (fleche retour) et AddInvitationButton, icone seule
+              // + aria-label plutot qu'un libelle visible.
               <button
                 type="button"
                 onClick={() => setEditMode((v) => !v)}
-                className="flex items-center gap-1.5 text-sm font-semibold text-accent"
+                aria-label={editMode ? 'Terminer la modification' : 'Modifier le chronogramme'}
+                className="glass-icon-button"
               >
-                {editMode ? 'Terminé' : (
-                  <>
-                    <EditIcon className="h-5 w-5" />
-                    Modifier
-                  </>
-                )}
+                {editMode ? <CheckIcon className="h-5 w-5" /> : <EditIcon className="h-5 w-5" />}
               </button>
             )
           }

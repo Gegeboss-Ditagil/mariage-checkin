@@ -68,6 +68,15 @@ const LANDSCAPE_SHELL_PAGES = [
   '../app/admin/page.tsx',
   '../app/approbations/page.tsx',
   '../app/agenda/page.tsx',
+  // v1.69.2 : ces deux ecrans (ajoutes apres v1.67.13, jamais migres vers ce
+  // patron) gardaient l'ancien `fixed inset-0` sans `landscape:flex-row` --
+  // en paysage, les classes `landscape:h-full landscape:w-20` propres a
+  // BottomNav (pensees pour un parent `flex-row`) se retrouvaient a l'interieur
+  // d'un parent reste `flex-col`, et la barre occupait alors presque toute la
+  // hauteur restante en une bande etroite, ecrasant le contenu de la page a un
+  // sliver quasi invisible (retour de Gersom, capture d'ecran /mon-mot-de-passe).
+  '../app/mon-mot-de-passe/page.tsx',
+  '../app/mots-de-passe/page.tsx',
 ];
 
 test("chaque ecran principal est ancre au viewport reel (position fixed + hauteur explicite 100svh) plutot que seulement dimensionne par h-dvh, sans changer le flex interne (BottomNav garde sa place, aucun padding a ajouter)", () => {

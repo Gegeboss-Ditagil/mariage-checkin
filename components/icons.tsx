@@ -144,3 +144,16 @@ export function EditIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+// Coche -- pendant de EditIcon pour l'etat "Termine" du meme bouton
+// bascule Vue/Edition sur /agenda, v1.69.2 (retour de Gersom : "met une
+// plus belle icone qui suit le theme liquid glass" au lieu du texte seul
+// "Terminé"). Meme convention duotone que le reste de ce fichier.
+export function CheckIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.16" />
+      <path d="m7.5 12.5 3 3 6-6.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

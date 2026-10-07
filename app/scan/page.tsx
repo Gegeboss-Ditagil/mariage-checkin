@@ -151,7 +151,17 @@ export default function ScanPage() {
               affiche tant que le role n'est pas encore lu (meme texte,
               aucune variation de hauteur, donc aucun decalage). */}
           <p className="eyebrow landscape:hidden">{role ? ROLE_LABELS[role] : 'Staff'}</p>
-          <h1 className="font-display text-xl landscape:mb-1 landscape:text-base">Scanner un QR code</h1>
+          {/* v1.69.2 (retour de Gersom, capture d'ecran) : en paysage, le
+              bouton de compte flottant (UserMenu, top-left depuis v1.45.1)
+              passait par-dessus ce titre -- les deux partagent le meme coin
+              haut-gauche (le conteneur parent a deja px-4, qui aligne son
+              bord de contenu sur le meme 1rem que le bouton flottant).
+              Seul le titre est decale vers la droite (pas tout le
+              conteneur, qui englobe aussi la camera carree juste en
+              dessous -- la retrecir pour degager ce coin serait une perte
+              nette) : largeur du bouton (2.75rem) + un espace de securite
+              (0.75rem), plus le meme supplement d'encoche que le bouton. */}
+          <h1 className="font-display text-xl landscape:mb-1 landscape:pl-[calc(2.75rem+0.75rem+env(safe-area-inset-left))] landscape:text-base">Scanner un QR code</h1>
           <p className="text-xs text-text-faint landscape:hidden">Présentez le QR de l'invité devant la caméra</p>
 
           {/* Le bouton "Prendre une photo" sous la camera a ete retire le
