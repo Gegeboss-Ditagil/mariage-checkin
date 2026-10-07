@@ -78,6 +78,8 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   38: ["Lambert Menga", "Bana Menga", "Bana Menga", "Accompagnant non-nommé", "Accompagnant non-nommé", "Accompagnant non-nommé", "Nadia Mabata", "Joël Bembo", "Jennifer Bembo", "Jacquie Menga"],
   39: ["Priscile Makuntima", "Barnabe Shungu", "Isidore Luyindula", "Glody Kambwa", "Lucien Shampe", "Léna Vinelle Nganga", "Jeanne Tona", "Helène Tona", "Ahicam Damuna"],
   40: ["Gisele Bopima", "Michaud Mabata", "Edoly Lukoki", "Michelina Guilherme", "Simao Guilherme", "Raphael Da Silva", "Daryl Lukoki", "Gladys Lukoki", "Dany Lukoki", "Glavina Lukoki"],
+  // v1.72.0 : table 42 = seconde reserve excedentaire, vide.
+  42: [null, null, null, null, null, null, null, null, null, null],
   41: ["Allegria Mpilingi", "Lys Landu", "Maeva Pierrefite", "Greg Pierrefitte", "Julia Pierrefite", "Axel Tacita", "Daeve Landu", "Brady Landu", "Dylan Landu", "Victoria Landu"],
 };
 

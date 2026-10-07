@@ -2,7 +2,7 @@
 
 import clsx from 'clsx';
 import { TABLE_SEAT_NAMES } from '@/lib/floorPlanSeats';
-import { RESERVE_TABLE_NUMBER } from '@/lib/withjoyImport';
+import { isReserveTableNumber } from '@/lib/withjoyImport';
 
 // Plan de la salle. Systeme de coordonnees SVG propre a ce composant, sans
 // rapport avec les coordonnees Supabase.
@@ -26,10 +26,10 @@ import { RESERVE_TABLE_NUMBER } from '@/lib/withjoyImport';
 // colonne et de sa rangee dans le PDF (ecarts de 1 a 4 pts gommes), pour une
 // grille parfaitement droite.
 //
-// Reserve (migration 0064) : la table 1 « Maquela do Zombo » est l'unique
-// table excedentaire, a l'emplacement qu'occupait la table 42 sur le PDF
-// precedent (bas droite du bloc Sud) ; la table 42 est desactivee et
-// n'apparait plus sur le plan.
+// Reserves (migration 0066, v1.72.0) : la table 1 « Maquela do Zombo » et la
+// table 42 sont les deux tables excedentaires, l'une sous l'autre dans la
+// colonne de droite du bloc Sud (PDF seatplan.io (8), qui ne change que cela
+// et la largeur du Couloir Sud par rapport au PDF (7)).
 const PLAN_ORIGIN_X = 200;
 const PLAN_ORIGIN_Y = 70;
 const PLAN_SCALE = 1.5;
@@ -61,6 +61,10 @@ export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
   // Table 1 « Maquela do Zombo » : reserve excedentaire (v1.71.0), vide.
   30: [385, 770], 36: [485, 770], 7: [585, 770], 15: [688, 770], 1: [792, 770],
   31: [385, 882], 41: [485, 882], 26: [585, 882], 27: [688, 882],
+  // Table 42 : seconde reserve excedentaire (v1.72.0, PDF seatplan.io (8)),
+  // dessinee dans la colonne de droite entre la table 1 et le Couloir Sud
+  // (position du PDF projetee sur ce repere, colonne alignee).
+  42: [792, 853],
 };
 
 // Palette seatplan.io relevee sur le PDF (pixels de chaque zone).
@@ -132,7 +136,8 @@ const ROOMS: Room[] = [
   room([424, 376.5, 336, 21.5], 'Allée centrale', 'lime'),
   room([765.5, 91, 15.5, 526.5], 'Long rideau blanc', 'red', { vertical: true, labelSize: 12 }),
   room([783, 77.5, 15, 367.5], 'Couloir Est', 'lime', { vertical: true, labelSize: 11, sub: 'câble rouge · accès WC', labelDy: 124 }),
-  room([696, 628, 85.5, 65], 'Couloir Sud', 'lime', { sub: 'Chapiteau', labelSize: 15 }),
+  // v1.72.0 : réduit en bande sur le PDF (8) pour laisser la place à la table 42.
+  room([699, 672, 87, 15], 'Couloir Sud · Chapiteau', 'lime', { labelSize: 8.5 }),
   // -- Cote est (droite) -----------------------------------------------
   room([808.5, 81.5, 169, 11], 'Buffet B · tables zone Nord', 'orange', { labelSize: 11, staffTag: 'Traiteur' }),
   room([807.5, 97, 172, 11.5], 'Buffet A · tables zone Nord', 'orange', { labelSize: 11, staffTag: 'Traiteur' }),
@@ -431,9 +436,9 @@ export function FloorPlan({
         const hasGuests = occupied?.has(number);
         const coteClass = tableCoteClass(coteByNumber?.get(number));
         const seats = TABLE_SEAT_NAMES[number] ?? [];
-        // v1.71.0 : la table de reserve (table 1, excedentaire) est signalee
-        // par un contour en pointilles et la mention « réserve ».
-        const isReserve = number === RESERVE_TABLE_NUMBER;
+        // v1.71.0 / v1.72.0 : les tables de reserve (1 et 42, excedentaires)
+        // sont signalees par un contour en pointilles et la mention « réserve ».
+        const isReserve = isReserveTableNumber(number);
         return (
           <g
             key={number}

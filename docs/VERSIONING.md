@@ -1,6 +1,6 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.71.0**
+**Version documentaire : 1.72.0**
 **Dernière mise à jour : 2026-10-07**
 
 ## Source de vérité
@@ -64,12 +64,12 @@ Après modification, Claude doit confirmer que le code et les documents de réf�
 
 ## État v1.68.2 (mis à jour depuis v1.47.0/v1.68.0/v1.68.1)
 
-- 41 tables actives (v1.71.0, migration `0064`) ; table 42 désactivée et masquée.
+- 42 tables actives (v1.72.0, migration `0066`).
 - Tables 2 à 41 : tables normales.
-- Table 1 « Maquela do Zombo » : seule réserve « excédentaire » (vide).
+- Tables 1 « Maquela do Zombo » et 42 : réserves « excédentaires » (vides).
 - La table 41 reste une table normale occupée.
 - Capacité officielle : 400 places (410 avec la réserve).
-- Capacité absolue avec réserve : 410 places.
+- Capacité absolue avec réserves : 420 places.
 - Session maximale : 12 heures.
 - **(Corrigé en v1.53.19)** Un déploiement n'invalide plus une session active — seule l'expiration naturelle (12 h) ou un changement du format du payload (`SESSION_SCHEMA_VERSION`) la termine. Avant cette version, chaque déploiement déconnectait instantanément toutes les sessions actives.
 - Les assets Next.js `/_next/*` ne sont pas servis depuis l'ancien cache PWA.

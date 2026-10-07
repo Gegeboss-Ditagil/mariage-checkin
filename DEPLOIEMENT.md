@@ -55,11 +55,11 @@ Toute écriture de check-in nécessite une connexion réseau.
 
 ## 5. Données et capacité de référence (v1.1.0, mis à jour v1.68.2)
 
-- 41 tables actives (v1.71.0, migration `0064`) ; table 42 désactivée et masquée.
+- 42 tables actives (v1.72.0, migration `0066`).
 - Tables 2 à 41 : normales.
-- Table 1 « Maquela do Zombo » : seule réserve « excédentaire » (vide).
+- Tables 1 « Maquela do Zombo » et 42 : réserves « excédentaires » (vides).
 - Capacité officielle : 400 places.
-- Capacité absolue avec réserve : 410 places.
+- Capacité absolue avec réserves : 420 places.
 - La table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives (voir migration `0062`, qui inverse `0061`).
 
 Toute modification structurelle des tables doit être faite via une nouvelle migration et documentée dans `CHANGELOG.md`.

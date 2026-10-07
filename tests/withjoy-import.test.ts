@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { buildImportPlan, parseCsvText, RESERVE_TABLE_NUMBER, NB_TABLES_INVITES } from '../lib/withjoyImport.ts';
+import { buildImportPlan, parseCsvText, RESERVE_TABLE_NUMBERS, NB_TABLES_INVITES } from '../lib/withjoyImport.ts';
 
 function csv(rows: string[][]): string {
   return [
@@ -72,16 +72,15 @@ test('tag explicite gagne sur sans-table et un double tag produit un warning', (
 });
 
 test('une capacité totale dépassée bloque au lieu de surcharger une table', () => {
-  // 41 tables (40 officielles 2-41 + la réserve, table 1) x 10 places = 410
-  // au total (v1.71.0, migration 0064 : la table 1 « Maquela do Zombo »
-  // devient l'unique réserve excédentaire, la table 42 est désactivée).
+  // 42 tables (40 officielles 2-41 + les réserves 1 et 42) x 10 places = 420
+  // au total (v1.72.0, migration 0066).
   const rows = Array.from({ length: 430 }, (_, index) => [
     `p${index}`, `Invite${index}`, 'Sature', '', '', 'Oui', 'Côté_Nelly',
   ]);
   const plan = buildImportPlan(parseCsvText(csv(rows)));
-  assert.equal(plan.report.unplacedCount, 20);
+  assert.equal(plan.report.unplacedCount, 10);
   assert.equal(plan.report.overCapacity.length, 0);
-  assert.equal(plan.tableAssignments.reduce((sum, item) => sum + item.group.size, 0), 410);
+  assert.equal(plan.tableAssignments.reduce((sum, item) => sum + item.group.size, 0), 420);
 });
 
 test('Cortege/Need_Contact/Mail restent synchronises entre import CSV, ajout manuel et script Python', () => {
@@ -236,27 +235,33 @@ test("l'import complet (route + migration 0052) ecrit withjoy_party_id, sans jam
 
 // v1.71.0 (migration 0064) : la table 1 « Maquela do Zombo » est l'unique
 // réserve excédentaire ; les tables normales sont 2 à 41 ; plus de table 42.
-test('v1.71.0 : la réserve est la table 1, utilisée seulement quand les tables 2-41 sont pleines', () => {
-  assert.equal(RESERVE_TABLE_NUMBER, 1);
+test('v1.72.0 : réserves = tables 1 puis 42, utilisées seulement quand les tables 2-41 sont pleines', () => {
+  assert.deepEqual([...RESERVE_TABLE_NUMBERS], [1, 42]);
   assert.equal(NB_TABLES_INVITES, 40);
   // 400 personnes sans tag de table : tables 2 à 41 remplies, réserve vide.
   const full = buildImportPlan(parseCsvText(csv(Array.from({ length: 400 }, (_, i) => [`p${i}`, `A${i}`, 'X', '', '', 'Oui', 'Côté_Nelly']))));
   const tables = new Set(full.tableAssignments.map((a) => a.tableNumber));
   assert.ok(!tables.has(1), 'la réserve (table 1) ne doit pas servir tant que 2-41 ont de la place');
-  assert.ok(!tables.has(42), 'la table 42 n existe plus');
+  assert.ok(!tables.has(42), 'la réserve (table 42) ne doit pas servir tant que 2-41 ont de la place');
   assert.equal(full.report.reserveCount, 0);
   assert.equal(full.report.officiellesCount, 400);
   // 5 personnes de plus : elles passent dans la réserve, table 1.
   const over = buildImportPlan(parseCsvText(csv(Array.from({ length: 405 }, (_, i) => [`p${i}`, `B${i}`, 'X', '', '', 'Oui', 'Côté_Nelly']))));
   assert.equal(over.report.reserveCount, 5);
   assert.ok(over.tableAssignments.filter((a) => a.tableNumber === 1).length === 5);
+  // 15 de plus : table 1 pleine (10), les 5 suivants vont en table 42.
+  const over15 = buildImportPlan(parseCsvText(csv(Array.from({ length: 415 }, (_, i) => [`p${i}`, `C${i}`, 'X', '', '', 'Oui', 'Côté_Nelly']))));
+  assert.equal(over15.report.reserveCount, 15);
+  assert.equal(over15.tableAssignments.filter((a) => a.tableNumber === 42).length, 5);
 });
 
-test('v1.71.0 : un tag T042 est hors plage, T001 reste accepté (réserve)', () => {
+test('v1.72.0 : T042 et T001 sont acceptés (réserves), T043 est hors plage', () => {
   const plan = buildImportPlan(parseCsvText(csv([
     ['p1', 'Jean', 'Dupont', '', '', 'Oui', 'Côté_Gege,T042'],
     ['p2', 'Ana', 'Silva', '', '', 'Oui', 'Côté_Gege,T001'],
+    ['p3', 'Zoe', 'Hors', '', '', 'Oui', 'Côté_Gege,T043'],
   ])));
-  assert.ok(plan.report.warnings.some((w) => /T42 hors de la plage 1-41/.test(w)));
+  assert.ok(plan.report.warnings.some((w) => /T43 hors de la plage 1-42/.test(w)));
+  assert.ok(plan.tableAssignments.some((a) => a.tableNumber === 42 && a.group.label.includes('Jean')));
   assert.ok(plan.tableAssignments.some((a) => a.tableNumber === 1 && a.group.label.includes('Ana')));
 });

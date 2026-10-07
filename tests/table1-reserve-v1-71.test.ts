@@ -50,14 +50,13 @@ test('la table 42 désactivée (capacité 0) est masquée de toutes les listes d
   }
 });
 
-test('capacités affichées : 400 places officielles, réserve = table 1', () => {
+test('capacités affichées : 400 places officielles, réserves = tables 1 et 42 (v1.72.0)', () => {
   assert.match(read('../app/plan-table/page.tsx'), /const CAPACITE_OFFICIELLE = 400;/);
   const importPage = read('../app/admin/import-withjoy/page.tsx');
   assert.match(importPage, /\/ 400 places officielles/);
-  assert.match(importPage, /en réserve \(table 1, excédentaire\)/);
-  assert.doesNotMatch(importPage, /table 42/);
+  assert.match(importPage, /en réserve \(tables 1 et 42, excédentaires\)/);
   const seats = read('../lib/floorPlanSeats.ts');
-  assert.doesNotMatch(seats, /^\s*42: \[/m);
+  assert.match(seats, /^\s*42: \[null, null, null, null, null, null, null, null, null, null\],/m);
   assert.match(seats, /"Rémy Landu", "Roger Makongo"\]/);
   assert.match(seats, /"Claudine Pello", "Luzolo Patrick Menga"/);
 });

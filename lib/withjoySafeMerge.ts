@@ -5,14 +5,15 @@
 // live. Ce module calcule, sans aucune écriture, ce qu'un export de dernière
 // minute APPORTE de nouveau, en ne touchant jamais à l'existant :
 //   * personnes absentes de la base -> ajoutées (à leur table T/Fxxx si elle a
-//     encore la place, sinon dans la réserve -- table 1 --, sinon sans table) ;
+//     encore la place, sinon dans une réserve -- table 1 puis 42 --, sinon
+//     sans table) ;
 //   * personnes déjà présentes mais dont le tag de table a changé -> SIGNALÉES
 //     seulement (un déplacement reste un geste manuel dans l'app, qui gère
 //     déjà les arrivées et la capacité) ;
 //   * aucune suppression, aucune remise à zéro, aucune modification de fiche.
 // Pur et déterministe (testé dans tests/withjoy-safe-merge.test.ts).
 
-import { RESERVE_TABLE_NUMBER, type ImportGroup, type ImportPlan } from './withjoyImport.ts';
+import { RESERVE_TABLE_NUMBERS, type ImportGroup, type ImportPlan } from './withjoyImport.ts';
 
 export interface ExistingInvitation {
   id: string;
@@ -145,9 +146,13 @@ export function buildSafeMergePlan(plan: ImportPlan, existing: ExistingInvitatio
     if (!group.noTable && fits(group.fixedTable)) {
       tableNumber = group.fixedTable;
       reason = 'tag';
-    } else if (!group.noTable && fits(RESERVE_TABLE_NUMBER)) {
-      tableNumber = RESERVE_TABLE_NUMBER;
-      reason = 'reserve';
+    } else if (!group.noTable) {
+      // Réserves dans l'ordre : table 1 d'abord, puis table 42 (v1.72.0).
+      const reserveTable = RESERVE_TABLE_NUMBERS.find((number) => fits(number));
+      if (reserveTable !== undefined) {
+        tableNumber = reserveTable;
+        reason = 'reserve';
+      }
     }
     if (tableNumber !== null) load.get(tableNumber)!.used += group.size;
     additions.push({ group, tableNumber, reason });

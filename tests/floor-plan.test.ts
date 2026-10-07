@@ -24,17 +24,16 @@ function parsePositions(src: string): Map<number, [number, number]> {
   return positions;
 }
 
-test('le plan de salle couvre exactement les tables 1 a 41 (reserve = table 1, plus de 42)', () => {
+test('le plan de salle couvre exactement les tables 1 a 42 (réserves 1 et 42, v1.72.0)', () => {
   const positions = parsePositions(source);
   // v1.68.2 (06/10/2026) : bascule confirmee par Gersom de la reserve
   // 41->42 (migration 0062, inverse 0061) -- la table 42 redevient
   // l'unique reserve et retrouve donc une position sur le plan, la table 41
   // devient une table normale (garde la sienne).
-  // v1.71.0 (migration 0064) : la table 1 « Maquela do Zombo » est la
-  // reserve excedentaire, la table 42 est desactivee et n'est plus dessinee.
-  assert.equal(positions.size, 41, 'doit y avoir exactement 41 tables positionnees sur le plan');
-  assert.ok(!positions.has(42), 'la table 42 ne doit plus apparaitre sur le plan');
-  for (let n = 1; n <= 41; n++) {
+  // v1.72.0 (migration 0066) : tables 1 « Maquela do Zombo » et 42 = deux
+  // reserves excedentaires, la 42 redessinee sous la 1 (PDF seatplan.io (8)).
+  assert.equal(positions.size, 42, 'doit y avoir exactement 42 tables positionnees sur le plan');
+  for (let n = 1; n <= 42; n++) {
     assert.ok(positions.has(n), 'table ' + n + ' doit avoir une position sur le plan');
   }
 });
@@ -109,7 +108,7 @@ test('v1.71.0 : le plan reprend toutes les zones, noms et sorties du PDF seatpla
     'Section C',
     'Section D',
     "Vin d'honneur & buffet",
-    'Couloir Sud',
+    'Couloir Sud · Chapiteau',
     'Table vin d’honneur C',
     'Table vin d’honneur D',
     'Table vin d’honneur E',
@@ -156,10 +155,12 @@ test('v1.70.0 : toutes les zones tiennent dans le viewBox et aucune table ne che
   }
 });
 
-test('v1.71.0 : la table 1 est la réserve, dessinée là où était la 42 et signalée « réserve »', () => {
+test('v1.72.0 : tables 1 et 42 réserves, l une sous l autre, signalées « réserve »', () => {
   assert.doesNotMatch(source, /OFF_PLAN_TABLES|hors plan/);
-  assert.match(source, /import \{ RESERVE_TABLE_NUMBER \} from '@\/lib\/withjoyImport';/);
-  assert.match(source, /const isReserve = number === RESERVE_TABLE_NUMBER;/);
+  assert.match(source, /import \{ isReserveTableNumber \} from '@\/lib\/withjoyImport';/);
+  assert.match(source, /const isReserve = isReserveTableNumber\(number\);/);
+  // Meme colonne que la table 1, juste en dessous (PDF (8)).
+  assert.deepEqual(parsePositions(source).get(42), [792, 853]);
   assert.match(source, /strokeDasharray=\{isReserve && !selected \? '6 4' : undefined\}/);
   assert.match(source, /réserve\s*\n\s*<\/text>/);
   // Bas droite du bloc Sud (colonne 6, rangee 7), comme la 42 sur l'ancien PDF.
@@ -168,9 +169,13 @@ test('v1.71.0 : la table 1 est la réserve, dessinée là où était la 42 et si
 
 test('v1.71.0 : tables alignées sur une grille droite (6 colonnes x 8 rangées), allée entre les rangées 4 et 5', () => {
   const p = parsePositions(source);
-  // Alignement « propre » demande par Gersom : 6 x et 8 y distincts seulement.
-  const xs = new Set([...p.values()].map(([x]) => x));
-  const ys = new Set([...p.values()].map(([, y]) => y));
+  // Alignement « propre » demande par Gersom : 6 x et 8 y distincts seulement
+  // (la réserve 42, ajoutée en v1.72.0 entre deux rangées comme sur le PDF,
+  // reste alignée sur la colonne de la table 1).
+  const grid = [...p.entries()].filter(([n]) => n !== 42).map(([, pos]) => pos);
+  const xs = new Set(grid.map(([x]) => x));
+  const ys = new Set(grid.map(([, y]) => y));
+  assert.equal(p.get(42)![0], p.get(1)![0]);
   assert.deepEqual([...xs].sort((a, b) => a - b), [284, 385, 485, 585, 688, 792]);
   assert.deepEqual([...ys].sort((a, b) => a - b), [91, 193, 293, 396, 562, 666, 770, 882]);
   // Rangee du haut, de gauche a droite, comme sur le PDF.

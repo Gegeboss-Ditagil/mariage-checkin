@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.71.0**
+**Version documentaire : 1.72.0**
 **Dernière mise à jour : 2026-10-07**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -39,12 +39,12 @@ Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulair
 
 ## Capacité (depuis v1.1.0, mis à jour v1.68.2)
 
-- 41 tables actives : 2-41 normales, table 1 « Maquela do Zombo » réserve « excédentaire » (v1.71.0, migration `0064`). La table 42 ne doit apparaître nulle part (plan, listes, déplacements, exports, assistant).
+- 42 tables actives : 2-41 normales, tables 1 « Maquela do Zombo » et 42 réserves « excédentaires » (v1.72.0, migration `0066`), la 42 dessinée sous la 1 sur le plan.
 - Capacité officielle affichée : 400.
-- Capacité absolue avec réserve : 410.
-- `/plan-table` : une invitation `table_id = NULL` (staff `notable` sans table) ne doit jamais être comptée en excédentaire/réserve — seule une invitation réellement placée en table 1 (réserve) compte comme excédentaire.
-- `/dashboard` : la jauge « Remplissage de la salle » marque visuellement le seuil des 400 places officielles dans sa graduation sur 410.
-- Les tables 2-41 ne doivent jamais être marquées réserve ; seule la table 1 l’est.
+- Capacité absolue avec réserves : 420.
+- `/plan-table` : une invitation `table_id = NULL` (staff `notable` sans table) ne doit jamais être comptée en excédentaire/réserve — seule une invitation réellement placée en table 1 ou 42 (réserves) compte comme excédentaire.
+- `/dashboard` : la jauge « Remplissage de la salle » marque visuellement le seuil des 400 places officielles dans sa graduation sur 420.
+- Les tables 2-41 ne doivent jamais être marquées réserve ; seules les tables 1 et 42 le sont.
 - Import With Joy (v1.71.0) : « Analyser » n’écrit rien ; la section « Mise à jour sûre » liste les nouveaux invités (table du tag, sinon réserve table 1, sinon sans table) et les changements de table seulement signalés ; « Ajouter » n’insère que les nouveaux, refuse si la base a changé depuis l’aperçu, fonctionne aussi en mode Jour J ; le remplacement complet n’est proposé qu’en Préparation/Test.
 - Réseau faible : une lecture qui dépasse 15 s échoue proprement (plus jamais « Chargement… » infini).
 
