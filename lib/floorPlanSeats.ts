@@ -65,7 +65,7 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   25: ["Jerry Muzezenu", "Chantale Muzezenu", "Jerry Junior Muzezenu", "Maguy Mawete Makinu", "Alain Nsakala", "Anita Nsakala", "Mifi Mbiki", "Serge Mbiki", "Etienne Mawete Makinu", "Odette Muzezenu"],
   26: ["Wytney Da Veiga", "Jean-Clivens Le Caous", "Cedrik LeCaous", "Maeva Lorsold", "Dylan Lorsold", "Cédric Tyller BELINGA", "Dan Elenga", "Mika Fleurival", "Anne Fuema", "Jonathan Kumbi"],
   27: ["Karl Isolokele", "Mademoissele Isokolele", "Frank Mbonda", "Sami Simon", "Jovany Germain", "Momo Sidibe", "Naomi SHANGO", "Vanilla TJOM", "Alyson Choy", "Kai Choy"],
-  28: ["Celestina Mundanda Nsita", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Tressy Mundanda Nsita", "Pauliana Mundanda Nsita", "Niveline Mbangu", "Nicole Mbangu", "Accompagnateur Amy Eliano", "Accompagnateur Amy Eliano", "Roger (Amy Eliano) Culumbu"],
+  28: ["Maguy Celestina Mundanda Nsita", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Tressy Mundanda Nsita", "Pauliana Mundanda Nsita", "Niveline Mbangu", "Nicole Mbangu", "Accompagnateur Amy Eliano", "Accompagnateur Amy Eliano", "Roger (Amy Eliano) Culumbu"],
   29: ["Laura Humba", null, "Weplo Culumbu", "Sylvie Culumbu", "Nicole Tusevo", "Elvis Tusevo", "Safira Tusevo", "Dorcas Matembe", "Divine Simao", "Sergio Manuel"],
   30: ["Richard Landu", "Betty Jeanne Closse", "Lucien Closse", "Roger Landu", "Nadine Landu", "Dorine Landu", "Sem Landu", "Denise Landu", "Rémy Landu", "Roger Makongo"],
   31: ["Nadine Kimbau", "Debest Pello", "Claudine Pello", "Luzolo Patrick Menga", "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya", "Odette Manuel"],

@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.71.2] — 2026-10-07
+
+Demandes explicites de Gersom : « supprime Cedrix » ; « Ya Maguy est en réalité Celestina Mundanda Nsita » (capture With Joy : « Maguy Celestina Mundanda Nsita », titulaire de la famille, table T028).
+
+### Données — production Supabase (migration `0065`, exécutée et vérifiée le 07/10/2026)
+- Sauvegarde complète des lignes touchées dans `import_backups` (`snapshot->>'kind' = 'v1.71.2_cedrix_maguy'`) avant toute écriture.
+- **« Cedrix » supprimé** (faux invité surprise de test, 0 arrivée) avec sa ligne de membre ; ses 4 lignes d’`audit_logs` sont conservées (lien mis à NULL). La table 2 repasse de 11/10 à **10/10**.
+- **« Ya Maguy Mundanda Nsita » supprimée** : doublon de « Celestina Mundanda Nsita », déjà comptée dans « Famille Mundanda Nsita » (même téléphone +41789610804, même groupe With Joy `table-028-party-166`, aucune arrivée ni membre). La table 28 repasse de 11/10 à **10/10**.
+- Prénom complet With Joy repris : « **Maguy Celestina** Mundanda Nsita » (liste « Membres: » de la famille, ligne de membre, siège du plan `lib/floorPlanSeats.ts`) — la recherche « Maguy » la retrouve.
+- Vérification groupée après coup : **plus aucune table au-delà de sa capacité**. 278 invitations.
+- Restant signalé, non touché (non demandé) : la fiche « Test » (faux invité de test, 0 personne, sans table).
+
+### Outillage
+- GitHub CLI (`gh` 2.102.0) installé sur le poste de Gersom (winget) pour ouvrir les PR depuis l’agent ; authentification à faire une fois par Gersom (`gh auth login`).
+
+### Tests
+- `tests/cedrix-maguy-v1-71-2.test.ts` (nouveau).
+
+Migration : `0065_remove_cedrix_merge_ya_maguy.sql` (exécutée et vérifiée en production le 07/10/2026).
+
 ## [1.71.1] — 2026-10-07
 
 Suite du parcours de test demandé par Gersom (téléphone/tablette émulés, réseau faible, logs), sur la preview de v1.71.0 avec les vraies données.
