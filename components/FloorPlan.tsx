@@ -63,20 +63,9 @@ export const FLOOR_PLAN_TABLE_POSITIONS: Record<number, [number, number]> = {
   31: [385, 882], 41: [485, 882], 26: [585, 882], 27: [688, 882],
 };
 
-// En-tetes de zone purement decoratifs (pas de tag staff, pas de clic).
-// Le PDF n'a pas d'en-tete Nord/Sud dessine -- la « zone Nord » n'y
-// apparait que dans le libelle des buffets, repris tel quel.
-export interface ZoneLabel {
-  x: number;
-  y: number;
-  label: string;
-}
-
-export const FLOOR_PLAN_ZONE_LABELS: ZoneLabel[] = [];
-
 // Palette seatplan.io relevee sur le PDF (pixels de chaque zone).
 export type PlanColor = 'cyan' | 'amber' | 'pink' | 'purple' | 'orange' | 'indigo' | 'lime' | 'emerald' | 'red';
-export const PLAN_COLORS: Record<PlanColor, { fill: string; text: string }> = {
+const PLAN_COLORS: Record<PlanColor, { fill: string; text: string }> = {
   cyan: { fill: '#06b6d4', text: '#083344' },
   amber: { fill: '#f59e0b', text: '#451a03' },
   pink: { fill: '#ec4899', text: '#ffffff' },
@@ -205,7 +194,7 @@ const STAFF_TABLE_ROOM: Room = {
 
 // Portes, sorties et acces ecrits sur le PDF (texte seul sur le plan
 // seatplan.io, sans zone dessinee) -- centre du texte en points PDF.
-export interface PlanMarker {
+interface PlanMarker {
   x: number;
   y: number;
   icon: string;
@@ -220,7 +209,7 @@ function marker(pdfX: number, pdfY: number, icon: string, label: string, kind: P
   const { x, y } = pdfToPlan(pdfX, pdfY);
   return { x, y, icon, label, kind, rotate, anchor };
 }
-export const PLAN_MARKERS: PlanMarker[] = [
+const PLAN_MARKERS: PlanMarker[] = [
   marker(330, 100, '🚪', 'Accès toilettes', 'door'),
   marker(430, 684, '🚨', 'Sortie d’urgence', 'exit'),
   marker(740, 700, '🚪', 'Porte accès chapiteau', 'door'),
