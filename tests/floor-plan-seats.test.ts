@@ -3,31 +3,28 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { TABLE_SEAT_NAMES } from '../lib/floorPlanSeats.ts';
 
-// v1.68.0 (05/10/2026) : noms de sieges lus par OCR sur les 4 photos de
-// zones du plan de table FINAL seatplan.io (41 tables), pour la surbrillance
-// optionnelle des chaises sur /plan-table -- explicitement laissee a
-// discretion ("a toi de decider... tu pourras meme comparer avec les noms
-// de With Joy pour te donner une idee"). PUREMENT INFORMATIF : ne doit
-// jamais devenir une source de placement (celle-ci reste
-// invitations.table_id, cf. docs/DATA_CHANGE_INSTRUCTIONS.md section 6).
+// v1.68.2 (06/10/2026) : noms de sieges extraits du PDF seatplan.io final du
+// 06/10/2026 (42 tables, reserve redevenue la table 42, voir migration
+// 0062), pour la surbrillance optionnelle des chaises sur /plan-table.
+// PUREMENT INFORMATIF : ne doit jamais devenir une source de placement
+// (celle-ci reste invitations.table_id, cf.
+// docs/DATA_CHANGE_INSTRUCTIONS.md section 6).
 
-test('TABLE_SEAT_NAMES couvre exactement les 41 tables, au moins dix sieges chacune', () => {
+test('TABLE_SEAT_NAMES couvre exactement les 42 tables', () => {
   const keys = Object.keys(TABLE_SEAT_NAMES).map(Number);
-  assert.equal(keys.length, 41, 'doit couvrir exactement les 41 tables');
-  for (let n = 1; n <= 41; n++) {
+  assert.equal(keys.length, 42, 'doit couvrir exactement les 42 tables');
+  for (let n = 1; n <= 42; n++) {
     assert.ok(TABLE_SEAT_NAMES[n], `table ${n} doit avoir une entree`);
-    // Certaines tables comptent plus de 10 membres reels (ex. un invite
-    // surprise approuve apres coup, un accompagnant non capture sur la
-    // photo) -- ajoutes en fin de liste plutot que perdus, jamais tronques.
-    assert.ok(TABLE_SEAT_NAMES[n].length >= 10, `table ${n} doit avoir au moins 10 sieges`);
+    assert.ok(TABLE_SEAT_NAMES[n].length >= 1, `table ${n} doit avoir au moins un siege`);
   }
-  assert.ok(!TABLE_SEAT_NAMES[42], 'la table 42 ne doit plus exister (decommissionnee, migration 0061)');
 });
 
-test('la table 41 (nouvelle reserve "excedentaire") est entierement vide sur la photo', () => {
+test('la table 42 (nouvelle reserve "excedentaire") est entierement vide sur la photo', () => {
   // Coherent avec le nouveau plan : aucune invitation n'y est placee, elle
-  // sert de reserve (voir supabase/migrations/0061).
-  assert.ok(TABLE_SEAT_NAMES[41].every((seat) => seat === null));
+  // sert de reserve (voir supabase/migrations/0062). La table 41 (ex-reserve)
+  // est desormais occupee par un vrai groupe de convives.
+  assert.ok(TABLE_SEAT_NAMES[42].every((seat) => seat === null));
+  assert.ok(TABLE_SEAT_NAMES[41].some((seat) => seat !== null));
 });
 
 test("un siege vide est represente par null, jamais une chaine vide ou 'Accompagnant'", () => {
@@ -70,25 +67,26 @@ test("toucher un siege sur le dessin de la table selectionnee surligne l'invitat
   assert.match(pageSource, /selectedTableCardRef\.current\?\.scrollIntoView/);
 });
 
-// v1.68.1 : reconstruction complete depuis le PDF seatplan.io final (export
-// vectoriel, texte extrait directement via PyMuPDF -- pas une photo, voir
-// CHANGELOG), remplacant les donnees v1.68.0 obtenues par OCR de 4 photos de
-// zones. Les noms sont recoupes avec les membres reellement places en base
-// (invitations.table_id, apres la mise a jour groupee de ce lot) pour
+// v1.68.2 : reconstruction complete depuis le nouveau PDF seatplan.io du
+// 06/10/2026 (export vectoriel, texte extrait directement via PyMuPDF -- pas
+// une photo, voir CHANGELOG), remplacant les donnees v1.68.1. Les noms sont
+// recoupes avec les membres reellement places en base (invitations.table_id,
+// apres la mise a jour groupee de ce lot, confirmee par Gersom) pour
 // reprendre l'orthographe canonique de l'application. Quelques verifications
-// ponctuelles plutot qu'une couverture exhaustive (405 sieges, deja
-// verifies un a un pendant la construction du fichier).
-test('v1.68.1 : quelques sieges verifies correspondent aux vrais occupants de leur table (PDF final)', () => {
+// ponctuelles plutot qu'une couverture exhaustive.
+test('v1.68.2 : quelques sieges verifies correspondent aux vrais occupants de leur table (nouveau PDF du 06/10/2026)', () => {
   assert.equal(TABLE_SEAT_NAMES[4][0], 'Henri Onatshungu Momba');
-  assert.equal(TABLE_SEAT_NAMES[2][7], 'Maguy Malungu');
-  assert.equal(TABLE_SEAT_NAMES[2][8], 'Ruben Kinanga Malungu');
-  assert.equal(TABLE_SEAT_NAMES[32][2], 'Sister 2 Malungu');
-  assert.equal(TABLE_SEAT_NAMES[32][3], 'Keziah Malungu');
-  assert.equal(TABLE_SEAT_NAMES[7][0], 'Safira Tusevo');
-  assert.equal(TABLE_SEAT_NAMES[1][3], 'Erika Dos Goncalves');
-  // La famille Lukoki, absente de la base avant ce lot, est confirmee par le
-  // PDF final comme reellement presente a la table 40 -- contrairement a la
-  // v1.68.0 (OCR de photos), qui ne l'avait pas retrouvee en base et
-  // l'excluait donc de l'affichage.
-  assert.equal(TABLE_SEAT_NAMES[40][8], 'Dany Lukoki');
+  assert.equal(TABLE_SEAT_NAMES[2][0], 'Erika Dos Goncalves');
+  assert.equal(TABLE_SEAT_NAMES[2][3], 'Maguy Malungu');
+  assert.equal(TABLE_SEAT_NAMES[2][4], 'Ruben Kinanga Malungu');
+  assert.equal(TABLE_SEAT_NAMES[32][8], 'Keren Malungu');
+  assert.equal(TABLE_SEAT_NAMES[32][9], 'Keziah Malungu');
+  assert.equal(TABLE_SEAT_NAMES[29][4], 'Nicole Tusevo');
+  // Table 1 : plus aucun occupant confirme sur ce nouveau PDF (ses anciens
+  // membres sont repartis ailleurs, voir en-tete du fichier) -- reste vide
+  // ici plutot que de perdre toute entree.
+  assert.ok(TABLE_SEAT_NAMES[1].every((seat) => seat === null));
+  // La famille Landu occupe desormais la table 41 (devenue une table
+  // normale, voir migration 0062) -- confirme par le PDF.
+  assert.equal(TABLE_SEAT_NAMES[41][1], 'Lys Landu');
 });

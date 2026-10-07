@@ -1,6 +1,6 @@
 # Instructions pour les modifications de données
 
-**Version documentaire : 1.68.1**
+**Version documentaire : 1.68.2**
 **Dernière mise à jour : 2026-10-05**
 
 ## 1. Principe général
@@ -35,16 +35,16 @@ L'agent doit :
 8. prévoir un retour arrière ;
 9. déterminer l'impact de version.
 
-## 4. État de référence v1.68.0 (mis à jour depuis v1.47.0)
+## 4. État de référence v1.68.2 (mis à jour depuis v1.47.0/v1.68.0/v1.68.1)
 
-- 41 tables au total (plan de table final seatplan.io, 05/10/2026) ;
-- tables 1 à 40 normales ;
-- table 41 seule réserve « excédentaire » (redevenue réserve — retour sur v1.47.0, où elle était régulière) ;
-- capacité officielle : 400 places ;
-- capacité absolue : 410 places ;
-- la table 42 (« Johannesburg ») n'existe plus dans ce plan — décommissionnée (`capacity = 0`, `is_reserve = false`) plutôt que supprimée, pour préserver 13 références historiques dans `audit_logs.table_id` (voir migration `0061`).
+- 42 tables au total (plan de table redessiné sur seatplan.io, 06/10/2026, bascule confirmée explicitement par Gersom) ;
+- tables 1 à 41 normales (la table 1 n'a provisoirement aucun occupant confirmé) ;
+- table 42 seule réserve « excédentaire » (redevenue réserve — retour sur v1.68.0, où elle était décommissionnée) ;
+- capacité officielle : 410 places ;
+- capacité absolue : 420 places ;
+- la table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives (voir migration `0062`, qui inverse `0061`).
 
-Ces chiffres décrivent la version 1.68.0 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
+Ces chiffres décrivent la version 1.68.2 et doivent être changés uniquement avec une migration et une nouvelle entrée de changelog.
 
 ## 5. Identifiants
 
@@ -69,6 +69,8 @@ Un import ne doit jamais par défaut effacer les invitations absentes, remettre 
 **05/10/2026 (v1.68.0) : plan de table final (4 photos de zones seatplan.io + CSV `guest-list_57.csv`), mise à jour ciblée plutôt qu'un remplacement complet.** Une première analyse avait recommandé `/admin/import-withjoy` (remplacement complet) — corrigée avant toute écriture en relisant cette même section : depuis le 25/08/2026, une correspondance par nom (`withjoy_party_id` stable en priorité, nom exact en repli) est la méthode sanctionnée pour une réorganisation de placement, pas un remplacement destructif. 38 des 261 invitations ont vu leur `table_id` modifié (23 nouvelle table, 15 sans table dont 9 marquées `ne_viendra_pas = true` sur confirmation explicite de Gersom — personnes absentes par nom du nouveau CSV). Plusieurs écarts signalés plutôt que devinés (groupe à scinder entre deux tables, composition de groupe divergente du CSV) : voir CHANGELOG v1.68.0 pour le détail complet.
 
 **05/10/2026 (v1.68.1) : confirmation + corrections depuis le PDF export seatplan.io final (vectoriel), suite directe de v1.68.0.** Un signalement initial (capture d'écran partielle montrant la table 41 occupée) a été clarifié avant toute action — demande explicite de confirmation du périmètre (nombre de tables vs nouvelle source complète), conformément à la section 3. Le PDF complet reçu ensuite confirme la structure déjà livrée en v1.68.0 (41 tables, aucune table 42) ; aucune migration nécessaire. Texte extrait directement du PDF vectoriel (coordonnées + police, via PyMuPDF) plutôt qu'une OCR de photos — méthode plus fiable, recoupée avec les invitations en base pour l'orthographe canonique, comme toujours. 4 corrections de placement par correspondance de nom (jamais un remplacement complet) : Erika Dos Goncalves (table 2 → 1) ; Famille Tusevo (sans table → table 7, composition corrigée à 3 membres réels) ; Famille Malungu scindée (Sister 2 + Keziah → table 32) ; le reste de ce groupe (Ruben Kinanga Malungu, Maguy Malungu, Sister 1 Malungu) laissé **sans table**, un conflit de capacité (table 2 déjà pleine avec l'invité surprise « Cedrix », hors CSV) signalé à Gersom plutôt que la table surchargée silencieusement. Capacité vérifiée après coup : 0 table en surcapacité. Voir CHANGELOG v1.68.1 pour le détail complet, incluant les personnes nouvelles trouvées dans le PDF mais non ajoutées (signalées, pas devinées).
+
+**06/10/2026 (v1.68.2) : plan de table entièrement redessiné (nouveau PDF export seatplan.io + `guest-list_58.csv`), reconciliation complète sur confirmation explicite de Gersom (deux questions posées avant d'écrire quoi que ce soit : bascule de structure 41↔42, puis application des changements de placement).** Comparaison nom-par-nom via `scripts/build_plan_from_csv.py` (jamais un remplacement complet via `/admin/import-withjoy`) entre les 262 invitations existantes et les 303 sous-groupes du nouveau CSV, cross-vérifiée par un second passage de correspondance exacte sur noms complets (bien plus fiable que le rapprochement direct des étiquettes PDF, tronquées/abrégées par seatplan.io). **Bascule de structure confirmée** : la table 42 redevient l'unique réserve (migration `0062`, inverse `0061`), la table 41 devient une table normale désormais occupée par un vrai groupe (famille Landu). **26 invitations déplacées**, **16 renommées/complétées** (orthographe réelle révélée par le CSV pour des membres jusque-là génériques, ex. « Sister 2 Malungu » → « Keren Malungu »), **14 nouvelles invitations ajoutées** (groupes CSV entièrement absents de la base), **3 décès de capacité signalés plutôt que résolus silencieusement** (tables 2, 28, 36 — toutes à 11/10 : la première à cause de l'invité surprise « Cedrix » hors CSV déjà connu, les deux autres parce que le CSV lui-même tague 11 personnes pour une table à 10 places). Une invitation déclinée (« Famille Kiaku Mbuta », RSVP « Non, nous allons manquer le vol ») marquée `ne_viendra_pas = true`. `lib/floorPlanSeats.ts` entièrement reconstruit depuis le nouveau PDF (même méthode qu'en v1.68.1). `components/FloorPlan.tsx` repositionné pour refléter l'inversion nord/sud décrite par Gersom (« most of the table that where in the south zone are now in the north zone and vice-versa »). Voir CHANGELOG v1.68.2 pour le détail complet.
 
 ## 7. Formulaires
 

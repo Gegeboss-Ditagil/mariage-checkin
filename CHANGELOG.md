@@ -3,6 +3,42 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.68.2] — 2026-10-06
+
+Retour de Gersom (`guest-list_58.csv` + `seating-chart-Mariage-Nelly---Gege-2026-10-06_1.pdf`) : « updated seating chart, with joy import not synced yet with this coming soon but at least update with what you have. disposition of table have changed, most of the table that where in the south zone are now in the north zone and vice-versa, update the map. tell me if theres mistake or divergences to correct, I will do it manually and redo. » Deux questions posées avant toute écriture (décisions structurelles, impossibles à deviner sans risque) : la bascule de réserve 41→42 a été confirmée explicitement (« Oui, bascule confirmée »), ainsi que l'application immédiate des changements de placement détectés (« Applique les changements maintenant »).
+
+### Changé — bascule de structure confirmée : la réserve redevient la table 42
+- Le nouveau PDF (export vectoriel seatplan.io) montre la table 41 occupée par un vrai groupe (famille Landu) et une table 42 vide à sa place — l'inverse de la structure confirmée 2 jours plus tôt en v1.68.1. Le CSV confirme indépendamment la même chose (tags F/T de 002 à 041 seulement, rien pour 042).
+- Migration `0062_table42_reserve_table41_regular.sql` (exécutée et vérifiée en production Supabase le 06/10/2026) inverse `0061` : la table 41 redevient une table normale, la table 42 redevient l'unique réserve « excédentaire » (capacité restaurée à 10). Nouvelle structure : 42 tables (41 normales + 1 réserve), **410 places officielles, 420 places absolues**.
+- `lib/withjoyImport.ts` (`NB_TABLES_INVITES` 40→41), `components/CapacityGauge.tsx`, `app/plan-table/page.tsx`, `app/admin/import-withjoy/page.tsx` et toute la documentation versionnée (`README.md`, `ASSIGNATION_TABLES.md`, `DEPLOIEMENT.md`, `docs/VERSIONING.md`, `docs/DATA_AND_FORMS.md`, `docs/DATA_CHANGE_INSTRUCTIONS.md`, `docs/QA_SCENARIOS.md`) mis à jour en conséquence. La logique d'assignation automatique/manuelle (`auto_assign_table_for_guest_approval`, `app/approbations/[id]/assign/page.tsx`) n'avait pas besoin de changement : elle se base déjà dynamiquement sur `tables.is_reserve`, jamais sur un numéro de table codé en dur.
+
+### Changé — `components/FloorPlan.tsx` repositionné (inversion nord/sud confirmée)
+- Comparaison systématique ancienne/nouvelle position de chaque table : confirme exactement ce que Gersom décrit — toutes les tables sauf 35 et 39 (restées au nord) basculent d'un côté à l'autre de l'Allée centrale. Le nouveau PDF dessine une seule grille de 6 colonnes × 8 rangées (pas 2 blocs côte à côte comme en v1.68.0) ; disposition reconstruite à l'identique (schéma simplifié reprenant l'ordre de lecture exact des coordonnées du PDF, jamais une trace pixel par pixel). Les 4 labels de zone cardinaux (Nord-Ouest/Nord-Est/Sud-Ouest/Sud-Est) redeviennent 2 (Nord/Sud), cohérent avec cette grille unique.
+- La table 1 n'apparaît nulle part sur ce nouveau PDF ni dans le CSV (confirmé par deux sources indépendantes) — garde la seule case encore libre de la grille plutôt que de perdre toute position ; ses anciens occupants sont désormais répartis sur d'autres tables (voir ci-dessous).
+
+### Changé — reconciliation complète des placements (méthode CSV, jamais le texte brut du PDF)
+- Reconstruction d'un rapprochement nom-par-nom réutilisant `scripts/build_plan_from_csv.py` (groupement par tag `F0xx`/`T0xx`, jamais un remplacement complet via `/admin/import-withjoy`) entre les 262 invitations existantes et les 303 sous-groupes du nouveau CSV. Une première tentative de rapprochement direct contre les étiquettes du PDF a produit plusieurs faux positifs (collisions sur un prénom ou un nom de famille partagé, ex. « Christelle Lema » confondue avec « Eric Lema », ou le marié « Gersom Dos Goncalves » confondu avec « Erika Dos Goncalves ») — abandonnée au profit du CSV, nettement plus fiable (noms complets, jamais tronqués).
+- **26 invitations déplacées** par correspondance de nom exacte (capacité vérifiée avant chaque écriture), dont la famille Landu reconstituée à la table 41 (Lys, Brady, Daeve, Famille Landu, Victoria), Erika Dos Goncalves (1→2), Famille Tusevo (7→29), Famille Nzasi (29→15).
+- **16 invitations renommées/complétées** : orthographe réelle révélée par le CSV pour des membres jusque-là génériques ou abrégés (ex. « Sister 2 Malungu » → « Keren Malungu », « Elda Makuntima » → « Helda Makuntima », « Famille non-nommé » (Amy Eiano) → « Roger (Amy Eliano) Culumbu », « Tia Sonia Culumbu »/« Epoux Tia Sonia » → « Sonia Ditutala »/« Anjo Ditutala » avec 2 enfants ajoutés).
+- **14 nouvelles invitations ajoutées** (groupes CSV entièrement absents de la base) : Famille Choy (table 27), Famille Lukoki (5 personnes, table 40), Raphael Da Silva (table 40), Wytney Da Veiga (table 26), Axel Tacita et Famille Pierrefite (table 41), Nedy Simao (table 7), Adriana Tsita (table 8), Famille DelaVille et Famille Beijinho (table 35), Famille Secke (table 22), Sylvie Culumbu (table 29), Ya Maguy Mundanda Nsita (table 28), Flora Landu (sans table).
+- **Une invitation déclinée** : « Famille Kiaku Mbuta » (RSVP « Non, nous allons manquer le vol » dans le nouveau CSV) marquée `ne_viendra_pas = true` et retirée de la table 5, libérant la place pour la famille Lukau.
+- **3 tables en surcapacité signalées plutôt que résolues silencieusement** : table 2 (11/10, « Cedrix » invité surprise hors CSV déjà connu, cause déjà documentée en v1.68.1) ; tables 28 et 36 (11/10 chacune) — le CSV lui-même tague 11 personnes pour une table à 10 places dans ces deux cas (pas une erreur de reconciliation : vérifié en recomptant directement les lignes CSV taguées T028/T036). Décision de Gersom nécessaire sur laquelle des personnes déplacer.
+
+### Changé — `lib/floorPlanSeats.ts` entièrement reconstruit (nouveau PDF du 06/10/2026)
+- Même méthode qu'en v1.68.1 (texte vectoriel extrait via PyMuPDF, recoupé avec les invitations réellement placées en base après ce lot pour l'orthographe canonique) — reconstruit depuis le nouveau PDF plutôt que celui du 04/10/2026, désormais périmé. Quelques sièges isolés où le PDF diverge du CSV (ex. « Luzolo P. Menga » dessiné à la table 31 sur le PDF, mais tagué T036 dans le CSV, ou « Danyl Mbidi »/« Pajos Mpapa » semblant intervertis entre tables 6 et 13) restent `null` plutôt que de refléter une donnée qui contredirait le vrai placement (`invitations.table_id`) — purement informatif, jamais une source de placement.
+
+### Signalé à Gersom plutôt que deviné (aucune écriture)
+- Table 29 : « Rafael O. I. Ngalula » dessiné sur le PDF, absent du CSV et de la base — identité non confirmée.
+- Table 7 : « Milo Bob Mabata » dessiné sur le PDF, absent du CSV et de la base — identité non confirmée.
+- Table 8 : « Ya Lale Yezi » dessinée sur le PDF, absente du CSV et de la base — possible variante de « Lale Culumbu » déjà en base, non confirmée.
+- Table 2 : « Sister 1 Malungu » (3ᵉ membre non identifié, déjà signalé en v1.68.1) reste sans table — le CSV ne tague que 2 personnes (Ruben Kinanga Malungu, Maguy Malungu) pour ce foyer à la table 2.
+- Tables 28 et 36 : voir surcapacités ci-dessus.
+
+### Tests
+- `tests/floor-plan.test.ts`, `tests/floor-plan-seats.test.ts`, `tests/table-orientation-arrows.test.ts`, `tests/withjoy-import.test.ts` mis à jour pour la structure à 42 tables et les nouvelles positions.
+
+Aucune donnée WithJoy n'a été synchronisée au-delà de cette reconciliation ciblée — Gersom a explicitement indiqué qu'un import WithJoy complet suivra séparément plus tard.
+
 ## [1.68.1] — 2026-10-05
 
 Retour de Gersom : capture d'écran montrant la table 41 occupée (contredisant v1.68.0) + question « on revient à 42 ? », puis transmission du PDF export seatplan.io final (`seating-chart-Mariage-Nelly---Gege-2026-10-04_3.pdf`, vectoriel, 44 "tables").

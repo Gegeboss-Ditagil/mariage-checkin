@@ -24,17 +24,16 @@ function parsePositions(src: string): Map<number, [number, number]> {
   return positions;
 }
 
-test('le plan de salle couvre exactement les tables 1 a 41 (reserve incluse)', () => {
+test('le plan de salle couvre exactement les tables 1 a 42 (reserve incluse)', () => {
   const positions = parsePositions(source);
-  // v1.68.0 (05/10/2026) : disposition reconstruite en 4 zones cardinales
-  // (NE/NO/SE/SO) depuis le plan de table final seatplan.io -- la table 42
-  // ("Johannesburg") n'existe plus (decommissionnee, migration 0061), la
-  // table 41 redevient l'unique reserve.
-  assert.equal(positions.size, 41, 'doit y avoir exactement 41 tables positionnees sur le plan');
-  for (let n = 1; n <= 41; n++) {
+  // v1.68.2 (06/10/2026) : bascule confirmee par Gersom de la reserve
+  // 41->42 (migration 0062, inverse 0061) -- la table 42 redevient
+  // l'unique reserve et retrouve donc une position sur le plan, la table 41
+  // devient une table normale (garde la sienne).
+  assert.equal(positions.size, 42, 'doit y avoir exactement 42 tables positionnees sur le plan');
+  for (let n = 1; n <= 42; n++) {
     assert.ok(positions.has(n), 'table ' + n + ' doit avoir une position sur le plan');
   }
-  assert.ok(!positions.has(42), 'la table 42 ne doit plus avoir de position (decommissionnee)');
 });
 
 test('les cibles tactiles des tables ne se chevauchent pas', () => {

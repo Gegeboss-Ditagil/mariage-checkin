@@ -72,17 +72,17 @@ test('tag explicite gagne sur sans-table et un double tag produit un warning', (
 });
 
 test('une capacité totale dépassée bloque au lieu de surcharger une table', () => {
-  // 41 tables (40 officielles + 1 réserve) x 10 places = 410 au total
-  // (v1.68.0, retour à la structure d'avant v1.47.0 : table 41 redevient
-  // l'unique réserve "excédentaire", la table 42 "Johannesburg" n'existe
-  // plus, voir supabase/migrations/0061).
+  // 42 tables (41 officielles + 1 réserve) x 10 places = 420 au total
+  // (v1.68.2, bascule confirmée par Gersom : la table 42 redevient l'unique
+  // réserve "excédentaire", la table 41 devient une table normale, voir
+  // supabase/migrations/0062 qui inverse 0061).
   const rows = Array.from({ length: 430 }, (_, index) => [
     `p${index}`, `Invite${index}`, 'Sature', '', '', 'Oui', 'Côté_Nelly',
   ]);
   const plan = buildImportPlan(parseCsvText(csv(rows)));
-  assert.equal(plan.report.unplacedCount, 20);
+  assert.equal(plan.report.unplacedCount, 10);
   assert.equal(plan.report.overCapacity.length, 0);
-  assert.equal(plan.tableAssignments.reduce((sum, item) => sum + item.group.size, 0), 410);
+  assert.equal(plan.tableAssignments.reduce((sum, item) => sum + item.group.size, 0), 420);
 });
 
 test('Cortege/Need_Contact/Mail restent synchronises entre import CSV, ajout manuel et script Python', () => {
