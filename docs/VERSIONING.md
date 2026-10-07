@@ -1,7 +1,7 @@
 # Versioning et gouvernance des releases
 
-**Version documentaire : 1.68.2**
-**Dernière mise à jour : 2026-10-03**
+**Version documentaire : 1.71.0**
+**Dernière mise à jour : 2026-10-07**
 
 ## Source de vérité
 
@@ -64,12 +64,12 @@ Après modification, Claude doit confirmer que le code et les documents de réf�
 
 ## État v1.68.2 (mis à jour depuis v1.47.0/v1.68.0/v1.68.1)
 
-- 42 tables au total (plan de table redessiné par Gersom sur seatplan.io, 06/10/2026, bascule confirmée explicitement).
-- Tables 1 à 41 : tables normales (la table 1 n'a provisoirement aucun occupant confirmé, ses anciens occupants ayant été répartis ailleurs dans ce lot).
-- Table 42 : seule réserve « excédentaire » (redevenue réserve en v1.68.2 — entre le 05/10/2026 et le 06/10/2026, elle avait été décommissionnée pendant que la table 41 servait de réserve, v1.68.0).
-- La table 41 est redevenue une table normale, désormais occupée par un vrai groupe de convives (migration `0062`, qui inverse `0061`).
-- Capacité officielle : 410 places.
-- Capacité absolue avec réserve : 420 places.
+- 41 tables actives (v1.71.0, migration `0064`) ; table 42 désactivée et masquée.
+- Tables 2 à 41 : tables normales.
+- Table 1 « Maquela do Zombo » : seule réserve « excédentaire » (vide).
+- La table 41 reste une table normale occupée.
+- Capacité officielle : 400 places (410 avec la réserve).
+- Capacité absolue avec réserve : 410 places.
 - Session maximale : 12 heures.
 - **(Corrigé en v1.53.19)** Un déploiement n'invalide plus une session active — seule l'expiration naturelle (12 h) ou un changement du format du payload (`SESSION_SCHEMA_VERSION`) la termine. Avant cette version, chaque déploiement déconnectait instantanément toutes les sessions actives.
 - Les assets Next.js `/_next/*` ne sont pas servis depuis l'ancien cache PWA.

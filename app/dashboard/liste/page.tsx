@@ -78,7 +78,7 @@ function ListeContent() {
     async function load() {
       const [{ data: invs }, { data: tbls }] = await Promise.all([
         supabase.from('invitations').select('*').order('nom_affichage'),
-        supabase.from('tables').select('*'),
+        supabase.from('tables').select('*').gt('capacity', 0),
       ]);
       if (!active) return;
       setInvitations((invs as InvitationRow[]) || []);

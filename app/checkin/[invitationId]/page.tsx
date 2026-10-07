@@ -205,7 +205,7 @@ export default function CheckinPage() {
   async function loadAllTableUsages(): Promise<TableCapacity[]> {
     const supabase = createClient();
     const [{ data: tables }, { data: assignments }, { data: allInvs }] = await Promise.all([
-      supabase.from('tables').select('*').order('is_reserve', { ascending: false }).order('number'),
+      supabase.from('tables').select('*').gt('capacity', 0).order('is_reserve', { ascending: false }).order('number'),
       supabase.from('overflow_assignments').select('*'),
       supabase.from('invitations').select('*'),
     ]);

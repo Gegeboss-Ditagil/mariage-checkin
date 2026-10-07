@@ -22,7 +22,7 @@ export async function GET() {
     { data: invitationsPrevu },
   ] = await Promise.all([
     supabase.from('events').select('*').eq('id', eventId).maybeSingle(),
-    supabase.from('tables').select('id, number, capacity, is_reserve').eq('event_id', eventId).order('number'),
+    supabase.from('tables').select('id, number, capacity, is_reserve').gt('capacity', 0).eq('event_id', eventId).order('number'),
     supabase.from('invitations').select('id', { count: 'exact', head: true }).eq('event_id', eventId),
     supabase
       .from('invitations')

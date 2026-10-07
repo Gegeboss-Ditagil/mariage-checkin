@@ -49,7 +49,7 @@ export default function GererExcedentPage() {
 
       const [{ data: inv }, { data: allTables }, { data: allAssignments }, { data: allInvs }] = await Promise.all([
         supabase.from('invitations').select('nom_affichage').eq('id', assign.invitation_id).maybeSingle(),
-        supabase.from('tables').select('*').order('is_reserve', { ascending: false }).order('number'),
+        supabase.from('tables').select('*').gt('capacity', 0).order('is_reserve', { ascending: false }).order('number'),
         supabase.from('overflow_assignments').select('*'),
         supabase.from('invitations').select('*'),
       ]);

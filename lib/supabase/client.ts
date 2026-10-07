@@ -16,11 +16,33 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  */
 let client: SupabaseClient | null = null;
 
+// v1.71.0, demande de Gersom : « il y aura une connectivité peut-être réduite
+// sur place, assure-toi que ça n'impacte pas trop l'app ». Sans délai maximal,
+// une lecture lancée sur un réseau saturé (salle pleine, 4G faible) pouvait
+// rester bloquée indéfiniment sur « Chargement… » au lieu de tomber en erreur
+// et laisser la page réessayer (polling, retour au premier plan, tirer pour
+// rafraîchir). Ce client ne fait que des LECTURES (les écritures passent par
+// les routes API, non concernées) : couper une lecture trop lente ne perd
+// jamais de donnée. Les websockets Realtime ne passent pas par ce fetch.
+export const SUPABASE_READ_TIMEOUT_MS = 15_000;
+
+export function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const timeout = AbortSignal.timeout?.(SUPABASE_READ_TIMEOUT_MS);
+  let signal = init.signal ?? timeout;
+  // Combine le signal de l'appelant et le délai quand le navigateur le
+  // permet (iOS 17.4+, Chrome 116+) ; sinon on garde celui de l'appelant.
+  if (init.signal && timeout && typeof AbortSignal.any === 'function') {
+    signal = AbortSignal.any([init.signal, timeout]);
+  }
+  return fetch(input, { ...init, signal: signal ?? undefined });
+}
+
 export function createClient(): SupabaseClient {
   if (!client) {
     client = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { global: { fetch: fetchWithTimeout } }
     );
   }
   return client;

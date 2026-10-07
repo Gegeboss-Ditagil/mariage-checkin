@@ -28,7 +28,16 @@
 // placement (invitations.table_id), ce panneau reste simplement `null` sur
 // ces quelques sieges plutot que de refleter une donnee qui contredirait la
 // vraie table de la personne.
+//
+// v1.71.0 (07/10/2026, export « seating-chart ... (7).pdf » + guest-list (63).csv) :
+// table 42 retiree (desactivee, voir migration 0064) ; « Roger Makongo »
+// ajoute au 10e siege de la table 30 (nouvel invite, CSV T030) ;
+// « Luzolo Patrick Menga » desormais a la table 31 en base aussi (CSV T031,
+// deplace depuis la table 36 par la migration 0064) -- son siege n'est plus
+// vide. Les autres tables, recomparees nom par nom avec ce PDF, sont
+// inchangees.
 export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
+  // v1.71.0 : table 1 « Maquela do Zombo » = reserve excedentaire, vide.
   1: [null, null, null, null, null, null, null, null, null, null],
   2: ["Erika Dos Goncalves", "Mona Vemba", "Isabel Vemba", "Maguy Malungu", "Ruben Kinanga Malungu", "Luis Dos", "Gaby Dos", "DeMbala Dos Goncalves", "Jael Dos Goncalves", "Nsimba Mambakasa"],
   3: ["Leverry Kinzi", "Jonas Mpindi", "Henry Kiadi Ndiongo", "Sumali Ndiongo", "Diton Kiala Diamena", "Oredezo Blancky", "Costa Mvovi", null, "Edo Tukula", "Neves Kiombi Nzuzi"],
@@ -58,8 +67,8 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   27: ["Karl Isolokele", "Mademoissele Isokolele", "Frank Mbonda", "Sami Simon", "Jovany Germain", "Momo Sidibe", "Naomi SHANGO", "Vanilla TJOM", "Alyson Choy", "Kai Choy"],
   28: ["Celestina Mundanda Nsita", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Tressy Mundanda Nsita", "Pauliana Mundanda Nsita", "Niveline Mbangu", "Nicole Mbangu", "Accompagnateur Amy Eliano", "Accompagnateur Amy Eliano", "Roger (Amy Eliano) Culumbu"],
   29: ["Laura Humba", null, "Weplo Culumbu", "Sylvie Culumbu", "Nicole Tusevo", "Elvis Tusevo", "Safira Tusevo", "Dorcas Matembe", "Divine Simao", "Sergio Manuel"],
-  30: ["Richard Landu", "Betty Jeanne Closse", "Lucien Closse", "Roger Landu", "Nadine Landu", "Dorine Landu", "Sem Landu", "Denise Landu", "Rémy Landu"],
-  31: ["Nadine Kimbau", "Debest Pello", "Claudine Pello", null, "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya", "Odette Manuel"],
+  30: ["Richard Landu", "Betty Jeanne Closse", "Lucien Closse", "Roger Landu", "Nadine Landu", "Dorine Landu", "Sem Landu", "Denise Landu", "Rémy Landu", "Roger Makongo"],
+  31: ["Nadine Kimbau", "Debest Pello", "Claudine Pello", "Luzolo Patrick Menga", "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya", "Odette Manuel"],
   32: ["Maman Elima", "Guillaume Mayimakanda", "Lucie Nzuzi", null, "Seba Domingos", "Clavert Domingos", "Charlene ELIMA", "Yves ELIMA", "Keren Malungu", "Keziah Malungu"],
   33: ["Esmeralda Vemba", "Plamedi Okito", "Darleine Okito", "Estelle Okito", "ANNE KAYLEE MAMBAKASA", "KHEIRA MAMBAKASA", "Domingas Ferreira", "Isabel Ferreira", "KENAYA MAMBAKASA", "Makaia Vemba Ferreira"],
   34: ["Jean-Claude Nsenda", "Noel Nsenda", "Moise Nsenda", "Aurelie Nsenda", "Augustin Nsenda", "Ruben Lopez", "Martinette Lopez", "Gladys Lopez", "Eden Lopez", "Veronique Nsenda"],
@@ -70,7 +79,6 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   39: ["Priscile Makuntima", "Barnabe Shungu", "Isidore Luyindula", "Glody Kambwa", "Lucien Shampe", "Léna Vinelle Nganga", "Jeanne Tona", "Helène Tona", "Ahicam Damuna"],
   40: ["Gisele Bopima", "Michaud Mabata", "Edoly Lukoki", "Michelina Guilherme", "Simao Guilherme", "Raphael Da Silva", "Daryl Lukoki", "Gladys Lukoki", "Dany Lukoki", "Glavina Lukoki"],
   41: ["Allegria Mpilingi", "Lys Landu", "Maeva Pierrefite", "Greg Pierrefitte", "Julia Pierrefite", "Axel Tacita", "Daeve Landu", "Brady Landu", "Dylan Landu", "Victoria Landu"],
-  42: [null, null, null, null, null, null, null, null, null, null],
 };
 
 // v1.48.5, demande de Gersom : afficher ce dessin sur la fiche d'un invité

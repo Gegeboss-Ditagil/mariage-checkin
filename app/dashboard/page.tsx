@@ -32,7 +32,7 @@ export default function DashboardPage() {
     const supabase = createClient();
     const [{ data: invs }, { data: tbls }, { data: ov }] = await Promise.all([
       supabase.from('invitations').select('*'),
-      supabase.from('tables').select('*').order('number'),
+      supabase.from('tables').select('*').gt('capacity', 0).order('number'),
       supabase.from('overflow_assignments').select('*'),
     ]);
     if (!activeRef.current) return;

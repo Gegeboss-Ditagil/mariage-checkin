@@ -1,11 +1,11 @@
 # Check-in Mariage Nelly & Gersom
 
-**Version actuelle : 1.70.0**
+**Version actuelle : 1.71.0**
 **Dernière mise à jour documentaire : 2026-10-07**
 
 [![Dernier commit](https://img.shields.io/github/last-commit/Gegeboss-Ditagil/mariage-checkin/main?label=derni%C3%A8re%20mise%20%C3%A0%20jour)](https://github.com/Gegeboss-Ditagil/mariage-checkin/commits/main)
 [![Branche de production](https://img.shields.io/badge/production-main-success)](https://github.com/Gegeboss-Ditagil/mariage-checkin/tree/main)
-[![Version](https://img.shields.io/badge/version-1.70.0-blue)](package.json)
+[![Version](https://img.shields.io/badge/version-1.71.0-blue)](package.json)
 [![Application](https://img.shields.io/badge/application-en%20ligne-0070f3)](https://mariage-checkin.vercel.app/)
 
 Application PWA de check-in pour le mariage du **24 octobre 2026**.
@@ -36,7 +36,7 @@ Voir la section **« Reprise rapide pour Claude AI »** à la fin de `CLAUDE.md`
 
 Voir `CHANGELOG.md` pour l'historique complet et détaillé, version par version — c'est la seule source de vérité tenue à jour à chaque release pour « qu'est-ce qui a changé et quand ». Quelques repères structurels toujours vrais aujourd'hui :
 
-- **42 tables au total** (depuis le 06/10/2026, v1.68.2, plan de table redessiné) : tables 1 à 41 normales (capacité 10 chacune, 410 places officielles), table 42 seule réserve « excédentaire » (420 places absolues avec réserve). Détail complet : `ASSIGNATION_TABLES.md`.
+- **41 tables actives** (depuis le 07/10/2026, v1.71.0, migration `0064`) : tables 2 à 41 normales (capacité 10 chacune, **400 places officielles**), **table 1 « Maquela do Zombo » seule réserve « excédentaire »** (vide, 410 places absolues avec réserve) ; la table 42 est désactivée (capacité 0, masquée dans l’app, conservée en base pour l’historique d’audit). Détail complet : `ASSIGNATION_TABLES.md`.
 - **Temps réel (Supabase Realtime)** sur les écrans principaux (`/dashboard`, `/plan-table`, `/exceptions`, fiches de table), avec application du delta plutôt qu'un refetch complet à chaque mise à jour.
 - **Invité surprise avec approbation à distance** (`/scan` → `/approbations`), placement automatique à l'approbation, réservation de table possible avant décision.
 - **Agenda partagé** (`/agenda`, admin/directeur), avec éléments privés et responsables assignables (comptes ou noms libres).

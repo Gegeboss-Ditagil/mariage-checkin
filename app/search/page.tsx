@@ -92,6 +92,7 @@ function SearchInner() {
     supabase
       .from('tables')
       .select('*')
+      .gt('capacity', 0)
       .order('number')
       .then(({ data }) => setAllTables((data as TableRow[]) || []));
   }, []);

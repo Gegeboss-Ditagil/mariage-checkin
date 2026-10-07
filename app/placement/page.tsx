@@ -50,7 +50,7 @@ export default function PlacementPage() {
 
     // Repli : certaines cartes imprimees encodent le nom de la ville
     // (accents/casse variables) plutot que le code vol-tXXX.
-    const { data: allTables } = await supabase.from('tables').select('*');
+    const { data: allTables } = await supabase.from('tables').select('*').gt('capacity', 0);
     const normalizedCode = normalize(code);
     const match = ((allTables as TableRow[]) || []).find((t) => t.label && normalize(t.label) === normalizedCode);
     if (match) {
@@ -66,7 +66,7 @@ export default function PlacementPage() {
     const supabase = createClient();
 
     if (/^\d+$/.test(query.trim())) {
-      const { data: t } = await supabase.from('tables').select('*').eq('number', Number(query)).maybeSingle();
+      const { data: t } = await supabase.from('tables').select('*').gt('capacity', 0).eq('number', Number(query)).maybeSingle();
       if (t) return setTable(t as TableRow);
     }
 

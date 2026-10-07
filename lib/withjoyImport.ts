@@ -1,8 +1,17 @@
 // Port serveur des règles validées par scripts/build_plan_from_csv.py et
 // scripts/assign_tables_from_labels.py. Ce module ne fait aucune écriture.
 
-export const NB_TABLES_INVITES = 41;
+// v1.71.0 (migration 0064) : la table 1 « Maquela do Zombo » est l unique
+// table de reserve (excedentaire) ; les tables normales sont 2 a 41 ; la
+// table 42 est desactivee (capacite 0, masquee). 40 x 10 = 400 places
+// officielles, 410 avec la reserve.
+export const NB_TABLES_INVITES = 40;
 export const NB_TABLES_RESERVE = 1;
+export const RESERVE_TABLE_NUMBER = 1;
+export const TOTAL_TABLE_NUMBERS = NB_TABLES_INVITES + NB_TABLES_RESERVE;
+export function isReserveTableNumber(table: number): boolean {
+  return table === RESERVE_TABLE_NUMBER;
+}
 export const CAPACITY = 10;
 export const CAPACITE_OFFICIELLE = NB_TABLES_INVITES * CAPACITY;
 
@@ -74,6 +83,10 @@ export interface ImportGroup {
   // (voir invitations.withjoy_party_id, migration 0052). `null` pour un
   // groupe "SOLO-N" synthetique (aucune valeur de party dans la ligne).
   withjoyPartyId: string | null;
+  // v1.71.0 : nom affiche de chaque personne du groupe (meme fonction
+  // displayName que nom_affichage/notes) -- sert a la « mise a jour sure »
+  // (lib/withjoySafeMerge.ts) pour retrouver une personne deja en base.
+  memberNames: string[];
 }
 
 export interface TableAssignment {
@@ -260,6 +273,7 @@ function buildGroup(gid: string, members: Record<string, string>[], warnings: st
     category: isStaff(tags) ? 'Staff' : null,
     rsvpConfirmed,
     withjoyPartyId,
+    memberNames: names,
   };
 }
 
@@ -359,8 +373,10 @@ export function buildImportPlan(rows: Record<string, string>[]): ImportPlan {
     const key = clusterKey(group);
     clusters.set(key, [...(clusters.get(key) || []), group]);
   }
-  const pool = Array.from({ length: NB_TABLES_INVITES }, (_, index) => index + 1).filter((table) => !labeledTables.has(table));
-  const reserve = [NB_TABLES_INVITES + 1];
+  // Tables normales 2-41 d abord, la reserve (table 1) en tout dernier recours.
+  const pool = Array.from({ length: TOTAL_TABLE_NUMBERS }, (_, index) => index + 1)
+    .filter((table) => !isReserveTableNumber(table) && !labeledTables.has(table));
+  const reserve = [RESERVE_TABLE_NUMBER];
   const clusterEntries = Array.from(clusters.entries()).sort((a, b) =>
     b[1].reduce((sum, group) => sum + group.size, 0) - a[1].reduce((sum, group) => sum + group.size, 0)
   );
@@ -389,8 +405,8 @@ export function buildImportPlan(rows: Record<string, string>[]): ImportPlan {
   const parCote = { Nelly: 0, Gege: 0, Neutre: 0 };
   allGroups.forEach((group) => { parCote[group.cote] += group.size; });
   const overCapacity = Array.from(tableUsed.entries()).filter(([, used]) => used > CAPACITY).map(([table, used]) => ({ table, used }));
-  const officiellesCount = Array.from(tableUsed.entries()).filter(([table]) => table <= NB_TABLES_INVITES).reduce((sum, [, used]) => sum + used, 0);
-  const reserveCount = tableUsed.get(NB_TABLES_INVITES + 1) || 0;
+  const officiellesCount = Array.from(tableUsed.entries()).filter(([table]) => !isReserveTableNumber(table)).reduce((sum, [, used]) => sum + used, 0);
+  const reserveCount = tableUsed.get(RESERVE_TABLE_NUMBER) || 0;
 
   return {
     report: {

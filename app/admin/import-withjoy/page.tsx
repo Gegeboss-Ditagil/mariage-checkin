@@ -6,6 +6,14 @@ import type { ImportReport } from '@/lib/withjoyImport';
 
 type Status = 'idle' | 'previewing' | 'previewed' | 'importing' | 'done' | 'error';
 
+// v1.71.0 : aperçu de la « mise à jour sûre » (voir lib/withjoySafeMerge.ts).
+interface SafePreview {
+  additions: { label: string; size: number; tableNumber: number | null; reason: 'tag' | 'reserve' | 'sans_table' }[];
+  tableChanges: { label: string; invitationName: string; fromTable: number | null; toTable: number }[];
+  alreadyPresent: number;
+  addedPersons: number;
+}
+
 export default function ImportWithJoyPage() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [csvText, setCsvText] = useState<string | null>(null);
@@ -15,6 +23,8 @@ export default function ImportWithJoyPage() {
   const [confirmation, setConfirmation] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string | null>(null);
+  const [safe, setSafe] = useState<SafePreview | null>(null);
+  const [eventStatus, setEventStatus] = useState<string | null>(null);
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -37,6 +47,8 @@ export default function ImportWithJoyPage() {
       setReport(data.report);
       setExpectedBeforeCount(data.currentInvitationCount);
       setExpectedFingerprint(data.stateFingerprint);
+      setSafe(data.safe ?? null);
+      setEventStatus(data.eventStatus ?? null);
       setStatus('previewed');
     } catch (error) {
       setStatus('error');
@@ -65,6 +77,27 @@ export default function ImportWithJoyPage() {
     }
   }
 
+  async function handleSafeApply() {
+    if (!csvText || !safe || safe.additions.length === 0) return;
+    if (!window.confirm(`Ajouter ${safe.additions.length} nouvelle(s) invitation(s) (${safe.addedPersons} personne(s)) ? Rien d'existant ne sera modifié ni supprimé.`)) return;
+    setStatus('importing');
+    setMessage(null);
+    try {
+      const response = await fetch('/api/admin/import-withjoy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csvText, mode: 'safe-apply', expectedAdditions: safe.additions.length }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "Échec de l'ajout");
+      setStatus('done');
+      setMessage(`Mise à jour sûre terminée : ${data.result.added} invitation(s) ajoutée(s) (${data.result.persons} personne(s)). Rien d'autre n'a été modifié.`);
+    } catch (error) {
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : "Échec de l'ajout");
+    }
+  }
+
   function reset() {
     setFileName(null);
     setCsvText(null);
@@ -74,10 +107,14 @@ export default function ImportWithJoyPage() {
     setConfirmation('');
     setStatus('idle');
     setMessage(null);
+    setSafe(null);
+    setEventStatus(null);
   }
 
   const blocked = !!report && (report.unplacedCount > 0 || report.overCapacity.length > 0);
   const clean = !!report && report.ok && report.warnings.length === 0 && report.emptyNameCount === 0 && !blocked;
+  // Le remplacement complet est refusé côté serveur hors Préparation/Test.
+  const replaceAllowed = eventStatus === 'setup' || eventStatus === 'test';
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -132,8 +169,8 @@ export default function ImportWithJoyPage() {
             </div>
 
             <div className="card space-y-1 p-4 text-sm text-text-muted">
-              <p>{report.officiellesCount} / 410 places officielles</p>
-              <p>{report.reserveCount} personnes en réserve (table 42)</p>
+              <p>{report.officiellesCount} / 400 places officielles</p>
+              <p>{report.reserveCount} personnes en réserve (table 1, excédentaire)</p>
               <p>{report.withFixedTable} invitations confirmées par tag T/Fxxx</p>
               <p>{report.withoutTable} personnes volontairement sans table</p>
               <p>{report.declinedCount} personnes ayant décliné, exclues de l’import</p>
@@ -154,7 +191,68 @@ export default function ImportWithJoyPage() {
               </div>
             )}
 
-            {!blocked && (
+            {safe && (
+              <div className="card space-y-3 p-4">
+                <div>
+                  <p className="font-semibold text-status-complete">Mise à jour sûre — recommandée le jour J</p>
+                  <p className="text-xs text-text-faint">
+                    Ajoute uniquement les personnes absentes de l’application. Ne supprime rien, ne déplace personne, ne remet aucune arrivée à zéro.
+                  </p>
+                </div>
+                <p className="text-sm text-text-muted">{safe.alreadyPresent} invitation{safe.alreadyPresent > 1 ? 's' : ''} déjà présente{safe.alreadyPresent > 1 ? 's' : ''} (inchangée{safe.alreadyPresent > 1 ? 's' : ''})</p>
+                {safe.additions.length === 0 ? (
+                  <p className="text-sm font-semibold text-text">Aucun nouvel invité dans ce fichier.</p>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-text">
+                      {safe.additions.length} nouvelle{safe.additions.length > 1 ? 's' : ''} invitation{safe.additions.length > 1 ? 's' : ''} ({safe.addedPersons} personne{safe.addedPersons > 1 ? 's' : ''})
+                    </p>
+                    <ul className="space-y-0.5 text-sm text-text-muted">
+                      {safe.additions.map((addition, index) => (
+                        <li key={index}>
+                          • {addition.label} ({addition.size}) →{' '}
+                          {addition.tableNumber === null
+                            ? 'sans table (aucune place libre)'
+                            : addition.reason === 'reserve'
+                              ? `table ${addition.tableNumber} (réserve, table demandée pleine)`
+                              : `table ${addition.tableNumber}`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {safe.tableChanges.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-status-partial">
+                      {safe.tableChanges.length} changement{safe.tableChanges.length > 1 ? 's' : ''} de table dans le fichier (non appliqué{safe.tableChanges.length > 1 ? 's' : ''} — à faire dans l’app si voulu)
+                    </p>
+                    <ul className="space-y-0.5 text-sm text-text-muted">
+                      {safe.tableChanges.map((change, index) => (
+                        <li key={index}>• {change.invitationName} : table {change.fromTable ?? '—'} → {change.toTable}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {status !== 'done' && (
+                  <button
+                    type="button"
+                    className="btn-primary w-full"
+                    disabled={status === 'importing' || safe.additions.length === 0}
+                    onClick={handleSafeApply}
+                  >
+                    {status === 'importing' ? 'Ajout en cours…' : safe.additions.length === 0 ? 'Rien à ajouter' : `Ajouter les ${safe.additions.length} nouveaux invités`}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!replaceAllowed && eventStatus && (
+              <p className="rounded-xl2 bg-surface-2 p-3 text-xs text-text-faint">
+                Remplacement complet indisponible : l’événement n’est plus en Préparation/Test. Utilisez la mise à jour sûre ci-dessus.
+              </p>
+            )}
+
+            {!blocked && replaceAllowed && (
               <div className="space-y-2 rounded-xl2 border-2 border-status-over/30 bg-status-over/5 p-4">
                 <p className="text-sm font-semibold text-status-over">Action destructive réservée aux phases Préparation et Test</p>
                 <p className="text-xs text-text-faint">
@@ -175,7 +273,7 @@ export default function ImportWithJoyPage() {
         {message && <p className={'rounded-xl2 p-3 text-sm font-medium ' + (status === 'done' ? 'bg-status-complete/10 text-status-complete' : 'bg-status-over/10 text-status-over')}>{message}</p>}
       </div>
 
-      {report?.ok && status !== 'done' && !blocked && (
+      {report?.ok && status !== 'done' && !blocked && replaceAllowed && (
         <div className="space-y-2 px-4 pb-6">
           <button type="button" className="btn-primary w-full" disabled={status === 'importing' || confirmation !== 'REMPLACER'} onClick={handleConfirm}>
             {status === 'importing' ? 'Import en cours…' : 'CONFIRMER ET REMPLACER'}

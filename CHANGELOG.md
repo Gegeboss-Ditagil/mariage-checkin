@@ -3,6 +3,46 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.71.0] — 2026-10-07
+
+Retour de Gersom avec le nouvel export seatplan.io (« seating-chart … (7).pdf ») et `guest-list (63).csv` : « la table 42 n'existe plus, appeler table 1 Maquela do Zombo la table excédentaire maintenant… 42 ne sera plus utilisé » ; « Roger Makongo a été ajouté… et Luzolo déplacé à la table 31 » ; « corrige bien les éléments comme la map donnée et aligne les tables… change les noms des objets de la salle » ; « assure-toi qu'un import With Joy de dernière minute à partir de l'app fonctionnera » ; « connectivité peut-être réduite sur place ».
+
+### Données — production Supabase (migration `0064`, exécutée et vérifiée le 07/10/2026)
+Décisions confirmées par Gersom avant toute écriture (questions posées), sauvegarde des lignes touchées dans `import_backups` (`snapshot->>'kind' = 'v1.71.0_table1_reserve'`) :
+- **Table 1 « Maquela do Zombo » = unique réserve « excédentaire »** (vide). Tables 2 à 41 normales : **400 places officielles**, 410 avec la réserve.
+- **Table 42 désactivée** (capacité 0, plus réserve, libellé « Supprimee (historique audit uniquement) ») et **masquée de toute l'application** — pas supprimée : 13 lignes d'`audit_logs` (septembre, période de test) la référencent (même raisonnement que `0061`).
+- **Roger Makongo** ajouté (table 30, Côté Gégé, confirmé, +33…455, tag T030) → table 30 = 10/10.
+- **Luzolo Patrick Menga** : table 36 → **table 31** (tag T041 incohérent corrigé en T031) → table 36 repasse de 11/10 à 10/10.
+- **Steven Kimbau** retiré de « Famille Kimbau » (4 → 3), comme sur le PDF qui ne l'assoit nulle part (le CSV le gardait à T031 : la table 31 serait passée à 11/10) → table 31 = 10/10.
+- Vérification groupée après coup (règle `docs/QE_QA_PROCESS.md`) : seules les tables **2** (« Cedrix », faux invité de test déjà signalé en v1.69.2) et **28** (« Ya Maguy Mundanda Nsita », absente de la table 28 du PDF) restent à 11/10 — signalées, non modifiées (hors demande).
+
+### Changé — table 42 masquée partout, réserve = table 1
+- 17 requêtes de **liste** de tables filtrent désormais `capacity > 0` (plan de table, tableau de bord, liste, recherche, placement, déplacements simples/multiples/débordements, ajout, assignation des approbations, assistant, gestion des tables, exports, notifications) — la table 42 n'apparaît plus nulle part. Les fonctions SQL de placement choisissent déjà la réserve par `is_reserve` (aucune ne cite 41/42, vérifié en base).
+- Import With Joy : réserve = **table 1** (`RESERVE_TABLE_NUMBER`), tables normales 2–41 remplies d'abord ; 400 places officielles affichées.
+- `/plan-table` : capacité officielle 400.
+
+### Changé — plan de salle refait sur le nouveau PDF
+- Toute la géométrie remesurée sur l'export du 07/10 (format Tabloid 1224×792, plus A4) : nouvelle transformation `pdfToPlan` (origine (200, 70) pts, ×1,5), viewBox 1220×950.
+- **Noms des objets repris du PDF** : Zone concert et show (ex-« Extension piste »), Bar soirée, Couloir Sud – Chapiteau (ex-« CO »), Vin d'honneur & buffet, **Tables vin d'honneur C / D / E** (ex-« Séparation temporaire »), **Cloisons temporaires A, B (chantier zone média) et séparation zone média-buffet**, **Section D** (nouvelle), table **Staff**.
+- **Tables alignées** : chaque table prend la moyenne de sa colonne et de sa rangée dans le PDF → grille droite de 6 colonnes × 8 rangées (écarts de 1 à 4 pts gommés).
+- **Table 1** dessinée là où était la 42 (bas droite du bloc Sud), contour en pointillés et mention « réserve » ; plus de table « hors plan ».
+- Repères du bord droit (sorties d'urgence, « Accès vers la S… ») ancrés à droite pour ne plus déborder du cadre.
+- Sièges : Roger Makongo (table 30), Luzolo (table 31), table 42 retirée (`lib/floorPlanSeats.ts`).
+
+### Ajouté — « Mise à jour sûre » pour un import With Joy de dernière minute
+- **Constat** : l'import existant **remplace tout** (supprime puis recrée toutes les invitations → arrivées, noms saisis, invités surprise, déplacements et fusions faits dans l'app perdus) et est **refusé en mode Jour J** : un import de dernière minute le jour même était donc impossible.
+- Nouveau module pur `lib/withjoySafeMerge.ts` + modes API `preview` (enrichi) / `safe-apply` : ajoute **uniquement les personnes absentes** (reconnues par nom affiché, liste « Membres: » ou identifiant With Joy), à leur table T/Fxxx si elle a la place, sinon dans la réserve (table 1), sinon sans table — jamais au-delà de la capacité ; **changements de table seulement signalés** ; aucune suppression, aucune remise à zéro ; un seul INSERT (tout ou rien) ; refus si la base a changé depuis l'aperçu ; journal `import_withjoy_safe_add` ; **autorisé aussi en mode Jour J**.
+- `/admin/import-withjoy` : section « Mise à jour sûre — recommandée le jour J » (liste des nouveaux et des changements signalés, bouton « Ajouter les N nouveaux invités ») ; le remplacement complet n'est plus proposé hors Préparation/Test.
+- Testé à sec sur `guest-list (63).csv` : 302 groupes / 411 personnes lus sans erreur.
+
+### Ajouté — connectivité réduite
+- Les lectures Supabase du navigateur ont un délai maximal de 15 s (`fetchWithTimeout`, `AbortSignal.timeout` combiné au signal de l'appelant quand le navigateur le permet) : sur un réseau saturé, une page n'est plus bloquée indéfiniment sur « Chargement… » et peut réessayer. Les écritures (routes API) ne sont pas coupées : couper une écriture que le serveur a peut-être déjà enregistrée serait plus risqué.
+
+### Tests
+- `tests/table1-reserve-v1-71.test.ts`, `tests/withjoy-safe-merge.test.ts` (nouveaux) ; `tests/floor-plan.test.ts`, `tests/floor-plan-seats.test.ts`, `tests/withjoy-import.test.ts` mis à jour (41 tables, réserve table 1, grille alignée, nouveaux noms, aucune table sur une zone).
+
+Migration : `0064_table1_reserve_hide_table42_makongo_luzolo.sql` (exécutée et vérifiée en production le 07/10/2026).
+
 ## [1.70.0] — 2026-10-07
 
 Retour de Gersom (avec l'export seatplan.io du 07/10/2026) : « assure-toi que la map est pareille dans l'app, il manque des détails surtout dans les à-côtés, on dirait une mauvaise reproduction... fais-le en détail, mets les sorties et autres comme dans ce plan. »
