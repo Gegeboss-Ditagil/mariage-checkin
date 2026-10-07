@@ -13,10 +13,10 @@ Retour de Gersom (2 captures d'écran : fiche `/checkin` d'« Ahicam Damuna » e
 
 ### Corrigé — dessin de table : la flèche ne chevauche plus la pastille Piste/Allée
 - **Root cause** : la pastille était centrée à un rayon fixe (`TILE_RADIUS = 190`) alors que la pointe de flèche montait jusqu'à ~181 et que la demi-taille de la pastille (22 à 39 selon l'angle) la faisait commencer bien avant — la pointe était donc dessinée sous le rectangle à presque tous les angles.
-- La pointe s'arrête désormais à `ARROW_TIP_RADIUS = 176` ; la pastille est placée par `tileCenterDistance(angle, w, h)` (distance centre→bord exacte d'un rectangle dans la direction de la flèche) pour que son bord le plus proche commence toujours `TILE_GAP = 8` plus loin, quelle que soit sa forme et l'angle.
+- La pointe s'arrête désormais à `ARROW_TIP_RADIUS = 170` ; la pastille est placée par `tileCenterDistance(angle, w, h)` (distance centre→bord exacte d'un rectangle dans la direction de la flèche) pour que son bord le plus proche commence toujours `TILE_GAP = 6` plus loin, quelle que soit sa forme et l'angle.
 
 ### Changé — dessin de table agrandi, repères plus clairs
-- Pastilles agrandies : Piste 54×54 → 76×76, Allée 78×44 → 108×72, emoji 26 → 40px, légende 11 → 14px.
+- Pastilles agrandies : Piste 54×54 → 72×72, Allée 78×44 → 98×68, emoji 26 → 36px, légende 11 → 14px — dimensionnées pour que, même avec les deux pastilles à gauche et à droite, le dessin ne soit jamais plus large que l’ncien (sinon les sièges rétréciraient sur ces tables).
 - Boussole N/E/S/O déplacée dans l'anneau libre entre le cercle central et les sièges (`COMPASS_RADIUS` 248 → 61) : les pastilles agrandies occupent désormais l'anneau extérieur, où elle aurait pu les chevaucher.
 - viewBox ajusté au contenu réel (`computeWheelViewBox` : cercle des sièges + les deux pastilles à leurs vrais angles) au lieu d'un carré fixe dimensionné pour le pire cas, et largeur maximale 360 → 560px : le dessin occupe nettement plus de place à l'écran.
 

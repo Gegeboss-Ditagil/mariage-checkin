@@ -116,19 +116,19 @@ test('components/TableSeatWheel.tsx dessine les deux flèches hors de la zone de
 // retrecit pour degager de la place.
 test('v1.66.0 : pastilles rectangulaires Piste (carrée)/Allée (rectangle) avec emoji agrandi, table centrale réduite', () => {
   assert.match(wheelSource, /const HUB_RADIUS = 44;/);
-  // v1.69.3 : pastilles agrandies (54x54/78x44 -> 76x76/108x72).
-  assert.match(wheelSource, /const PISTE_TILE_WIDTH = 76;/);
-  assert.match(wheelSource, /const PISTE_TILE_HEIGHT = 76;/);
-  assert.match(wheelSource, /const ALLEE_TILE_WIDTH = 108;/);
-  assert.match(wheelSource, /const ALLEE_TILE_HEIGHT = 72;/);
+  // v1.69.3 : pastilles agrandies (54x54/78x44 -> 72x72/98x68).
+  assert.match(wheelSource, /const PISTE_TILE_WIDTH = 72;/);
+  assert.match(wheelSource, /const PISTE_TILE_HEIGHT = 72;/);
+  assert.match(wheelSource, /const ALLEE_TILE_WIDTH = 98;/);
+  assert.match(wheelSource, /const ALLEE_TILE_HEIGHT = 68;/);
   // Piste carree (PISTE_TILE_WIDTH === PISTE_TILE_HEIGHT, deja verifie par
   // les deux regex ci-dessus), Allee plus large que haute (forme allongee,
   // ALLEE_TILE_WIDTH > ALLEE_TILE_HEIGHT) -- les deux pastilles different
   // volontairement, jamais le meme gabarit reutilise tel quel.
-  assert.ok(108 > 72, 'la pastille Allee doit etre plus large que haute');
+  assert.ok(98 > 68, 'la pastille Allee doit etre plus large que haute');
   // L'emoji est isole dans son propre <text>, bien plus grand que l'ancien
   // libelle combine (15px) -- jamais retabli a la meme taille que la legende.
-  assert.match(wheelSource, /const EMOJI_FONT_SIZE = 40;/);
+  assert.match(wheelSource, /const EMOJI_FONT_SIZE = 36;/);
   assert.match(wheelSource, /style=\{\{ fontSize: EMOJI_FONT_SIZE \}\}/);
   // Legende texte separee de l'emoji, toujours visible sous la pastille.
   assert.match(wheelSource, /className="fill-text text-\[14px\] font-bold">\s*\r?\n\s*\{label\}/);
@@ -186,15 +186,15 @@ test('les quatre écrans qui affichent le dessin passent orientation={getTableOr
 // angles, aucun point de la fleche n'est sous la pastille, et la pastille
 // reste dans le viewBox maximal.
 test('v1.69.3 : la flèche ne chevauche jamais la pastille, à aucun angle', () => {
-  assert.match(wheelSource, /const ARROW_TIP_RADIUS = 176;/);
-  assert.match(wheelSource, /const TILE_GAP = 8;/);
-  assert.match(wheelSource, /const VIEW_MARGIN = 136;/);
+  assert.match(wheelSource, /const ARROW_TIP_RADIUS = 170;/);
+  assert.match(wheelSource, /const TILE_GAP = 6;/);
+  assert.match(wheelSource, /const VIEW_MARGIN = 116;/);
   assert.match(wheelSource, /const halfExtent = Math\.min\(sx > 1e-9 \? w \/ 2 \/ sx : Infinity, cy > 1e-9 \? h \/ 2 \/ cy : Infinity\);/);
   assert.match(wheelSource, /return ARROW_TIP_RADIUS \+ TILE_GAP \+ halfExtent;/);
-  const TIP = 176;
-  const GAP = 8;
+  const TIP = 170;
+  const GAP = 6;
   const CENTER = 160;
-  const MARGIN = 136;
+  const MARGIN = 116;
   const VIEW = 320;
   const dist = (a: number, w: number, h: number) => {
     const r = (a * Math.PI) / 180;
@@ -202,13 +202,13 @@ test('v1.69.3 : la flèche ne chevauche jamais la pastille, à aucun angle', () 
     const cy = Math.abs(Math.cos(r));
     return TIP + GAP + Math.min(sx > 1e-9 ? w / 2 / sx : Infinity, cy > 1e-9 ? h / 2 / cy : Infinity);
   };
-  for (const [w, h] of [[76, 76], [108, 72]]) {
+  for (const [w, h] of [[72, 72], [98, 68]]) {
     for (let a = 0; a < 360; a += 0.25) {
       const r = (a * Math.PI) / 180;
       const R = dist(a, w, h);
       const cx = CENTER + Math.sin(r) * R;
       const cy = CENTER - Math.cos(r) * R;
-      // Tout point du trait et de la pointe (rayon 146 -> 176, +1 pour l'epaisseur).
+      // Tout point du trait et de la pointe (rayon 146 -> 170, +1 pour l'epaisseur).
       for (let rr = 146; rr <= TIP + 1; rr += 1) {
         const px = CENTER + Math.sin(r) * rr;
         const py = CENTER - Math.cos(r) * rr;
@@ -219,5 +219,30 @@ test('v1.69.3 : la flèche ne chevauche jamais la pastille, à aucun angle', () 
         assert.ok(v >= -MARGIN && v <= VIEW + MARGIN, `pastille hors viewBox a ${a} deg`);
       }
     }
+  }
+});
+
+// v1.69.3 : agrandir les pastilles ne doit jamais elargir le dessin au-dela
+// de l'ancien carre fixe (VIEW_SIZE + 2 x 104 = 528) dans le pire cas --
+// sinon, une fois mis a l'echelle de l'ecran, les sieges retreciraient sur
+// les tables dont les deux pastilles sont a gauche ET a droite.
+test('v1.69.3 : le viewBox ajusté ne dépasse jamais l\'ancien carré de 528', () => {
+  const TIP = 170;
+  const GAP = 6;
+  const dist = (a: number, w: number, h: number) => {
+    const r = (a * Math.PI) / 180;
+    const sx = Math.abs(Math.sin(r));
+    const cy = Math.abs(Math.cos(r));
+    return TIP + GAP + Math.min(sx > 1e-9 ? w / 2 / sx : Infinity, cy > 1e-9 ? h / 2 / cy : Infinity);
+  };
+  const extent = (a: number, w: number, h: number) => {
+    const r = (a * Math.PI) / 180;
+    const R = dist(a, w, h);
+    return { x: Math.abs(Math.sin(r) * R) + w / 2 };
+  };
+  for (let a = 0; a < 360; a += 1) {
+    // Piste et Allee de part et d'autre (pire cas horizontal).
+    const width = extent(a, 72, 72).x + extent(a + 180, 98, 68).x + 2 * 4;
+    assert.ok(width <= 528 + 24, `viewBox trop large (${width.toFixed(0)}) a ${a} deg`);
   }
 });

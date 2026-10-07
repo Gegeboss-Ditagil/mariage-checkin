@@ -133,19 +133,21 @@ const ARROW_INNER_RADIUS = 146;
 // direction de la fleche (voir tileCenterDistance). L'ancien rayon fixe
 // (TILE_RADIUS = 190, v1.66.0) faisait chevaucher la pointe et le
 // rectangle a presque tous les angles.
-const ARROW_TIP_RADIUS = 176;
-const TILE_GAP = 8;
+const ARROW_TIP_RADIUS = 170;
+const TILE_GAP = 6;
 // v1.66.0 : vraie pastille rectangulaire (emoji isole + legende). Piste =
 // carre (forme compacte, comme la piste de danse reelle) ; Allee =
 // rectangle plus large qu'haut (forme allongee, comme une allee).
 // v1.69.3, "agrandie... les images de piste et de l'allee... pour que ca
 // soit beaucoup plus clair" : pastilles et emoji nettement agrandis
-// (54x54 / 78x44 / 26px auparavant).
-const PISTE_TILE_WIDTH = 76;
-const PISTE_TILE_HEIGHT = 76;
-const ALLEE_TILE_WIDTH = 108;
-const ALLEE_TILE_HEIGHT = 72;
-const EMOJI_FONT_SIZE = 40;
+// (54x54 / 78x44 / 26px auparavant) -- sans elargir le
+// viewBox au-dela de l'ancien carre dans le pire cas (pastilles a gauche et
+// a droite), sinon les sieges retreciraient sur ces tables-la.
+const PISTE_TILE_WIDTH = 72;
+const PISTE_TILE_HEIGHT = 72;
+const ALLEE_TILE_WIDTH = 98;
+const ALLEE_TILE_HEIGHT = 68;
+const EMOJI_FONT_SIZE = 36;
 // Repere cardinal (N/S/E/O) : v1.69.3, deplace dans l'anneau libre entre le
 // cercle central (HUB_RADIUS = 44) et le bord interieur des sieges
 // (SEAT_RADIUS - SEAT_HEIGHT/2 = 78) -- les pastilles agrandies occupent
@@ -153,9 +155,9 @@ const EMOJI_FONT_SIZE = 40;
 // a certains angles.
 const COMPASS_RADIUS = 61;
 // Marge assez large pour contenir la pastille la plus eloignee quel que
-// soit l'angle (pire cas ~292 du centre, verifie par
+// soit l'angle (pire cas ~274 du centre, verifie par
 // tests/table-orientation-arrows.test.ts).
-const VIEW_MARGIN = 136;
+const VIEW_MARGIN = 116;
 
 // Distance du centre de la table au centre d'une pastille w x h placee dans
 // la direction `angle` (0 deg = haut, sens horaire), de sorte que son bord
@@ -278,12 +280,12 @@ function LandmarkTile({
           x1={CENTER}
           y1={CENTER - ARROW_INNER_RADIUS}
           x2={CENTER}
-          y2={CENTER - ARROW_TIP_RADIUS + 16}
+          y2={CENTER - ARROW_TIP_RADIUS + 12}
           className="stroke-accent stroke-[4]"
           strokeLinecap="round"
         />
         <polygon
-          points={`${CENTER - 8},${CENTER - ARROW_TIP_RADIUS + 18} ${CENTER + 8},${CENTER - ARROW_TIP_RADIUS + 18} ${CENTER},${CENTER - ARROW_TIP_RADIUS}`}
+          points={`${CENTER - 8},${CENTER - ARROW_TIP_RADIUS + 14} ${CENTER + 8},${CENTER - ARROW_TIP_RADIUS + 14} ${CENTER},${CENTER - ARROW_TIP_RADIUS}`}
           className="fill-accent"
           strokeLinejoin="round"
         />
