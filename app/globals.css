@@ -280,6 +280,17 @@ body {
   @apply h-8 w-8;
 }
 
+/* Pastille texte en verre (v1.70.0) : actions textuelles de la barre du haut
+   (« + Signaler », « Sélectionner », « Annuler »), qui etaient du texte nu
+   a cote de boutons ronds en verre -- meme recette que .glass-icon-button. */
+.glass-pill {
+  @apply inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-hairline bg-surface px-4 text-sm font-semibold text-accent
+    active:scale-[0.97] transition-transform;
+  box-shadow: var(--elev-2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
 /* Bascule Actif/Desactive en verre liquide (theme iOS) -- demande de
    Gersom le 02/09/2026 : "pour activer et desactiver, ca puisse etre un
    toggle avec le theme ios verre liquide", a la place de l'ancien badge

@@ -298,3 +298,19 @@ test('une seule barre de capacite (CapacityBar) remplace les deux barres separee
   assert.equal(capacityBarUsages.length, 2, 'CapacityBar doit etre utilise exactement 2 fois (carte de table + recapitulatif de page)');
   assert.match(pageSource, /const over = present > prevu;/);
 });
+
+// v1.70.0, constate en testant /plan-table dans Chrome : setPointerCapture
+// systematique au pointerdown redirigeait pointerup ET click vers le <div>
+// du zoom -- un clic souris (et Android) sur une table ou une zone staff ne
+// declenchait jamais son onClick. Bug present depuis v1.11.0.
+test('v1.70.0 : un simple tap sur le plan n est jamais capture par le conteneur de zoom', () => {
+  const down = zoomSource.slice(zoomSource.indexOf('function onPointerDown'), zoomSource.indexOf('function onPointerMove'));
+  // Aucune capture inconditionnelle a l'appui : seulement pour un 2e doigt.
+  assert.doesNotMatch(down, /^\s*e\.currentTarget\.setPointerCapture\(e\.pointerId\);/m);
+  assert.match(down, /if \(pointers\.current\.size === 2\) \{\s*\r?\n\s*for \(const id of pointers\.current\.keys\(\)\) capture\(e\.currentTarget, id\);/);
+  assert.match(down, /if \(e\.isPrimary\) pointers\.current\.clear\(\);/);
+  // Glissement une fois zoome : capture prise seulement apres le seuil de 4px.
+  const move = zoomSource.slice(zoomSource.indexOf('function onPointerMove'), zoomSource.indexOf('function onPointerUp'));
+  assert.match(move, /moved\.current = true;\s*\r?\n\s*capture\(e\.currentTarget, e\.pointerId\);/);
+  assert.match(zoomSource, /function capture\(el: Element, pointerId: number\) \{/);
+});

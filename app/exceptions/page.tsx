@@ -85,8 +85,9 @@ export default function ExceptionsPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar
           title="Exceptions"
+          backHref="/scan"
           right={
-            <button className="text-sm font-semibold" onClick={() => setShowForm((v) => !v)}>
+            <button type="button" className="glass-pill" onClick={() => setShowForm((v) => !v)}>
               {showForm ? 'Annuler' : '+ Signaler'}
             </button>
           }

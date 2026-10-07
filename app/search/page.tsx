@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { createClient } from '@/lib/supabase/client';
@@ -168,7 +168,13 @@ function SearchInner() {
     return () => clearTimeout(timeout);
   }, [query, mode]);
 
-  const hasQuery = query.trim().length >= (mode === 'telephone' ? 4 : 2);
+  // v1.70.0 : la bascule « toutes les invitations » <-> « résultats » est
+  // pilotée par une valeur DIFFÉRÉE de la saisie. Sans ça, la 2e lettre
+  // tapée démontait synchroniquement les ~250 lignes de la liste dans le
+  // même événement clavier (INP mesuré à 1,1 s sur la preview : le champ
+  // gelait). La saisie reste instantanée, la liste suit juste après.
+  const deferredQuery = useDeferredValue(query);
+  const hasQuery = deferredQuery.trim().length >= (mode === 'telephone' ? 4 : 2);
 
   const browsing = mode === 'nom' && !hasQuery;
   const listeAffichee = browsing ? allInvitations : results;

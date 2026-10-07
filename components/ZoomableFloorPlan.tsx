@@ -36,6 +36,16 @@ function distance(a: Point, b: Point) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+// Capture tolerante : un pointeur deja relache (ou inconnu du navigateur)
+// leve une exception -- jamais bloquant pour le geste en cours.
+function capture(el: Element, pointerId: number) {
+  try {
+    if (!el.hasPointerCapture(pointerId)) el.setPointerCapture(pointerId);
+  } catch {
+    /* pointeur deja relache */
+  }
+}
+
 interface ZoomableFloorPlanProps {
   selectedNumber: number | null;
   onSelectNumber: (number: number) => void;
@@ -80,9 +90,20 @@ export function ZoomableFloorPlan({
     // s'il n'existait pas (fréquent après un pincement), on évite ainsi
     // d'avaler le prochain vrai tap sur une table.
     if (pointers.current.size === 0) moved.current = false;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    // v1.70.0 : un pointeur « principal » ouvre toujours un nouveau geste --
+    // purge un eventuel pointeur reste orphelin (relache hors du cadre, sans
+    // capture), qui ferait sinon croire a un pincement au prochain tap.
+    if (e.isPrimary) pointers.current.clear();
+    // v1.70.0 : PLUS de setPointerCapture systematique au pointerdown. En
+    // Chrome (souris et Android), la capture redirige pointerup ET le click
+    // vers ce <div> : le click n'atteignait donc jamais la table ou la zone
+    // touchee (onClick des <g> jamais declenche) -- constate en testant le
+    // plan sur la preview, bug present depuis v1.11.0. La capture n'est
+    // prise que lorsqu'un vrai geste commence (2e doigt, ou glissement une
+    // fois zoome, voir onPointerMove) ; un simple tap reste un vrai click.
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2) {
+      for (const id of pointers.current.keys()) capture(e.currentTarget, id);
       const [a, b] = Array.from(pointers.current.values());
       // Deux pointeurs peuvent exceptionnellement commencer au même pixel;
       // une borne minimale évite alors une division par zéro au mouvement.
@@ -107,7 +128,10 @@ export function ZoomableFloorPlan({
     } else if (pointers.current.size === 1 && panStart.current && scale > 1) {
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved.current = true;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        moved.current = true;
+        capture(e.currentTarget, e.pointerId);
+      }
       setTranslate(
         clampTranslate({ x: panStart.current.translate.x + dx, y: panStart.current.translate.y + dy }, scale)
       );

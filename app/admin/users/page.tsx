@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TopBar } from '@/components/TopBar';
+import { CloseIcon, EditIcon } from '@/components/icons';
 import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 
 const inputClass =
@@ -228,11 +229,16 @@ export default function UsersAdminPage() {
                   <p className="text-sm text-text-faint">{ROLE_LABELS[u.role] || u.role}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* v1.70.0 : meme crayon en verre que /agenda, TopBar et
+                      /members (style uniforme) -- l'ancien bouton texte
+                      « Modifier » etait le dernier de ce type. */}
                   <button
-                    className="rounded-full border border-hairline px-3 py-1 text-xs font-semibold text-accent/80"
+                    type="button"
+                    aria-label={editingId === u.id ? 'Annuler la modification' : 'Modifier ' + u.nom_affichage}
+                    className="glass-icon-button glass-icon-button-sm"
                     onClick={() => (editingId === u.id ? cancelEdit() : startEdit(u))}
                   >
-                    {editingId === u.id ? 'Annuler' : 'Modifier'}
+                    {editingId === u.id ? <CloseIcon className="h-4 w-4" /> : <EditIcon className="h-4 w-4" />}
                   </button>
                   {/* Bascule verre liquide (theme iOS) au lieu de l'ancien
                       badge texte cliquable -- demande de Gersom le
