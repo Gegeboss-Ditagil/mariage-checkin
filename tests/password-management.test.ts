@@ -224,3 +224,24 @@ test("/mon-mot-de-passe demande le secret actuel ET une confirmation du nouveau 
   assert.match(monMotDePasseSource, /newSecret !== confirmSecret/);
   assert.match(monMotDePasseSource, /fetch\('\/api\/account\/password', \{/);
 });
+
+// v1.69.1, retour de Gersom (capture d'écran du menu, compte admin) :
+// "c'est comme un doublon... avoir deux clés dans ce menu-là" -- pour admin,
+// "Mots de passe" (réinitialiser le compte d'AUTRUI) fait doublon avec
+// Administration > Comptes de l'équipe > Modifier (bouton "Réinitialiser"
+// déjà présent là depuis v1.67.4) -- retiré du menu du compte UNIQUEMENT
+// pour admin, directeur (sans adminPanel, donc sans Administration) garde
+// ce lien comme son seul point d'entrée.
+const accountMenuSourceV2 = readFileSync(new URL('../components/AccountMenu.tsx', import.meta.url), 'utf8');
+
+test('AccountMenu : "Mots de passe" (réinitialiser AUTRUI) est masqué pour admin (doublon avec Administration), mais reste visible pour directeur (seul accès)', () => {
+  assert.match(accountMenuSourceV2, /const canManagePasswords = hasCapability\(role, 'managePasswords'\) && !canAdmin;/);
+  // "Mon mot de passe" (self-service) reste, lui, inconditionnel pour tous les rôles.
+  assert.doesNotMatch(accountMenuSourceV2, /canManagePasswords && <Link role="menuitem" href="\/mon-mot-de-passe"/);
+  assert.match(accountMenuSourceV2, /canManagePasswords && <Link role="menuitem" href="\/mots-de-passe"/);
+});
+
+test("canAccessPath('/mots-de-passe') reste inchangé pour directeur (seul accès, jamais Administration)", () => {
+  assert.equal(canAccessPath('directeur', '/mots-de-passe'), true);
+  assert.equal(hasCapability('directeur', 'adminPanel'), false);
+});

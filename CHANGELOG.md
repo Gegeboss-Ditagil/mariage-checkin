@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.69.1] — 2026-10-07
+
+Retour de Gersom (capture d'écran du menu du compte, compte admin) sur v1.69.0 : « Il y a deux fois le l'option mot de passe... c'est pas beau esthétiquement... c'est comme un doublon... avoir deux clés dans ce menu-là. » + bug signalé : « quand je clique sur mon mot de passe, il n'y a rien qui apparaît. »
+
+### Corrigé — menu du compte : un seul « 🔑 » pour admin
+- `components/AccountMenu.tsx` : « 🔑 Mots de passe » (réinitialiser le compte d'AUTRUI) n'est plus affiché pour `admin` — cette fonctionnalité existe déjà, identique, dans Administration → Comptes de l'équipe → fiche d'édition → « Réinitialiser » (`/admin/users`, depuis v1.67.4) ; la garder en double dans le menu du compte était un vrai doublon pour ce rôle. Condition : `hasCapability(role, 'managePasswords') && !canAdmin`.
+- Pour `directeur` (qui n'a jamais `adminPanel`, donc jamais accès à Administration), « 🔑 Mots de passe » reste affiché dans le menu — son seul point d'entrée vers cette capacité, aucune régression d'accès.
+- « 🔑 Mon mot de passe » (changer SON PROPRE secret) reste inconditionnel pour tous les rôles, inchangé.
+
+### Investigué — « rien n'apparaît » en cliquant sur « Mon mot de passe »
+- Revue complète du chemin : `components/AccountMenu.tsx` (lien/clic), `middleware.ts` (admin court-circuite toute vérification de chemin), `lib/permissions.ts` (`/mon-mot-de-passe` ouvert à tous), `components/TopBar.tsx`, `app/mon-mot-de-passe/page.tsx` — rien d'anormal trouvé. Confirmé sur le journal de build de production (déploiement `cc08ef8`, actuellement en ligne) que `/mon-mot-de-passe` compile en route statique (○, 2.16 kB) exactement comme `/mots-de-passe` (○, 2.34 kB) qui fonctionne déjà.
+- **Non reproduit** : aucun identifiant de test disponible dans cet environnement pour se connecter et reproduire le clic en conditions réelles (voir `docs/QE_QA_PROCESS.md` — jamais de PIN/mot de passe en clair dans ce dépôt). Hypothèse la plus probable, déjà documentée comme cause récurrente dans ce projet (v1.53.19, v1.62.0) : un onglet/PWA resté ouvert depuis AVANT le déploiement de v1.69.0 ne connaît pas encore la nouvelle route côté routeur client, et une navigation client-side vers une route inconnue de son bundle peut échouer silencieusement sans recharger la page entière. Recommandation transmise à Gersom : fermer complètement puis rouvrir l'app (ou recharger à fond) avant de retester.
+
+### Tests
+- `tests/password-management.test.ts` : nouvelle assertion sur la condition `canManagePasswords && !canAdmin`, et que `canAccessPath('/mots-de-passe')` reste vrai pour `directeur`.
+
+Aucune migration.
+
 ## [1.69.0] — 2026-10-07
 
 Retour de Gersom (message vocal, deux parties) : « j'aimerais que les gens aient la possibilité de modifier leur mot de passe eux-mêmes... ajoute l'option mot de passe dans le menu » + « on va revenir à la logique précédente pour [certains comptes]... PIN = 4 derniers chiffres de leur numéro de téléphone... ajoute la fonctionnalité [d'appeler un invité]... dans la portion recherche des invités... un petit drapeau [de pays]... tu demandes si c'est par téléphone ou par WhatsApp ». Deux questions posées avant d'écrire du code touchant des comptes réels : la portée exacte du reset PIN-vers-téléphone (confirmée : `agent_checkin` uniquement, ni directeur ni placeur ni approbateur) et le traitement des comptes sans téléphone identifiable (confirmé : laisser leur PIN inchangé).

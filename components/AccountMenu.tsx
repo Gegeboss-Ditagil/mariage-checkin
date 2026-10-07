@@ -102,7 +102,15 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   const canHistory = hasCapability(role, 'viewHistory');
   const canAdmin = hasCapability(role, 'adminPanel');
   const canGuestApproval = hasCapability(role, 'viewGuestApprovals');
-  const canManagePasswords = hasCapability(role, 'managePasswords');
+  // v1.69.1, retour de Gersom (capture d'écran du menu, compte admin) :
+  // "c'est comme un doublon... avoir deux clés dans ce menu-là" -- pour
+  // admin, "Mots de passe" (réinitialiser le compte d'AUTRUI) fait déjà
+  // doublon avec Administration > Comptes de l'équipe > Modifier, qui a le
+  // même bouton "Réinitialiser" depuis v1.67.4 -- retiré du menu UNIQUEMENT
+  // pour admin. directeur n'a jamais adminPanel (donc jamais
+  // Administration) : reste son SEUL point d'entrée vers managePasswords,
+  // le lien lui reste donc visible, aucune régression d'accès.
+  const canManagePasswords = hasCapability(role, 'managePasswords') && !canAdmin;
 
   return (
     // En paysage, la barre de navigation devient une bande verticale collee
