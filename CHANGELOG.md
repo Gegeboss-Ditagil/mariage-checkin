@@ -3,6 +3,32 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.73.0] — 2026-10-08
+
+QA terrain demandée par Gersom : vrais enregistrements sur l'invitation de Roger Makongo (table 30) avec un placeur (Agent001), un scanneur (Sanda) et un directeur (Tuzola) dans Chrome — recherches nom/téléphone/email, check-in et annulation, ajout d'un accompagnant par le placeur, excédent en réserve, invité surprise avec demande d'approbation puis décision. Tout a été remis à l'état initial ensuite (Roger : table 30, 0 arrivé ; aucune demande ni excédent restant). Détail des 20 cas : `docs/QA_SCENARIOS.md`.
+
+### Sécurité
+- **Le jeton secret du lien public d'approbation (`/approve/[token]`) était renvoyé au placeur** par la création d'une demande et par la réservation de table : un placeur pouvait approuver sa propre demande sans `reviewGuestApproval`. Le jeton et le téléphone de l'approbateur sont retirés de toutes les réponses (`lib/guestApprovalPublic.ts`).
+
+### Corrigé
+- **Recherche** : « MAKONGO roger » ne trouvait pas « Roger Makongo » (chaque mot est maintenant cherché, dans n'importe quel ordre) ; « Remy » trouve « Rémy » ; « table 30 » trouve la table 30 ; une virgule ou une parenthèse ne casse plus la requête (`lib/searchFilters.ts`).
+- **Bande de `/scan`** : « 0 / 431 arrivés » alors que le tableau de bord disait 397 — elle comptait aussi le staff et les invités sans table.
+- **Excédent déjà placé en réserve** : « ⚠️ Gérer l'excédent » restait affiché chez les autres agents ; la fiche indique maintenant ce qui est placé (« ✓ 1 personne placée en réserve (table 1) ») et ne propose que le reste.
+- **Place de réserve devenue inutile** (arrivée annulée après le placement) : siège fantôme silencieux en table 1/42 — maintenant signalé sur la fiche, avec « Libérer la place en réserve » pour les rôles qui en ont le droit.
+- **Double comptage** : la personne en excédent placée en réserve était comptée à la fois à sa table d'origine et en réserve (table 30 à 11/10) dans les calculs de capacité de l'application.
+- **Badge Approbations** de la barre du bas resté à 1 après une décision (jusqu'au sondage suivant) : la réponse est maintenant partagée par tous les badges.
+- **Libellés** : « Placement confirmée » → « Place confirmée » ; « ASSIGNER LES 1 A CETTE TABLE » → « ASSIGNER À CETTE TABLE » ; « table de reserve » → « réserve » ; le bouton du choix de thème disait « Continuer vers le scan » même vers le tableau de bord.
+
+### Constaté, non modifié
+- Les deux mesures « INP » de l'outil Vercel (22 s, 4 s) venaient d'onglets en arrière-plan (rendu ralenti par Chrome) : aucun appel bloquant dans le code.
+- La caméra de « 📷 Invité surprise » demande l'autorisation du navigateur : non accordée pendant ce test (décision laissée à Gersom) — le circuit d'approbation a été testé par l'API avec une photo générée.
+- La session « visibilité » (David) n'a pas pu être testée : elle partageait l'adresse de l'onglet Agent001 (même cookie). À refaire sur une adresse distincte.
+
+### Tests
+- `tests/qa-terrain-v1-73.test.ts` (nouveau, 11 tests).
+
+Aucune migration.
+
 ## [1.72.1] — 2026-10-08
 
 Processus QA demandé par Gersom : cas de test précis par rôle (placeur, scanneur, directeur de festin, visibilité, admin) à partir des règles métier, puis scripts.

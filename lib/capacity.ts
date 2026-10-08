@@ -1,4 +1,4 @@
-import { InvitationRow, OverflowAssignmentRow, TableRow } from './types';
+import type { InvitationRow, OverflowAssignmentRow, TableRow } from './types';
 
 export interface TableCapacity {
   table: TableRow;
@@ -36,15 +36,30 @@ export function computeTableCapacities(
   const arriveesParTable = new Map<string, number>();
   const estimeParTable = new Map<string, number>();
 
+  // v1.73.0 (QA terrain) : l'excedent d'un groupe deja place en reserve
+  // etait compte DEUX fois -- a sa table d'origine (nombre_arrive) ET a la
+  // table de reserve (overflow_assignments). Constate sur Roger Makongo :
+  // table 30 a 11/10 alors que la 11e personne etait assise en table 1.
+  // On retire de la table d'origine la part de l'excedent reellement placee
+  // ailleurs -- jamais plus que l'excedent actuel (une arrivee annulee apres
+  // coup ne fait pas sous-compter la table d'origine).
+  const placeAilleursParInvitation = new Map<string, number>();
+  for (const o of overflow) {
+    if (!o.invitation_id) continue;
+    placeAilleursParInvitation.set(o.invitation_id, (placeAilleursParInvitation.get(o.invitation_id) || 0) + o.nombre_personnes);
+  }
+
   for (const inv of invitations) {
     if (!inv.table_id) continue;
-    arriveesParTable.set(inv.table_id, (arriveesParTable.get(inv.table_id) || 0) + inv.nombre_arrive);
+    const excedent = Math.max(0, inv.nombre_arrive - inv.nombre_prevu);
+    const placeAilleurs = Math.min(placeAilleursParInvitation.get(inv.id) || 0, excedent);
+    arriveesParTable.set(inv.table_id, (arriveesParTable.get(inv.table_id) || 0) + inv.nombre_arrive - placeAilleurs);
     // Une invitation marquee "ne viendra pas" ne contribue que ses arrivees
     // reelles (normalement 0) a l'estimation -- ses places prevues sont
     // considerees liberees. Sinon, on prend le plus grand de prevu/arrive
     // (pour ne jamais sous-compter un groupe deja en excedent).
     const contribution = inv.ne_viendra_pas ? inv.nombre_arrive : Math.max(inv.nombre_prevu, inv.nombre_arrive);
-    estimeParTable.set(inv.table_id, (estimeParTable.get(inv.table_id) || 0) + contribution);
+    estimeParTable.set(inv.table_id, (estimeParTable.get(inv.table_id) || 0) + contribution - placeAilleurs);
   }
 
   const overflowParTable = new Map<string, number>();

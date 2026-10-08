@@ -27,11 +27,17 @@ export function ScanStatsStrip() {
 
     async function load() {
       const [{ data: invs }, { data: tbls }] = await Promise.all([
-        supabase.from('invitations').select('nombre_prevu, nombre_arrive'),
-        supabase.from('tables').select('capacity'),
+        supabase.from('invitations').select('nombre_prevu, nombre_arrive, table_id'),
+        supabase.from('tables').select('capacity').gt('capacity', 0),
       ]);
       if (!activeRef.current) return;
-      const invitations = (invs as Pick<InvitationRow, 'nombre_prevu' | 'nombre_arrive'>[]) || [];
+      // v1.73.0 (QA terrain) : meme base que /dashboard (v1.53.13) -- seules
+      // les invitations AVEC table comptent. Sans ce filtre, la bande
+      // affichait 431 attendus (staff/sans table inclus) quand le tableau de
+      // bord en affichait 397 pour les memes donnees.
+      const invitations = ((invs as Pick<InvitationRow, 'nombre_prevu' | 'nombre_arrive' | 'table_id'>[]) || []).filter(
+        (i) => i.table_id !== null
+      );
       setAttendus(invitations.reduce((s, i) => s + i.nombre_prevu, 0));
       setArrives(invitations.reduce((s, i) => s + i.nombre_arrive, 0));
       setCapaciteTotale(((tbls as Pick<TableRow, 'capacity'>[]) || []).reduce((s, t) => s + t.capacity, 0));

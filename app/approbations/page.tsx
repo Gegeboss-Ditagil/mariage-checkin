@@ -11,6 +11,7 @@ import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, TrashIcon } from '@/compo
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
 import { usePolling } from '@/hooks/usePolling';
 import { SwipeableDeleteCard } from '@/components/SwipeableDeleteCard';
+import { fetchPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
 import { useDismiss } from '@/hooks/useDismiss';
 
 interface ApprovalListItem {
@@ -114,6 +115,7 @@ export default function ApprobationsPage() {
       });
       const data = await response.json().catch(() => null);
       await load(true);
+      void fetchPendingApprovalsCount();
       if (response.ok) {
         // L'approbation place automatiquement la personne (table
         // excédentaire en priorité, sinon la table la plus libre du bon

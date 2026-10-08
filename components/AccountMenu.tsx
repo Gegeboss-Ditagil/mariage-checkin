@@ -10,7 +10,7 @@ import { usePolling } from '@/hooks/usePolling';
 import { hasCapability } from '@/lib/permissions';
 import { ROLE_LABELS } from '@/lib/types';
 import { clearGuestApprovalsCache } from '@/lib/guestApprovalClientCache';
-import { fetchPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
+import { fetchPendingApprovalsCount, onPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
 import { syncAppBadge, clearAppBadge } from '@/lib/appBadge';
 
 const THEME_CHOICES: { pref: ThemePref; label: string }[] = [
@@ -77,6 +77,12 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
     if (!canPollApprovals) return;
     void loadPendingApprovals();
   }, [loadPendingApprovals, canPollApprovals]);
+
+  // v1.73.0 : suit aussi les reponses obtenues par les autres badges.
+  useEffect(() => {
+    if (!canPollApprovals) return;
+    return onPendingApprovalsCount((data) => setPendingApprovals(data.pending_count || 0));
+  }, [canPollApprovals]);
 
   // Sondage maille a la visibilite de l'onglet : mis en pause automatiquement
   // quand l'app passe en arriere-plan (voir hooks/usePolling.ts).

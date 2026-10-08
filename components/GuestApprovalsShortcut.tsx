@@ -6,7 +6,7 @@ import { ApprovalIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
 import { usePolling } from '@/hooks/usePolling';
 import { syncAppBadge } from '@/lib/appBadge';
-import { fetchPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
+import { fetchPendingApprovalsCount, onPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
 import type { Role } from '@/lib/types';
 
 /**
@@ -33,6 +33,12 @@ export function GuestApprovalsShortcut({ role }: { role: Role }) {
     if (!canPollApprovals) return;
     void loadPendingCount();
   }, [loadPendingCount, canPollApprovals]);
+
+  // v1.73.0 : suit aussi les reponses obtenues par les autres badges.
+  useEffect(() => {
+    if (!canPollApprovals) return;
+    return onPendingApprovalsCount((data) => setPendingCount(data.pending_count || 0));
+  }, [canPollApprovals]);
 
   // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts).
   usePolling(loadPendingCount, canPollApprovals ? 5000 : 0);

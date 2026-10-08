@@ -611,7 +611,8 @@ test('le compte d\'approbations en attente est explicitement exclu du cache HTTP
   const pendingRequestSource = readFileSync(new URL('../lib/pendingApprovalsRequest.ts', import.meta.url), 'utf8');
   assert.match(pendingRequestSource, /fetch\('\/api\/guest-approvals\?count=pending', \{ cache: 'no-store' \}\)/);
   for (const source of [accountMenuSource, bottomNavSource, guestApprovalsShortcutSource]) {
-    assert.match(source, /import \{ fetchPendingApprovalsCount \} from '@\/lib\/pendingApprovalsRequest';/);
+    // v1.73.0 : + onPendingApprovalsCount (badges synchronises entre eux).
+    assert.match(source, /import \{ fetchPendingApprovalsCount(, onPendingApprovalsCount)? \} from '@\/lib\/pendingApprovalsRequest';/);
     assert.match(source, /fetchPendingApprovalsCount\(\)/);
   }
 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
+import { withoutApprovalSecrets } from '@/lib/guestApprovalPublic';
 import { GuestApprovalRequestRow } from '@/lib/types';
 
 /**
@@ -44,5 +45,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: error.message }, { status });
   }
 
-  return NextResponse.json({ request: data as GuestApprovalRequestRow });
+  return NextResponse.json({ request: withoutApprovalSecrets(data as GuestApprovalRequestRow) });
 }
