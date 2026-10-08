@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.72.1] — 2026-10-08
+
+Processus QA demandé par Gersom : cas de test précis par rôle (placeur, scanneur, directeur de festin, visibilité, admin) à partir des règles métier, puis scripts.
+
+### Corrigé (PR #131, fusionnée)
+- **Tableau des rôles de `docs/BUSINESS_RULES.md` faux sur 5 lignes** (ajout d'invitation et étiquettes du directeur, renommage du scanneur, agenda du placeur…) — réécrit et vérifié ligne par ligne contre `lib/permissions.ts`.
+- **Écrans d'écriture ouverts à des rôles sans le droit** : visibilité (lecture seule) pouvait ouvrir `/tables/add`, `/tables/move…`, `/tables/overflow`, le placeur `/tables/add` (le serveur refusait ensuite). `canAccessPath` exige désormais la capacité de l'action de chaque écran.
+- **10 routes API** (check-in annuler/corriger, exceptions, déplacements, échanges, débordements) protégées par des listes de rôles recopiées — passées sur `hasCapability`, mêmes rôles autorisés.
+- **Écran « Hors ligne » jamais affiché** : `/offline` redirigeait vers `/login` (307, vérifié), donc le service worker mettait en cache la mauvaise page. `/offline` est public (page statique sans donnée) et le cache du service worker passe en v4.
+
+### Données — production (migration `0067`, exécutée et vérifiée le 08/10/2026)
+- **Placeur014, Placeur015, Placeur016 : rôle `agent_checkin` → `placeur`** (confirmé par Gersom : « ils sont supposés être des placeurs »). Même PIN ; le nouveau rôle s'applique à leur prochaine connexion. Sauvegarde `import_backups` (`kind = v1.72.1_placeurs`, sans secret).
+
+### Tests
+- `tests/qa-role-matrix.test.ts` (nouveau) : 31 capacités × 5 rôles, 30 écrans × 5 rôles, 33 routes API (bonne capacité, aucune liste de rôles recopiée), session exigée partout, page hors ligne publique.
+
+Migration : `0067_placeur014_016_role_placeur.sql`.
+
 ## [1.72.0] — 2026-10-07
 
 Demande explicite de Gersom, avec le nouvel export seatplan.io (« seating-chart … (8).pdf ») : « on va remettre la table 1 comme excédentaire, donc 1 et 42 excédentaires ».
