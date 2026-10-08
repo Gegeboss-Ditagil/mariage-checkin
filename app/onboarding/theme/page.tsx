@@ -33,10 +33,18 @@ function ThemeOnboardingForm() {
   const role = useSessionRole();
   const { pref, setTheme, markThemeChosen } = useTheme();
 
+  // v1.73.0 : le bouton disait toujours « vers le scan », meme quand la
+  // destination est le tableau de bord (directeur, approbateur).
+  const destination = params.get('next') || (role ? landingPathForRole(role) : '/scan');
+  const continueLabel = destination.startsWith('/dashboard')
+    ? 'Continuer vers le tableau de bord'
+    : destination.startsWith('/scan')
+      ? 'Continuer vers le scan'
+      : 'Continuer';
+
   function continueToApp() {
     markThemeChosen();
-    const next = params.get('next');
-    router.replace(next || (role ? landingPathForRole(role) : '/scan'));
+    router.replace(destination);
     router.refresh();
   }
 
@@ -93,7 +101,7 @@ function ThemeOnboardingForm() {
       </div>
 
       <button type="button" className="btn-primary w-full" onClick={continueToApp}>
-        Continuer vers le scan
+        {continueLabel}
       </button>
     </div>
   );

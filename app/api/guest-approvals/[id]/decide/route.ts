@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 import { applyGuestApprovalDecision } from '@/lib/guestApprovalDecide';
+import { decisionResultWithoutSecrets } from '@/lib/guestApprovalPublic';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = getSessionUser();
@@ -21,5 +22,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!result.ok) {
     return NextResponse.json(result, { status: result.reason === 'not_found' ? 404 : 409 });
   }
-  return NextResponse.json(result);
+  return NextResponse.json(decisionResultWithoutSecrets(result));
 }

@@ -7,6 +7,20 @@ export interface PendingApprovalsPayload {
 
 let inFlight: Promise<PendingApprovalsPayload | null> | null = null;
 
+// v1.73.0 (QA terrain) : apres une decision sur /approbations, le badge du
+// menu du compte passait a 0 mais celui de la barre du bas restait a 1
+// jusqu'a son propre sondage (15 s). Chaque reponse est maintenant diffusee
+// a TOUS les badges abonnes, quel que soit le composant qui l'a demandee.
+type Listener = (payload: PendingApprovalsPayload) => void;
+const listeners = new Set<Listener>();
+
+export function onPendingApprovalsCount(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 /**
  * Trois composants (AccountMenu, BottomNav, GuestApprovalsShortcut) sondent
  * chacun independamment `/api/guest-approvals?count=pending` sur leur propre
@@ -29,6 +43,10 @@ export function fetchPendingApprovalsCount(): Promise<PendingApprovalsPayload | 
   if (inFlight) return inFlight;
   inFlight = fetch('/api/guest-approvals?count=pending', { cache: 'no-store' })
     .then((response) => (response.ok ? response.json() : null))
+    .then((data: PendingApprovalsPayload | null) => {
+      if (data) listeners.forEach((listener) => listener(data));
+      return data;
+    })
     .catch(() => null)
     .finally(() => {
       inFlight = null;

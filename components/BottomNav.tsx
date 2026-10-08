@@ -9,7 +9,7 @@ import { ApprovalIcon, CameraIcon, GaugeIcon, GridIcon, ScanIcon, SearchIcon, St
 import { hasCapability } from '@/lib/permissions';
 import { usePolling } from '@/hooks/usePolling';
 import { syncAppBadge } from '@/lib/appBadge';
-import { fetchPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
+import { fetchPendingApprovalsCount, onPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
 
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; badge?: number };
 
@@ -190,6 +190,12 @@ export function BottomNav({ role, onCentralAction }: { role: Role; onCentralActi
     if (!canPollApprovals) return;
     void loadPendingCount();
   }, [loadPendingCount, canPollApprovals]);
+
+  // v1.73.0 : suit aussi les reponses obtenues par les autres badges.
+  useEffect(() => {
+    if (!canPollApprovals) return;
+    return onPendingApprovalsCount((data) => setPendingCount(data.pending_count || 0));
+  }, [canPollApprovals]);
 
   // Sondage maille a la visibilite de l'onglet (voir hooks/usePolling.ts) :
   // la mise a jour du badge n'a aucun interet quand l'ecran est en arriere-plan.

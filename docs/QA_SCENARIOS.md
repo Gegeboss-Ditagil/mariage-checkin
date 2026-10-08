@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.72.0**
-**Dernière mise à jour : 2026-10-07**
+**Version documentaire : 1.73.0**
+**Dernière mise à jour : 2026-10-08**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -227,3 +227,30 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - La PR doit indiquer `Version: X.Y.Z → A.B.C` ou `Version inchangée: X.Y.Z`.
 
 Ne jamais effectuer de test d'écriture sur les vraies données sans mode test ou autorisation explicite.
+
+## QA terrain v1.73.0 (08/10/2026) — vrais enregistrements sur Roger Makongo (table 30)
+
+Rôles connectés dans Chrome : placeur (Agent001), scanneur (Sanda), directeur (Tuzola). Chaque écriture a été remise à l’état initial (Roger : table 30, 0 arrivé, 0 check-in ; aucune demande d’approbation ni excédent restant).
+
+| # | Rôle | Cas | Attendu | Résultat |
+|---|---|---|---|---|
+| 1 | Placeur | Recherche nom « makongo », « roger makongo » | Roger Makongo, table 30 | OK |
+| 2 | Placeur | Recherche nom inversé « MAKONGO roger » | Roger Makongo | **KO → corrigé v1.73.0** |
+| 3 | Placeur | Téléphone « 745986455 », « 07 45 98 64 55 », « 0745986455 », « +33745986455 » (onglets Téléphone et Nom) | Roger Makongo | OK |
+| 4 | Placeur | Recherche « table 30 » / « rogér » | Table 30 / Roger | **KO → corrigé v1.73.0** |
+| 5 | Placeur | Email « gmail » | invitations avec gmail | OK |
+| 6 | Scanneur | ✓ arrivée Roger, puis annulation | 1 arrivé puis 0 ; temps réel sur le tableau de bord du directeur | OK |
+| 7 | Scanneur | Pas de « + », pas de 📷, message « Un placeur ou directeur peut l’ajouter » | conforme | OK |
+| 8 | Placeur | « + » formulaire vide | rien n’est enregistré | OK |
+| 9 | Placeur | « + » QA Testmakongo (déjà arrivé) | ajouté, visible en temps réel chez le scanneur | OK |
+| 10 | Scanneur | Roger arrive aussi (2/1) → « Gérer l’excédent » → table 1 (réserve) | affectation en réserve | OK |
+| 11 | Placeur | Fiche après affectation faite par le scanneur | plus de « Gérer l’excédent » | **KO → corrigé v1.73.0** |
+| 12 | Placeur | Annuler l’arrivée de l’accompagnant après affectation | place de réserve signalée | **KO (siège fantôme silencieux) → corrigé v1.73.0** |
+| 13 | Placeur | Demande invité surprise sans photo / côté invalide / sans nom | 400 photo_required / invalid_cote / nom_required | OK |
+| 14 | Placeur | Demande invité surprise valide liée à Roger | créée, visible chez le directeur avec « Arrivé(e) avec Roger Makongo — Table 30 » | OK — **mais la réponse contenait le jeton secret du lien d’approbation → corrigé v1.73.0** |
+| 15 | Placeur | Décider lui-même (API) | 401 | OK |
+| 16 | Scanneur | Créer une demande / ajouter un non prévu (API) | 401 / 401 | OK |
+| 17 | Directeur | Approuver | Approuvé, placé automatiquement table 1 (aucune table normale libre côté Gégé : 9/16/39 sont côté Nelly) | OK |
+| 18 | Directeur | Badge Approbations de la barre du bas après décision | 0 immédiatement | **KO (restait 1 jusqu’à 15 s) → corrigé v1.73.0** |
+| 19 | Placeur, scanneur | Accès écrans (`/tables/add`, `/placement`, `/history`, `/admin`, `/mots-de-passe`…) | conforme à la matrice | OK |
+| 20 | Tous | Bande /scan « 0 / 431 » vs tableau de bord « 397 » | même total | **KO → corrigé v1.73.0** |

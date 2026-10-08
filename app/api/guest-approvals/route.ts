@@ -8,6 +8,7 @@ import { notifyApprover } from '@/lib/guestApprovalNotify';
 import { GuestApprovalRequestRow, GuestApproverRow } from '@/lib/types';
 import { TwilioConfigError, TwilioSendError } from '@/lib/twilio';
 import { baseUrl } from '@/lib/requestUrl';
+import { withoutApprovalSecrets } from '@/lib/guestApprovalPublic';
 import { notifyGuestApprovalReviewers } from '@/lib/webPush';
 
 /**
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
   await notifyGuestApprovalReviewers(supabase, created);
 
   return NextResponse.json({
-    request: { ...created, photo_signed_url: signedUrl },
+    request: { ...withoutApprovalSecrets(created), photo_signed_url: signedUrl },
     approver_nom: approver.nom,
     sms_sent: smsSent,
     sms_error: smsError,

@@ -21,6 +21,10 @@ type Step = 'confirm' | 'success' | 'success_retrait' | 'overflow' | 'overflow_d
 
 export default function CheckinPage() {
   const { invitationId } = useParams<{ invitationId: string }>();
+  // Garde contre une reponse lente d'une fiche precedente (meme instance de
+  // composant reutilisee d'une invitation a l'autre, voir v1.39.2).
+  const invitationIdRef = useRef(invitationId);
+  invitationIdRef.current = invitationId;
   const router = useRouter();
 
   const online = useOnline();
@@ -60,6 +64,12 @@ export default function CheckinPage() {
     { assignment: OverflowAssignmentRow; table: TableRow | null }[]
   >([]);
   const [confirmFullTable, setConfirmFullTable] = useState(false);
+  // v1.73.0 (QA terrain) : excedent DEJA place en reserve pour ce groupe,
+  // lu sur la fiche elle-meme. Avant, « Gerer l'excedent » restait affiche
+  // une fois l'excedent place par un autre agent, et rien ne signalait une
+  // place de reserve devenue inutile (arrivee annulee ensuite : siege
+  // fantome compte en table 1/42).
+  const [placedOverflow, setPlacedOverflow] = useState<{ id: string; count: number; tableNumber: number | null }[]>([]);
   // Table a laquelle appartient cette invitation, pour l'afficher directement
   // sur la fiche (utile pour informer l'invite retrouve via une recherche
   // telephone/email de sa table, sans avoir a naviguer ailleurs).
@@ -111,8 +121,10 @@ export default function CheckinPage() {
     setHasMemberList(true);
     setError(null);
     setSyncNotice(null);
+    setPlacedOverflow([]);
 
     const supabase = createClient();
+    void loadPlacedOverflow();
     supabase
       .from('invitations')
       .select('*')
@@ -187,12 +199,33 @@ export default function CheckinPage() {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'overflow_assignments', filter: 'invitation_id=eq.' + invitationId },
+        () => void loadPlacedOverflow()
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [invitationId]);
+
+  async function loadPlacedOverflow() {
+    const requestedId = invitationId;
+    const { data } = await createClient()
+      .from('overflow_assignments')
+      .select('id, nombre_personnes, reserve_table:reserve_table_id(number)')
+      .eq('invitation_id', requestedId);
+    if (requestedId !== invitationIdRef.current) return;
+    setPlacedOverflow(
+      ((data as unknown as { id: string; nombre_personnes: number; reserve_table: { number: number } | null }[]) || []).map((a) => ({
+        id: a.id,
+        count: a.nombre_personnes,
+        tableNumber: a.reserve_table?.number ?? null,
+      }))
+    );
+  }
 
   const delta = invitation ? arriveValue - invitation.nombre_arrive : 0;
 
@@ -430,6 +463,7 @@ export default function CheckinPage() {
         return;
       }
       setStep('overflow_done');
+      void loadPlacedOverflow();
     } catch {
       setError('Erreur réseau — réessayez');
     } finally {
@@ -632,7 +666,7 @@ export default function CheckinPage() {
     return (
       <SuccessScreen
         title="✓ AFFECTATION CONFIRMÉE"
-        lines={[excedentCount + ' personne' + (excedentCount > 1 ? 's' : '') + ' en table de reserve']}
+        lines={[excedentCount + ' personne' + (excedentCount > 1 ? 's' : '') + ' en table de réserve']}
       />
     );
   }
@@ -755,7 +789,7 @@ export default function CheckinPage() {
               }
               onClick={() => chosenReserveTable && handleAssignOverflow(chosenReserveTable)}
             >
-              {submitting ? '…' : !online ? 'HORS LIGNE' : 'ASSIGNER LES ' + excedentCount + ' A CETTE TABLE'}
+              {submitting ? '…' : !online ? 'HORS LIGNE' : excedentCount > 1 ? 'ASSIGNER LES ' + excedentCount + ' À CETTE TABLE' : 'ASSIGNER À CETTE TABLE'}
             </button>
           )}
           <button className="btn-secondary w-full" onClick={() => router.push('/checkin/' + invitation.id)}>
@@ -821,7 +855,8 @@ export default function CheckinPage() {
             <span className="rounded-full bg-status-complete/15 px-3 py-1 text-xs font-bold text-status-complete">✓ Invitation approuvée</span>
           )}
           <span className="rounded-full bg-accent-tint px-3 py-1 text-xs font-bold text-accent">
-            Placement {PLACEMENT_LABELS[invitation.placement_status].toLowerCase()}
+            {/* « Place » (féminin) : « Placement confirmée » était fautif. */}
+            Place {PLACEMENT_LABELS[invitation.placement_status].toLowerCase()}
           </span>
           <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-semibold text-text-muted">
             {invitation.nombre_arrive > 0 ? `${invitation.nombre_arrive} arrivé${invitation.nombre_arrive > 1 ? 's' : ''}` : 'Non arrivé'}
@@ -955,16 +990,48 @@ export default function CheckinPage() {
           canMerge={canMerge}
         />
 
-        {invitation.nombre_arrive > invitation.nombre_prevu && (
-          <button
-            type="button"
-            className="mb-3 block w-full text-center text-sm font-medium text-status-over underline underline-offset-2"
-            onClick={() => openOverflowFlow(invitation.nombre_arrive - invitation.nombre_prevu)}
-          >
-            ⚠️ Gérer l’excédent ({invitation.nombre_arrive - invitation.nombre_prevu} personne
-            {invitation.nombre_arrive - invitation.nombre_prevu > 1 ? 's' : ''})
-          </button>
-        )}
+        {(() => {
+          const excedent = Math.max(0, invitation.nombre_arrive - invitation.nombre_prevu);
+          const placed = placedOverflow.reduce((s, a) => s + a.count, 0);
+          const restant = excedent - placed;
+          const tablesPlacees = placedOverflow.map((a) => (a.tableNumber === null ? '?' : String(a.tableNumber))).join(', ');
+          const pluriel = (n: number) => (n > 1 ? 's' : '');
+          return (
+            <>
+              {placed > 0 && (
+                <p className="mb-2 text-center text-sm text-text-muted">
+                  ✓ {placed} personne{pluriel(placed)} de ce groupe placée{pluriel(placed)} en réserve (table {tablesPlacees})
+                </p>
+              )}
+              {restant > 0 && (
+                <button
+                  type="button"
+                  className="mb-3 block w-full text-center text-sm font-medium text-status-over underline underline-offset-2"
+                  onClick={() => openOverflowFlow(excedent)}
+                >
+                  ⚠️ Gérer l’excédent ({restant} personne{pluriel(restant)})
+                </button>
+              )}
+              {restant < 0 && (
+                <div className="mb-3 rounded-xl2 border border-status-over bg-surface px-3 py-2 text-center text-sm text-status-over">
+                  ⚠️ {-restant} place{pluriel(-restant)} gardée{pluriel(-restant)} en réserve alors qu’il n’y a plus
+                  d’excédent pour ce groupe.
+                  {canReorganizeExcedent ? (
+                    <button
+                      type="button"
+                      className="mt-1 block w-full font-semibold underline underline-offset-2"
+                      onClick={() => router.push('/tables/overflow/' + placedOverflow[placedOverflow.length - 1].id)}
+                    >
+                      Libérer la place en réserve
+                    </button>
+                  ) : (
+                    <span className="mt-1 block text-text-muted">Prévenez un placeur pour libérer la place.</span>
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Ne propose de marquer "ne viendra pas" que tant que personne de ce
             groupe n'est arrive : une fois une arrivee enregistree, ce n'est

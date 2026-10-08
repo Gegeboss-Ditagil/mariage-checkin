@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.72.0**
-**Dernière mise à jour : 2026-10-07**
+**Version documentaire : 1.73.0**
+**Dernière mise à jour : 2026-10-08**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -101,6 +101,12 @@ Depuis v1.69.0, `admin` et `directeur` peuvent aussi **contacter directement un 
 Depuis v1.67.0 (03/10/2026), `POST /api/auth/login` verrouille un compte (les deux modes, `pin` et `password`) après **10 tentatives de connexion consécutives échouées** — voir `lib/loginLockout.ts`. Portée volontairement **par compte** (`nom_affichage`/`email`), jamais par adresse IP (éviterait de bloquer tout le staff partageant le même Wi-Fi de la salle). Verrouillage de **15 minutes**, confirmé explicitement par Gersom plutôt que deviné — un verrouillage permanent nécessitant une réinitialisation manuelle aurait risqué de bloquer durablement un agent distrait le jour du mariage. Le compteur se remet à zéro après une connexion réussie, ou tout seul une fois le verrouillage expiré (jamais un reverrouillage immédiat à la première tentative suivante). Un verrouillage déclenché est journalisé (`app_logs`, niveau `warn`, consultable sur `/admin/logs`) pour que Gersom puisse repérer une vraie tentative de sabotage, jamais seulement une erreur de saisie.
 
 Depuis v1.40.0, `agent_checkin` a aussi `viewAgenda` (jamais `manageAgenda`) — retour de Gersom sur Agent001 : « il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ». Ce rôle consulte donc le chronogramme sans le modifier ; `/staff` reste par ailleurs atteignable pour lui via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre du bas remplace Staff par Agenda.
+
+**Excédent placé en réserve (v1.73.0)** : la fiche d’une invitation n’affiche « Gérer l’excédent » que pour la part encore non placée, indique « ✓ N personne(s) placée(s) en réserve (table X) », et signale une place de réserve devenue inutile (arrivée annulée après le placement) avec « Libérer la place en réserve » pour les rôles `manageOverflow` (sinon : prévenir un placeur). Dans les calculs de capacité de l’application (`lib/capacity.ts`), cette personne compte à la table de réserve et n’est plus comptée en plus à la table d’origine.
+
+**Recherche par nom (v1.73.0)** : chaque mot tapé doit être présent, dans n’importe quel ordre (« Makongo Roger » = « Roger Makongo ») ; un « e » tapé couvre aussi é/è/ê/ë (« Remy » trouve « Rémy ») ; « table 30 » trouve la table 30 ; une saisie sans lettre d’au moins 5 chiffres est cherchée comme numéro de téléphone (fin du numéro, tous formats).
+
+**Lien public d’approbation (v1.73.0)** : le jeton secret de `/approve/[token]` et le téléphone de l’approbateur ne sont jamais renvoyés par l’API à l’application (création, réservation de table, décision) — seul l’approbateur reçoit le lien.
 
 Depuis v1.30.1, `manageTags` est limité à `admin` et `directeur`; placeur et agent scan consultent seulement les étiquettes. Une liste nominative incomplète est réparée jusqu’à `max(nombre_prevu, nombre_arrive, 1)` sans changer ces compteurs. Un accompagnant ajouté à une invitation existante doit être nommé, hérite du côté du groupe et passe directement au placement de l’excédent.
 

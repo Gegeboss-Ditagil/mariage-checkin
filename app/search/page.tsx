@@ -13,6 +13,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
 import { GuestContactButton } from '@/components/GuestContactButton';
+import { buildInvitationSearchFilters, tableSearchText } from '@/lib/searchFilters';
 
 interface Result extends InvitationRow {
   table?: TableRow | null;
@@ -99,8 +100,8 @@ function SearchInner() {
 
   const tableResults = useMemo(() => {
     if (mode !== 'nom') return [];
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
+    const q = tableSearchText(query);
+    if (q.length < 1 || query.trim().length < 2) return [];
     return allTables
       .filter((t) => {
         const vol = volCode(t.number) || '';
@@ -130,37 +131,18 @@ function SearchInner() {
       // notes ("Membres: ..."), l'email, ET le telephone — le telephone est
       // compare uniquement sur les chiffres, sur la FIN du numero (au moins 5
       // chiffres), pour ignorer les differences d'indicatif pays (+33, 0033,
-      // 0 initial manquant, etc.).
-      const digits = q.replace(/\D/g, '');
-      const digitSuffix = digits.length >= 5 ? digits.slice(-8) : null;
-
-      const orParts: string[] = [];
-      if (mode === 'nom') {
-        orParts.push(
-          'nom_affichage.ilike.%' + q + '%',
-          'groupe.ilike.%' + q + '%',
-          'notes.ilike.%' + q + '%',
-          'email.ilike.%' + q + '%'
-        );
-      }
-      if (mode === 'email') {
-        orParts.push('email.ilike.%' + q + '%');
-      }
-      if (digitSuffix && (mode === 'nom' || mode === 'telephone')) {
-        orParts.push('telephone_digits.ilike.%' + digitSuffix + '%');
-      }
-
-      if (orParts.length === 0) {
+      // 0 initial manquant, etc.). v1.73.0 : chaque mot doit etre present,
+      // dans n'importe quel ordre (lib/searchFilters.ts).
+      const filters = buildInvitationSearchFilters(mode, q);
+      if (filters.length === 0) {
         setResults([]);
         setLoading(false);
         return;
       }
 
-      const { data } = await supabase
-        .from('invitations')
-        .select('*, table:tables(*)')
-        .or(orParts.join(','))
-        .limit(25);
+      let request = supabase.from('invitations').select('*, table:tables(*)');
+      for (const group of filters) request = request.or(group);
+      const { data } = await request.limit(25);
 
       setResults((data as Result[]) || []);
       setLoading(false);
