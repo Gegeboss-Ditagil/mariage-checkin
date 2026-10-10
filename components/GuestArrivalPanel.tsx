@@ -7,7 +7,9 @@ import { GuestArrivalStatus, GuestRow, InvitationRow } from '@/lib/types';
 import { useOnline } from '@/hooks/useOnline';
 import { parseMembersFromNotes } from '@/lib/membersNotes';
 import { debounce } from '@/lib/debounce';
-import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
+import { namesMatch } from '@/lib/floorPlanSeats';
+import { liveSeatNames } from '@/lib/liveSeats';
+import { useLiveTableSeats } from '@/hooks/useLiveTableSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import { getTableOrientation } from '@/lib/floorPlanOrientation';
 
@@ -23,6 +25,7 @@ import { getTableOrientation } from '@/lib/floorPlanOrientation';
 export function GuestArrivalPanel({
   invitation,
   tableNumber,
+  seatTable,
   onInvitationUpdate,
   onVisibilityChange,
   onAfterAdd,
@@ -43,6 +46,10 @@ export function GuestArrivalPanel({
   // nom : `null` tant que l'invitation n'a pas encore de table, auquel cas
   // ce panneau ne s'affiche simplement pas (voir plus bas).
   tableNumber: number | null;
+  // v1.74.0 : la table complète (id + capacité) pour dessiner les sièges
+  // depuis les vraies données (hooks/useLiveTableSeats.ts) -- un invité
+  // surprise ou un excédent placé en table 1/42 y apparaît par son nom.
+  seatTable?: { id: string; number: number; capacity: number } | null;
   onInvitationUpdate: (inv: InvitationRow) => void;
   // Signale au parent si ce panneau affiche reellement une liste de membres,
   // pour qu'il sache s'il doit se rabattre sur l'ancien compteur agrege
@@ -113,6 +120,14 @@ export function GuestArrivalPanel({
 }) {
   const router = useRouter();
   const online = useOnline();
+  const { seats: liveSeats, live: liveSeatsReady } = useLiveTableSeats(seatTable ?? null);
+  // Siège d'un membre de CETTE invitation (jamais celui d'un homonyme d'un
+  // autre groupe à la même table).
+  const seatIndexForGuest = (name: string): number | null => {
+    if (!liveSeats) return null;
+    const idx = liveSeats.findIndex((seat) => seat !== null && seat.invitationId === invitation.id && namesMatch(seat.name, name));
+    return idx === -1 ? null : idx;
+  };
   const [members, setMembers] = useState<GuestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(false);
@@ -395,23 +410,23 @@ export function GuestArrivalPanel({
   useEffect(() => {
     if (!settled || !visible) return;
     if (autoHighlightedInvitationIdRef.current === invitation.id) return;
-    const currentSeats = tableNumber !== null ? TABLE_SEAT_NAMES[tableNumber] : undefined;
-    if (!currentSeats) return;
+    if (!liveSeats || !liveSeatsReady) return;
     autoHighlightedInvitationIdRef.current = invitation.id;
     const indices: number[] = [];
     for (const guest of members) {
-      const idx = findSeatIndexByName(tableNumber as number, guest.nom_affichage);
+      const idx = seatIndexForGuest(guest.nom_affichage);
       if (idx !== null && !indices.includes(idx)) indices.push(idx);
     }
     if (indices.length > 0) setHighlightedSeats(indices);
-  }, [settled, visible, invitation.id, tableNumber, members]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settled, visible, invitation.id, liveSeats, liveSeatsReady, members]);
 
   if (!settled) return <div className="card mb-3 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;
 
-  // v1.48.5 : memes seuils que /plan-table (TABLE_SEAT_NAMES[number] absent
-  // = cette table n'a pas de lecture photo, le panneau ne s'affiche pas).
-  const seats = tableNumber !== null ? TABLE_SEAT_NAMES[tableNumber] : undefined;
+  // v1.74.0 : sièges vivants de la vraie table (hooks/useLiveTableSeats.ts) ;
+  // invitation sans table = aucun dessin.
+  const seats = tableNumber !== null && liveSeats ? liveSeatNames(liveSeats) : undefined;
 
   return (
     <>
@@ -458,7 +473,7 @@ export function GuestArrivalPanel({
           // une recherche floue ni sur une autre table (voir
           // lib/floorPlanSeats.ts). Icone masquee si aucune correspondance :
           // rien a montrer plutot qu'un bouton mort.
-          const seatIndex = tableNumber !== null ? findSeatIndexByName(tableNumber, guest.nom_affichage) : null;
+          const seatIndex = seatIndexForGuest(guest.nom_affichage);
           return (
             <li
               key={guest.id}
@@ -632,7 +647,7 @@ export function GuestArrivalPanel({
     {seats && (
       <div ref={seatWheelRef} className="card mb-3 p-4">
         <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
-          Vu sur le plan photographié · à titre indicatif
+          Plan de la table · à jour en direct
         </p>
         <TableSeatWheel
           tableNumber={tableNumber as number}
@@ -649,8 +664,10 @@ export function GuestArrivalPanel({
             // v1.48.9 : "vice versa" -- toucher un siege retrouve, parmi les
             // membres DEJA LISTES ici, celui dont le nom correspond
             // exactement (jamais approche) au nom lu sur ce siege.
-            const seatName = seats[idx];
-            const match = seatName ? members.find((guest) => namesMatch(guest.nom_affichage, seatName)) : undefined;
+            const seat = liveSeats?.[idx];
+            const match = seat && seat.invitationId === invitation.id
+              ? members.find((guest) => namesMatch(guest.nom_affichage, seat.name))
+              : undefined;
             setHighlightedGuestId(match ? match.id : null);
             if (match) {
               requestAnimationFrame(() => {

@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.74.0] — 2026-10-10
+
+Retour de Gersom (capture de la table 1, tous les sièges « Vide ») : « si je mets quelqu'un sur les tables 1 et 42 à travers l'application, parce que c'est un invité surprise ou un ajout, [...] on va voir le nom de la personne sur le siège [...] ainsi que son nom en haut et sur l'image de la table. L'objectif est de s'assurer que l'image de la table soit synchronisée avec la liste d'invités. »
+
+### Ajouté
+- **Dessin de table synchronisé avec la liste d'invités, en temps réel** (`lib/liveSeats.ts`, `hooks/useLiveTableSeats.ts`), sur `/plan-table`, `/tables/[tableId]`, `/table/[tableId]` et la fiche « Qui est arrivé ? ». Jusqu'ici le dessin lisait uniquement l'export figé du PDF (`TABLE_SEAT_NAMES`) : les tables 1 et 42 (réserves) restaient toujours « Vide », et une personne déplacée restait dessinée à son ancienne table. Désormais :
+  - invité surprise approuvé ou excédent placé en table 1/42 → son nom sur un siège ;
+  - personne déplacée, retirée ou marquée « ne viendra pas » → siège libéré ;
+  - personnes toujours présentes → même siège que sur le PDF ;
+  - table qui déborde → sièges ajoutés (personne n'est caché).
+- Toucher un siège retrouve l'invitation par son identifiant (plus par comparaison de noms) ; 🪑 surligne les sièges réellement occupés par l'invitation.
+- **Chaises du grand plan de salle** : pleines/vides selon le nombre réel de personnes placées (`computeTableCapacities`, excédents en réserve compris) ; `/plan-table` charge et écoute désormais `overflow_assignments`.
+- Titre du panneau : « Vu sur le plan photographié · à titre indicatif » → « Plan de la table · à jour en direct ».
+
+### Vérifié sur les vraies données (10/10/2026)
+- 387 des 388 sièges nommés du PDF restent à leur place ; 10 personnes placées depuis l'application et absentes du PDF apparaissent enfin (ex. « Samy Archange » table 35, qui remplace « Kizombeira DelaVille » renommée).
+- « Sergio » (table 1) n'apparaît pas : il a été marqué « ne viendra pas » juste après son approbation (`nombre_prevu = 0`), son siège est donc libre — comportement correct.
+
+### Constaté, non modifié (données)
+- 2 invitations ont plus de lignes nominatives que de places prévues : « Famille Malungu » (table 2, 5 lignes pour 2 places — « Sister 1/2 Malungu » et « Keziah Malungu » viennent de l'ancienne scission v1.68.1) et « Famille LeCaous » (table 26, 2 lignes pour 1 place — « Maman Sunette Jean-Baptiste »). Le dessin s'en tient à `nombre_prevu` (priorité aux noms de « Membres: »), mais « Qui est arrivé ? » affiche toujours ces lignes en trop. À nettoyer avec l'accord de Gersom.
+
+### Tests
+- `tests/live-seats.test.ts` (nouveau, 8 tests : table 1 avec invité surprise, excédent en table 42, libellé d'excédent sans nom, ordre du PDF gardé, débordement, « ne viendra pas », lignes en trop, chaises du grand plan, câblage temps réel des 4 écrans).
+- `tests/floor-plan-seats.test.ts`, `tests/table-seat-wheel.test.ts` mis à jour.
+
+Aucune migration.
+
 ## [1.73.1] — 2026-10-10
 
 Retour de Gersom (2 captures d'écran, compte scanneur) : « quand on fait une recherche avec le nom d'une personne et qu'on appuie sur son invitation, des fois, ça va ouvrir [l'ancien compteur Personnes arrivées +/−]... c'est supposé d'amener directement à [Qui est arrivé ?] ».

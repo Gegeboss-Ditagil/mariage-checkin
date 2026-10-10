@@ -979,6 +979,7 @@ export default function CheckinPage() {
         <GuestArrivalPanel
           invitation={invitation}
           tableNumber={invitationTable?.number ?? null}
+          seatTable={invitationTable}
           onInvitationUpdate={setInvitation}
           onVisibilityChange={setHasMemberList}
           onAfterAdd={handlePanelAdd}

@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.73.1**
+**Version documentaire : 1.74.0**
 **Dernière mise à jour : 2026-10-08**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -103,6 +103,8 @@ Depuis v1.67.0 (03/10/2026), `POST /api/auth/login` verrouille un compte (les de
 Depuis v1.40.0, `agent_checkin` a aussi `viewAgenda` (jamais `manageAgenda`) — retour de Gersom sur Agent001 : « il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ». Ce rôle consulte donc le chronogramme sans le modifier ; `/staff` reste par ailleurs atteignable pour lui via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre du bas remplace Staff par Agenda.
 
 **Excédent placé en réserve (v1.73.0)** : la fiche d’une invitation n’affiche « Gérer l’excédent » que pour la part encore non placée, indique « ✓ N personne(s) placée(s) en réserve (table X) », et signale une place de réserve devenue inutile (arrivée annulée après le placement) avec « Libérer la place en réserve » pour les rôles `manageOverflow` (sinon : prévenir un placeur). Dans les calculs de capacité de l’application (`lib/capacity.ts`), cette personne compte à la table de réserve et n’est plus comptée en plus à la table d’origine.
+
+**Dessin des tables synchronisé (v1.74.0)** : le dessin d’une table (« Plan de la table · à jour en direct ») montre les personnes réellement placées à cette table — invitations de la table (lignes nominatives hors « ne viendra pas », sinon « Membres: », sinon le nom de l’invitation, complété par « Invité de … » jusqu’à `nombre_prevu`), moins leurs excédents envoyés en réserve, plus les excédents reçus (personne ajoutée sur place en premier, sinon « Excédent · <invitation> »). Les sièges du PDF seatplan.io gardent leur position pour les personnes toujours présentes ; les autres sont libérés ; les nouveaux prennent les premiers sièges libres, puis des sièges supplémentaires si la table déborde. Les chaises du grand plan suivent le même nombre (excédents compris). Affichage seulement : la source de placement reste `invitations.table_id`.
 
 **Fiche d’invitation pour un scanneur (v1.73.1)** : à la première ouverture, la fiche crée les lignes nominatives manquantes (capacité `checkin`, scanneur compris) et affiche toujours « Qui est arrivé ? » (✓/✕ par personne) ; l’ancien compteur « Personnes arrivées » +/− n’est plus qu’un repli. Créer ces lignes ne modifie aucun total et ne permet pas de renommer (`manageMembers` inchangé).
 

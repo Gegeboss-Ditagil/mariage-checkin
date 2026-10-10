@@ -9,11 +9,13 @@ import {
   COTE_LABELS,
   Cote,
   InvitationRow,
+  OverflowAssignmentRow,
   PLACEMENT_COLORS,
   PLACEMENT_LABELS,
   PlacementStatus,
   TableRow,
 } from '@/lib/types';
+import { computeTableCapacities } from '@/lib/capacity';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { AddInvitationButton } from '@/components/AddInvitationButton';
@@ -21,7 +23,8 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
 import { CallButton, MessageButton } from '@/components/MessageButton';
 import { FLOOR_PLAN_TABLE_POSITIONS, type Room, type TableCoteCounts } from '@/components/FloorPlan';
-import { TABLE_SEAT_NAMES, namesMatch } from '@/lib/floorPlanSeats';
+import { liveSeatNames } from '@/lib/liveSeats';
+import { useLiveTableSeats } from '@/hooks/useLiveTableSeats';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import { getTableOrientation } from '@/lib/floorPlanOrientation';
 import { ZoomableFloorPlan } from '@/components/ZoomableFloorPlan';
@@ -93,6 +96,8 @@ function PlanTablePageInner() {
   const role = useSessionRole();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
+  // v1.74.0 : excédents placés en réserve, pour remplir les chaises du plan.
+  const [overflow, setOverflow] = useState<OverflowAssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadInProgressRef = useRef(false);
@@ -149,9 +154,10 @@ function PlanTablePageInner() {
     loadInProgressRef.current = true;
     const supabase = createClient();
     try {
-      const [tablesResult, invitationsResult] = await Promise.all([
+      const [tablesResult, invitationsResult, overflowResult] = await Promise.all([
         supabase.from('tables').select('*').gt('capacity', 0).order('number'),
         supabase.from('invitations').select('*').order('nom_affichage'),
+        supabase.from('overflow_assignments').select('*'),
       ]);
       if (tablesResult.error || invitationsResult.error) {
         setLoadError("Impossible d'actualiser les tables. Vérifiez la connexion puis réessayez.");
@@ -159,6 +165,7 @@ function PlanTablePageInner() {
       }
       setTables((tablesResult.data as TableRow[]) || []);
       setInvitations((invitationsResult.data as InvitationRow[]) || []);
+      if (!overflowResult.error) setOverflow((overflowResult.data as OverflowAssignmentRow[]) || []);
       setLoadError(null);
     } catch {
       setLoadError("Impossible d'actualiser les tables. Vérifiez la connexion puis réessayez.");
@@ -188,6 +195,7 @@ function PlanTablePageInner() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invitations' }, debouncedLoad)
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'invitations' }, debouncedLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overflow_assignments' }, debouncedLoad)
       .subscribe();
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') void load();
@@ -354,6 +362,8 @@ function PlanTablePageInner() {
   }, [invitations, filtre, coteFiltre]);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
+  // v1.74.0 : sièges du dessin calculés depuis les vraies invitations (temps réel).
+  const { seats: liveSeats } = useLiveTableSeats(selectedTable);
   // Tables presentes sur le plan interactif -- les 41 tables (v1.68.0,
   // disposition en 4 zones cardinales NE/NO/SE/SO reconstruite depuis les
   // photos de Gersom, voir FLOOR_PLAN_TABLE_POSITIONS dans
@@ -366,6 +376,15 @@ function PlanTablePageInner() {
   // Recalcule la majorite Nelly/Gege de chaque table depuis les invitations
   // chargees. La couleur suit ainsi automatiquement les changements de
   // placement recus en temps reel.
+  // v1.74.0 : chaises pleines du plan = personnes réellement placées (même
+  // calcul que les jauges de capacité : excédents en réserve compris, jamais
+  // comptés deux fois).
+  const occupiedSeatsByNumber = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const c of computeTableCapacities(tables, invitations, overflow)) map.set(c.table.number, c.occupationEstimee);
+    return map;
+  }, [tables, invitations, overflow]);
+
   const coteByNumber = useMemo(() => {
     const map = new Map<number, TableCoteCounts>();
     for (const table of tables) {
@@ -514,6 +533,7 @@ function PlanTablePageInner() {
                     selectedZoneTag={selectedZoneTag}
                     onSelectZone={selectZone}
                     coteByNumber={coteByNumber}
+                    occupiedSeatsByNumber={occupiedSeatsByNumber}
                   />
                   <p className="mt-2 text-center text-xs text-text-faint">
                     Appuyez sur une table pour la sélectionner, ou sur une zone en pointillés (Bar, Buffets, DJ et
@@ -563,14 +583,14 @@ function PlanTablePageInner() {
                     </div>
                   )}
 
-                  {selectedTable && TABLE_SEAT_NAMES[selectedTable.number] && (
+                  {selectedTable && liveSeats && (
                     <div ref={seatWheelRef} className="card mt-3 p-4">
                       <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
-                        Vu sur le plan photographié · à titre indicatif
+                        Plan de la table · à jour en direct
                       </p>
                       <TableSeatWheel
                         tableNumber={selectedTable.number}
-                        seats={TABLE_SEAT_NAMES[selectedTable.number]}
+                        seats={liveSeatNames(liveSeats)}
                         orientation={getTableOrientation(selectedTable.number)}
                         highlightedIndices={highlightedSeats}
                         onSelectSeat={(idx) => {
@@ -585,15 +605,9 @@ function PlanTablePageInner() {
                           // LISTEES pour cette table, celle dont un membre
                           // correspond exactement (jamais approche) au nom lu
                           // sur ce siege.
-                          const seatName = TABLE_SEAT_NAMES[selectedTable.number]?.[idx];
+                          const seatInvitationId = liveSeats[idx]?.invitationId;
                           const invitationsHere = invitationsByTable.get(selectedTable.id) || [];
-                          const match = seatName
-                            ? invitationsHere.find(
-                                (inv) =>
-                                  namesMatch(inv.nom_affichage, seatName) ||
-                                  extractMembresComplet(inv.notes).some((m) => namesMatch(m, seatName))
-                              )
-                            : undefined;
+                          const match = seatInvitationId ? invitationsHere.find((inv) => inv.id === seatInvitationId) : undefined;
                           setSelectedInvitationId(match ? match.id : null);
                           if (match) {
                             requestAnimationFrame(() => {
