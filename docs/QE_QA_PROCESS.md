@@ -1,6 +1,6 @@
 # Processus QE/QA pour les bugs
 
-**Version documentaire : 1.76.0**
+**Version documentaire : 1.76.1**
 **Dernière mise à jour : 2026-10-10**
 
 Ce document distingue deux moments différents et fixe ce qui est obligatoire à chacun :
@@ -102,6 +102,7 @@ Ce qui n'était jamais testé, et qui l'est désormais :
 | Le résultat en base d'un parcours métier | `qa/functional/business-flows.spec.ts` : check-in puis annulation, invité surprise approuvé et visible sur sa table, « Reconsidérer » → placé, déconnexion par rôle |
 | Réseau faible ou coupé dans la salle | `network-and-concurrency.spec.ts` : 3G lente, coupure pendant un pointage |
 | Deux agents sur la même famille en même temps | même fichier : compteur exact, personne comptée deux fois = échec |
+| Un appareil lent (le téléphone d'un agent) | même fichier : fiche check-in avec processeur ×6, saut d'affichage < 0,1 |
 
 Règle : **une PR ne se fusionne que si le check « Qualité » est vert.** Un nouvel écran ou un nouveau bouton est couvert automatiquement par le balayage ; un nouveau parcours métier ajoute un test dans `business-flows.spec.ts`. Toujours non couvert (à vérifier à la main sur un vrai iPhone avant le jour J, voir `docs/BACKLOG.md`) : le vrai Safari/WebKit, la caméra réelle et la lecture d'un vrai QR, les notifications Push, l'installation PWA.
 

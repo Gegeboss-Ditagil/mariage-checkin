@@ -28,6 +28,7 @@ export function GuestArrivalPanel({
   seatTable,
   onInvitationUpdate,
   onVisibilityChange,
+  onLayoutReady,
   onAfterAdd,
   onOpenSurpriseGuest,
   onFinish,
@@ -60,6 +61,11 @@ export function GuestArrivalPanel({
   // trouve par Gersom le 29/08/2026 : le panneau (et Mona dedans) disparaissait
   // completement des ce moment-la, plus aucun moyen de l'annuler.
   onVisibilityChange?: (visible: boolean) => void;
+  // v1.76.0 (balayage fonctionnel : la fiche du scanneur « sautait », CLS
+  // 0,70) : vrai quand le panneau a sa hauteur définitive -- membres chargés
+  // ET dessin de la table affiché (s'il y en a un). Le parent n'affiche ce
+  // qui suit le panneau qu'à ce moment-là, pour que rien ne soit repoussé.
+  onLayoutReady?: (ready: boolean) => void;
   // Appele apres un ajout reussi (voir saveAdd), avec l'invitation a jour --
   // permet au parent de declencher l'assignation d'excedent si besoin (le
   // "+" ajoute desormais quelqu'un DEJA ARRIVE, voir canAdd ci-dessous).
@@ -420,6 +426,12 @@ export function GuestArrivalPanel({
     if (indices.length > 0) setHighlightedSeats(indices);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settled, visible, invitation.id, liveSeats, liveSeatsReady, members]);
+
+  const layoutReady = settled && (!visible || !seatTable || tableNumber === null || !!liveSeats);
+  useEffect(() => {
+    onLayoutReady?.(layoutReady);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutReady]);
 
   if (!settled) return <div className="card mb-3 text-center text-sm text-text-faint">Chargement des membres…</div>;
   if (!visible) return null;

@@ -87,6 +87,15 @@ export default function CheckinPage() {
   // panneau -- et la personne exclue avec, plus aucun moyen de l'annuler --
   // trouve par Gersom le 29/08/2026).
   const [hasMemberList, setHasMemberList] = useState(true);
+  // v1.76.0 (balayage fonctionnel, CLS 0,70 sur la fiche du scanneur) : tant
+  // que GuestArrivalPanel charge ses membres, rien n'est affiché SOUS lui --
+  // sinon l'emplacement « Chargement des membres… » (petit) remplacé par la
+  // vraie liste (grande) faisait sauter tout ce qui suivait.
+  const [panelSettled, setPanelSettled] = useState(false);
+  // Le dessin de la table (dernier élément du panneau) n'apparaît qu'une fois
+  // la table chargée : on l'attend aussi avant d'afficher ce qui suit.
+  const [tableLookupDone, setTableLookupDone] = useState(false);
+  const belowPanelReady = panelSettled && tableLookupDone;
 
   // -- Renommer l'invitation (pas un membre detaille -- voir /members) ------
   const [renaming, setRenaming] = useState(false);
@@ -120,6 +129,8 @@ export default function CheckinPage() {
     setInvitationTable(null);
     invitationTableIdRef.current = null;
     setHasMemberList(true);
+    setPanelSettled(false);
+    setTableLookupDone(false);
     setError(null);
     setSyncNotice(null);
     setPlacedOverflow([]);
@@ -143,7 +154,15 @@ export default function CheckinPage() {
               .select('*')
               .eq('id', inv.table_id)
               .maybeSingle()
-              .then(({ data: t }) => setInvitationTable((t as TableRow) || null));
+              .then(
+                ({ data: t }) => {
+                  setInvitationTable((t as TableRow) || null);
+                  setTableLookupDone(true);
+                },
+                () => setTableLookupDone(true)
+              );
+          } else {
+            setTableLookupDone(true);
           }
         } else {
           setNotFound(true);
@@ -824,6 +843,8 @@ export default function CheckinPage() {
           invite, pas d'etiquette) tienne sans defiler sur un iPhone. */}
       <div className="flex-1 px-4 py-4">
         <div className="card mb-3 space-y-1 text-center">
+          {/* Ligne réservée tant que la table charge (sinon tout descend de 24 px). */}
+          {!tableLookupDone && invitation.table_id && <p aria-hidden className="h-5" />}
           {invitationTable && (
             // Cliquable vers la fiche de la table -- demande de Gersom le
             // 13/09/2026 : "on peut ouvrir le check-in [de l'invite]. Par
@@ -982,6 +1003,7 @@ export default function CheckinPage() {
           seatTable={invitationTable}
           onInvitationUpdate={setInvitation}
           onVisibilityChange={setHasMemberList}
+          onLayoutReady={setPanelSettled}
           onAfterAdd={handlePanelAdd}
           onOpenSurpriseGuest={() => setShowCamera(true)}
           onFinish={() => router.push('/scan')}
@@ -993,7 +1015,7 @@ export default function CheckinPage() {
           canMerge={canMerge}
         />
 
-        {(() => {
+        {belowPanelReady && (() => {
           const excedent = Math.max(0, invitation.nombre_arrive - invitation.nombre_prevu);
           const placed = placedOverflow.reduce((s, a) => s + a.count, 0);
           const restant = excedent - placed;
@@ -1048,7 +1070,7 @@ export default function CheckinPage() {
             garder un moyen d'annuler). Base sur hasMemberList (etat reel du
             panneau), jamais sur nombre_prevu -- voir le commentaire sur
             hasMemberList plus haut. */}
-        {invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || !hasMemberList) && (
+        {belowPanelReady && invitation.nombre_arrive === 0 && (invitation.ne_viendra_pas || !hasMemberList) && (
           <button
             type="button"
             disabled={noShowSubmitting || !online}
@@ -1073,7 +1095,7 @@ export default function CheckinPage() {
             panneau, en petite icone a cote du "+" plutot qu'un gros bouton
             separe ici (retour de Gersom le 14/09/2026 : "le bouton invité
             surprise... un simple icône de caméra à côté de l'icône +"). */}
-        {hasMemberList && !canSubmitGuestApproval && (
+        {belowPanelReady && hasMemberList && !canSubmitGuestApproval && (
           // Ni l'ajout instantané (dans GuestArrivalPanel) ni le parcours
           // photo ne sont accessibles à ce rôle (agent_checkin, visibilite)
           // -- un excédent de personnes remonte toujours à un
