@@ -3,6 +3,27 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.77.0] — 2026-10-10
+
+Demande de Gersom : « corrige — tu as les droits Supabase » pour la migration 0069 et l'écart entre le dépôt et la production.
+
+### Production (Supabase), fait par l'agent
+- **Historique des migrations réconcilié** : 33 migrations du dépôt (0005, 0036 à 0068 sauf 0047) étaient appliquées en production sans y être inscrites, ou seulement sous une version horodatée. Chacune a été vérifiée sur la base (fonctions, colonnes, données), puis inscrite avec sa version à 4 chiffres. Ajout de lignes uniquement ; retour arrière : supprimer les lignes `created_by like 'reconciliation v1.77.0%'`.
+- **0041 appliquée** (colonne `users.agenda_manager`, jamais passée en production, inutilisée depuis v1.31.1) : la production égale désormais un rejeu du dépôt.
+
+### À exécuter par Gersom (éditeur SQL Supabase)
+- `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql` : applique **0069**, l'inscrit (avec 0047, qu'elle remplace), sauvegarde l'historique puis en retire les 65 doublons horodatés et opérations de données ponctuelles. C'est ce qui fera passer le check « Supabase Preview ». L'outil de l'agent expire sur toute suppression (deux essais, rien d'écrit). Testé de bout en bout sur la base de test locale.
+
+### Ajouté
+- `docs/MIGRATIONS_PRODUCTION.md` : état en production de chaque migration + règles (une seule numérotation, ne pas utiliser `apply_migration` qui enregistre une version horodatée, suppressions via `supabase/manual/`).
+- `tests/migration-history.test.ts` : échoue si une migration n'a pas d'état documenté, ou si le script manuel ne reprend pas 0069 à l'identique avec sauvegarde avant nettoyage.
+
+### Trouvé, laissé en attente de décision
+- Tables `canada_jets_leads` / `canada_jets_lead_events` (autre projet, vides) dans la base du mariage ; une règle permet à quiconque possède la clé publique de l'application d'insérer des lignes. Non modifiées.
+
+### Migration
+- 0041 appliquée ; 0069 dans le script manuel. Aucune nouvelle migration.
+
 ## [1.76.1] — 2026-10-10
 
 Suite de v1.76.0 : la première passe complète des tests fonctionnels sur GitHub a trouvé un dernier problème de fluidité.
