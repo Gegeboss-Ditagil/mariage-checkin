@@ -10,11 +10,10 @@ Demande de Gersom (suite de v1.74.0) : « supprime les noms en trop ».
 ### Données (migration `0068_remove_extra_member_rows_malungu_lecaous.sql`)
 - « Famille Malungu » (table 2, 2 places) : retire « Sister 1 Malungu » (a sa propre invitation, sans table), « Sister 2 Malungu » et « Keziah Malungu » (a sa propre invitation « Famille Malungu » table 32 avec Keren) — restes de la scission v1.68.1. Restent : Ruben Kinanga Malungu, Maguy Malungu.
 - « Famille LeCaous » (table 26, 1 place) : retire « Maman Sunette Jean-Baptiste ». Reste : Cedrik LeCaous. (Elle avait été cochée arrivée puis décochée par Rémy pendant les tests de septembre ; l'invitation est passée depuis à 1 place.)
-- Seules les lignes nominatives sont supprimées ; invitations, places prévues et arrivées inchangées. Sauvegarde `import_backups` (kind `v1.74.1_extra_members`) écrite avant ; garde-fous : statut « attendu », 0 arrivée ; idempotente.
+- Pour ces deux invitations, seules les lignes nominatives sont supprimées ; places prévues et arrivées inchangées. Sauvegarde `import_backups` (kind `v1.74.1_extra_members`) écrite avant ; garde-fous : statut « attendu », 0 arrivée ; idempotente.
 - **Non appliquée par l'agent** : l'outil Supabase de cet environnement expire sur toute suppression (deux essais, rien d'écrit, aucune sauvegarde créée). À exécuter telle quelle dans l'éditeur SQL Supabase.
 
-### Constaté, non modifié
-- « Famille Kinanga Malungu » (sans table) reprend exactement les mêmes membres que « Famille Malungu » table 2 (Ruben Kinanga Malungu, Maguy Malungu) : doublon probable ajouté en v1.69.2, à confirmer avant suppression.
+- « Famille Kinanga Malungu » (sans table, 0 arrivée, aucune ligne nominative) : doublon de « Famille Malungu » table 2 (mêmes membres Ruben Kinanga Malungu et Maguy Malungu), ajouté en v1.69.2 — invitation supprimée sur confirmation de Gersom. Incluse dans la même sauvegarde.
 
 Aucun changement de code.
 
