@@ -1,6 +1,6 @@
 # Migrations : dépôt ↔ production
 
-**Version documentaire : 1.78.0**
+**Version documentaire : 1.79.0**
 **Dernière mise à jour : 2026-10-10**
 
 Une ligne par fichier de `supabase/migrations/`. `tests/migration-history.test.ts` échoue si un fichier manque ici : toute nouvelle migration doit dire si elle est appliquée en production.
@@ -87,8 +87,9 @@ Vérifié en production table par table (fonctions, colonnes, données). Toutes 
 | `0067_placeur014_016_role_placeur.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
 | `0068_remove_extra_member_rows_malungu_lecaous.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
 | `0069_health_report_reset_fix_strict_overload.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL, script `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`) ; contrôle de santé vérifié vide |
+| `0070_reset_removes_test_surprise_guests.sql` | **À exécuter par Gersom** dans l'éditeur SQL (v1.79.0), puis inscrire : `insert into supabase_migrations.schema_migrations (version, name, created_by) values ('0070', '0070_reset_removes_test_surprise_guests', 'editeur SQL, v1.79.0') on conflict (version) do nothing;` |
 
 ## Hors dépôt, trouvé en production
 
 - **Opérations de données ponctuelles** (août 2026 : `reimport_guestlist_*`, `restore_invitations_after_unexpected_wipe_20260821`, `clean_reset_invitations_20260821*`, `clear_table_for_no_table_staff`, `remove_fabricated_rows_20260822`) : imports et nettoyages d'avant le parcours With Joy actuel, sans effet sur la structure. Retirées de l'historique le 10/10/2026 (copie conservée dans `supabase_migrations.schema_migrations_backup_20261010`).
-- **`canada_jets_leads_pipeline`** (21/09/2026) : tables `canada_jets_leads` et `canada_jets_lead_events` d'un autre projet, vides, créées dans cette base. La règle « public insert leads » permet à quiconque possède la clé publique de l'application d'y insérer des lignes. Suppression demandée par Gersom le 10/10/2026 ; vérifiées vides et sans aucune dépendance, SQL : `supabase/manual/2026-10-10_supprimer_tables_canada_jets.sql` (garde-fou : annule si une ligne est apparue), à exécuter dans l'éditeur SQL (`docs/BACKLOG.md` n°9).
+- **`canada_jets_leads_pipeline`** (21/09/2026) : tables `canada_jets_leads` et `canada_jets_lead_events` d'un autre projet, vides, créées dans cette base. La règle « public insert leads » permet à quiconque possède la clé publique de l'application d'y insérer des lignes. **Supprimées par Gersom le 10/10/2026** (vérifié : 0 table, 0 règle restante). Avant : vérifiées vides et sans aucune dépendance, SQL : `supabase/manual/2026-10-10_supprimer_tables_canada_jets.sql` (garde-fou : annule si une ligne est apparue), à exécuter dans l'éditeur SQL (`docs/BACKLOG.md` n°9).
