@@ -5,7 +5,10 @@ import { hasCapability } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'manageMembers')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  // v1.73.1 : creer les lignes nominatives manquantes fait partie du check-in
+  // (aucun total modifie) -- ouvert a 'checkin', sinon un scanneur retombait
+  // sur l'ancien compteur +/- pour toute invitation jamais ouverte.
+  if (!user || !hasCapability(user.role, 'checkin')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const { invitation_id } = await req.json().catch(() => ({}));
   if (!invitation_id) return NextResponse.json({ error: 'Invitation requise' }, { status: 400 });
   const supabase = createAdminClient();

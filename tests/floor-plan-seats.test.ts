@@ -45,8 +45,10 @@ test("le module documente explicitement qu'il n'est pas une source de placement"
 
 test("/plan-table affiche ce panneau uniquement pour la table selectionnee, jamais comme source d'assignation", () => {
   const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
-  assert.match(pageSource, /TABLE_SEAT_NAMES\[selectedTable\.number\]/);
-  assert.match(pageSource, /Vu sur le plan photographié/);
+  // v1.74.0 : sièges vivants (hooks/useLiveTableSeats.ts), plus l'export figé seul.
+  assert.match(pageSource, /const \{ seats: liveSeats \} = useLiveTableSeats\(selectedTable\);/);
+  assert.match(pageSource, /selectedTable && liveSeats && \(/);
+  assert.match(pageSource, /Plan de la table · à jour en direct/);
   // Purement local (surbrillance client, jamais une ecriture Supabase) :
   // un simple useState, jamais passe a un appel fetch/API/RPC. Tableau
   // depuis v1.48.5 (plusieurs sieges a la fois, ex. toute une invitation).
@@ -64,7 +66,9 @@ test('reinitialise la surbrillance de siege a chaque changement de table (jamais
 test("toucher un siege sur le dessin de la table selectionnee surligne l'invitation correspondante (sens siege -> nom, seul restant)", () => {
   const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(pageSource, /onSelectInvitation/);
-  assert.match(pageSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
+  // v1.74.0 : le siège porte directement l'id de son invitation.
+  assert.match(pageSource, /const seatInvitationId = liveSeats\[idx\]\?\.invitationId;/);
+  assert.match(pageSource, /invitationsHere\.find\(\(inv\) => inv\.id === seatInvitationId\)/);
   assert.match(pageSource, /selectedTableCardRef\.current\?\.scrollIntoView/);
 });
 

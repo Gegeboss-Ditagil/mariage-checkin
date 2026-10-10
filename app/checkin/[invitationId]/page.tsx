@@ -31,6 +31,7 @@ export default function CheckinPage() {
   const role = useSessionRole();
   const canReorganizeExcedent = hasCapability(role, 'manageOverflow');
   const canRename = hasCapability(role, 'manageMembers');
+  const canCheckin = hasCapability(role, 'checkin');
   const canMoveGuest = hasCapability(role, 'moveGuests');
   const canManageTags = hasCapability(role, 'manageTags');
   const canMerge = hasCapability(role, 'mergeInvitations');
@@ -978,6 +979,7 @@ export default function CheckinPage() {
         <GuestArrivalPanel
           invitation={invitation}
           tableNumber={invitationTable?.number ?? null}
+          seatTable={invitationTable}
           onInvitationUpdate={setInvitation}
           onVisibilityChange={setHasMemberList}
           onAfterAdd={handlePanelAdd}
@@ -985,6 +987,7 @@ export default function CheckinPage() {
           onFinish={() => router.push('/scan')}
           onMerge={() => router.push('/checkin/' + invitation.id + '/merge')}
           canManage={canRename}
+          canMaterialize={canCheckin}
           canAdd={canSubmitGuestApproval}
           canMove={canMoveGuest}
           canMerge={canMerge}

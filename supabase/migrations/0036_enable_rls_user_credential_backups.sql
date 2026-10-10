@@ -17,4 +17,14 @@
 -- lib/session.ts), auth.uid() serait toujours nul ici.
 -- ============================================================================
 
+-- v1.76.0 : la table avait été créée à la main en production, sans migration
+-- (découvert en rejouant toutes les migrations sur une base vide, pile de test
+-- scripts/qa-stack/). Même structure que la production ; sans effet là-bas.
+create table if not exists public.user_credential_backups (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  reason text,
+  snapshot jsonb
+);
+
 alter table public.user_credential_backups enable row level security;

@@ -53,6 +53,7 @@ interface ZoomableFloorPlanProps {
   selectedZoneTag?: string | null;
   onSelectZone?: (room: Room) => void;
   coteByNumber?: Map<number, TableCoteCounts>;
+  occupiedSeatsByNumber?: Map<number, number>;
 }
 
 export function ZoomableFloorPlan({
@@ -62,6 +63,7 @@ export function ZoomableFloorPlan({
   selectedZoneTag,
   onSelectZone,
   coteByNumber,
+  occupiedSeatsByNumber,
 }: ZoomableFloorPlanProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pointers = useRef<Map<number, Point>>(new Map());
@@ -200,6 +202,7 @@ export function ZoomableFloorPlan({
             selectedZoneTag={selectedZoneTag}
             onSelectZone={onSelectZone}
             coteByNumber={coteByNumber}
+            occupiedSeatsByNumber={occupiedSeatsByNumber}
           />
         </div>
       </div>

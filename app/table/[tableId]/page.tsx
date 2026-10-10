@@ -11,8 +11,9 @@ import { TopBar } from '@/components/TopBar';
 import { restants } from '@/lib/statusLogic';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { hasCapability } from '@/lib/permissions';
-import { extractPrenoms, extractMembresComplet } from '@/lib/membersNotes';
-import { TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch } from '@/lib/floorPlanSeats';
+import { extractPrenoms } from '@/lib/membersNotes';
+import { liveSeatNames, seatIndicesForInvitation } from '@/lib/liveSeats';
+import { useLiveTableSeats } from '@/hooks/useLiveTableSeats';
 import { FLOOR_PLAN_TABLE_POSITIONS } from '@/components/FloorPlan';
 import { TableSeatWheel } from '@/components/TableSeatWheel';
 import { getTableOrientation } from '@/lib/floorPlanOrientation';
@@ -42,6 +43,8 @@ export default function TablePage() {
   const canMoveGuests = hasCapability(role, 'moveGuests');
   const canCheckin = hasCapability(role, 'checkin');
   const [table, setTable] = useState<TableRow | null>(null);
+  // v1.74.0 : sièges du dessin calculés depuis les vraies invitations (temps réel).
+  const { seats: liveSeats } = useLiveTableSeats(table);
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   // Excedents assignes a CETTE table (venant d'un autre groupe/table) : sans
   // ca, une personne qui scanne le QR code de la table ne voit jamais les
@@ -333,15 +336,9 @@ export default function TablePage() {
         {invitations.map((inv) => {
           const prenoms = extractPrenoms(inv.notes);
           const checked = selectedIds.has(inv.id);
-          const seats = table ? TABLE_SEAT_NAMES[table.number] : undefined;
-          // v1.48.8 : memes noms candidats que /plan-table et /tables/[tableId]
-          // (nom affiche + membres detailles des notes), correspondance
-          // exacte uniquement (jamais approchee, voir lib/floorPlanSeats.ts).
-          const seatMatches = seats
-            ? [inv.nom_affichage, ...extractMembresComplet(inv.notes)]
-                .map((name) => findSeatIndexByName(table!.number, name))
-                .filter((idx): idx is number => idx !== null)
-            : [];
+          // v1.74.0 : sièges réellement occupés par cette invitation (lib/liveSeats.ts),
+            // plus une recherche par nom dans l'export figé du PDF.
+            const seatMatches = liveSeats ? seatIndicesForInvitation(liveSeats, inv.id) : [];
           // v1.53.3, retour de Gersom : "quand je clique sur [le nom], ça
           // devrait faire highlight [le siège]" -- toucher la ligne met
           // désormais en évidence le siège (au lieu de naviguer, devenu
@@ -463,14 +460,14 @@ export default function TablePage() {
       </ul>
 
       <div className="px-4 pb-24">
-        {table && TABLE_SEAT_NAMES[table.number] && (
+        {table && liveSeats && (
           <div ref={seatWheelRef} className="card mt-3 p-4">
             <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-text-faint">
-              Vu sur le plan photographié · à titre indicatif
+              Plan de la table · à jour en direct
             </p>
             <TableSeatWheel
               tableNumber={table.number}
-              seats={TABLE_SEAT_NAMES[table.number]}
+              seats={liveSeatNames(liveSeats)}
               orientation={getTableOrientation(table.number)}
               highlightedIndices={highlightedSeats}
               onSelectSeat={(idx) => {
@@ -484,14 +481,8 @@ export default function TablePage() {
                 // siege retrouve, parmi les invitations de CETTE table,
                 // celle dont un membre correspond exactement (jamais
                 // approche) au nom lu sur ce siege.
-                const seatName = table ? TABLE_SEAT_NAMES[table.number]?.[idx] : undefined;
-                const match = seatName
-                  ? invitations.find(
-                      (inv) =>
-                        namesMatch(inv.nom_affichage, seatName) ||
-                        extractMembresComplet(inv.notes).some((m) => namesMatch(m, seatName))
-                    )
-                  : undefined;
+                const seatInvitationId = liveSeats[idx]?.invitationId;
+                const match = seatInvitationId ? invitations.find((inv) => inv.id === seatInvitationId) : undefined;
                 setSelectedInvitationId(match ? match.id : null);
                 if (match) {
                   requestAnimationFrame(() => {

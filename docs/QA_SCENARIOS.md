@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.73.0**
-**Dernière mise à jour : 2026-10-08**
+**Version documentaire : 1.76.0**
+**Dernière mise à jour : 2026-10-10**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -254,3 +254,35 @@ Rôles connectés dans Chrome : placeur (Agent001), scanneur (Sanda), directeur 
 | 18 | Directeur | Badge Approbations de la barre du bas après décision | 0 immédiatement | **KO (restait 1 jusqu’à 15 s) → corrigé v1.73.0** |
 | 19 | Placeur, scanneur | Accès écrans (`/tables/add`, `/placement`, `/history`, `/admin`, `/mots-de-passe`…) | conforme à la matrice | OK |
 | 20 | Tous | Bande /scan « 0 / 431 » vs tableau de bord « 397 » | même total | **KO → corrigé v1.73.0** |
+
+## Première utilisation par rôle — v1.75.0
+
+À rejouer sur un appareil vierge (navigation privée ou nouvel appareil) et une invitation jamais ouverte (`scripts/sql-tests/02_e2e_fresh_invitation.sql`). Automatisé par `e2e/first-use.spec.ts` (iPhone, Android, iPad) et, côté code, `tests/first-use-roles.test.ts`.
+
+| # | Rôle | Étape | Attendu |
+|---|---|---|---|
+| 1 | Tous | Connexion sur appareil vierge | Écran de choix du thème une fois, puis page d'arrivée du rôle (scanneur/placeur/admin : Scan ; directeur/approbateur : Tableau de bord) |
+| 2 | Tous | Toucher chaque onglet de la barre du bas | Chaque onglet s'ouvre, jamais renvoyé ailleurs, jamais « Accès réservé » |
+| 3 | Scanneur, placeur, directeur, admin | Ouvrir une invitation jamais ouverte | « Qui est arrivé ? » avec un ✓/✕ par personne, jamais l'ancien compteur +/− |
+| 4 | Approbateur | Tableau de bord → Tous les invités → toucher un invité | Rien ne s'ouvre (pas de fiche de check-in pour ce rôle), aucun renvoi inattendu |
+| 5 | Approbateur | Approbations → flèche retour | Retour au tableau de bord (sa page d'arrivée), pas vers Scan |
+| 6 | Approbateur | Placer un invité surprise sur une table | Retour à Approbations, pas vers une fiche interdite |
+| 7 | Directeur/admin | Refuser une demande, puis « Reconsidérer → choisir une table » | L'invité est approuvé ET placé sur la table choisie (bug corrigé en v1.75.0 : restait sans table) |
+| 8 | Admin | `/admin` → carte « Santé de la base » | « ✓ N contrôles OK » ; toute ligne rouge bloque la livraison |
+
+## Tests fonctionnels automatiques — v1.76.0
+
+Lancés automatiquement sur chaque PR (check « Qualité », `.github/workflows/quality.yml`) sur l'application complète et une base rejouée depuis toutes les migrations ; en local : `scripts/qa-stack/README.md`. Ils remplacent la QA manuelle de chaque écran, pas la vérification sur un vrai iPhone (`docs/BACKLOG.md` n°8).
+
+| # | Fichier | Scénario | Attendu |
+|---|---|---|---|
+| 1 | `crawl-every-click.spec.ts` | Chaque rôle × chaque page × chaque bouton (iPhone, ordinateur) | Aucune erreur JS, aucune erreur serveur, aucun appel refusé, aucune déconnexion, jamais « Accès réservé » après un clic, page < 3 s, CLS < 0,25, le compte du testeur jamais désactivé ; la liste des écritures faites d'un seul toucher est jointe au rapport pour relecture |
+| 2 | `business-flows.spec.ts` | Scanneur : rechercher, ouvrir une invitation jamais ouverte, pointer, annuler | Compteur en base 0 → 1 → 0 |
+| 3 | idem | Directeur : approuver un invité surprise | Placé sur une table, son nom visible sur le dessin de la table |
+| 4 | idem | Directeur : refuser puis « Reconsidérer → table » | Approuvé ET placé (bug v1.75.0) |
+| 5 | idem | Admin : se désactiver / se rétrograder soi-même | Refusé (API 400, bascule grisée) ; désactiver un autre compte demande confirmation |
+| 6 | idem | Directeur : « Réinitialiser » un code | Confirmation demandée ; refusée = aucun code changé |
+| 7 | idem | Approbateur, santé de la base, plan, déconnexion de chaque rôle | Voir le fichier |
+| 8 | `network-and-concurrency.spec.ts` | 3G lente sur Scan, Recherche, Bord, Plan | Chaque écran utilisable en < 8 s, sans erreur |
+| 9 | idem | Coupure réseau sur une fiche de check-in | Bandeau « HORS LIGNE », boutons de pointage désactivés, rien d'écrit ; tout repart au retour du réseau |
+| 10 | idem | Deux agents touchent la même personne au même instant | Compteur = personnes cochées, jamais compté deux fois |

@@ -9,6 +9,7 @@ import { ResponsablePicker } from '@/components/ResponsablePicker';
 import { useSessionRole } from '@/hooks/useSessionRole';
 import { usePolling } from '@/hooks/usePolling';
 import { useDismiss } from '@/hooks/useDismiss';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 type Person = { id: string; nom_affichage: string; nom_complet: string | null; role: string; email: string | null };
 type AgendaItem = { id: string; time_label: string; title: string; department: string; details: string | null; sort_order: number; assignee_ids: string[]; custom_assignees: string[]; completed: boolean; is_private: boolean };
@@ -126,6 +127,9 @@ export default function AgendaPage() {
   const [responsablePickerOpen, setResponsablePickerOpen] = useState(false);
   const { closing: insertClosing, dismiss: dismissInsert } = useDismiss(() => setInsertAt(null));
   const { closing: editClosing, dismiss: dismissEdit } = useDismiss(() => openEditing(null));
+  // Échap ferme la fiche ouverte (la fiche des responsables, posée par-dessus, gère d'abord la sienne).
+  useEscapeKey(insertAt !== null && !responsablePickerOpen, dismissInsert);
+  useEscapeKey(!!editing && !responsablePickerOpen, dismissEdit);
   // Remplace `canManage` seul comme garde sur toute action qui modifie/ouvre
   // une fiche -- "la seule chose qu'on peut faire [en View], c'est scroll
   // down. Quand on appuie, ça fera rien." `canManage` reste la garde

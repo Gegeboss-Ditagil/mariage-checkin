@@ -3,6 +3,112 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.76.0] — 2026-10-10
+
+Demande de Gersom : « tout un processus de test de fonctionnalité... partout, tous les clics, c'est fluide. UI, UX, front-end, back-end, complet... il y a quelque chose d'autre qu'on ne testait pas et qu'il faut que tu ajoutes. »
+
+### Ce qui n'était jamais testé
+Jusqu'ici, aucun test ne faisait tourner l'application : les tests lisaient le code, les tests SQL parlaient à la base, mais rien ne cliquait dans l'app avec une vraie base derrière. **Et aucun test ne tournait automatiquement sur GitHub** : tout dépendait d'un lancement manuel. Les migrations n'étaient jamais rejouées depuis zéro (d'où 0005 absente et une table créée à la main, découvertes en v1.75.0 et ici). Le réseau faible, la simultanéité entre agents et la fluidité (lenteur, écran qui saute) n'étaient jamais mesurés.
+
+### Ajouté
+- **Pile de test complète** (`scripts/qa-stack/`) : l'application réelle, PostgreSQL rejouée depuis **toutes** les migrations du dépôt, PostgREST, données synthétiques (122 invitations, un compte par rôle). Jamais la production.
+- **Balayage « clique partout »** (`qa/functional/crawl-every-click.spec.ts`) : 5 rôles × 24 pages × chaque bouton, sur iPhone et ordinateur. Échoue sur une erreur JavaScript, une erreur serveur, un appel refusé, une déconnexion, « Accès réservé » après un clic, une page de plus de 3 s ou qui saute à l'affichage. Liste en plus chaque écriture faite d'un seul toucher sans confirmation.
+- **Parcours métier vérifiés en base** (`business-flows.spec.ts`, 9 parcours) et **réseau / simultanéité** (`network-and-concurrency.spec.ts` : 3G lente, coupure réseau, deux agents sur la même personne).
+- **Check « Qualité » sur chaque PR** (`.github/workflows/quality.yml`) : types, tests unitaires, build, base rejouée + contrôle de santé, tests dans le navigateur.
+
+### Corrigé (trouvé par le balayage dès son premier passage)
+- **Un admin pouvait désactiver son propre compte d'un seul toucher** (bascule sur `/admin/users`, sans confirmation) et ne plus pouvoir se reconnecter. Bascule grisée pour son propre compte, refus côté API (désactiver ou rétrograder soi-même) ; désactiver un autre compte demande confirmation.
+- **« Réinitialiser » remplaçait le code d'une personne d'un seul toucher** (`/mots-de-passe` et `/admin/users`) : le jour J, un faux mouvement bloquait un agent. Confirmation ajoutée.
+- **Changer le mode de l'événement** (`/admin` : Préparation, Test, JOUR J, Terminé) se faisait d'un seul toucher ; sortir du JOUR J rouvre la réinitialisation des arrivées. Confirmation ajoutée.
+- Les fiches de `/agenda` et le code affiché par `/mots-de-passe` se ferment avec Échap (`hooks/useEscapeKey.ts`), comme les autres fiches.
+- `0036` : crée la table `user_credential_backups` si elle n'existe pas (elle avait été créée à la main en production, jamais dans une migration — une base neuve échouait).
+
+### Tests
+- Parcours métier : 9/9 (deux passages de suite) ; réseau et simultanéité : 3/3 ; balayage : voir la PR.
+- Le parcours « Reconsidérer → choisir une table » est désormais vérifié de bout en bout dans le navigateur : l'invité est bien approuvé ET placé (correctif v1.75.0 confirmé).
+
+### Migration
+- Aucune nouvelle. `0036` modifiée sans effet en production (`create table if not exists` ; la table y existe déjà).
+
+## [1.75.0] — 2026-10-10
+
+Demande de Gersom après l'analyse « pourquoi nos tests n'ont pas vu ces erreurs » : « corrige tous les 7 points, ajoute les tests, reconsidère aussi tes tests... surtout sur une première utilisation pour tous les rôles ».
+
+### Corrigé
+- **« Reconsidérer → choisir une table » laissait l'invité approuvé SANS table**, sans message. `assign_table_to_guest_approval_strict` existait en deux versions en production (0038 sans `p_force`, 0049 avec) ; l'appel à 3 arguments de `lib/guestApprovalDecide.ts` correspondait aux deux (« function is not unique », confirmé en base) et l'erreur était ignorée. Le code passe désormais tous les arguments ; la migration 0069 supprime l'ancienne version.
+- **Bouton « Réinitialiser les données de test » de `/admin` en échec** : la fonction (0047) n'avait jamais été créée en production. Recréée dans 0069, adaptée au pointage par personne (remet aussi les personnes cochées à « attendu », retire les ajouts sur place).
+- **Approbateur (`visibilite`)** — trouvés par le nouveau test « première utilisation » : toucher un invité dans « Tous les invités » l'envoyait vers une fiche interdite (renvoyé au tableau de bord) ; placer un invité surprise aussi ; la flèche retour d'Approbations menait à Scan. Corrigés.
+- **Migration 0005 absente du dépôt** (appliquée en production le 18/08/2026, jamais versionnée) : restaurée à l'identique depuis l'historique Supabase.
+- Scripts npm `seed` et `reset-test-data` retirés (fichiers inexistants) ; `npm test` lance toute la suite.
+
+### Ajouté
+- **Contrôle de santé de la base** (`app_health_report`, lecture seule, carte « Santé de la base » sur `/admin`, `/api/admin/health`) : 28 fonctions × une seule version, 18 colonnes attendues, contrainte `decided_via`, réserves 1 et 42, lignes nominatives ≤ places, surcapacité, doublons de personnes, demandes approuvées réservées sans table, compteur d'arrivées = personnes cochées. Déjà créé en production : ne signale que les 2 problèmes corrigés par 0069.
+- **Toute erreur SQL est journalisée** dans `/admin/logs` (`lib/rpcErrorLog.ts`, branché une fois dans le client admin) — y compris la réponse HTTP 300 de PostgREST pour une fonction ambiguë.
+- **Tests SQL sur la vraie base sans rien y laisser** (`scripts/sql-tests/01_first_use_flows.sql`) : réserver puis approuver, placement automatique, première ouverture d'une invitation, premier pointage. Exécutés en production le 10/10/2026 : 4/4 OK, aucune ligne conservée.
+- **Parcours de bout en bout « première utilisation »** (`e2e/first-use.spec.ts`, Playwright, iPhone/Android/iPad, 5 rôles) + lancement manuel GitHub (`.github/workflows/e2e-first-use.yml`) + `e2e/README.md`. Non exécutés ici (aperçus Vercel bloqués par le réseau de l'agent, comptes de test à créer).
+- `docs/BACKLOG.md` ; règles §6 de `docs/QE_QA_PROCESS.md` ; scénarios « première utilisation » dans `docs/QA_SCENARIOS.md`.
+
+### Tests
+- `tests/rpc-signatures.test.ts` (vérifié en échec sur l'ancien code), `tests/db-health-report.test.ts`, `tests/rpc-error-log.test.ts`, `tests/first-use-roles.test.ts` (8 tests, dont un balayage de tous les liens de chaque écran pour chaque rôle), `tests/project-hygiene.test.ts`.
+
+### Migration
+- `0069_health_report_reset_fix_strict_overload.sql` : **à exécuter dans l'éditeur SQL Supabase** (l'outil de l'agent expire sur toute instruction de suppression). `app_health_report` y est déjà créée ; le reste (suppression de l'ancienne version, réinitialisation) attend cette exécution.
+- `0005_function_search_path_hardening.sql` : restaurée dans le dépôt, déjà appliquée en production — ne pas réexécuter.
+
+## [1.74.1] — 2026-10-10
+
+Demande de Gersom (suite de v1.74.0) : « supprime les noms en trop ».
+
+### Données (migration `0068_remove_extra_member_rows_malungu_lecaous.sql`)
+- « Famille Malungu » (table 2, 2 places) : retire « Sister 1 Malungu » (a sa propre invitation, sans table), « Sister 2 Malungu » et « Keziah Malungu » (a sa propre invitation « Famille Malungu » table 32 avec Keren) — restes de la scission v1.68.1. Restent : Ruben Kinanga Malungu, Maguy Malungu.
+- « Famille LeCaous » (table 26, 1 place) : retire « Maman Sunette Jean-Baptiste ». Reste : Cedrik LeCaous. (Elle avait été cochée arrivée puis décochée par Rémy pendant les tests de septembre ; l'invitation est passée depuis à 1 place.)
+- Pour ces deux invitations, seules les lignes nominatives sont supprimées ; places prévues et arrivées inchangées. Sauvegarde `import_backups` (kind `v1.74.1_extra_members`) écrite avant ; garde-fous : statut « attendu », 0 arrivée ; idempotente.
+- **Non appliquée par l'agent** : l'outil Supabase de cet environnement expire sur toute suppression (deux essais, rien d'écrit, aucune sauvegarde créée). À exécuter telle quelle dans l'éditeur SQL Supabase.
+
+- « Famille Kinanga Malungu » (sans table, 0 arrivée, aucune ligne nominative) : doublon de « Famille Malungu » table 2 (mêmes membres Ruben Kinanga Malungu et Maguy Malungu), ajouté en v1.69.2 — invitation supprimée sur confirmation de Gersom. Incluse dans la même sauvegarde.
+
+Aucun changement de code.
+
+## [1.74.0] — 2026-10-10
+
+Retour de Gersom (capture de la table 1, tous les sièges « Vide ») : « si je mets quelqu'un sur les tables 1 et 42 à travers l'application, parce que c'est un invité surprise ou un ajout, [...] on va voir le nom de la personne sur le siège [...] ainsi que son nom en haut et sur l'image de la table. L'objectif est de s'assurer que l'image de la table soit synchronisée avec la liste d'invités. »
+
+### Ajouté
+- **Dessin de table synchronisé avec la liste d'invités, en temps réel** (`lib/liveSeats.ts`, `hooks/useLiveTableSeats.ts`), sur `/plan-table`, `/tables/[tableId]`, `/table/[tableId]` et la fiche « Qui est arrivé ? ». Jusqu'ici le dessin lisait uniquement l'export figé du PDF (`TABLE_SEAT_NAMES`) : les tables 1 et 42 (réserves) restaient toujours « Vide », et une personne déplacée restait dessinée à son ancienne table. Désormais :
+  - invité surprise approuvé ou excédent placé en table 1/42 → son nom sur un siège ;
+  - personne déplacée, retirée ou marquée « ne viendra pas » → siège libéré ;
+  - personnes toujours présentes → même siège que sur le PDF ;
+  - table qui déborde → sièges ajoutés (personne n'est caché).
+- Toucher un siège retrouve l'invitation par son identifiant (plus par comparaison de noms) ; 🪑 surligne les sièges réellement occupés par l'invitation.
+- **Chaises du grand plan de salle** : pleines/vides selon le nombre réel de personnes placées (`computeTableCapacities`, excédents en réserve compris) ; `/plan-table` charge et écoute désormais `overflow_assignments`.
+- Titre du panneau : « Vu sur le plan photographié · à titre indicatif » → « Plan de la table · à jour en direct ».
+
+### Vérifié sur les vraies données (10/10/2026)
+- 387 des 388 sièges nommés du PDF restent à leur place ; 10 personnes placées depuis l'application et absentes du PDF apparaissent enfin (ex. « Samy Archange » table 35, qui remplace « Kizombeira DelaVille » renommée).
+- « Sergio » (table 1) n'apparaît pas : il a été marqué « ne viendra pas » juste après son approbation (`nombre_prevu = 0`), son siège est donc libre — comportement correct.
+
+### Constaté, non modifié (données)
+- 2 invitations ont plus de lignes nominatives que de places prévues : « Famille Malungu » (table 2, 5 lignes pour 2 places — « Sister 1/2 Malungu » et « Keziah Malungu » viennent de l'ancienne scission v1.68.1) et « Famille LeCaous » (table 26, 2 lignes pour 1 place — « Maman Sunette Jean-Baptiste »). Le dessin s'en tient à `nombre_prevu` (priorité aux noms de « Membres: »), mais « Qui est arrivé ? » affiche toujours ces lignes en trop. À nettoyer avec l'accord de Gersom.
+
+### Tests
+- `tests/live-seats.test.ts` (nouveau, 8 tests : table 1 avec invité surprise, excédent en table 42, libellé d'excédent sans nom, ordre du PDF gardé, débordement, « ne viendra pas », lignes en trop, chaises du grand plan, câblage temps réel des 4 écrans).
+- `tests/floor-plan-seats.test.ts`, `tests/table-seat-wheel.test.ts` mis à jour.
+
+Aucune migration.
+
+## [1.73.1] — 2026-10-10
+
+Retour de Gersom (2 captures d'écran, compte scanneur) : « quand on fait une recherche avec le nom d'une personne et qu'on appuie sur son invitation, des fois, ça va ouvrir [l'ancien compteur Personnes arrivées +/−]... c'est supposé d'amener directement à [Qui est arrivé ?] ».
+
+### Corrigé
+- **Scanneurs renvoyés sur l'ancien compteur +/−** au lieu de « Qui est arrivé ? » (✓/✕ par personne). À la première ouverture d'une invitation, la fiche crée les lignes nominatives (noms importés, ou « Accompagnant à nommer ») ; cette étape exigeait `manageMembers` (renommage), que `agent_checkin` a perdu le 14/09/2026 (v1.51.0). Pour un scanneur, toute invitation jamais ouverte par un placeur/directeur/admin restait donc sur le compteur — **251 invitations sur 279** le 10/10/2026 (requête groupée), d'où le « des fois ». `/api/members/ensure` et `/api/members/initialize` exigent désormais `checkin` (aucun total modifié par `ensure` ; aucun renommage possible pour autant — `/api/members/rename` reste réservé à `manageMembers`). `GuestArrivalPanel` reçoit une prop dédiée `canMaterialize` (= `checkin`), distincte de `canManage`.
+- Le compteur +/− ne reste qu'en repli pour `visibilite` (pas de `checkin`, donc rien à enregistrer de toute façon).
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` (1 nouveau test de régression), `tests/members-migration.test.ts`, `tests/qa-role-matrix.test.ts` (`members/ensure`, `members/initialize` → `checkin`).
+
+Aucune migration.
+
 ## [1.73.0] — 2026-10-08
 
 QA terrain demandée par Gersom : vrais enregistrements sur l'invitation de Roger Makongo (table 30) avec un placeur (Agent001), un scanneur (Sanda) et un directeur (Tuzola) dans Chrome — recherches nom/téléphone/email, check-in et annulation, ajout d'un accompagnant par le placeur, excédent en réserve, invité surprise avec demande d'approbation puis décision. Tout a été remis à l'état initial ensuite (Roger : table 30, 0 arrivé ; aucune demande ni excédent restant). Détail des 20 cas : `docs/QA_SCENARIOS.md`.
