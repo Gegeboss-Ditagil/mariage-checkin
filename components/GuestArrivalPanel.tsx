@@ -30,6 +30,7 @@ export function GuestArrivalPanel({
   onFinish,
   onMerge,
   canManage,
+  canMaterialize,
   canAdd,
   canMove,
   canMerge,
@@ -60,6 +61,12 @@ export function GuestArrivalPanel({
   // demande de Gersom le 30/08/2026 : taper un nom modifie directement,
   // plus besoin de passer par "Gerer les membres du groupe" pour renommer.
   canManage?: boolean;
+  // v1.73.1, retour de Gersom ("pour les scanners... ça va ouvrir [l'ancien
+  // compteur]") : creer les lignes nominatives a la premiere ouverture ne doit
+  // PAS dependre de canManage (renommage) -- agent_checkin a perdu
+  // manageMembers le 14/09/2026 et retombait donc sur le compteur +/- pour
+  // toute invitation jamais ouverte (251/279 le 10/10/2026). Capacite 'checkin'.
+  canMaterialize?: boolean;
   // Ajouter quelqu'un qui arrive avec le groupe a la derniere minute : le
   // "+" appelle desormais add_unplanned_arrival (marque arrive tout de
   // suite, declenche l'excedent), pas add_invitation_member -- reserve a
@@ -203,7 +210,7 @@ export function GuestArrivalPanel({
       // Préserve en priorité les vrais noms importés dans "Membres: ...".
       // La réparation générique ci-dessous ne sert qu'aux lignes encore
       // manquantes après cette matérialisation.
-      if (list.length === 0 && draft.length > 0 && canManage) {
+      if (list.length === 0 && draft.length > 0 && canMaterialize) {
         setInitializing(true);
         await fetch('/api/members/initialize', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -215,7 +222,7 @@ export function GuestArrivalPanel({
       // Régression v1.30.1 : certains anciens groupes ont un compteur agrégé
       // mais aucune (ou trop peu de) lignes nominatives. Complète les lignes
       // manquantes sans modifier les totaux, puis affiche immédiatement ✓/X.
-      if (list.length < expectedRows && canManage) {
+      if (list.length < expectedRows && canMaterialize) {
         // Corrige le 13/09/2026 (retour de Gersom : "la photo trois... reste
         // là quelques millisecondes et boom après la photo 2 arrive",
         // surtout en arrivant depuis /plan-table -- une invitation jamais

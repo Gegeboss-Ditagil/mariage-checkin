@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.73.1] — 2026-10-10
+
+Retour de Gersom (2 captures d'écran, compte scanneur) : « quand on fait une recherche avec le nom d'une personne et qu'on appuie sur son invitation, des fois, ça va ouvrir [l'ancien compteur Personnes arrivées +/−]... c'est supposé d'amener directement à [Qui est arrivé ?] ».
+
+### Corrigé
+- **Scanneurs renvoyés sur l'ancien compteur +/−** au lieu de « Qui est arrivé ? » (✓/✕ par personne). À la première ouverture d'une invitation, la fiche crée les lignes nominatives (noms importés, ou « Accompagnant à nommer ») ; cette étape exigeait `manageMembers` (renommage), que `agent_checkin` a perdu le 14/09/2026 (v1.51.0). Pour un scanneur, toute invitation jamais ouverte par un placeur/directeur/admin restait donc sur le compteur — **251 invitations sur 279** le 10/10/2026 (requête groupée), d'où le « des fois ». `/api/members/ensure` et `/api/members/initialize` exigent désormais `checkin` (aucun total modifié par `ensure` ; aucun renommage possible pour autant — `/api/members/rename` reste réservé à `manageMembers`). `GuestArrivalPanel` reçoit une prop dédiée `canMaterialize` (= `checkin`), distincte de `canManage`.
+- Le compteur +/− ne reste qu'en repli pour `visibilite` (pas de `checkin`, donc rien à enregistrer de toute façon).
+
+### Tests
+- `tests/guest-arrival-panel.test.ts` (1 nouveau test de régression), `tests/members-migration.test.ts`, `tests/qa-role-matrix.test.ts` (`members/ensure`, `members/initialize` → `checkin`).
+
+Aucune migration.
+
 ## [1.73.0] — 2026-10-08
 
 QA terrain demandée par Gersom : vrais enregistrements sur l'invitation de Roger Makongo (table 30) avec un placeur (Agent001), un scanneur (Sanda) et un directeur (Tuzola) dans Chrome — recherches nom/téléphone/email, check-in et annulation, ajout d'un accompagnant par le placeur, excédent en réserve, invité surprise avec demande d'approbation puis décision. Tout a été remis à l'état initial ensuite (Roger : table 30, 0 arrivé ; aucune demande ni excédent restant). Détail des 20 cas : `docs/QA_SCENARIOS.md`.

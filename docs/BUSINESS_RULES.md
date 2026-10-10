@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.73.0**
+**Version documentaire : 1.73.1**
 **Dernière mise à jour : 2026-10-08**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -103,6 +103,8 @@ Depuis v1.67.0 (03/10/2026), `POST /api/auth/login` verrouille un compte (les de
 Depuis v1.40.0, `agent_checkin` a aussi `viewAgenda` (jamais `manageAgenda`) — retour de Gersom sur Agent001 : « il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ». Ce rôle consulte donc le chronogramme sans le modifier ; `/staff` reste par ailleurs atteignable pour lui via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre du bas remplace Staff par Agenda.
 
 **Excédent placé en réserve (v1.73.0)** : la fiche d’une invitation n’affiche « Gérer l’excédent » que pour la part encore non placée, indique « ✓ N personne(s) placée(s) en réserve (table X) », et signale une place de réserve devenue inutile (arrivée annulée après le placement) avec « Libérer la place en réserve » pour les rôles `manageOverflow` (sinon : prévenir un placeur). Dans les calculs de capacité de l’application (`lib/capacity.ts`), cette personne compte à la table de réserve et n’est plus comptée en plus à la table d’origine.
+
+**Fiche d’invitation pour un scanneur (v1.73.1)** : à la première ouverture, la fiche crée les lignes nominatives manquantes (capacité `checkin`, scanneur compris) et affiche toujours « Qui est arrivé ? » (✓/✕ par personne) ; l’ancien compteur « Personnes arrivées » +/− n’est plus qu’un repli. Créer ces lignes ne modifie aucun total et ne permet pas de renommer (`manageMembers` inchangé).
 
 **Recherche par nom (v1.73.0)** : chaque mot tapé doit être présent, dans n’importe quel ordre (« Makongo Roger » = « Roger Makongo ») ; un « e » tapé couvre aussi é/è/ê/ë (« Remy » trouve « Rémy ») ; « table 30 » trouve la table 30 ; une saisie sans lettre d’au moins 5 chiffres est cherchée comme numéro de téléphone (fin du numéro, tous formats).
 

@@ -149,6 +149,8 @@ const API_CAPABILITY: Record<string, Capability[]> = {
   'invitations/tags/remove': ['manageTags'],
   'members/add': ['manageMembers'],
   'members/add-unplanned': ['submitGuestApproval'],
+  'members/ensure': ['checkin'],
+  'members/initialize': ['checkin'],
   'members/move': ['moveGuests'],
   'members/remove': ['manageMembers'],
   'members/rename': ['manageMembers'],
