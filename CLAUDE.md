@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.74.0**
+**Version documentaire : 1.74.1**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -153,6 +153,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.73.0 : QA terrain sur Roger Makongo (placeur/scanneur/directeur dans Chrome, tout remis à l'état initial). **Sécurité** : le jeton de `/approve/[token]` n'est plus jamais renvoyé par l'API (`lib/guestApprovalPublic.ts` sur création/réservation/décision). Recherche par mots dans n'importe quel ordre + e accentué + « table N » (`lib/searchFilters.ts`). Bande `/scan` alignée sur le tableau de bord (invitations avec table). Fiche check-in : excédent déjà placé affiché, « Gérer l'excédent » seulement pour le reste, place de réserve inutile signalée. `lib/capacity.ts` ne compte plus l'excédent placé à sa table d'origine. Badges d'approbations synchronisés (`onPendingApprovalsCount`). Aucune migration.
 - v1.73.1 : les scanneurs (`agent_checkin`) tombaient sur l'ancien compteur +/− au lieu de « Qui est arrivé ? » pour toute invitation jamais ouverte (251/279) — la création des lignes nominatives exigeait `manageMembers`, perdu en v1.51.0. `/api/members/ensure` et `/api/members/initialize` exigent désormais `checkin` ; `GuestArrivalPanel.canMaterialize` séparé de `canManage`. Renommage toujours réservé à `manageMembers`. Aucune migration.
 - v1.74.0 : le dessin de chaque table (`TableSeatWheel` sur `/plan-table`, `/tables/[tableId]`, `/table/[tableId]` et la fiche « Qui est arrivé ? ») ne lit plus seulement l'export figé `TABLE_SEAT_NAMES` : `lib/liveSeats.ts` + `hooks/useLiveTableSeats.ts` le recalculent depuis `invitations.table_id`, `guests` et `overflow_assignments`, en temps réel. Un invité surprise ou un excédent placé en table 1/42 apparaît par son nom ; une personne déplacée ou « ne viendra pas » libère son siège ; l'ordre du PDF est gardé pour ceux qui sont toujours là. Les chaises du grand plan suivent `computeTableCapacities().occupationEstimee`. Titre du panneau : « Plan de la table · à jour en direct ». Aucune migration ; rien n'est écrit en base.
+- v1.74.1 : migration `0068_remove_extra_member_rows_malungu_lecaous.sql` (demande de Gersom : « supprime les noms en trop ») — retire les lignes nominatives au-delà de `nombre_prevu` : « Sister 1/2 Malungu » et « Keziah Malungu » de « Famille Malungu » (table 2), « Maman Sunette Jean-Baptiste » de « Famille LeCaous » (table 26). Sauvegarde `import_backups` kind `v1.74.1_extra_members` avant suppression, garde-fous (attendu, 0 arrivée), idempotente. **NON appliquée par l'agent** : l'outil Supabase expire (60 s) sur toute suppression dans cet environnement (même blocage qu'en v1.69.2) — à exécuter telle quelle dans l'éditeur SQL Supabase, puis vérifier (7 → 3 lignes sur ces deux invitations).
 
 ## Reprise rapide pour Claude AI
 
