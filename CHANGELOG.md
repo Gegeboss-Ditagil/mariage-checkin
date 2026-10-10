@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.79.0] — 2026-10-10
+
+Signalé par Gersom (capture de `/admin`) : « Sergio et Test, mis en table 1 pendant le mode test, sont encore là... quand j'appuie sur le bouton rouge, ça devrait les enlever » + « explique-moi la différence entre les modes ».
+
+### Constat (journal `app_logs` et base de production)
+- Le clic sur le bouton rouge de 21:17 a été **refusé** (`event_live`) : l'événement était en mode JOUR J, où la réinitialisation est volontairement bloquée. L'écran affichait le code brut au lieu d'expliquer quoi faire.
+- Même en mode test, **les invités surprise approuvés ne partaient pas** : une approbation crée une vraie invitation (note « Invité surprise approuvé… »), que la réinitialisation ignorait, comme les demandes d'approbation. 3 restaient en production (« Test » du 16/09, « Sergio », « Test »).
+
+### Corrigé
+- **Migration 0070** : le bouton rouge efface aussi les invités surprise approuvés (repérés par la note posée par les fonctions d'approbation **et** l'absence d'identifiant With Joy — jamais un invité importé) et toutes les demandes d'approbation. Toujours refusé en mode JOUR J.
+- **`/admin`** : une phrase sous le mode actif explique ce qu'il permet ; le bouton rouge est grisé en mode JOUR J avec la marche à suivre (« repassez d'abord en Mode test ») ; la confirmation liste ce qui sera effacé et ce qui reste ; les erreurs sont en clair.
+
+### Tests
+- `qa/functional/test-mode-reset.spec.ts` (navigateur) : pendant les essais, un invité surprise approuvé + une arrivée pointée ; bouton rouge en mode test -> invité surprise, demandes, scans et arrivées effacés, aucun invité importé supprimé, tables inchangées. **Vérifié en échec avec l'ancienne réinitialisation (0069)**, au vert avec 0070. En mode JOUR J : bouton grisé, API refusée (409).
+- `npm test` 555/555.
+
+### Migration
+- `0070_reset_removes_test_surprise_guests.sql` : **à exécuter dans l'éditeur SQL** (`create or replace function`, aucune donnée modifiée à l'exécution ; l'outil de l'agent expire sur tout texte de suppression). Puis appuyer sur le bouton rouge en Mode test.
+
+### Divers
+- Tables `canada_jets_*` supprimées par Gersom le 10/10/2026, vérifié (backlog n°9).
+
 ## [1.78.0] — 2026-10-10
 
 Demande de Gersom : « ajoute une fonction pour les admins qui gèrent les comptes... qu'ils puissent changer le rôle d'un user, ensuite teste que ça fonctionne directement après pour tous les rôles ».

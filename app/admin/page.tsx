@@ -13,6 +13,22 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Terminé',
 };
 
+// v1.79.0, question de Gersom : « c'est quoi la différence entre les
+// différents modes ? ». Le mode ne change PAS ce que les agents peuvent faire
+// (scanner, pointer, approuver marchent partout) : il dit seulement si le
+// bouton rouge de réinitialisation est permis.
+const STATUS_HELP: Record<string, string> = {
+  setup: 'Avant les essais : import With Joy, tables, comptes. La réinitialisation est permise.',
+  test: 'Les agents s’entraînent pour de vrai (scans, arrivées, invités surprise). Le bouton rouge efface ensuite tout ce qu’ils ont fait.',
+  live: 'Le jour J. Tout fonctionne pareil, mais le bouton rouge est bloqué : impossible d’effacer les vraies arrivées par erreur.',
+  closed: 'Après la fête : consultation et exports. La réinitialisation est permise.',
+};
+
+const RESET_ERRORS: Record<string, string> = {
+  event_live: 'Refusé : l’événement est en mode JOUR J. Repassez d’abord en « Mode test », puis réessayez.',
+  event_not_found: 'Événement introuvable.',
+};
+
 export default function AdminHome() {
   const [event, setEvent] = useState<EventRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -82,12 +98,12 @@ export default function AdminHome() {
   }
 
   async function resetTestData() {
-    if (!confirm('Réinitialiser toutes les arrivées enregistrées ? Cette action est irréversible.')) return;
+    if (!confirm('Effacer tout ce qui a été fait pendant les essais ?\n\n• toutes les arrivées et tous les scans\n• les personnes ajoutées sur place (+)\n• les invités surprise et leurs demandes d’approbation\n• l’historique et les exceptions\n\nLes invités importés de With Joy, leurs tables et les comptes restent. Action irréversible.')) return;
     setBusy(true);
     setMessage(null);
     const res = await fetch('/api/admin/reset-test-data', { method: 'POST' });
     const data = await res.json();
-    setMessage(res.ok ? 'Données de test réinitialisées.' : data.error);
+    setMessage(res.ok ? 'Données de test effacées : tout est prêt pour le jour J.' : RESET_ERRORS[data.error] ?? data.error);
     setBusy(false);
   }
 
@@ -114,6 +130,7 @@ export default function AdminHome() {
                 </button>
               ))}
             </div>
+            {event && STATUS_HELP[event.status] && <p className="mt-3 text-sm text-text-faint">{STATUS_HELP[event.status]}</p>}
             {message && <p className="mt-2 text-sm text-text-muted">{message}</p>}
           </div>
 
@@ -177,11 +194,16 @@ export default function AdminHome() {
           <div className="card">
             <p className="mb-2 font-semibold">Mode test</p>
             <p className="mb-3 text-sm text-text-faint">
-              Simule des scans et arrivées sans risque, puis remet tout à zéro avant le jour J.
+              Efface tout ce que les agents ont fait pendant les essais (arrivées, scans, ajouts sur place, invités surprise), pour commencer le jour J au propre. Les invités With Joy, les tables et les comptes restent.
             </p>
-            <button className="btn-danger w-full" disabled={busy} onClick={resetTestData}>
+            <button className="btn-danger w-full" disabled={busy || event?.status === 'live'} onClick={resetTestData}>
               RÉINITIALISER LES DONNÉES DE TEST
             </button>
+            {event?.status === 'live' && (
+              <p className="mt-2 text-sm font-medium text-status-partial">
+                Bloqué en mode JOUR J. Pour effacer les essais, repassez d’abord en « Mode test ».
+              </p>
+            )}
           </div>
         </div>
 
