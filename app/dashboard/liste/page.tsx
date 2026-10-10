@@ -9,6 +9,8 @@ import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { extractPrenoms } from '@/lib/membersNotes';
 import clsx from 'clsx';
+import { useSessionRole } from '@/hooks/useSessionRole';
+import { hasCapability } from '@/lib/permissions';
 
 // 'Nelly'/'Gege' filtrent par cote; 'staff' isole category === 'Staff' --
 // demande de Gersom le 28/08/2026 : le total "399 personnes" mélange
@@ -58,6 +60,11 @@ export default function DashboardListePage() {
 
 function ListeContent() {
   const router = useRouter();
+  // v1.75.0 (test « première utilisation » par rôle) : l'Approbateur
+  // (visibilite) n'a pas accès à /checkin -- toucher une ligne l'envoyait sur
+  // une page interdite, aussitôt renvoyé au tableau de bord (« rien ne se
+  // passe »). Lignes non cliquables pour les rôles sans 'checkin'.
+  const canCheckin = hasCapability(useSessionRole(), 'checkin');
   const params = useSearchParams();
   const type = params.get('type') || 'tous';
 
@@ -202,7 +209,8 @@ function ListeContent() {
             return (
               <li key={inv.id}>
                 <button
-                  className="flex w-full items-center justify-between gap-3 py-4 text-left"
+                  className="flex w-full items-center justify-between gap-3 py-4 text-left disabled:cursor-default"
+                  disabled={!canCheckin}
                   onClick={() => router.push('/checkin/' + inv.id)}
                 >
                   <div className="min-w-0">

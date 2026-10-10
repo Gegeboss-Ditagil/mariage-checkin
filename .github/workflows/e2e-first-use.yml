@@ -1,0 +1,43 @@
+# v1.75.0 -- parcours « première utilisation » par rôle (e2e/first-use.spec.ts).
+# Lancement manuel : onglet Actions -> « E2E première utilisation » -> Run
+# workflow, en indiquant l'URL du déploiement à tester. Identifiants dans les
+# secrets du dépôt (Settings -> Secrets and variables -> Actions) :
+# E2E_<ROLE>_NAME / E2E_<ROLE>_PIN et E2E_FRESH_INVITATION_ID (voir e2e/README.md).
+name: E2E première utilisation
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: URL du déploiement (aperçu Vercel ou production)
+        required: true
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url }}
+          E2E_ADMIN_NAME: ${{ secrets.E2E_ADMIN_NAME }}
+          E2E_ADMIN_PIN: ${{ secrets.E2E_ADMIN_PIN }}
+          E2E_DIRECTEUR_NAME: ${{ secrets.E2E_DIRECTEUR_NAME }}
+          E2E_DIRECTEUR_PIN: ${{ secrets.E2E_DIRECTEUR_PIN }}
+          E2E_PLACEUR_NAME: ${{ secrets.E2E_PLACEUR_NAME }}
+          E2E_PLACEUR_PIN: ${{ secrets.E2E_PLACEUR_PIN }}
+          E2E_AGENT_CHECKIN_NAME: ${{ secrets.E2E_AGENT_CHECKIN_NAME }}
+          E2E_AGENT_CHECKIN_PIN: ${{ secrets.E2E_AGENT_CHECKIN_PIN }}
+          E2E_VISIBILITE_NAME: ${{ secrets.E2E_VISIBILITE_NAME }}
+          E2E_VISIBILITE_PIN: ${{ secrets.E2E_VISIBILITE_PIN }}
+          E2E_FRESH_INVITATION_ID: ${{ secrets.E2E_FRESH_INVITATION_ID }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results

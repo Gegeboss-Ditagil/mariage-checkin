@@ -17,6 +17,22 @@ export default function AdminHome() {
   const [event, setEvent] = useState<EventRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // v1.75.0 : contrôle de santé de la base (voir /api/admin/health).
+  const [health, setHealth] = useState<{ check_name: string; ok: boolean; detail: string }[] | null>(null);
+
+  async function loadHealth() {
+    try {
+      const res = await fetch('/api/admin/health', { cache: 'no-store' });
+      const data = await res.json();
+      setHealth(Array.isArray(data.checks) ? data.checks : []);
+    } catch {
+      setHealth(null);
+    }
+  }
+
+  useEffect(() => {
+    void loadHealth();
+  }, []);
 
   useEffect(() => {
     fetch('/api/admin/event')
@@ -128,6 +144,29 @@ export default function AdminHome() {
                 <span aria-hidden className={'glass-toggle-thumb' + (event?.twilio_enabled ? ' glass-toggle-thumb-on' : '')} />
               </button>
             </div>
+          </div>
+
+          <div className="card">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="font-semibold">Santé de la base</p>
+              <button type="button" className="glass-pill text-sm" onClick={() => void loadHealth()}>
+                Revérifier
+              </button>
+            </div>
+            {health === null ? (
+              <p className="text-sm text-text-faint">Vérification…</p>
+            ) : health.filter((c) => !c.ok).length === 0 ? (
+              <p className="text-sm text-status-complete">✓ {health.length} contrôles OK : fonctions, colonnes et données cohérentes.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {health.filter((c) => !c.ok).map((c) => (
+                  <li key={c.check_name} className="text-sm">
+                    <span className="font-semibold text-status-over">✕ {c.check_name}</span>
+                    <span className="block text-text-faint">{c.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="card">
