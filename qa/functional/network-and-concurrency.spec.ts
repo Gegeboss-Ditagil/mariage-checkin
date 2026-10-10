@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ROLES, db, quickLogin, watchProblems } from './helpers';
+import { ROLES, cls, db, installClsProbe, quickLogin, watchProblems } from './helpers';
 
 // Ce que ni le code ni la QA ne testaient : connexion faible ou coupée dans
 // la salle, et plusieurs agents qui touchent la même invitation en même temps.
@@ -68,5 +68,20 @@ test.describe('réseau et simultanéité', () => {
     const arrived = guests.filter((g) => g.guests.arrival_status === 'arrive').length;
     const [inv] = await db<{ nombre_arrive: number }>(request, 'GET', `/invitations?select=nombre_arrive&id=eq.${id}`);
     expect(inv.nombre_arrive, 'compteur = personnes cochées').toBe(arrived);
+  });
+
+  test('téléphone lent : la fiche check-in d’une invitation jamais ouverte ne saute pas (CLS < 0,1)', async ({ page, request }) => {
+    // v1.76.0 : CLS 0,70 mesuré sur GitHub (machine plus lente) -- la liste
+    // des membres puis le dessin de la table repoussaient tout ce qui suivait.
+    const [fresh] = await db<{ id: string }>(request, 'GET', '/invitations?select=id,invitation_guests(guest_id)&nombre_prevu=gte.3&table_id=not.is.null&invitation_guests=is.null&limit=1');
+    await installClsProbe(page);
+    await quickLogin(page, role('agent_checkin'));
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+    await page.goto('/checkin/' + fresh.id);
+    await expect(page.getByText('Qui est arrivé ?')).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1500);
+    expect(await cls(page), 'la fiche saute à l’affichage').toBeLessThan(0.1);
   });
 });

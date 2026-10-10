@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.76.0**
+**Version documentaire : 1.76.1**
 **Dernière mise à jour : 2026-10-10**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -286,3 +286,4 @@ Lancés automatiquement sur chaque PR (check « Qualité », `.github/workflows/
 | 8 | `network-and-concurrency.spec.ts` | 3G lente sur Scan, Recherche, Bord, Plan | Chaque écran utilisable en < 8 s, sans erreur |
 | 9 | idem | Coupure réseau sur une fiche de check-in | Bandeau « HORS LIGNE », boutons de pointage désactivés, rien d'écrit ; tout repart au retour du réseau |
 | 10 | idem | Deux agents touchent la même personne au même instant | Compteur = personnes cochées, jamais compté deux fois |
+| 11 | idem | Téléphone lent (processeur ×6), fiche check-in jamais ouverte | Aucun saut d'affichage (CLS < 0,1) |

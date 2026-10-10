@@ -3,6 +3,22 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.76.1] — 2026-10-10
+
+Suite de v1.76.0 : la première passe complète des tests fonctionnels sur GitHub a trouvé un dernier problème de fluidité.
+
+### Corrigé
+- **La fiche check-in « sautait » à l'affichage sur un appareil lent** (scanneur, invitation jamais ouverte : CLS 0,70 mesuré sur GitHub). L'emplacement « Chargement des membres… » était remplacé par la liste puis par le dessin de la table, repoussant tout ce qui suivait. Ce qui suit le panneau n'apparaît plus qu'une fois sa hauteur définitive connue (`onLayoutReady`), et la ligne « Table N » est réservée dès le premier affichage. Mesuré à 0 avec le processeur ralenti 6 fois ; test permanent ajouté (CLS < 0,1).
+
+- Workflows GitHub (`quality.yml`, `e2e-first-use.yml`) : jeton limité à la lecture (`permissions: contents: read`), signalé par CodeQL.
+
+### Tests
+- `network-and-concurrency.spec.ts` : nouveau test « téléphone lent » (processeur ×6, CLS < 0,1) ; avant le correctif, la même mesure donnait 0,16 à 0,19 en local et 0,70 sur GitHub. 4/4.
+- Parcours métier : 9/9 ; tests unitaires : 547/547.
+
+### Migration
+- Aucune.
+
 ## [1.76.0] — 2026-10-10
 
 Demande de Gersom : « tout un processus de test de fonctionnalité... partout, tous les clics, c'est fluide. UI, UX, front-end, back-end, complet... il y a quelque chose d'autre qu'on ne testait pas et qu'il faut que tu ajoutes. »
@@ -24,7 +40,7 @@ Jusqu'ici, aucun test ne faisait tourner l'application : les tests lisaient le c
 - `0036` : crée la table `user_credential_backups` si elle n'existe pas (elle avait été créée à la main en production, jamais dans une migration — une base neuve échouait).
 
 ### Tests
-- Parcours métier : 9/9 (deux passages de suite) ; réseau et simultanéité : 3/3 ; balayage : voir la PR.
+- Parcours métier : 9/9 (deux passages de suite) ; réseau et simultanéité : 3/3 ; balayage « clique partout » : 5 rôles sur iPhone — seule anomalie restante, la fiche check-in qui saute sur GitHub, corrigée en 1.76.1.
 - Le parcours « Reconsidérer → choisir une table » est désormais vérifié de bout en bout dans le navigateur : l'invité est bien approuvé ET placé (correctif v1.75.0 confirmé).
 
 ### Migration
