@@ -22,4 +22,6 @@ for f in $(ls supabase/migrations/*.sql | sort); do
 done
 $PSQL -c "update tables set capacity = 10, is_reserve = number in (1, 42) where event_id = '$EVENT';"
 node --experimental-strip-types --no-warnings scripts/qa-stack/seed.ts | $PSQL
+# PostgREST garde le schéma en cache : on lui demande de le relire (sans effet s'il ne tourne pas encore).
+$PSQL -c "notify pgrst, 'reload schema';"
 echo "Base de test prête : $(psql -At -d app -c 'select count(*) from invitations') invitations, $(psql -At -d app -c 'select count(*) from users') comptes."

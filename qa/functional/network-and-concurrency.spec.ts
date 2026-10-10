@@ -27,7 +27,10 @@ test.describe('réseau et simultanéité', () => {
       const ms = Date.now() - started;
       expect(ms, `${path} en 3G lente`).toBeLessThan(8000);
     }
-    expect(problems).toEqual([]);
+    // Un préchargement interrompu par la navigation suivante (« Falling back
+    // to browser navigation ») n'est pas une erreur visible : Next recharge
+    // simplement la page.
+    expect(problems.filter((p) => !/Failed to fetch RSC payload/.test(p))).toEqual([]);
   });
 
   test('coupure réseau : la fiche le signale et bloque le pointage, puis tout repart au retour du réseau', async ({ page, request }) => {
@@ -37,8 +40,10 @@ test.describe('réseau et simultanéité', () => {
     await page.goto('/checkin/' + id);
     await expect(page.getByText('Qui est arrivé ?')).toBeVisible({ timeout: 15_000 });
     await page.context().setOffline(true);
-    await page.getByRole('button', { name: /^Marquer arrivé : / }).first().click();
-    await expect(page.getByText(/CONNEXION REQUISE|hors ligne|HORS LIGNE/i).first()).toBeVisible();
+    // Hors ligne : bandeau visible ET pointage impossible (boutons désactivés),
+    // jamais une arrivée « perdue » qui semblerait enregistrée.
+    await expect(page.getByText(/HORS LIGNE/).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Marquer arrivé : / }).first()).toBeDisabled();
     expect((await db<{ nombre_arrive: number }>(request, 'GET', `/invitations?select=nombre_arrive&id=eq.${id}`))[0].nombre_arrive).toBe(0);
     await page.context().setOffline(false);
     await page.reload();
@@ -47,7 +52,7 @@ test.describe('réseau et simultanéité', () => {
   });
 
   test('deux agents pointent la même famille en même temps : compteur exact, aucune personne comptée deux fois', async ({ browser, request }) => {
-    const id = await invitationId(request, 'Famille Test070');
+    const id = await invitationId(request, 'Famille Test006');
     const agents = await Promise.all([role('agent_checkin'), role('placeur')].map(async (r) => {
       const context = await browser.newContext();
       const page = await context.newPage();

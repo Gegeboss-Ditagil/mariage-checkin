@@ -37,7 +37,18 @@ test.describe('clique partout, chaque rôle', () => {
         '/admin/tables', '/admin/exports', '/admin/import-withjoy', '/admin/wizard', '/tables', '/placement',
         `/tables/${table}`, `/checkin/${invitation}`, ...(requestId ? [`/approbations/${requestId}/assign`] : []),
       ];
-      page.on('dialog', (d) => void d.dismiss());
+      // Confirmations refusées : rien d'irréversible n'est exécuté. On note
+      // qu'une confirmation a été demandée, pour repérer les écritures faites
+      // d'un seul toucher SANS confirmation (v1.76.0 : désactiver son propre
+      // compte, réinitialiser un code, changer le mode de l'événement).
+      let dialogShown = false;
+      const writes: string[] = [];
+      page.on('dialog', (d) => { dialogShown = true; void d.dismiss(); });
+      page.on('request', (r) => {
+        const url = new URL(r.url());
+        if (r.method() !== 'GET' && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/public/')) writes.push(`${r.method()} ${url.pathname}`);
+      });
+      const oneTapWrites: string[] = [];
       await installClsProbe(page);
       await quickLogin(page, role);
       const problems = watchProblems(page);
@@ -69,7 +80,9 @@ test.describe('clique partout, chaque rôle', () => {
         const clickables = page.locator('main a[href], main button, a[href]:visible, button:visible, [role="button"]:visible, input[type="checkbox"]:visible');
         const total = Math.min(await clickables.count(), 40);
         for (let i = 0; i < total; i += 1) {
-          if (new URL(page.url()).pathname !== path) {
+          // Page rechargée avant CHAQUE clic : une fiche ouverte par le clic
+          // précédent ne doit pas masquer les boutons suivants.
+          if (i > 0) {
             await page.goto(path);
             await page.waitForLoadState('networkidle').catch(() => {});
           }
@@ -78,6 +91,8 @@ test.describe('clique partout, chaque rôle', () => {
           const label = ((await target.getAttribute('aria-label')) || (await target.innerText().catch(() => '')) || (await target.getAttribute('href')) || '?').trim().slice(0, 60);
           if (SKIP_LABELS.test(label)) continue;
           const before = problems.length;
+          dialogShown = false;
+          writes.length = 0;
           await target.click({ timeout: 3000 }).catch((e) => problems.push(`${path} : clic impossible sur « ${label} » (${String(e).split('\n')[0].slice(0, 80)})`));
           await page.waitForTimeout(400);
           await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
@@ -85,10 +100,18 @@ test.describe('clique partout, chaque rôle', () => {
           if (after === '/login') problems.push(`${path} : « ${label} » a déconnecté l'utilisateur`);
           if (await page.getByText('Accès réservé').count()) problems.push(`${path} : « ${label} » mène à « Accès réservé »`);
           if (problems.length > before) problems[problems.length - 1] += ` [après « ${label} » sur ${path}]`;
+          if (writes.length && !dialogShown) oneTapWrites.push(`${path} : « ${label} » -> ${Array.from(new Set(writes)).join(', ')}`);
           await page.keyboard.press('Escape').catch(() => {});
         }
       }
       attachReport(testInfo, 'pages-' + role.key, report);
+      // À relire : chaque écriture faite d'un seul toucher doit être voulue
+      // (pointer une arrivée : oui ; désactiver un compte : non).
+      attachReport(testInfo, 'ecritures-en-un-toucher-' + role.key, oneTapWrites);
+      // Le balayage ne doit jamais avoir désactivé ou verrouillé son propre compte.
+      const me = await request.get(DB + '/users?select=active,failed_login_attempts&nom_affichage=eq.' + encodeURIComponent(role.name), { headers: { apikey: SERVICE, Authorization: 'Bearer ' + SERVICE } });
+      const [account] = (await me.json()) as { active: boolean }[];
+      if (!account?.active) problems.push(`le compte ${role.name} a été désactivé par un simple clic`);
       expect(problems, problems.join('\n')).toEqual([]);
     });
   }

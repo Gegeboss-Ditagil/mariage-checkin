@@ -5,6 +5,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { ROLE_LABELS, Role } from '@/lib/types';
 import { useSessionRole } from '@/hooks/useSessionRole';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 type PasswordUserRow = {
   id: string;
@@ -50,8 +51,12 @@ export default function PasswordsPage() {
   }
 
   useEffect(load, []);
+  useEscapeKey(!!result, () => setResult(null));
 
   async function resetPassword(u: PasswordUserRow) {
+    // v1.76.0 (balayage « clique partout ») : un seul toucher remplaçait le
+    // code de la personne -- le jour J, un faux mouvement bloquait un agent.
+    if (!window.confirm(`Générer un nouveau code pour « ${u.nom_affichage} » ? Son code actuel ne fonctionnera plus.`)) return;
     setError(null);
     setResettingId(u.id);
     const res = await fetch('/api/passwords', {

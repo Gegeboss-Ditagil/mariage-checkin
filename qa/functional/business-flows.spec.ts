@@ -34,17 +34,18 @@ test.describe('parcours métier', () => {
 
   test('directeur : approuver un invité surprise -> placé, nom visible sur le dessin de sa table', async ({ page, request }) => {
     const problems = watchProblems(page);
+    const name = 'QA Approuvé ' + Date.now().toString().slice(-5);
     const [req] = await db<{ id: string }>(request, 'POST', '/guest_approval_requests', {
-      event_id: EVENT, token: 'qa-' + Date.now(), cote: 'Gege', nom_invite: 'QA Approuvé', nombre_invites: 1, photo_url: 'qa/a.jpg', approver_phone: '+41790000001',
+      event_id: EVENT, token: 'qa-' + Date.now(), cote: 'Gege', nom_invite: name, nombre_invites: 1, photo_url: 'qa/a.jpg', approver_phone: '+41790000001',
     });
     await quickLogin(page, role('directeur'));
     await page.goto('/approbations');
-    await page.getByRole('button', { name: 'Ouvrir la demande de QA Approuvé' }).click();
-    await page.getByRole('button', { name: 'Approuver', exact: true }).click();
+    await page.getByRole('button', { name: 'Ouvrir la demande de ' + name }).click();
+    await page.getByRole('dialog', { name }).getByRole('button', { name: 'Approuver', exact: true }).click();
     await expect.poll(async () => (await db<{ table_id: string | null }>(request, 'GET', `/guest_approval_requests?select=table_id&id=eq.${req.id}`))[0].table_id).not.toBeNull();
     const [placed] = await db<{ table_id: string }>(request, 'GET', `/guest_approval_requests?select=table_id&id=eq.${req.id}`);
     await page.goto('/tables/' + placed.table_id);
-    await expect(page.getByText('QA Approuvé').first()).toBeVisible();
+    await expect(page.getByText(name).first()).toBeVisible();
     await expect(page.getByText('Plan de la table · à jour en direct')).toBeVisible();
     // v1.74.0 : le nom est aussi sur un siège du dessin (texte SVG).
     await expect(page.locator('svg text', { hasText: 'QA' }).first()).toBeVisible();
@@ -53,18 +54,24 @@ test.describe('parcours métier', () => {
 
   test('directeur : refuser puis « Reconsidérer » -> choisir une table -> invité PLACÉ (bug v1.75.0)', async ({ page, request }) => {
     const problems = watchProblems(page);
+    const name = 'QA Reconsidéré ' + Date.now().toString().slice(-5);
     const [req] = await db<{ id: string }>(request, 'POST', '/guest_approval_requests', {
-      event_id: EVENT, token: 'qa-' + Date.now(), cote: 'Nelly', nom_invite: 'QA Reconsidéré', nombre_invites: 1, photo_url: 'qa/b.jpg', approver_phone: '+41790000002', statut: 'refuse', decided_via: 'app', decided_at: new Date().toISOString(),
+      event_id: EVENT, token: 'qa-' + Date.now(), cote: 'Nelly', nom_invite: name, nombre_invites: 1, photo_url: 'qa/b.jpg', approver_phone: '+41790000002', statut: 'refuse', decided_via: 'app', decided_at: new Date().toISOString(),
     });
     await quickLogin(page, role('directeur'));
     await page.goto('/approbations');
-    await page.getByRole('button', { name: 'Ouvrir la demande de QA Reconsidéré' }).click();
+    await page.getByRole('button', { name: 'Ouvrir la demande de ' + name }).click();
     await page.getByText('Reconsidérer').last().click();
     await page.waitForURL(/\/approbations\/.+\/assign/);
     await page.locator('button.btn-primary').last().click();
-    await expect.poll(async () => (await db<{ statut: string; table_id: string | null }>(request, 'GET', `/guest_approval_requests?select=statut,table_id&id=eq.${req.id}`))[0]).toMatchObject({ statut: 'approuve' });
-    const [after] = await db<{ table_id: string | null }>(request, 'GET', `/guest_approval_requests?select=table_id&id=eq.${req.id}`);
-    expect(after.table_id, 'approuvé mais SANS table : régression du bug v1.75.0').not.toBeNull();
+    // L'approbation puis le placement sont deux écritures successives : on
+    // attend le placement (10 s max). Resté sans table = régression v1.75.0.
+    await expect
+      .poll(async () => (await db<{ statut: string; table_id: string | null }>(request, 'GET', `/guest_approval_requests?select=statut,table_id&id=eq.${req.id}`))[0], {
+        message: 'approuvé mais SANS table : régression du bug v1.75.0',
+        timeout: 10_000,
+      })
+      .toMatchObject({ statut: 'approuve', table_id: expect.any(String) });
     expect(problems).toEqual([]);
   });
 
@@ -84,6 +91,36 @@ test.describe('parcours métier', () => {
     await quickLogin(page, role('admin'));
     await page.goto('/admin');
     await expect(page.getByText(/contrôles OK/)).toBeVisible({ timeout: 15_000 });
+  });
+
+  test('admin : impossible de désactiver ou rétrograder son propre compte ; les autres demandent confirmation', async ({ page, request }) => {
+    await quickLogin(page, role('admin'));
+    const [me] = await db<{ id: string }>(request, 'GET', '/users?select=id&nom_affichage=eq.QA%20Admin');
+    const off = await page.request.patch('/api/admin/users', { data: { id: me.id, active: false } });
+    expect(off.status(), 'se désactiver soi-même doit être refusé').toBe(400);
+    const demote = await page.request.patch('/api/admin/users', { data: { id: me.id, role: 'placeur', pin: '9999' } });
+    expect(demote.status(), 'se rétrograder soi-même doit être refusé').toBe(400);
+    expect((await db<{ active: boolean; role: string }>(request, 'GET', `/users?select=active,role&id=eq.${me.id}`))[0]).toEqual({ active: true, role: 'admin' });
+    // Interface : bascule de son propre compte grisée ; celle d'un autre demande confirmation.
+    await page.goto('/admin/users');
+    await expect(page.getByRole('switch', { name: 'Désactiver QA Admin' })).toBeDisabled();
+    let asked = '';
+    page.once('dialog', (d) => { asked = d.message(); void d.dismiss(); });
+    await page.getByRole('switch', { name: 'Désactiver QA Scanneur' }).click();
+    await expect.poll(() => asked).toContain('Désactiver le compte');
+    expect((await db<{ active: boolean }>(request, 'GET', '/users?select=active&nom_affichage=eq.QA%20Scanneur'))[0].active).toBe(true);
+  });
+
+  test('directeur : « Réinitialiser » un code demande toujours confirmation', async ({ page, request }) => {
+    await quickLogin(page, role('directeur'));
+    await page.goto('/mots-de-passe');
+    let asked = '';
+    page.once('dialog', (d) => { asked = d.message(); void d.dismiss(); });
+    await page.getByRole('button', { name: 'Réinitialiser' }).first().click();
+    await expect.poll(() => asked).toContain('nouveau code');
+    // Refusé : aucun code n'a changé.
+    const rows = await db<{ pin_reset_hint: string | null }>(request, 'GET', '/users?select=pin_reset_hint&pin_reset_hint=not.is.null');
+    expect(rows).toEqual([]);
   });
 
   test('plan : toucher une table ouvre son dessin avec les noms des invités', async ({ page }) => {

@@ -158,6 +158,8 @@ export interface UserRow {
   // v1.67.4 -- jamais recalculés côté client.
   canReset?: boolean;
   hint?: string | null;
+  // v1.76.0 : le compte connecté -- jamais désactivable par lui-même.
+  isSelf?: boolean;
 }
 
 export interface AuditLogRow {

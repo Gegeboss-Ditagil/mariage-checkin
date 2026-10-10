@@ -3,6 +3,33 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.76.0] — 2026-10-10
+
+Demande de Gersom : « tout un processus de test de fonctionnalité... partout, tous les clics, c'est fluide. UI, UX, front-end, back-end, complet... il y a quelque chose d'autre qu'on ne testait pas et qu'il faut que tu ajoutes. »
+
+### Ce qui n'était jamais testé
+Jusqu'ici, aucun test ne faisait tourner l'application : les tests lisaient le code, les tests SQL parlaient à la base, mais rien ne cliquait dans l'app avec une vraie base derrière. **Et aucun test ne tournait automatiquement sur GitHub** : tout dépendait d'un lancement manuel. Les migrations n'étaient jamais rejouées depuis zéro (d'où 0005 absente et une table créée à la main, découvertes en v1.75.0 et ici). Le réseau faible, la simultanéité entre agents et la fluidité (lenteur, écran qui saute) n'étaient jamais mesurés.
+
+### Ajouté
+- **Pile de test complète** (`scripts/qa-stack/`) : l'application réelle, PostgreSQL rejouée depuis **toutes** les migrations du dépôt, PostgREST, données synthétiques (122 invitations, un compte par rôle). Jamais la production.
+- **Balayage « clique partout »** (`qa/functional/crawl-every-click.spec.ts`) : 5 rôles × 24 pages × chaque bouton, sur iPhone et ordinateur. Échoue sur une erreur JavaScript, une erreur serveur, un appel refusé, une déconnexion, « Accès réservé » après un clic, une page de plus de 3 s ou qui saute à l'affichage. Liste en plus chaque écriture faite d'un seul toucher sans confirmation.
+- **Parcours métier vérifiés en base** (`business-flows.spec.ts`, 9 parcours) et **réseau / simultanéité** (`network-and-concurrency.spec.ts` : 3G lente, coupure réseau, deux agents sur la même personne).
+- **Check « Qualité » sur chaque PR** (`.github/workflows/quality.yml`) : types, tests unitaires, build, base rejouée + contrôle de santé, tests dans le navigateur.
+
+### Corrigé (trouvé par le balayage dès son premier passage)
+- **Un admin pouvait désactiver son propre compte d'un seul toucher** (bascule sur `/admin/users`, sans confirmation) et ne plus pouvoir se reconnecter. Bascule grisée pour son propre compte, refus côté API (désactiver ou rétrograder soi-même) ; désactiver un autre compte demande confirmation.
+- **« Réinitialiser » remplaçait le code d'une personne d'un seul toucher** (`/mots-de-passe` et `/admin/users`) : le jour J, un faux mouvement bloquait un agent. Confirmation ajoutée.
+- **Changer le mode de l'événement** (`/admin` : Préparation, Test, JOUR J, Terminé) se faisait d'un seul toucher ; sortir du JOUR J rouvre la réinitialisation des arrivées. Confirmation ajoutée.
+- Les fiches de `/agenda` et le code affiché par `/mots-de-passe` se ferment avec Échap (`hooks/useEscapeKey.ts`), comme les autres fiches.
+- `0036` : crée la table `user_credential_backups` si elle n'existe pas (elle avait été créée à la main en production, jamais dans une migration — une base neuve échouait).
+
+### Tests
+- Parcours métier : 9/9 (deux passages de suite) ; réseau et simultanéité : 3/3 ; balayage : voir la PR.
+- Le parcours « Reconsidérer → choisir une table » est désormais vérifié de bout en bout dans le navigateur : l'invité est bien approuvé ET placé (correctif v1.75.0 confirmé).
+
+### Migration
+- Aucune nouvelle. `0036` modifiée sans effet en production (`create table if not exists` ; la table y existe déjà).
+
 ## [1.75.0] — 2026-10-10
 
 Demande de Gersom après l'analyse « pourquoi nos tests n'ont pas vu ces erreurs » : « corrige tous les 7 points, ajoute les tests, reconsidère aussi tes tests... surtout sur une première utilisation pour tous les rôles ».
