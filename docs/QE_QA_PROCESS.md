@@ -86,6 +86,25 @@ Analyse demandée par Gersom : « comment ça se fait qu'on a fait des tests int
 7. **Ne plus écrire de test qui fige la façon d'écrire le code** (« la page utilise `TABLE_SEAT_NAMES` ») : tester un résultat (fonction pure dans `lib/`, SQL, navigateur). Les tests existants de ce type sont remplacés au fil des modifications des fichiers concernés.
 8. **Première utilisation par rôle** : la QA terrain se fait aussi sur un appareil vierge et une invitation jamais ouverte (`scripts/sql-tests/02_e2e_fresh_invitation.sql`, `e2e/first-use.spec.ts`), pas seulement sur des données déjà manipulées par un autre rôle.
 
+## 7. Tests fonctionnels complets (v1.76.0)
+
+Demande de Gersom : « tout un processus de test de fonctionnalité... partout, tous les clics, c'est fluide. UI, UX, front-end, back-end, complet ». Jusqu'à v1.75.0, **aucun test ne faisait tourner l'application** : les tests lisaient le code, les tests SQL parlaient à la base, mais personne ne cliquait dans l'app avec une vraie base derrière — et rien ne tournait automatiquement sur GitHub.
+
+Ce qui n'était jamais testé, et qui l'est désormais :
+
+| Angle mort | Test ajouté |
+|---|---|
+| Aucun test lancé automatiquement sur une PR | `.github/workflows/quality.yml` : types, tests unitaires, build, base rejouée, tests navigateur, sur chaque PR |
+| Les migrations ne se rejouaient jamais depuis zéro (0005 manquante, table créée à la main pour 0036…) | `scripts/qa-stack/build-db.sh` rejoue **toutes** les migrations sur une base vide ; une seule qui échoue bloque la PR |
+| L'application complète (page → API → SQL) jamais exécutée | `scripts/qa-stack/` : vraie app, vraie PostgreSQL, PostgREST, données synthétiques |
+| Les clics : un bouton qui plante, mène à « Accès réservé » ou déconnecte | `qa/functional/crawl-every-click.spec.ts` : 5 rôles × chaque page × chaque bouton, iPhone et ordinateur |
+| La fluidité (lenteur, écran qui saute) | même balayage : chargement > 3 s ou CLS > 0,25 = échec |
+| Le résultat en base d'un parcours métier | `qa/functional/business-flows.spec.ts` : check-in puis annulation, invité surprise approuvé et visible sur sa table, « Reconsidérer » → placé, déconnexion par rôle |
+| Réseau faible ou coupé dans la salle | `network-and-concurrency.spec.ts` : 3G lente, coupure pendant un pointage |
+| Deux agents sur la même famille en même temps | même fichier : compteur exact, personne comptée deux fois = échec |
+
+Règle : **une PR ne se fusionne que si le check « Qualité » est vert.** Un nouvel écran ou un nouveau bouton est couvert automatiquement par le balayage ; un nouveau parcours métier ajoute un test dans `business-flows.spec.ts`. Toujours non couvert (à vérifier à la main sur un vrai iPhone avant le jour J, voir `docs/BACKLOG.md`) : le vrai Safari/WebKit, la caméra réelle et la lecture d'un vrai QR, les notifications Push, l'installation PWA.
+
 ## Rattachement
 
 Ce document fait partie de l'ordre de lecture obligatoire de `CLAUDE.md` et de la liste des documents versionnés de `docs/VERSIONING.md`.

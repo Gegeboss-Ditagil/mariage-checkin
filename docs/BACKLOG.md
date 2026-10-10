@@ -1,6 +1,6 @@
 # Backlog — limites connues et actions en attente
 
-**Version documentaire : 1.75.0**
+**Version documentaire : 1.76.0**
 **Dernière mise à jour : 2026-10-10**
 
 Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » dans une PR ou le CHANGELOG est ajoutée ici, avec un responsable, puis retirée quand elle est traitée. Le CHANGELOG raconte ce qui a été fait ; ce fichier dit ce qui reste à faire.
@@ -13,3 +13,5 @@ Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » d
 | 4 | Remplacer progressivement les tests « le code contient X » (1 516 assertions) par des tests de résultat | Ils passent même quand la fonctionnalité est cassée. | Agent, au fil des modifications | En cours |
 | 5 | `/checkin/[id]/merge` reste ouvrable par URL pour `agent_checkin` (l'API refuse l'écriture) | Limite de `canAccessPath` (préfixes) ; sans risque de données, mais écran inutile pour ce rôle. | Agent | Connu |
 | 6 | Relancer `scripts/sql-tests/01_first_use_flows.sql` et le contrôle de santé avant le jour J | Dernière vérification sur la vraie base. | Gersom / agent | Avant le jour J |
+| 7 | Rendre obligatoire le check « Qualité » (GitHub → Settings → Branches → règle sur `main` → « Require status checks ») | Sans cette règle, une PR rouge peut encore être fusionnée. | Gersom | À faire |
+| 8 | Vérifier à la main sur un vrai iPhone avant le jour J : lecture d'un vrai QR, photo « Invité surprise », notifications Push, installation de l'app | Les tests automatiques simulent la caméra et ne peuvent pas recevoir de Push réel. | Gersom + 1 scanneur | Avant le jour J |

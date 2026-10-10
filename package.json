@@ -25,7 +25,10 @@
     "test:reservation": "node --test tests/guest-approval-reservation.test.ts",
     "test:seatwheel": "node --test tests/table-seat-wheel.test.ts",
     "test": "node --test tests/*.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "qa:db": "scripts/qa-stack/build-db.sh",
+    "qa:stack": "scripts/qa-stack/start.sh",
+    "qa:functional": "playwright test -c playwright.functional.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",
