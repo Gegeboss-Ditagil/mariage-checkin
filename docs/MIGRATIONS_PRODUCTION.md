@@ -1,6 +1,6 @@
 # Migrations : dépôt ↔ production
 
-**Version documentaire : 1.77.0**
+**Version documentaire : 1.78.0**
 **Dernière mise à jour : 2026-10-10**
 
 Une ligne par fichier de `supabase/migrations/`. `tests/migration-history.test.ts` échoue si un fichier manque ici : toute nouvelle migration doit dire si elle est appliquée en production.
@@ -15,7 +15,7 @@ Une ligne par fichier de `supabase/migrations/`. `tests/migration-history.test.t
 
 ## État au 10/10/2026
 
-Vérifié en production table par table (fonctions, colonnes, données). Seule 0069 reste à appliquer.
+Vérifié en production table par table (fonctions, colonnes, données). Toutes les migrations du dépôt sont appliquées ; l'historique ne contient plus que les versions à 4 chiffres (68 lignes, 0 doublon, copie dans `supabase_migrations.schema_migrations_backup_20261010`).
 
 | Fichier | État en production |
 |---|---|
@@ -86,9 +86,9 @@ Vérifié en production table par table (fonctions, colonnes, données). Seule 0
 | `0066_table42_reserve_again_with_table1.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
 | `0067_placeur014_016_role_placeur.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
 | `0068_remove_extra_member_rows_malungu_lecaous.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
-| `0069_health_report_reset_fix_strict_overload.sql` | **À exécuter par Gersom** : `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql` |
+| `0069_health_report_reset_fix_strict_overload.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL, script `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`) ; contrôle de santé vérifié vide |
 
 ## Hors dépôt, trouvé en production
 
-- **Opérations de données ponctuelles** (août 2026 : `reimport_guestlist_*`, `restore_invitations_after_unexpected_wipe_20260821`, `clean_reset_invitations_20260821*`, `clear_table_for_no_table_staff`, `remove_fabricated_rows_20260822`) : imports et nettoyages d'avant le parcours With Joy actuel, sans effet sur la structure. Retirées de l'historique par le script manuel (copie conservée dans `supabase_migrations.schema_migrations_backup_20261010`).
-- **`canada_jets_leads_pipeline`** (21/09/2026) : tables `canada_jets_leads` et `canada_jets_lead_events` d'un autre projet, vides, créées dans cette base. La règle « public insert leads » permet à quiconque possède la clé publique de l'application d'y insérer des lignes. Laissées telles quelles en attendant la décision de Gersom (`docs/BACKLOG.md`).
+- **Opérations de données ponctuelles** (août 2026 : `reimport_guestlist_*`, `restore_invitations_after_unexpected_wipe_20260821`, `clean_reset_invitations_20260821*`, `clear_table_for_no_table_staff`, `remove_fabricated_rows_20260822`) : imports et nettoyages d'avant le parcours With Joy actuel, sans effet sur la structure. Retirées de l'historique le 10/10/2026 (copie conservée dans `supabase_migrations.schema_migrations_backup_20261010`).
+- **`canada_jets_leads_pipeline`** (21/09/2026) : tables `canada_jets_leads` et `canada_jets_lead_events` d'un autre projet, vides, créées dans cette base. La règle « public insert leads » permet à quiconque possède la clé publique de l'application d'y insérer des lignes. Suppression demandée par Gersom le 10/10/2026 ; vérifiées vides et sans aucune dépendance, SQL : `supabase/manual/2026-10-10_supprimer_tables_canada_jets.sql` (garde-fou : annule si une ligne est apparue), à exécuter dans l'éditeur SQL (`docs/BACKLOG.md` n°9).

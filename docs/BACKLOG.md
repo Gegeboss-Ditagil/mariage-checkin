@@ -1,13 +1,13 @@
 # Backlog — limites connues et actions en attente
 
-**Version documentaire : 1.77.0**
+**Version documentaire : 1.78.0**
 **Dernière mise à jour : 2026-10-10**
 
 Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » dans une PR ou le CHANGELOG est ajoutée ici, avec un responsable, puis retirée quand elle est traitée. Le CHANGELOG raconte ce qui a été fait ; ce fichier dit ce qui reste à faire.
 
 | # | Élément | Pourquoi c'est important | Responsable | Statut |
 |---|---|---|---|---|
-| 1 | Exécuter `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql` dans l'éditeur SQL Supabase (remplace l'ancienne consigne « exécuter 0069 ») | Applique 0069 (fonction de placement unique, réinitialisation de test) et nettoie l'historique : fait passer le check « Supabase Preview ». L'outil de l'agent est bloqué sur les suppressions. | Gersom | À faire |
+| 1 | Exécuter `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql` dans l'éditeur SQL Supabase | Applique 0069 et nettoie l'historique des migrations. | Gersom | **Fait le 10/10/2026** (contrôle de santé vide, 0 doublon) |
 | 2 | Créer 5 comptes de test (un par rôle) + secrets GitHub `E2E_*` (voir `e2e/README.md`) | Sans eux, les parcours « première utilisation » dans un vrai navigateur ne peuvent pas tourner. | Gersom | À faire |
 | 3 | Quota Copilot épuisé : le check `github-advanced-security` est rouge sur chaque PR | Signal de sécurité indisponible ; CodeQL reste vert. | Gersom | À surveiller |
 | 4 | Remplacer progressivement les tests « le code contient X » (1 516 assertions) par des tests de résultat | Ils passent même quand la fonctionnalité est cassée. | Agent, au fil des modifications | En cours |
@@ -15,4 +15,4 @@ Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » d
 | 6 | Relancer `scripts/sql-tests/01_first_use_flows.sql` et le contrôle de santé avant le jour J | Dernière vérification sur la vraie base. | Gersom / agent | Avant le jour J |
 | 7 | Rendre obligatoire le check « Qualité » (GitHub → Settings → Branches → règle sur `main` → « Require status checks ») | Sans cette règle, une PR rouge peut encore être fusionnée. | Gersom | À faire |
 | 8 | Vérifier à la main sur un vrai iPhone avant le jour J : lecture d'un vrai QR, photo « Invité surprise », notifications Push, installation de l'app | Les tests automatiques simulent la caméra et ne peuvent pas recevoir de Push réel. | Gersom + 1 scanneur | Avant le jour J |
-| 9 | Décider du sort des tables `canada_jets_leads` / `canada_jets_lead_events` (autre projet, vides) dans la base du mariage | Une règle permet à quiconque possède la clé publique de l'app d'y insérer des lignes. Les déplacer vers le bon projet ou les supprimer. | Gersom | À décider |
+| 9 | Supprimer les tables `canada_jets_leads` / `canada_jets_lead_events` (autre projet, vides, aucune dépendance) | Une règle permettait à quiconque possède la clé publique de l'app d'y insérer des lignes. Suppression décidée par Gersom le 10/10/2026, SQL fourni (éditeur SQL). | Gersom | À exécuter |
