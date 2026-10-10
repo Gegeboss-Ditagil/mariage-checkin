@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.76.1**
+**Version documentaire : 1.77.0**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -12,7 +12,7 @@ Avant toute modification, lire dans cet ordre :
 5. `docs/DATA_AND_FORMS.md`
 6. `docs/DATA_CHANGE_INSTRUCTIONS.md`
 7. `docs/QE_QA_PROCESS.md`
-8. `docs/QA_SCENARIOS.md` (et `docs/BACKLOG.md` pour les actions en attente)
+8. `docs/QA_SCENARIOS.md` (et `docs/BACKLOG.md` pour les actions en attente, `docs/MIGRATIONS_PRODUCTION.md` avant toute migration)
 9. `docs/CLAUDE_HANDOFF_STAFF_ACCESS.md` pour tout changement de rôles ou de `/staff`
 10. `README.md`
 
@@ -157,6 +157,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.75.0 : suite de l'analyse « pourquoi nos tests n'ont pas vu ces erreurs ». Bug corrigé : `assign_table_to_guest_approval_strict` en 2 versions en production → « Reconsidérer → choisir une table » laissait l'invité sans table (code : tous les arguments passés ; 0069 supprime l'ancienne version). Ajouts : `app_health_report()` (déjà créée en production, carte « Santé de la base » sur `/admin`), journalisation de tout échec RPC (`lib/rpcErrorLog.ts` dans le client admin), tests SQL sans trace (`scripts/sql-tests/`), e2e Playwright « première utilisation » par rôle (`e2e/`, à lancer avec des comptes de test), `docs/BACKLOG.md`, règles §6 de `docs/QE_QA_PROCESS.md`. Approbateur : plus de liens vers `/checkin`. Migration 0005 restaurée dans le dépôt (déjà appliquée). **0069 à exécuter par Gersom dans l'éditeur SQL** (suppressions bloquées côté agent).
 - v1.76.0 : **tests fonctionnels complets** — `scripts/qa-stack/` (vraie app + PostgreSQL rejouée depuis toutes les migrations + données synthétiques, jamais la production), `qa/functional/` (balayage « clique partout » 5 rôles × chaque page × chaque bouton, parcours métier vérifiés en base, 3G lente, coupure réseau, deux agents simultanés), check « Qualité » sur chaque PR (`.github/workflows/quality.yml`). Trouvé et corrigé par le balayage : un admin pouvait se désactiver lui-même d'un toucher (refusé désormais, API + bascule grisée), « Réinitialiser » un code et changer le mode de l'événement se faisaient sans confirmation (confirmation ajoutée), Échap ferme les fiches d'agenda. `0036` crée `user_credential_backups` si absente. Toute nouvelle fonctionnalité ajoute son parcours à `qa/functional/business-flows.spec.ts` ; une PR ne se fusionne que si « Qualité » est vert.
 - v1.76.1 : la fiche check-in ne « saute » plus à l'affichage sur un appareil lent (CLS 0,70 → 0) : `GuestArrivalPanel` signale `onLayoutReady` quand membres ET dessin de la table sont affichés ; la fiche n'affiche ce qui suit le panneau qu'à ce moment-là et réserve la ligne « Table N ». Test « téléphone lent » (processeur ×6) dans `qa/functional/network-and-concurrency.spec.ts`.
+- v1.77.0 : historique des migrations de production réconcilié (33 migrations inscrites après vérification, 0041 appliquée) ; **0069 + nettoyage de l'historique à exécuter par Gersom** (`supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`). Lire `docs/MIGRATIONS_PRODUCTION.md` avant toute migration : version à 4 chiffres uniquement dans l'historique, jamais `apply_migration` (il enregistre une version horodatée), suppressions via un script `supabase/manual/`. Tables `canada_jets_*` (autre projet) trouvées en base, laissées en attente de décision.
 
 ## Reprise rapide pour Claude AI
 
