@@ -71,7 +71,7 @@ test('le composant est purement local : aucun appel reseau, aucune ecriture Supa
 
 test('/plan-table rend TableSeatWheel a la place de la grille de boutons pour la table selectionnee', () => {
   assert.match(pageSource, /<TableSeatWheel/);
-  assert.match(pageSource, /seats=\{TABLE_SEAT_NAMES\[selectedTable\.number\]\}/);
+  assert.match(pageSource, /seats=\{liveSeatNames\(liveSeats\)\}/);
   assert.match(pageSource, /highlightedIndices=\{highlightedSeats\}/);
   assert.match(pageSource, /onSelectSeat=\{\(idx\) => \{\s*\n\s*const isDeselect = /);
   // v1.48.8 : un tap direct sur un siege (pas via un nom de la liste) doit
@@ -82,8 +82,8 @@ test('/plan-table rend TableSeatWheel a la place de la grille de boutons pour la
   // v1.48.9, retour de Gersom : "vice versa" -- un tap sur un siege NON
   // deselectionne retrouve desormais aussi l'invitation correspondante
   // (jamais approchee) parmi celles deja listees pour cette table.
-  assert.match(pageSource, /namesMatch\(inv\.nom_affichage, seatName\)/);
-  assert.match(pageSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
+  // v1.74.0 : le siège vivant porte l'id de son invitation (plus de recherche par nom).
+  assert.match(pageSource, /const seatInvitationId = liveSeats\[idx\]\?\.invitationId;/);
 });
 
 // v1.48.5 : plusieurs sieges a la fois (toute une invitation surlignee
@@ -98,12 +98,15 @@ test('TableSeatWheel accepte plusieurs sieges surlignes a la fois (highlightedIn
 
 test('GuestArrivalPanel (fiche invite) rend aussi TableSeatWheel, retrouve par le numero de table reel', () => {
   const panelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
-  assert.match(panelSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch \} from '@\/lib\/floorPlanSeats'/);
+  assert.match(panelSource, /import \{ useLiveTableSeats \} from '@\/hooks\/useLiveTableSeats'/);
   assert.match(panelSource, /<TableSeatWheel/);
   // La table vient de la vraie source de placement (prop tableNumber, issue
   // de invitations.table_id -> tables.number), jamais devinee par nom.
   assert.match(panelSource, /tableNumber: number \| null;/);
-  assert.match(panelSource, /const seatIndex = tableNumber !== null \? findSeatIndexByName\(tableNumber, guest\.nom_affichage\) : null;/);
+  // v1.74.0 : sièges vivants de la vraie table, limités aux membres de CETTE invitation.
+  assert.match(panelSource, /useLiveTableSeats\(seatTable \?\? null\)/);
+  assert.match(panelSource, /seat\.invitationId === invitation\.id && namesMatch\(seat\.name, name\)/);
+  assert.match(panelSource, /const seatIndex = seatIndexForGuest\(guest\.nom_affichage\);/);
 });
 
 // v1.48.9, retour de Gersom : "vice versa -- si j'appuie sur la chaise de la
@@ -113,7 +116,7 @@ test('GuestArrivalPanel surligne aussi la ligne du membre retrouve quand on touc
   const panelSource = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
   assert.match(panelSource, /const \[highlightedGuestId, setHighlightedGuestId\] = useState<string \| null>\(null\);/);
   assert.match(panelSource, /guest\.id === highlightedGuestId/);
-  assert.match(panelSource, /const match = seatName \? members\.find\(\(guest\) => namesMatch\(guest\.nom_affichage, seatName\)\) : undefined;/);
+  assert.match(panelSource, /seat && seat\.invitationId === invitation\.id\s*\n\s*\? members\.find\(\(guest\) => namesMatch\(guest\.nom_affichage, seat\.name\)\)/);
   assert.match(panelSource, /setHighlightedGuestId\(match \? match\.id : null\);/);
   // Reinitialise partout ou highlightedSeats l'est deja (changement
   // d'invitation), sinon une ligne resterait surlignee pour un autre groupe.
@@ -172,15 +175,13 @@ test("toucher un nom dans la liste de la table sélectionnée navigue de nouveau
 for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]/page.tsx']) {
   test(`${route} affiche aussi le dessin "vu sur le plan photographie" sous la liste, avec trois icones (📍/🪑/✅) par invitation`, () => {
     const tableDetailSource = readFileSync(new URL(route, import.meta.url), 'utf8');
-    assert.match(tableDetailSource, /import \{ TABLE_SEAT_NAMES, findSeatIndexByName, namesMatch \} from '@\/lib\/floorPlanSeats'/);
+    assert.match(tableDetailSource, /import \{ useLiveTableSeats \} from '@\/hooks\/useLiveTableSeats'/);
     assert.match(tableDetailSource, /import \{ TableSeatWheel \} from '@\/components\/TableSeatWheel'/);
     assert.match(tableDetailSource, /import \{ FLOOR_PLAN_TABLE_POSITIONS \} from '@\/components\/FloorPlan'/);
     assert.match(tableDetailSource, /<TableSeatWheel/);
-    assert.match(tableDetailSource, /table && TABLE_SEAT_NAMES\[table\.number\]/);
-    // Correspondance exacte uniquement (nom affiche + membres detailles),
-    // jamais approchee -- meme regle que /plan-table et GuestArrivalPanel.
-    assert.match(tableDetailSource, /\[inv\.nom_affichage, \.\.\.extractMembresComplet\(inv\.notes\)\]/);
-    assert.match(tableDetailSource, /findSeatIndexByName\(table!\.number, name\)/);
+    // v1.74.0 : sièges vivants, chaque siège porte l'id de son invitation.
+    assert.match(tableDetailSource, /table && liveSeats && \(/);
+    assert.match(tableDetailSource, /const seatMatches = liveSeats \? seatIndicesForInvitation\(liveSeats, inv\.id\) : \[\];/);
     // 📍 : localise la table sur /plan-table (nouveau comportement), gate
     // sur la meme condition que le bouton "localiser" de /plan-table.
     assert.match(tableDetailSource, /const tableHasPlanPosition = !!table && table\.number in FLOOR_PLAN_TABLE_POSITIONS;/);
@@ -198,8 +199,7 @@ for (const route of ['../app/tables/[tableId]/page.tsx', '../app/table/[tableId]
     // v1.48.9, retour de Gersom : "vice versa" -- toucher un siege sur le
     // dessin retrouve aussi l'invitation correspondante parmi celles de
     // cette table (jamais une recherche approchee).
-    assert.match(tableDetailSource, /namesMatch\(inv\.nom_affichage, seatName\)/);
-    assert.match(tableDetailSource, /extractMembresComplet\(inv\.notes\)\.some\(\(m\) => namesMatch\(m, seatName\)\)/);
+    assert.match(tableDetailSource, /invitations\.find\(\(inv\) => inv\.id === seatInvitationId\)/);
   });
 }
 

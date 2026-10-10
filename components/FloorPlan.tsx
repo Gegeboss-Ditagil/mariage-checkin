@@ -2,6 +2,7 @@
 
 import clsx from 'clsx';
 import { TABLE_SEAT_NAMES } from '@/lib/floorPlanSeats';
+import { floorPlanChairs } from '@/lib/liveSeats';
 import { isReserveTableNumber } from '@/lib/withjoyImport';
 
 // Plan de la salle. Systeme de coordonnees SVG propre a ce composant, sans
@@ -277,6 +278,9 @@ interface FloorPlanProps {
   selectedZoneTag?: string | null;
   onSelectZone?: (room: Room) => void;
   coteByNumber?: Map<number, TableCoteCounts>;
+  // v1.74.0 : personnes réellement placées par table (lib/capacity.ts,
+  // excédents en réserve compris). Absent = chaises du PDF telles quelles.
+  occupiedSeatsByNumber?: Map<number, number>;
 }
 
 function zoneHandlers(clickable: boolean, select: () => void) {
@@ -301,6 +305,7 @@ export function FloorPlan({
   selectedZoneTag,
   onSelectZone,
   coteByNumber,
+  occupiedSeatsByNumber,
 }: FloorPlanProps) {
   return (
     <svg
@@ -435,7 +440,7 @@ export function FloorPlan({
         const selected = selectedNumber === number;
         const hasGuests = occupied?.has(number);
         const coteClass = tableCoteClass(coteByNumber?.get(number));
-        const seats = TABLE_SEAT_NAMES[number] ?? [];
+        const seats = floorPlanChairs(TABLE_SEAT_NAMES[number] ?? [], occupiedSeatsByNumber?.get(number));
         // v1.71.0 / v1.72.0 : les tables de reserve (1 et 42, excedentaires)
         // sont signalees par un contour en pointilles et la mention « réserve ».
         const isReserve = isReserveTableNumber(number);
@@ -457,7 +462,7 @@ export function FloorPlan({
             {/* Zone de contact plus large que le cercle visible, pour rester
                 facile a toucher sur mobile (cible tactile ~44px minimum). */}
             <circle cx={x} cy={y} r={34} fill="transparent" />
-            {seats.map((name, idx) => (
+            {seats.map((filled, idx) => (
               <rect
                 key={idx}
                 x={x - SEAT_W / 2}
@@ -466,10 +471,10 @@ export function FloorPlan({
                 height={SEAT_H}
                 rx={3}
                 transform={'rotate(' + (360 / seats.length) * idx + ' ' + x + ' ' + y + ')'}
-                className={name ? 'fill-text-faint stroke-none' : 'fill-none stroke-text-faint'}
-                fillOpacity={name ? 0.55 : undefined}
-                strokeWidth={name ? 0 : 1.2}
-                strokeDasharray={name ? undefined : '3 2'}
+                className={filled ? 'fill-text-faint stroke-none' : 'fill-none stroke-text-faint'}
+                fillOpacity={filled ? 0.55 : undefined}
+                strokeWidth={filled ? 0 : 1.2}
+                strokeDasharray={filled ? undefined : '3 2'}
               />
             ))}
             {selected && (
