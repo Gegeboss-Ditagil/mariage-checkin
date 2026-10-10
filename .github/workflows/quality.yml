@@ -12,6 +12,11 @@ name: Qualité
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      balayage_complet:
+        description: 'Balayage « clique partout » aussi sur ordinateur (plus long)'
+        type: boolean
+        default: false
 jobs:
   unitaires:
     runs-on: ubuntu-latest
@@ -32,7 +37,7 @@ jobs:
 
   fonctionnels:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     services:
       postgres:
         image: postgres:16
@@ -63,6 +68,8 @@ jobs:
       - name: Application + base de test
         run: QA_POSTGREST_BIN=/tmp/postgrest scripts/qa-stack/start.sh
       - name: Tests fonctionnels
+        env:
+          QA_CRAWL_ALL: ${{ inputs.balayage_complet && '1' || '' }}
         run: |
           set -a; . scripts/qa-stack/.env.qa; set +a
           npx playwright test -c playwright.functional.config.ts

@@ -28,7 +28,11 @@ test.describe('clique partout, chaque rôle', () => {
 
   for (const role of ROLES) {
     test(`${role.key} : toutes les pages, tous les boutons`, async ({ page, request }, testInfo) => {
-      test.skip(testInfo.project.name !== 'iphone' && testInfo.project.name !== 'ordinateur', 'balayage complet sur iPhone et ordinateur');
+      // iPhone (l'appareil du staff) sur chaque PR ; ordinateur en plus quand
+      // QA_CRAWL_ALL=1 (lancement manuel du workflow, ou en local) -- environ
+      // 10 min par rôle et par appareil.
+      const devices = process.env.CI && !process.env.QA_CRAWL_ALL ? ['iphone'] : ['iphone', 'ordinateur'];
+      test.skip(!devices.includes(testInfo.project.name), 'balayage complet : ' + devices.join(', '));
       test.setTimeout(900_000);
       const { invitation, table, request: requestId } = await ids(request);
       const pages = [
