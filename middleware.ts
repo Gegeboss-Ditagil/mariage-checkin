@@ -83,6 +83,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // v1.78.0 : état réel du compte (rôle changé par un admin, compte
+  // désactivé), relu en base par la route elle-même -- ouvert à tout compte
+  // connecté, quel que soit le rôle inscrit dans un jeton peut-être périmé.
+  if (pathname === '/api/auth/me') {
+    return NextResponse.next();
+  }
+
   if (!canAccessPath(user.role, pathname)) {
     // Redirige vers l'ecran par defaut du role plutot que d'afficher une erreur
     return NextResponse.redirect(new URL(landingPathForRole(user.role), req.url));

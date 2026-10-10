@@ -12,7 +12,7 @@ import { hasCapability } from '@/lib/permissions';
  * c'etait le dernier tag de role restant.
  */
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'manageTags')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

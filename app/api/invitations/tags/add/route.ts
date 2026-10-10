@@ -12,7 +12,7 @@ import { hasCapability } from '@/lib/permissions';
  * (add_invitation_tag, 0022_manage_invitation_tags.sql).
  */
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'manageTags')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

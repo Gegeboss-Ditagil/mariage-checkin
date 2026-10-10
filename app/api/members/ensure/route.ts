@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   // v1.73.1 : creer les lignes nominatives manquantes fait partie du check-in
   // (aucun total modifie) -- ouvert a 'checkin', sinon un scanneur retombait
   // sur l'ancien compteur +/- pour toute invitation jamais ouverte.

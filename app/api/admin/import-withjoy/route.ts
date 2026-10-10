@@ -8,7 +8,7 @@ import { logServerError } from '@/lib/serverLog';
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

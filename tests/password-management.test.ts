@@ -189,7 +189,7 @@ test('is_super_admin est bien porté par le jeton de session (jamais lu ailleurs
 const selfPasswordRouteSource = readFileSync(new URL('../app/api/account/password/route.ts', import.meta.url), 'utf8');
 
 test('POST /api/account/password exige une session, mais AUCUNE capacité managePasswords (ouvert à tous)', () => {
-  assert.match(selfPasswordRouteSource, /const user = getSessionUser\(\);/);
+  assert.match(selfPasswordRouteSource, /const user = await getSessionUser\(\);/);
   assert.match(selfPasswordRouteSource, /if \(!user\) return NextResponse\.json/);
   assert.doesNotMatch(selfPasswordRouteSource, /managePasswords/);
 });

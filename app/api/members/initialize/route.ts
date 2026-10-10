@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   // v1.73.1 : materialiser les noms importes ("Membres: ...") fait partie du
   // check-in, ce n'est pas un renommage -- ouvert a 'checkin' (scanneur compris).
   if (!user || !hasCapability(user.role, 'checkin')) {

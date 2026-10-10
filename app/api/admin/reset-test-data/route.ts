@@ -9,7 +9,7 @@ import { hasCapability } from '@/lib/permissions';
  * accidentellement les vraies donnees du jour J.
  */
 export async function POST() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'adminPanel')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

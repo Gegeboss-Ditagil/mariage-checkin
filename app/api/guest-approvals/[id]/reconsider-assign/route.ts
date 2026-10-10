@@ -31,7 +31,7 @@ import { decisionResultWithoutSecrets } from '@/lib/guestApprovalPublic';
  * (admin, directeur, visibilite).
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'reviewGuestApproval') || !hasCapability(user.role, 'assignGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

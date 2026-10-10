@@ -1,6 +1,6 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.76.1**
+**Version documentaire : 1.78.0**
 **Dernière mise à jour : 2026-10-10**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
@@ -287,3 +287,4 @@ Lancés automatiquement sur chaque PR (check « Qualité », `.github/workflows/
 | 9 | idem | Coupure réseau sur une fiche de check-in | Bandeau « HORS LIGNE », boutons de pointage désactivés, rien d'écrit ; tout repart au retour du réseau |
 | 10 | idem | Deux agents touchent la même personne au même instant | Compteur = personnes cochées, jamais compté deux fois |
 | 11 | idem | Téléphone lent (processeur ×6), fiche check-in jamais ouverte | Aucun saut d'affichage (CLS < 0,1) |
+| 12 | `role-change.spec.ts` | Un admin change le rôle d'un compte connecté ailleurs (vers chaque rôle, vers admin et retour), puis le désactive | Nouveaux droits dès la requête suivante, PIN conservé entre rôles « PIN », session fermée si le mode de connexion change ou si le compte est désactivé ; l'appareil de la personne se met à jour seul |

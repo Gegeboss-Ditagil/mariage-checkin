@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const supabase = createAdminClient();
@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { status, name, event_date, reserve_table_capacity, twilio_enabled } = await req.json().catch(() => ({}));

@@ -36,7 +36,7 @@ function normalizeAgendaItem<T extends { custom_assignees?: unknown; is_private?
 }
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'viewAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const canManage = hasCapability(user.role, 'manageAgenda');
   const supabase = createAdminClient();
@@ -62,20 +62,34 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'manageAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || '').trim();
   const timeLabel = String(body.time_label || '').trim();
   if (!title || !timeLabel) return NextResponse.json({ error: 'Heure et activité requises' }, { status: 400 });
   const supabase = createAdminClient();
+  // v1.78.0 (trouvé par le test de changement de rôle) : sans sort_order, le
+  // défaut Date.now() (~1,8e12) dépassait la colonne numeric(10,3) -- « numeric
+  // field overflow ». Défaut : après la dernière activité.
+  let sortOrder = Number(body.sort_order);
+  if (!Number.isFinite(sortOrder)) {
+    const { data: last } = await supabase
+      .from('agenda_items')
+      .select('sort_order')
+      .eq('event_id', user.event_id)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sortOrder = Number(last?.sort_order ?? 0) + 10;
+  }
   const { data, error } = await supabase.from('agenda_items').insert({
     event_id: user.event_id,
     time_label: timeLabel,
     title,
     department: String(body.department || 'Coordination').trim(),
     details: String(body.details || '').trim() || null,
-    sort_order: Number.isFinite(Number(body.sort_order)) ? Number(body.sort_order) : Date.now(),
+    sort_order: sortOrder,
     assignee_ids: Array.isArray(body.assignee_ids) ? body.assignee_ids : [],
     custom_assignees: sanitizeCustomAssignees(body.custom_assignees),
     is_private: body.is_private === true,
@@ -86,7 +100,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'manageAgenda')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || '');

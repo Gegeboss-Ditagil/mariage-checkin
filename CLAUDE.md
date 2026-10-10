@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.77.0**
+**Version documentaire : 1.78.0**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -158,6 +158,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.76.0 : **tests fonctionnels complets** — `scripts/qa-stack/` (vraie app + PostgreSQL rejouée depuis toutes les migrations + données synthétiques, jamais la production), `qa/functional/` (balayage « clique partout » 5 rôles × chaque page × chaque bouton, parcours métier vérifiés en base, 3G lente, coupure réseau, deux agents simultanés), check « Qualité » sur chaque PR (`.github/workflows/quality.yml`). Trouvé et corrigé par le balayage : un admin pouvait se désactiver lui-même d'un toucher (refusé désormais, API + bascule grisée), « Réinitialiser » un code et changer le mode de l'événement se faisaient sans confirmation (confirmation ajoutée), Échap ferme les fiches d'agenda. `0036` crée `user_credential_backups` si absente. Toute nouvelle fonctionnalité ajoute son parcours à `qa/functional/business-flows.spec.ts` ; une PR ne se fusionne que si « Qualité » est vert.
 - v1.76.1 : la fiche check-in ne « saute » plus à l'affichage sur un appareil lent (CLS 0,70 → 0) : `GuestArrivalPanel` signale `onLayoutReady` quand membres ET dessin de la table sont affichés ; la fiche n'affiche ce qui suit le panneau qu'à ce moment-là et réserve la ligne « Table N ». Test « téléphone lent » (processeur ×6) dans `qa/functional/network-and-concurrency.spec.ts`.
 - v1.77.0 : historique des migrations de production réconcilié (33 migrations inscrites après vérification, 0041 appliquée) ; **0069 + nettoyage de l'historique à exécuter par Gersom** (`supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`). Lire `docs/MIGRATIONS_PRODUCTION.md` avant toute migration : version à 4 chiffres uniquement dans l'historique, jamais `apply_migration` (il enregistre une version horodatée), suppressions via un script `supabase/manual/`. Tables `canada_jets_*` (autre projet) trouvées en base, laissées en attente de décision.
+- v1.78.0 : changement de rôle effectif immédiatement — `getSessionUser()` est désormais **asynchrone** (`await getSessionUser()` partout) et relit rôle/actif en base (`lib/session.ts`, `lib/sessionRefresh.ts`, cache 3 s, `forgetAccountState` après modification) ; `components/SessionWatcher.tsx` + `/api/auth/me` (ouvert à tout compte connecté dans `middleware.ts`) rechargent la page d'un compte dont le rôle a changé ; entre rôles « PIN », le PIN est conservé. Test navigateur : `qa/functional/role-change.spec.ts`.
 
 ## Reprise rapide pour Claude AI
 

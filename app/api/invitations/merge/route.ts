@@ -10,7 +10,7 @@ import { hasCapability } from '@/lib/permissions';
  * pas une simple correction de nom.
  */
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'mergeInvitations')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

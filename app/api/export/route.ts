@@ -16,7 +16,7 @@ function toCsv(headers: string[], rows: (string | number)[][]): string {
 }
 
 export async function GET(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'exportData')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

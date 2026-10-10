@@ -10,7 +10,7 @@ interface StaffInvitation extends InvitationRow {
 }
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'viewStaff')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

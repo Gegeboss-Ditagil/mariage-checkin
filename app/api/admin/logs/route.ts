@@ -9,7 +9,7 @@ const PAGE_SIZE = 100;
 // toujours borne a l'evenement de l'agent connecte (jamais tous les
 // evenements si ce projet en accueillait plusieurs un jour).
 export async function GET(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);

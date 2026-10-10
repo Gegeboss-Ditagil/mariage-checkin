@@ -13,7 +13,7 @@ import { logServerEvent } from '@/lib/serverLog';
 // reprouvant le secret ACTUEL (comme tout changement de mot de passe
 // classique) -- aucune reinitialisation "a l'aveugle" possible ici.
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { currentSecret, newSecret } = await req.json().catch(() => ({}));

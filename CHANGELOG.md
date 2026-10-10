@@ -3,6 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.78.0] — 2026-10-10
+
+Demande de Gersom : « ajoute une fonction pour les admins qui gèrent les comptes... qu'ils puissent changer le rôle d'un user, ensuite teste que ça fonctionne directement après pour tous les rôles ».
+
+### Constat
+Le changement de rôle existait déjà dans la fiche d'édition de `/admin/users` (v1.36.0), mais il ne « fonctionnait » pas directement :
+- **le rôle était figé dans la session (12 h)** : un compte rétrogradé gardait ses anciens droits, un compte promu n'avait pas les nouveaux, jusqu'à sa prochaine connexion ;
+- **un compte désactivé restait connecté** (la désactivation ne bloquait que la connexion suivante) ;
+- changer un placeur en scanneur obligeait à **ressaisir un PIN**, alors que les deux se connectent de la même façon.
+
+### Corrigé / ajouté
+- **Effet immédiat** : chaque requête serveur relit le rôle et l'état du compte en base (`lib/session.ts`, cache de 3 s ; `forgetAccountState` après une modification). Rôle changé entre rôles « PIN » : la session est réécrite avec le nouveau rôle, sans reconnexion. Passage vers ou depuis admin (mode de connexion différent) ou compte désactivé : déconnexion. Base injoignable : la session est gardée (jamais déconnecter tout le staff pendant une coupure). Logique pure et testée : `lib/sessionRefresh.ts`.
+- **La personne voit son nouveau rôle sans rien faire** : `components/SessionWatcher.tsx` vérifie `/api/auth/me` toutes les 20 s (onglet visible) et au retour sur l'app ; rôle changé -> la page se recharge avec sa nouvelle barre ; compte désactivé -> écran de connexion.
+- **Un seul geste dans `/admin/users`** : entre deux rôles « PIN », le PIN actuel reste valable (message « Son PIN actuel reste valable ; le changement s'applique immédiatement ») ; un nouvel identifiant n'est demandé que pour passer vers ou depuis admin. Son propre rôle n'est pas modifiable (liste grisée, comme la bascule).
+- **Bug trouvé par les nouveaux tests** : `POST /api/agenda` sans `sort_order` échouait (« numeric field overflow » : défaut `Date.now()` trop grand pour la colonne). Défaut : après la dernière activité. L'écran envoyait toujours la valeur, donc aucun utilisateur n'était touché.
+
+### Tests
+- `tests/session-refresh.test.ts` : les 25 combinaisons de rôles (5 × 5), désactivation, compte supprimé, base injoignable, admin principal.
+- `qa/functional/role-change.spec.ts` (navigateur, application complète) : un admin change le rôle d'un compte **déjà connecté ailleurs** vers directeur, scanneur, approbateur, placeur -> rôle, cookie, accès au scanner et écriture d'agenda vérifiés aussitôt, PIN d'origine toujours valable ; vers admin et retour ; désactivation -> 401 immédiat ; dans l'écran, scanneur -> directeur sans PIN, sa session passe à directeur toute seule. 4/4.
+- Parcours métier 9/9 ; `npm test` 552/552.
+
+### Migration
+- Aucune.
+
 ## [1.77.0] — 2026-10-10
 
 Demande de Gersom : « corrige — tu as les droits Supabase » pour la migration 0069 et l'écart entre le dépôt et la production.

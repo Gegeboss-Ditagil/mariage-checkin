@@ -9,7 +9,7 @@ import { hasCapability } from '@/lib/permissions';
 // la table choisie. Meme capacite que /api/move-invitation (deplacement au
 // niveau du groupe entier) : moveGuests.
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'moveGuests')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

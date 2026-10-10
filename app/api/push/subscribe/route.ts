@@ -4,7 +4,7 @@ import { hasCapability } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   // Les placeurs doivent pouvoir s'abonner pour recevoir l'assignation apres
   // la décision, même s'ils n'ont pas le droit d'approuver/refuser.
   if (!user || !hasCapability(user.role, 'viewGuestApprovals')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
