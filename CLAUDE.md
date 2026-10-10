@@ -1,7 +1,7 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.73.0**
-**Dernière mise à jour : 2026-10-08**
+**Version documentaire : 1.73.1**
+**Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
 
@@ -151,6 +151,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.72.0 : **réserves = tables 1 « Maquela do Zombo » et 42** (migration `0066` exécutée et vérifiée en production le 07/10/2026, sauvegarde `import_backups` kind `v1.72.0_reserves_1_42`) — la 42 est réactivée (capacité 10) et dessinée sous la table 1 (PDF seatplan.io (8), qui ne change par ailleurs que le Couloir Sud, réduit en bande). Tables 2-41 normales : 400 places officielles, 420 absolues. `RESERVE_TABLE_NUMBERS = [1, 42]` / `isReserveTableNumber` dans `lib/withjoyImport.ts` (import, mise à jour sûre, plan). Ne pas réexécuter la migration manuellement.
 - v1.72.1 : QA par rôle (PR #131) — `tests/qa-role-matrix.test.ts` verrouille 31 capacités × 5 rôles, les accès écran et les 33 routes API ; écrans d'écriture `/tables/add|move|overflow` gardés par capacité ; 10 routes API passées sur `hasCapability` ; `/offline` public + cache SW v4 ; tableau des rôles de `docs/BUSINESS_RULES.md` corrigé. Migration `0067` exécutée et vérifiée en production le 08/10/2026 : Placeur014/015/016 passent de `agent_checkin` à `placeur` (sauvegarde `import_backups` kind `v1.72.1_placeurs`, effet à la prochaine connexion).
 - v1.73.0 : QA terrain sur Roger Makongo (placeur/scanneur/directeur dans Chrome, tout remis à l'état initial). **Sécurité** : le jeton de `/approve/[token]` n'est plus jamais renvoyé par l'API (`lib/guestApprovalPublic.ts` sur création/réservation/décision). Recherche par mots dans n'importe quel ordre + e accentué + « table N » (`lib/searchFilters.ts`). Bande `/scan` alignée sur le tableau de bord (invitations avec table). Fiche check-in : excédent déjà placé affiché, « Gérer l'excédent » seulement pour le reste, place de réserve inutile signalée. `lib/capacity.ts` ne compte plus l'excédent placé à sa table d'origine. Badges d'approbations synchronisés (`onPendingApprovalsCount`). Aucune migration.
+- v1.73.1 : les scanneurs (`agent_checkin`) tombaient sur l'ancien compteur +/− au lieu de « Qui est arrivé ? » pour toute invitation jamais ouverte (251/279) — la création des lignes nominatives exigeait `manageMembers`, perdu en v1.51.0. `/api/members/ensure` et `/api/members/initialize` exigent désormais `checkin` ; `GuestArrivalPanel.canMaterialize` séparé de `canManage`. Renommage toujours réservé à `manageMembers`. Aucune migration.
 
 ## Reprise rapide pour Claude AI
 

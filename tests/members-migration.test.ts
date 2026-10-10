@@ -24,8 +24,9 @@ test('le correctif reste atomique et audite l avant et l apres', () => {
   assert.match(migration, /'nombre_prevu_ajuste', v_was_adjusted/);
 });
 
-test('la route d initialisation utilise la capacite centrale manageMembers', () => {
-  assert.match(initializeRoute, /hasCapability\(user\.role, 'manageMembers'\)/);
+test('la route d initialisation utilise la capacite centrale checkin (v1.73.1 : scanneur compris)', () => {
+  assert.match(initializeRoute, /hasCapability\(user\.role, 'checkin'\)/);
+  assert.doesNotMatch(initializeRoute, /'manageMembers'/);
   assert.doesNotMatch(initializeRoute, /\['admin', 'directeur', 'placeur', 'agent_checkin'\]/);
 });
 

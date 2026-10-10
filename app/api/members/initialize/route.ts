@@ -5,7 +5,9 @@ import { hasCapability } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || !hasCapability(user.role, 'manageMembers')) {
+  // v1.73.1 : materialiser les noms importes ("Membres: ...") fait partie du
+  // check-in, ce n'est pas un renommage -- ouvert a 'checkin' (scanneur compris).
+  if (!user || !hasCapability(user.role, 'checkin')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 

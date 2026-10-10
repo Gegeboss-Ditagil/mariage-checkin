@@ -142,7 +142,7 @@ test('GuestArrivalPanel se base sur members.length (pas nombre_prevu) pour decid
 test('une ancienne invitation avec compteur agrege retrouve automatiquement ses lignes nominatives et les boutons individuels', () => {
   assert.match(panelSource, /Math\.max\(invitation\.nombre_prevu, invitation\.nombre_arrive, 1\)/);
   assert.match(panelSource, /fetch\('\/api\/members\/ensure'/);
-  assert.match(ensureRouteSource, /hasCapability\(user\.role, 'manageMembers'\)/);
+  assert.match(ensureRouteSource, /hasCapability\(user\.role, 'checkin'\)/);
   assert.match(ensureMigrationSource, /create or replace function ensure_invitation_member_rows/);
   assert.match(ensureMigrationSource, /greatest\(v_inv\.nombre_prevu, v_inv\.nombre_arrive, 1\)/);
   assert.match(ensureMigrationSource, /Accompagnant à nommer/);
@@ -253,4 +253,18 @@ test('guests.is_unplanned distingue un accompagnant ajoute via add_unplanned_arr
 
   const typesSource = readFileSync(new URL('../lib/types.ts', import.meta.url), 'utf8');
   assert.match(typesSource, /is_unplanned: boolean;/);
+});
+
+test('v1.73.1 : un scanneur (checkin sans manageMembers) materialise aussi les lignes -- plus jamais l ancien compteur +/-', async () => {
+  const { hasCapability } = await import('../lib/permissions.ts');
+  assert.equal(hasCapability('agent_checkin', 'checkin'), true);
+  assert.equal(hasCapability('agent_checkin', 'manageMembers'), false);
+  // Les deux branches de materialisation dependent de canMaterialize, jamais de canManage.
+  assert.match(panelSource, /list\.length === 0 && draft\.length > 0 && canMaterialize\)/);
+  assert.match(panelSource, /list\.length < expectedRows && canMaterialize\)/);
+  assert.doesNotMatch(panelSource, /draft\.length > 0 && canManage\)/);
+  assert.doesNotMatch(panelSource, /expectedRows && canManage\)/);
+  assert.match(checkinSource, /const canCheckin = hasCapability\(role, 'checkin'\);/);
+  assert.match(checkinSource, /canMaterialize=\{canCheckin\}/);
+  assert.doesNotMatch(ensureRouteSource, /'manageMembers'/);
 });
