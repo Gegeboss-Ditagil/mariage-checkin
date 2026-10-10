@@ -10,6 +10,8 @@ Suite de v1.76.0 : la première passe complète des tests fonctionnels sur GitHu
 ### Corrigé
 - **La fiche check-in « sautait » à l'affichage sur un appareil lent** (scanneur, invitation jamais ouverte : CLS 0,70 mesuré sur GitHub). L'emplacement « Chargement des membres… » était remplacé par la liste puis par le dessin de la table, repoussant tout ce qui suivait. Ce qui suit le panneau n'apparaît plus qu'une fois sa hauteur définitive connue (`onLayoutReady`), et la ligne « Table N » est réservée dès le premier affichage. Mesuré à 0 avec le processeur ralenti 6 fois ; test permanent ajouté (CLS < 0,1).
 
+- Workflows GitHub (`quality.yml`, `e2e-first-use.yml`) : jeton limité à la lecture (`permissions: contents: read`), signalé par CodeQL.
+
 ### Tests
 - `network-and-concurrency.spec.ts` : nouveau test « téléphone lent » (processeur ×6, CLS < 0,1) ; avant le correctif, la même mesure donnait 0,16 à 0,19 en local et 0,70 sur GitHub. 4/4.
 - Parcours métier : 9/9 ; tests unitaires : 547/547.

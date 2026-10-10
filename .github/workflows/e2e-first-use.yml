@@ -10,6 +10,9 @@ on:
       base_url:
         description: URL du déploiement (aperçu Vercel ou production)
         required: true
+# Jeton GitHub en lecture seule (signalé par CodeQL) : ces tests n'écrivent rien sur le dépôt.
+permissions:
+  contents: read
 jobs:
   e2e:
     runs-on: ubuntu-latest

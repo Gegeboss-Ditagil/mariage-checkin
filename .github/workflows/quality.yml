@@ -17,6 +17,9 @@ on:
         description: 'Balayage « clique partout » aussi sur ordinateur (plus long)'
         type: boolean
         default: false
+# Jeton GitHub en lecture seule (signalé par CodeQL) : ces tests n'écrivent rien sur le dépôt.
+permissions:
+  contents: read
 jobs:
   unitaires:
     runs-on: ubuntu-latest
