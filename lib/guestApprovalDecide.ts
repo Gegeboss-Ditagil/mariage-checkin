@@ -127,10 +127,19 @@ async function finalizeDecision(
   // parcours principal depuis le 02/09/2026 -- voir la branche suivante.
   let tableNumber: number | null = null;
   if (decision === 'approuve' && updated.reserved_table_id && !updated.table_id) {
+    // v1.75.0 : p_relocations ET p_force toujours passes explicitement. Avec
+    // seulement 3 arguments, l'appel correspondait aux DEUX versions de la
+    // fonction presentes en production (0038 sans p_force, 0049 avec) :
+    // Postgres refusait (« function ... is not unique ») et la demande
+    // restait approuvee SANS table, silencieusement -- tout le parcours
+    // « Reconsiderer -> choisir une table » (v1.44.0) etait concerne.
+    // Verrouille par tests/rpc-signatures.test.ts.
     const { data: assigned, error: assignError } = await supabase.rpc('assign_table_to_guest_approval_strict', {
       p_request_id: updated.id,
       p_table_id: updated.reserved_table_id,
       p_agent_id: decidedByAgentId ?? null,
+      p_relocations: [],
+      p_force: false,
     });
     if (!assignError && assigned) {
       const { data: refreshed } = await supabase

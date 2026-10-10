@@ -1,6 +1,6 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.74.0**
+**Version documentaire : 1.75.0**
 **Dernière mise à jour : 2026-10-08**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
@@ -103,6 +103,12 @@ Depuis v1.67.0 (03/10/2026), `POST /api/auth/login` verrouille un compte (les de
 Depuis v1.40.0, `agent_checkin` a aussi `viewAgenda` (jamais `manageAgenda`) — retour de Gersom sur Agent001 : « il ne devrait pas voir en bas à droite staff... il devrait voir agenda à la place ». Ce rôle consulte donc le chronogramme sans le modifier ; `/staff` reste par ailleurs atteignable pour lui via le badge QR "STAFF" depuis `/scan` (`viewStaff` inchangée) — seul le raccourci permanent de la barre du bas remplace Staff par Agenda.
 
 **Excédent placé en réserve (v1.73.0)** : la fiche d’une invitation n’affiche « Gérer l’excédent » que pour la part encore non placée, indique « ✓ N personne(s) placée(s) en réserve (table X) », et signale une place de réserve devenue inutile (arrivée annulée après le placement) avec « Libérer la place en réserve » pour les rôles `manageOverflow` (sinon : prévenir un placeur). Dans les calculs de capacité de l’application (`lib/capacity.ts`), cette personne compte à la table de réserve et n’est plus comptée en plus à la table d’origine.
+
+**Santé de la base (v1.75.0)** : `/admin` affiche « Santé de la base » (`app_health_report`, lecture seule) — chaque fonction SQL appelée par l'application existe en une seule version, colonnes attendues présentes, et règles de données : lignes nominatives ≤ places, aucune table en surcapacité, aucun doublon de personne entre invitations, réserves = tables 1 et 42, aucune demande approuvée réservée sans table, compteur d'arrivées = personnes cochées. Tout échec d'une fonction SQL est journalisé dans `/admin/logs`.
+
+**Réinitialisation des données de test (v1.75.0)** : refusée en mode « live ». Efface arrivées, excédents, exceptions et historique, remet chaque personne « arrivée » à « attendu » et retire les personnes ajoutées sur place ; les « ne viendra pas » et le placement sont conservés.
+
+**Approbateur et fiches de check-in (v1.75.0)** : l'Approbateur (`visibilite`) n'ouvre jamais une fiche de check-in — les lignes de « Tous les invités » ne sont pas cliquables pour lui, placer un invité surprise le ramène à Approbations, et la flèche retour d'Approbations mène à sa page d'arrivée.
 
 **Dessin des tables synchronisé (v1.74.0)** : le dessin d’une table (« Plan de la table · à jour en direct ») montre les personnes réellement placées à cette table — invitations de la table (lignes nominatives hors « ne viendra pas », sinon « Membres: », sinon le nom de l’invitation, complété par « Invité de … » jusqu’à `nombre_prevu`), moins leurs excédents envoyés en réserve, plus les excédents reçus (personne ajoutée sur place en premier, sinon « Excédent · <invitation> »). Les sièges du PDF seatplan.io gardent leur position pour les personnes toujours présentes ; les autres sont libérés ; les nouveaux prennent les premiers sièges libres, puis des sièges supplémentaires si la table déborde. Les chaises du grand plan suivent le même nombre (excédents compris). Affichage seulement : la source de placement reste `invitations.table_id`.
 

@@ -3,6 +3,31 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.75.0] — 2026-10-10
+
+Demande de Gersom après l'analyse « pourquoi nos tests n'ont pas vu ces erreurs » : « corrige tous les 7 points, ajoute les tests, reconsidère aussi tes tests... surtout sur une première utilisation pour tous les rôles ».
+
+### Corrigé
+- **« Reconsidérer → choisir une table » laissait l'invité approuvé SANS table**, sans message. `assign_table_to_guest_approval_strict` existait en deux versions en production (0038 sans `p_force`, 0049 avec) ; l'appel à 3 arguments de `lib/guestApprovalDecide.ts` correspondait aux deux (« function is not unique », confirmé en base) et l'erreur était ignorée. Le code passe désormais tous les arguments ; la migration 0069 supprime l'ancienne version.
+- **Bouton « Réinitialiser les données de test » de `/admin` en échec** : la fonction (0047) n'avait jamais été créée en production. Recréée dans 0069, adaptée au pointage par personne (remet aussi les personnes cochées à « attendu », retire les ajouts sur place).
+- **Approbateur (`visibilite`)** — trouvés par le nouveau test « première utilisation » : toucher un invité dans « Tous les invités » l'envoyait vers une fiche interdite (renvoyé au tableau de bord) ; placer un invité surprise aussi ; la flèche retour d'Approbations menait à Scan. Corrigés.
+- **Migration 0005 absente du dépôt** (appliquée en production le 18/08/2026, jamais versionnée) : restaurée à l'identique depuis l'historique Supabase.
+- Scripts npm `seed` et `reset-test-data` retirés (fichiers inexistants) ; `npm test` lance toute la suite.
+
+### Ajouté
+- **Contrôle de santé de la base** (`app_health_report`, lecture seule, carte « Santé de la base » sur `/admin`, `/api/admin/health`) : 28 fonctions × une seule version, 18 colonnes attendues, contrainte `decided_via`, réserves 1 et 42, lignes nominatives ≤ places, surcapacité, doublons de personnes, demandes approuvées réservées sans table, compteur d'arrivées = personnes cochées. Déjà créé en production : ne signale que les 2 problèmes corrigés par 0069.
+- **Toute erreur SQL est journalisée** dans `/admin/logs` (`lib/rpcErrorLog.ts`, branché une fois dans le client admin) — y compris la réponse HTTP 300 de PostgREST pour une fonction ambiguë.
+- **Tests SQL sur la vraie base sans rien y laisser** (`scripts/sql-tests/01_first_use_flows.sql`) : réserver puis approuver, placement automatique, première ouverture d'une invitation, premier pointage. Exécutés en production le 10/10/2026 : 4/4 OK, aucune ligne conservée.
+- **Parcours de bout en bout « première utilisation »** (`e2e/first-use.spec.ts`, Playwright, iPhone/Android/iPad, 5 rôles) + lancement manuel GitHub (`.github/workflows/e2e-first-use.yml`) + `e2e/README.md`. Non exécutés ici (aperçus Vercel bloqués par le réseau de l'agent, comptes de test à créer).
+- `docs/BACKLOG.md` ; règles §6 de `docs/QE_QA_PROCESS.md` ; scénarios « première utilisation » dans `docs/QA_SCENARIOS.md`.
+
+### Tests
+- `tests/rpc-signatures.test.ts` (vérifié en échec sur l'ancien code), `tests/db-health-report.test.ts`, `tests/rpc-error-log.test.ts`, `tests/first-use-roles.test.ts` (8 tests, dont un balayage de tous les liens de chaque écran pour chaque rôle), `tests/project-hygiene.test.ts`.
+
+### Migration
+- `0069_health_report_reset_fix_strict_overload.sql` : **à exécuter dans l'éditeur SQL Supabase** (l'outil de l'agent expire sur toute instruction de suppression). `app_health_report` y est déjà créée ; le reste (suppression de l'ancienne version, réinitialisation) attend cette exécution.
+- `0005_function_search_path_hardening.sql` : restaurée dans le dépôt, déjà appliquée en production — ne pas réexécuter.
+
 ## [1.74.1] — 2026-10-10
 
 Demande de Gersom (suite de v1.74.0) : « supprime les noms en trop ».

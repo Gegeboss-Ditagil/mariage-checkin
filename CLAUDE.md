@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.74.1**
+**Version documentaire : 1.75.0**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -12,7 +12,7 @@ Avant toute modification, lire dans cet ordre :
 5. `docs/DATA_AND_FORMS.md`
 6. `docs/DATA_CHANGE_INSTRUCTIONS.md`
 7. `docs/QE_QA_PROCESS.md`
-8. `docs/QA_SCENARIOS.md`
+8. `docs/QA_SCENARIOS.md` (et `docs/BACKLOG.md` pour les actions en attente)
 9. `docs/CLAUDE_HANDOFF_STAFF_ACCESS.md` pour tout changement de rôles ou de `/staff`
 10. `README.md`
 
@@ -154,6 +154,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.73.1 : les scanneurs (`agent_checkin`) tombaient sur l'ancien compteur +/− au lieu de « Qui est arrivé ? » pour toute invitation jamais ouverte (251/279) — la création des lignes nominatives exigeait `manageMembers`, perdu en v1.51.0. `/api/members/ensure` et `/api/members/initialize` exigent désormais `checkin` ; `GuestArrivalPanel.canMaterialize` séparé de `canManage`. Renommage toujours réservé à `manageMembers`. Aucune migration.
 - v1.74.0 : le dessin de chaque table (`TableSeatWheel` sur `/plan-table`, `/tables/[tableId]`, `/table/[tableId]` et la fiche « Qui est arrivé ? ») ne lit plus seulement l'export figé `TABLE_SEAT_NAMES` : `lib/liveSeats.ts` + `hooks/useLiveTableSeats.ts` le recalculent depuis `invitations.table_id`, `guests` et `overflow_assignments`, en temps réel. Un invité surprise ou un excédent placé en table 1/42 apparaît par son nom ; une personne déplacée ou « ne viendra pas » libère son siège ; l'ordre du PDF est gardé pour ceux qui sont toujours là. Les chaises du grand plan suivent `computeTableCapacities().occupationEstimee`. Titre du panneau : « Plan de la table · à jour en direct ». Aucune migration ; rien n'est écrit en base.
 - v1.74.1 : migration `0068_remove_extra_member_rows_malungu_lecaous.sql` (demande de Gersom : « supprime les noms en trop ») — retire les lignes nominatives au-delà de `nombre_prevu` : « Sister 1/2 Malungu » et « Keziah Malungu » de « Famille Malungu » (table 2), « Maman Sunette Jean-Baptiste » de « Famille LeCaous » (table 26) ; supprime aussi l'invitation doublon « Famille Kinanga Malungu » (sans table, mêmes membres que la Famille Malungu table 2). Sauvegarde `import_backups` kind `v1.74.1_extra_members` avant suppression, garde-fous (attendu, 0 arrivée), idempotente. **NON appliquée par l'agent** : l'outil Supabase expire (60 s) sur toute suppression dans cet environnement (même blocage qu'en v1.69.2) — à exécuter telle quelle dans l'éditeur SQL Supabase, puis vérifier (7 → 3 lignes sur ces deux invitations, plus aucune « Famille Kinanga Malungu »).
+- v1.75.0 : suite de l'analyse « pourquoi nos tests n'ont pas vu ces erreurs ». Bug corrigé : `assign_table_to_guest_approval_strict` en 2 versions en production → « Reconsidérer → choisir une table » laissait l'invité sans table (code : tous les arguments passés ; 0069 supprime l'ancienne version). Ajouts : `app_health_report()` (déjà créée en production, carte « Santé de la base » sur `/admin`), journalisation de tout échec RPC (`lib/rpcErrorLog.ts` dans le client admin), tests SQL sans trace (`scripts/sql-tests/`), e2e Playwright « première utilisation » par rôle (`e2e/`, à lancer avec des comptes de test), `docs/BACKLOG.md`, règles §6 de `docs/QE_QA_PROCESS.md`. Approbateur : plus de liens vers `/checkin`. Migration 0005 restaurée dans le dépôt (déjà appliquée). **0069 à exécuter par Gersom dans l'éditeur SQL** (suppressions bloquées côté agent).
 
 ## Reprise rapide pour Claude AI
 
@@ -162,5 +163,5 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 3. Pour les approbations, lire ensemble `app/approbations/page.tsx`, `app/approbations/[id]/assign/page.tsx`, `lib/guestApprovalDecide.ts`, `lib/webPush.ts` et les migrations `0038` et `0050`.
 4. Pour la navigation, modifier la source centralisée `components/BottomNav.tsx`; ne pas recopier des menus dans les pages.
 5. Ne pas modifier la règle des rôles sans mettre à jour `lib/permissions.ts`, les routes API, `tests/permissions.test.ts`, `tests/guest-approvals.test.ts` et `docs/BUSINESS_RULES.md` dans le même lot.
-6. Avant livraison : `npx tsc --noEmit`, toutes les suites `node --test tests/*.test.ts`, `npm run build`, puis `git diff --check`.
+6. Avant livraison : `npx tsc --noEmit`, toutes les suites `node --test tests/*.test.ts` (`npm test`), `npm run build`, `git diff --check`, puis le contrôle de santé de la base (`select * from app_health_report() where not ok;`, doit être vide) et, après une migration sur check-in/approbations/membres, `scripts/sql-tests/01_first_use_flows.sql`.
 7. Les prochains changements doivent passer par une branche et une PR pour permettre la révision avant fusion; ne pousser directement sur `main` que si Gersom le demande explicitement.

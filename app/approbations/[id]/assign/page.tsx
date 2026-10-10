@@ -224,7 +224,9 @@ export default function AssignGuestApprovalTablePage() {
         setSubmitting(false);
         return;
       }
-      router.push(mode === 'assign' ? '/checkin/' + data.invitation.id : '/approbations');
+      // v1.75.0 : l'Approbateur (visibilite) peut placer mais n'a pas accès à
+      // /checkin -- il revient à /approbations au lieu d'une page interdite.
+      router.push(mode === 'assign' && hasCapability(role, 'checkin') ? '/checkin/' + data.invitation.id : '/approbations');
     } catch {
       setError('Erreur réseau — réessayez');
       setSubmitting(false);

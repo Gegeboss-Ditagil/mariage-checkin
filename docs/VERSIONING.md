@@ -43,6 +43,7 @@ Les documents suivants décrivent l'état courant et doivent rester alignés :
 - `docs/DATA_CHANGE_INSTRUCTIONS.md`
 - `docs/QE_QA_PROCESS.md`
 - `docs/QA_SCENARIOS.md`
+- `docs/BACKLOG.md`
 - `docs/VERSIONING.md`
 - `CHANGELOG.md`
 

@@ -5,7 +5,7 @@ import { Link } from 'next-view-transitions';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { useSessionRole } from '@/hooks/useSessionRole';
-import { hasCapability } from '@/lib/permissions';
+import { hasCapability, landingPathForRole } from '@/lib/permissions';
 import { PushNotificationButton } from '@/components/PushNotificationButton';
 import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, TrashIcon } from '@/components/icons';
 import { readGuestApprovalsCache, refreshGuestApprovals, warmGuestApprovals } from '@/lib/guestApprovalClientCache';
@@ -73,6 +73,10 @@ const POLL_INTERVAL_MS = 15000;
 
 export default function ApprobationsPage() {
   const role = useSessionRole();
+  // v1.75.0 (test « première utilisation ») : la flèche retour menait à /scan
+  // pour tout le monde -- l'Approbateur (visibilite) n'y a pas accès et était
+  // renvoyé ailleurs. Retour vers la page d'arrivée de chaque rôle.
+  const approvalsBackHref = role ? landingPathForRole(role) : '/scan';
   const initialCache = readGuestApprovalsCache();
   const [requests, setRequests] = useState<ApprovalListItem[]>((initialCache?.requests || []) as ApprovalListItem[]);
   const [loading, setLoading] = useState(!initialCache);
@@ -205,7 +209,7 @@ export default function ApprobationsPage() {
   if (role && !hasCapability(role, 'viewGuestApprovals')) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-2 px-6 text-center">
-        <TopBar title="Approbations" backHref="/scan" />
+        <TopBar title="Approbations" backHref={approvalsBackHref} />
         <p className="mt-8 text-lg font-semibold">Accès réservé</p>
         <p className="text-sm text-text-faint">
           Ce rôle ne peut pas voir les demandes d'approbation.
@@ -217,7 +221,7 @@ export default function ApprobationsPage() {
   return (
     <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar title="Approbations" backHref="/scan" />
+        <TopBar title="Approbations" backHref={approvalsBackHref} />
 
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
           {role && hasCapability(role, 'viewGuestApprovals') && <PushNotificationButton />}
