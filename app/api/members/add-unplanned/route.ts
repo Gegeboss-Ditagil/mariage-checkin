@@ -21,7 +21,7 @@ import { hasCapability } from '@/lib/permissions';
 // (`set-arrival-status`, marquer présents des invités déjà prévus) reste
 // inchangé pour tout le monde.
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'submitGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

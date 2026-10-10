@@ -6,6 +6,7 @@ import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { OnlineIndicator } from '@/components/OnlineIndicator';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { GlobalErrorLogger } from '@/components/GlobalErrorLogger';
+import { SessionWatcher } from '@/components/SessionWatcher';
 import { VIEW_TRANSITION_GUARD_SCRIPT } from '@/lib/viewTransitionGuard';
 
 const displayFont = Playfair_Display({
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ServiceWorkerRegister />
         <OnlineIndicator />
         <GlobalErrorLogger />
+        <SessionWatcher />
         {/*
           Monte au niveau racine (et non sur une seule page) pour que
           l'ecouteur "beforeinstallprompt" soit attache des le tout premier

@@ -6,7 +6,7 @@ import { applyGuestApprovalDecision } from '@/lib/guestApprovalDecide';
 import { decisionResultWithoutSecrets } from '@/lib/guestApprovalPublic';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'reviewGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

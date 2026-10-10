@@ -20,7 +20,7 @@ import { notifyGuestApprovalReviewers } from '@/lib/webPush';
  */
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'submitGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'viewGuestApprovals')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

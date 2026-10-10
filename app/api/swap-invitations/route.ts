@@ -11,7 +11,7 @@ import { hasCapability } from '@/lib/permissions';
  * 0020_bulk_move_and_swap_invitations.sql.
  */
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   // v1.72.1 : capacité centralisée (lib/permissions.ts) au lieu d'une liste
   // de rôles recopiée ici -- mêmes rôles autorisés qu'avant.
   if (!user || !hasCapability(user.role, 'moveGuests')) {

@@ -10,8 +10,8 @@ import { hasCapability, landingPathForRole } from '@/lib/permissions';
 // le code.
 import { version } from '@/package.json';
 
-export default function Home() {
-  const user = getSessionUser();
+export default async function Home() {
+  const user = await getSessionUser();
 
   let next = '/login';
   if (user) {

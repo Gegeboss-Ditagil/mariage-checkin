@@ -4,7 +4,7 @@ import { hasCapability } from '@/lib/permissions';
 import { webPushPublicKey } from '@/lib/webPush';
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   // Toute personne qui voit les demandes peut recevoir une alerte. La
   // décision reste protégée séparément par reviewGuestApproval.
   if (!user || !hasCapability(user.role, 'viewGuestApprovals')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });

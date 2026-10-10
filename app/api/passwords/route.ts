@@ -14,7 +14,7 @@ import { logServerEvent } from '@/lib/serverLog';
 // qui peut reinitialiser/voir quoi.
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'managePasswords')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const supabase = createAdminClient();
@@ -45,7 +45,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'managePasswords')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { id } = await req.json().catch(() => ({}));

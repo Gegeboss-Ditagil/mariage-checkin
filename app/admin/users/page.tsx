@@ -270,7 +270,10 @@ export default function UsersAdminPage() {
                   // mot de passe pour admin, nom + PIN sinon), donc le
                   // nouvel identifiant devient obligatoire au lieu de
                   // facultatif -- voir app/api/admin/users/route.ts.
-                  const missingCredential = roleChanged
+                  // v1.78.0 : seul le passage vers/depuis admin change le mode
+                  // de connexion ; entre rôles « PIN », le PIN actuel reste.
+                  const crossesAdmin = roleChanged && (editRole === 'admin' || u.role === 'admin');
+                  const missingCredential = crossesAdmin
                     ? editRole === 'admin'
                       ? !editEmail.trim() || !editPassword.trim()
                       : !editPin.trim()
@@ -308,6 +311,8 @@ export default function UsersAdminPage() {
                         <select
                           className={inputClass}
                           value={editRole}
+                          disabled={u.isSelf}
+                          title={u.isSelf ? 'Votre propre rôle ne peut pas être changé ici' : undefined}
                           onChange={(e) => setEditRole(e.target.value as Role)}
                         >
                           {ROLE_OPTIONS.map((opt) => (
@@ -318,9 +323,9 @@ export default function UsersAdminPage() {
 
                       {roleChanged && (
                         <p className="text-xs font-medium text-status-partial">
-                          Changement de rôle : {editRole === 'admin' || u.role === 'admin'
-                            ? 'le mode de connexion change, un nouvel identifiant est requis ci-dessous.'
-                            : 'le PIN doit être ressaisi ci-dessous.'}
+                          {crossesAdmin
+                            ? 'Changement de rôle : le mode de connexion change, un nouvel identifiant est requis ci-dessous.'
+                            : `Nouveau rôle : ${ROLE_LABELS[editRole]}. Son PIN actuel reste valable ; le changement s'applique immédiatement.`}
                         </p>
                       )}
 
@@ -335,7 +340,7 @@ export default function UsersAdminPage() {
                           />
                           <input
                             className={inputClass}
-                            placeholder={roleChanged ? 'Mot de passe' : 'Nouveau mot de passe (laisser vide pour ne pas changer)'}
+                            placeholder={crossesAdmin ? 'Mot de passe' : 'Nouveau mot de passe (laisser vide pour ne pas changer)'}
                             type="password"
                             value={editPassword}
                             onChange={(e) => setEditPassword(e.target.value)}
@@ -344,7 +349,7 @@ export default function UsersAdminPage() {
                       ) : (
                         <input
                           className={inputClass}
-                          placeholder={roleChanged ? 'PIN (4 chiffres)' : 'Nouveau PIN (laisser vide pour ne pas changer)'}
+                          placeholder={crossesAdmin ? 'PIN (4 chiffres)' : 'Nouveau PIN (laisser vide pour ne pas changer)'}
                           inputMode="numeric"
                           value={editPin}
                           onChange={(e) => setEditPin(e.target.value)}

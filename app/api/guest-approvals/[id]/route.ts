@@ -21,7 +21,7 @@ import { GUEST_APPROVAL_BUCKET } from '@/lib/guestApprovalPhotos';
  * la nettoyer de la liste.
  */
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'deleteGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

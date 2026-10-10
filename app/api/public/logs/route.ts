@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'message requis' }, { status: 400 });
   }
 
-  const user = getSessionUser();
+  const user = await getSessionUser();
 
   await logServerEvent({
     event_id: user?.event_id ?? null,

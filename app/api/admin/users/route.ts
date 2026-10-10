@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getSessionUser } from '@/lib/session';
+import { forgetAccountState, getSessionUser } from '@/lib/session';
 import { hashSecret } from '@/lib/auth';
 import { canResetPassword, canViewPasswordHint } from '@/lib/permissions';
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const supabase = createAdminClient();
@@ -38,7 +38,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { nom_affichage, role, pin, email, password } = await req.json().catch(() => ({}));
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 const ROLES = ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibilite'];
 
 export async function PATCH(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { id, active, nom_affichage, email, pin, password, role } = await req.json().catch(() => ({}));
@@ -100,6 +100,15 @@ export async function PATCH(req: NextRequest) {
   if (id === user.id && (active === false || (role !== undefined && role !== 'admin'))) {
     return NextResponse.json({ error: 'Vous ne pouvez pas désactiver ni rétrograder votre propre compte' }, { status: 400 });
   }
+
+  const supabase = createAdminClient();
+  const { data: target } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', id)
+    .eq('event_id', user.event_id)
+    .maybeSingle();
+  if (!target) return NextResponse.json({ error: 'Compte introuvable' }, { status: 404 });
 
   const updates: Record<string, unknown> = {};
   if (typeof active === 'boolean') updates.active = active;
@@ -119,7 +128,7 @@ export async function PATCH(req: NextRequest) {
     updates.email = email.trim();
     updates.password_hash = hashSecret(password);
     updates.pin_hash = null;
-  } else if (typeof role === 'string') {
+  } else if (typeof role === 'string' && target.role === 'admin') {
     if (!pin) {
       return NextResponse.json({ error: 'PIN requis pour passer ce compte hors admin' }, { status: 400 });
     }
@@ -127,6 +136,12 @@ export async function PATCH(req: NextRequest) {
     updates.pin_hash = hashSecret(pin);
     updates.email = null;
     updates.password_hash = null;
+  } else if (typeof role === 'string') {
+    // v1.78.0 : entre deux rôles qui se connectent par nom + PIN, le PIN
+    // actuel reste valable -- ne plus le faire ressaisir (« changer le rôle
+    // d'un user » doit être un seul geste). Nouveau PIN facultatif.
+    updates.role = role;
+    if (typeof pin === 'string' && pin.trim()) updates.pin_hash = hashSecret(pin.trim());
   } else {
     // Rôle inchangé : mise à jour normale des identifiants existants.
     if (typeof email === 'string') updates.email = email.trim() || null;
@@ -138,7 +153,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Rien à mettre à jour' }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('users')
     .update(updates)
@@ -151,5 +165,7 @@ export async function PATCH(req: NextRequest) {
     const message = error.code === '23505' ? 'Ce nom est déjà utilisé par un autre compte' : error.message;
     return NextResponse.json({ error: message }, { status: 400 });
   }
+  // Effet immédiat : la prochaine requête de ce compte relit son rôle.
+  forgetAccountState(id);
   return NextResponse.json({ user: data });
 }

@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'checkin')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

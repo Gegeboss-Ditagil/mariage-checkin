@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   // Reserve a l'admin depuis le 30/08/2026 (demande de Gersom) -- capacite
   // centralisee (lib/permissions.ts) plutot que la liste de roles en dur
   // utilisee jusqu'ici, pour rester la seule source de verite.

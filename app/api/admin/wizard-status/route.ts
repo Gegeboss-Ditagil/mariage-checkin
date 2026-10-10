@@ -7,7 +7,7 @@ import { getSessionUser } from '@/lib/session';
  * l'assistant en 9 etapes (/admin/wizard). Lecture seule, aucune ecriture.
  */
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const supabase = createAdminClient();

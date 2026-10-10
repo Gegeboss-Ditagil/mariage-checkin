@@ -17,7 +17,7 @@ import { GuestApprovalRequestRow } from '@/lib/types';
  * (assignGuestApproval) -- ce sont les mêmes rôles qui placent les tables.
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'assignGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

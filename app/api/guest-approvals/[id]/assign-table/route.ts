@@ -15,7 +15,7 @@ import { notifyGuestApprovalPlaceurs } from '@/lib/webPush';
  * sur une demande déjà approuvée par SMS, pas un droit général d'ajout.
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'assignGuestApproval')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }

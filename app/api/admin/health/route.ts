@@ -11,7 +11,7 @@ import { hasCapability } from '@/lib/permissions';
  * Réservé à l'admin (adminPanel).
  */
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !hasCapability(user.role, 'adminPanel')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
