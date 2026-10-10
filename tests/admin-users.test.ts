@@ -14,7 +14,9 @@ const cssSource = readFileSync(new URL('../app/globals.css', import.meta.url), '
 test('Actif/Désactivé est une vraie bascule en verre liquide (glass-toggle), plus un badge texte cliquable', () => {
   assert.match(pageSource, /role="switch"/);
   assert.match(pageSource, /aria-checked=\{u\.active\}/);
-  assert.match(pageSource, /className=\{'glass-toggle' \+ \(u\.active \? ' glass-toggle-on' : ''\)\}/);
+  // v1.76.0 : bascule grisée pour son propre compte -- le comportement est
+  // vérifié dans le navigateur (qa/functional/business-flows.spec.ts).
+  assert.match(pageSource, /'glass-toggle' \+ \(u\.active \? ' glass-toggle-on' : ''\)/);
   assert.doesNotMatch(pageSource, /bg-status-complete\/10 text-status-complete/);
   assert.match(cssSource, /\.glass-toggle \{/);
   assert.match(cssSource, /\.glass-toggle-on \{/);

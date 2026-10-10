@@ -24,3 +24,6 @@ __pycache__/
 # vercel
 .vercel
 
+.qa/
+scripts/qa-stack/.env.qa
+test-results/

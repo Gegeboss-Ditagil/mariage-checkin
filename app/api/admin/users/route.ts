@@ -32,6 +32,7 @@ export async function GET() {
     created_at: row.created_at,
     canReset: canResetPassword(user, row.role),
     hint: canViewHints ? row.pin_reset_hint : undefined,
+    isSelf: row.id === user.id,
   }));
   return NextResponse.json({ users, canViewHints });
 }
@@ -92,6 +93,12 @@ export async function PATCH(req: NextRequest) {
   }
   if (role !== undefined && !ROLES.includes(role)) {
     return NextResponse.json({ error: 'Rôle invalide' }, { status: 400 });
+  }
+  // v1.76.0, trouvé par le balayage « clique partout » : un admin pouvait
+  // désactiver ou rétrograder SON PROPRE compte d'un seul geste et ne plus
+  // pouvoir se reconnecter (ni personne pour le réactiver s'il est le seul).
+  if (id === user.id && (active === false || (role !== undefined && role !== 'admin'))) {
+    return NextResponse.json({ error: 'Vous ne pouvez pas désactiver ni rétrograder votre propre compte' }, { status: 400 });
   }
 
   const updates: Record<string, unknown> = {};

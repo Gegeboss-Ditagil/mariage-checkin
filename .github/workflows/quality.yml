@@ -1,0 +1,82 @@
+# v1.76.0 -- contrôle qualité AUTOMATIQUE sur chaque PR (jusqu'ici, aucun test
+# ne tournait sur GitHub : tout dépendait d'un lancement manuel).
+#   1. types + 550 tests unitaires + build de production ;
+#   2. base reconstruite depuis TOUTES les migrations du dépôt + contrôle de
+#      santé (une migration qui ne se rejoue pas, ou une base incohérente,
+#      bloque la PR) ;
+#   3. tests fonctionnels dans un vrai navigateur (iPhone, Android, iPad,
+#      ordinateur) sur l'application complète + base de test : chaque rôle,
+#      chaque page, chaque bouton, parcours métier, réseau faible, simultanéité.
+# Jamais la production : base PostgreSQL éphémère et données synthétiques.
+name: Qualité
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      balayage_complet:
+        description: 'Balayage « clique partout » aussi sur ordinateur (plus long)'
+        type: boolean
+        default: false
+jobs:
+  unitaires:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: build-only
+          SUPABASE_SERVICE_ROLE_KEY: build-only
+          SESSION_SECRET: build-only-secret-build-only-secret
+
+  fonctionnels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 20
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Base de test depuis toutes les migrations
+        run: scripts/qa-stack/build-db.sh
+      - name: Contrôle de santé de la base de test
+        run: |
+          bad=$(psql -d app -At -c "select check_name || ' : ' || detail from app_health_report() where not ok")
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      - name: PostgREST
+        run: |
+          curl -sSL -o /tmp/pgrst.tar.xz https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz
+          tar -C /tmp -xf /tmp/pgrst.tar.xz
+      - run: npx playwright install --with-deps chromium
+      - name: Application + base de test
+        run: QA_POSTGREST_BIN=/tmp/postgrest scripts/qa-stack/start.sh
+      - name: Tests fonctionnels
+        env:
+          QA_CRAWL_ALL: ${{ inputs.balayage_complet && '1' || '' }}
+        run: |
+          set -a; . scripts/qa-stack/.env.qa; set +a
+          npx playwright test -c playwright.functional.config.ts
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-fonctionnels
+          path: |
+            test-results
+            .qa

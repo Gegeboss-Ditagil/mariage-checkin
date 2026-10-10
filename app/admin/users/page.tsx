@@ -61,6 +61,8 @@ export default function UsersAdminPage() {
   useEffect(load, []);
 
   async function resetPassword(u: UserRow) {
+    // v1.76.0 : même confirmation que /mots-de-passe -- jamais d'un seul toucher.
+    if (!window.confirm(`Générer un nouveau code pour « ${u.nom_affichage} » ? Son code actuel ne fonctionnera plus.`)) return;
     setResetError(null);
     setResettingId(u.id);
     const res = await fetch('/api/passwords', {
@@ -102,6 +104,9 @@ export default function UsersAdminPage() {
   }
 
   async function toggleActive(u: UserRow) {
+    // v1.76.0 : désactiver un compte le déconnecte de l'app (ex. un scanneur
+    // en plein jour J) -- jamais d'un seul geste accidentel.
+    if (u.active && !window.confirm(`Désactiver le compte « ${u.nom_affichage} » ? Il ne pourra plus se connecter.`)) return;
     await fetch('/api/admin/users', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -248,7 +253,9 @@ export default function UsersAdminPage() {
                     role="switch"
                     aria-checked={u.active}
                     aria-label={(u.active ? 'Désactiver ' : 'Activer ') + u.nom_affichage}
-                    className={'glass-toggle' + (u.active ? ' glass-toggle-on' : '')}
+                    className={'glass-toggle' + (u.active ? ' glass-toggle-on' : '') + (u.isSelf ? ' opacity-50' : '')}
+                    disabled={u.isSelf}
+                    title={u.isSelf ? 'Votre propre compte ne peut pas être désactivé' : undefined}
                     onClick={() => toggleActive(u)}
                   >
                     <span aria-hidden className={'glass-toggle-thumb' + (u.active ? ' glass-toggle-thumb-on' : '')} />

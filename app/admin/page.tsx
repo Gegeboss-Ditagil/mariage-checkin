@@ -41,6 +41,11 @@ export default function AdminHome() {
   }, []);
 
   async function setStatus(status: string) {
+    // v1.76.0 (balayage « clique partout ») : changer de mode d'un seul
+    // toucher pouvait sortir du « JOUR J » -- ce qui rouvre la
+    // réinitialisation des arrivées. Toujours confirmer.
+    if (event && status === event.status) return;
+    if (!window.confirm(`Passer l'événement en mode « ${STATUS_LABELS[status] ?? status} » ?`)) return;
     setBusy(true);
     setMessage(null);
     const res = await fetch('/api/admin/event', {
