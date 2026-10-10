@@ -1,6 +1,6 @@
 # Migrations : dépôt ↔ production
 
-**Version documentaire : 1.79.0**
+**Version documentaire : 1.79.1**
 **Dernière mise à jour : 2026-10-10**
 
 Une ligne par fichier de `supabase/migrations/`. `tests/migration-history.test.ts` échoue si un fichier manque ici : toute nouvelle migration doit dire si elle est appliquée en production.
@@ -87,7 +87,8 @@ Vérifié en production table par table (fonctions, colonnes, données). Toutes 
 | `0067_placeur014_016_role_placeur.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
 | `0068_remove_extra_member_rows_malungu_lecaous.sql` | Appliquée à la main, inscrite à l'historique le 10/10/2026 (effets vérifiés) |
 | `0069_health_report_reset_fix_strict_overload.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL, script `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`) ; contrôle de santé vérifié vide |
-| `0070_reset_removes_test_surprise_guests.sql` | **À exécuter par Gersom** dans l'éditeur SQL (v1.79.0), puis inscrire : `insert into supabase_migrations.schema_migrations (version, name, created_by) values ('0070', '0070_reset_removes_test_surprise_guests', 'editeur SQL, v1.79.0') on conflict (version) do nothing;` |
+| `0070_reset_removes_test_surprise_guests.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; bouton rouge pressé en Mode test, effets vérifiés (invités surprise et scans effacés) |
+| `0071_remove_invitations_without_table_groups_1_3.sql` | **À exécuter par Gersom** dans l'éditeur SQL (v1.79.1), puis inscrire : `insert into supabase_migrations.schema_migrations (version, name, created_by) values ('0071', '0071_remove_invitations_without_table_groups_1_3', 'editeur SQL, v1.79.1') on conflict (version) do nothing;` |
 
 ## Hors dépôt, trouvé en production
 
