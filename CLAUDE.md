@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.79.0**
+**Version documentaire : 1.79.1**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -160,6 +160,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.77.0 : historique des migrations de production réconcilié (33 migrations inscrites après vérification, 0041 appliquée) ; **0069 + nettoyage de l'historique à exécuter par Gersom** (`supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`). Lire `docs/MIGRATIONS_PRODUCTION.md` avant toute migration : version à 4 chiffres uniquement dans l'historique, jamais `apply_migration` (il enregistre une version horodatée), suppressions via un script `supabase/manual/`. Tables `canada_jets_*` (autre projet) trouvées en base, laissées en attente de décision.
 - v1.78.0 : changement de rôle effectif immédiatement — `getSessionUser()` est désormais **asynchrone** (`await getSessionUser()` partout) et relit rôle/actif en base (`lib/session.ts`, `lib/sessionRefresh.ts`, cache 3 s, `forgetAccountState` après modification) ; `components/SessionWatcher.tsx` + `/api/auth/me` (ouvert à tout compte connecté dans `middleware.ts`) rechargent la page d'un compte dont le rôle a changé ; entre rôles « PIN », le PIN est conservé. Test navigateur : `qa/functional/role-change.spec.ts`.
 - v1.79.0 : la réinitialisation des données de test (`reset_test_event_data`, migration `0070`, **à exécuter par Gersom dans l'éditeur SQL**) efface aussi les invités surprise approuvés (note « Invité surprise approuvé… » ET `withjoy_party_id` nul) et les demandes d'approbation ; toujours refusée en mode `live`. `/admin` explique chaque mode et grise le bouton rouge en JOUR J. Les modes ne changent PAS ce que les agents peuvent faire : seul le bouton rouge en dépend. Test : `qa/functional/test-mode-reset.spec.ts`.
+- v1.79.1 : 0070 appliquée et bouton rouge pressé par Gersom (vérifié). Migration `0071` (**à exécuter par Gersom dans l'éditeur SQL**) supprime 9 invitations sans table demandées (groupes 1-3 : « ne viendra pas », Waku Menga, Flora Landu, fiche fantôme Odette Muzezenu mulumba — jamais « Odette Manuel », table 31), sauvegarde `import_backups` kind `v1.79.1_sans_table`. Comparaison `guest-list_65.csv` / plan seatplan.io du 10/10 / base : écarts listés dans CHANGELOG 1.79.1, **aucun placement modifié** sans décision de Gersom.
 
 ## Reprise rapide pour Claude AI
 

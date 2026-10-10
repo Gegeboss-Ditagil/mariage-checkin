@@ -3,6 +3,26 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.79.1] — 2026-10-10
+
+Demande de Gersom : « Groupe 1 delete / groupe 2 delete / groupe 3 delete » + « voici le dernier export With Joy (`guest-list_65.csv`) et le dernier export seatplan.io (plan du 10/10/2026) : assure-toi que ça correspond, puis donne-moi les erreurs à corriger ».
+
+### Données
+- **Migration 0071** (à exécuter dans l'éditeur SQL) : supprime les 9 invitations sans table demandées. Groupe 1 (« ne viendra pas ») : Ya Dany Culumbu, Rene Herrera, Henry karl Jeantine, Famille Nzuzi Culumbu, deux « Famille Lumbu ». Groupe 2 : Waku Menga, Flora Landu. Groupe 3 : fiche fantôme « Odette Muzezenu mulumba » (pas « Odette Manuel », table 31). Vérifié avant : 0 arrivée, 0 scan, 0 excédent, aucune n'est dans le CSV ni sur le plan. Sauvegarde `import_backups` (kind `v1.79.1_sans_table`), garde-fous par identifiant exact, idempotente.
+- 0070 appliquée et bouton rouge pressé par Gersom : vérifié (invités surprise Sergio/Test effacés, 0 scan).
+
+### Comparaison With Joy / seatplan.io / app (aucun placement modifié)
+CSV : 420 personnes, 400 avec une table. Plan : 409 places nommées sur 431, tables 1 et 42 vides (réserves).
+- **Tables qui ne correspondent pas** : Jean-Clivens Le Caous et Cedrik LeCaous (CSV table 26, plan 27) ; Pajos Mpapa (CSV 6, plan 13) ; Danyl Mbidi (CSV 13, plan 6) ; Lys Landu (CSV et plan 30, app 41) ; Roger Makongo (CSV et plan 41, app 30).
+- **Dans le CSV mais pas dans l'app** : Greg, Maeva et Julia Moussaoui (table 41 ; l'app a « Famille Pierrefitte » à leur place : renommage probable) ; Aissatou et Mariame Doumbia (table 26, réponse vide dans With Joy) ; « victor daniel » / « Additional Guest 1 daniel » (sans table dans le CSV, table 21 dans l'app et sur le plan).
+- **Dans le CSV mais pas sur le plan** : Frank Mbonda et Mademoissele Isokolele (table 27) ; Steven Kimbau (table 31, retiré de l'app en v1.71.0).
+- **Orthographe différente entre CSV et plan** (même personne) : Alyson Choy / Alyson Kai, Acacia Nsasi / Nzasi, Jacquie / Jackie Menga, Helda / Elda Makuntima, Lale Culumbu / Ya Lale Yezi, Julie / Tata Julie Indanda, Bob Culumbu / Milo Bob Mabata, Weplo Culumbu / Weplo Antoine, Sylvie Culumbu / Sylvie Weplo, Rafael Opetum Isei / Rafael O. I. Ngalula, FOFO JAH / Kizombeira Beijinho, Epouse Mvovi / « Invité n. n. 338 », Artiste Amy Eliano ×2 / « Accompagnateur Amy Eliano » ×2, Epouse Domingos / « Accompagnant non-nommé ». Plan seul : « Bana t. S. 2 » (table 15).
+- **Dans l'app mais plus dans le CSV** : Ashnee Barclay, Famille Mwinba, Lina Kumpesa (toutes « ne viendra pas »), Grâce Ndonga et Sister 1 Malungu (sans table, attendues).
+
+### Tests
+- 0071 rejouée sur la base locale dans une transaction annulée : invitations et lignes nominatives supprimées, sauvegarde créée une seule fois, deuxième exécution sans effet.
+- `npm test`.
+
 ## [1.79.0] — 2026-10-10
 
 Signalé par Gersom (capture de `/admin`) : « Sergio et Test, mis en table 1 pendant le mode test, sont encore là... quand j'appuie sur le bouton rouge, ça devrait les enlever » + « explique-moi la différence entre les modes ».

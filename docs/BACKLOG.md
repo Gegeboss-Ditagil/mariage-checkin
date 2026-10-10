@@ -1,6 +1,6 @@
 # Backlog — limites connues et actions en attente
 
-**Version documentaire : 1.79.0**
+**Version documentaire : 1.79.1**
 **Dernière mise à jour : 2026-10-10**
 
 Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » dans une PR ou le CHANGELOG est ajoutée ici, avec un responsable, puis retirée quand elle est traitée. Le CHANGELOG raconte ce qui a été fait ; ce fichier dit ce qui reste à faire.
@@ -16,4 +16,6 @@ Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » d
 | 7 | Rendre obligatoire le check « Qualité » (GitHub → Settings → Branches → règle sur `main` → « Require status checks ») | Sans cette règle, une PR rouge peut encore être fusionnée. | Gersom | À faire |
 | 8 | Vérifier à la main sur un vrai iPhone avant le jour J : lecture d'un vrai QR, photo « Invité surprise », notifications Push, installation de l'app | Les tests automatiques simulent la caméra et ne peuvent pas recevoir de Push réel. | Gersom + 1 scanneur | Avant le jour J |
 | 9 | Supprimer les tables `canada_jets_leads` / `canada_jets_lead_events` (autre projet, vides, aucune dépendance) | Une règle permettait à quiconque possède la clé publique de l'app d'y insérer des lignes. Suppression décidée par Gersom le 10/10/2026, SQL fourni (éditeur SQL). | Gersom | **Fait le 10/10/2026** (vérifié) |
-| 10 | Exécuter `supabase/migrations/0070_reset_removes_test_surprise_guests.sql` dans l'éditeur SQL (+ l'inscription d'historique de `docs/MIGRATIONS_PRODUCTION.md`), puis bouton rouge en Mode test | Sans elle, le bouton rouge laisse les invités surprise des essais (Sergio, Test). | Gersom | À faire |
+| 10 | Exécuter `supabase/migrations/0070_reset_removes_test_surprise_guests.sql` dans l'éditeur SQL (+ l'inscription d'historique de `docs/MIGRATIONS_PRODUCTION.md`), puis bouton rouge en Mode test | Sans elle, le bouton rouge laisse les invités surprise des essais (Sergio, Test). | Gersom | **Fait le 10/10/2026** (vérifié) |
+| 11 | Exécuter `supabase/migrations/0071_remove_invitations_without_table_groups_1_3.sql` dans l'éditeur SQL (+ inscription d'historique, `docs/MIGRATIONS_PRODUCTION.md`) | Supprime les 9 invitations sans table demandées (groupes 1-3). | Gersom | À faire |
+| 12 | Trancher les écarts With Joy / seatplan.io / base listés dans CHANGELOG 1.79.1 (tables 26/27, 6/13, 30/41, Moussaoui, Doumbia…) | Le plan papier, With Joy et l'app ne disent pas encore la même chose pour ces personnes. | Gersom, puis agent | À faire |
