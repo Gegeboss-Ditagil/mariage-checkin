@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.81.0] — 2026-10-11
+
+Demande de Gersom (capture « Google Play Protect — Appli non sécurisée bloquée — Cette application a été conçue pour une version plus ancienne d'Android », « Check-in ») : beaucoup d'utilisateurs Android ne peuvent pas installer l'app.
+
+### Cause
+- Le dépôt ne contient aucun APK : sur Android, « installer » la PWA fait fabriquer un APK (WebAPK) par le **navigateur**. Chrome passe par Google (APK à jour, jamais bloqué). Samsung Internet et d'autres navigateurs constructeurs (Xiaomi, Huawei…) fabriquent leur propre APK, qui vise une ancienne version d'Android : Android 14+ / Play Protect le bloquent. Problème connu côté Samsung, non corrigé (SamsungInternet/support#123). Aucun réglage du manifest ne change la cible de cet APK.
+
+### Correction
+- `lib/installPlatform.ts` (nouveau) : détection par user-agent (Chrome Android / autre navigateur Android / WebView WhatsApp-Facebook / iOS), lien `intent://` qui rouvre la même page dans Chrome (`?install=chrome`, repli fiche Play Store de Chrome).
+- `components/InstallAppButton.tsx` : hors Chrome sur Android, le bouton devient « ⬇ Installer via Chrome », n'appelle **jamais** le prompt natif du navigateur, explique le message Play Protect (pas un virus) et propose « Ouvrir dans Chrome ». À l'arrivée dans Chrome, l'aide s'ouvre directement avec un bouton « Installer » (prompt natif Chrome). iOS et ordinateur inchangés.
+- `public/manifest.json` : `id: "/"` (identité stable de l'app installée).
+
+### Tests
+- `tests/android-install.test.ts` (nouveau, 12 tests, `npm run test:androidinstall`) : user-agents réels Chrome, Samsung Internet, Xiaomi, Huawei, Opera, Edge, Firefox, WebView, Facebook, iPhone, ordinateur ; lien intent ; retrait de `?install=chrome` ; jamais de prompt natif hors Chrome ; manifest.
+- `docs/QA_SCENARIOS.md` : scénario manuel sur un vrai Samsung.
+
+Aucune migration.
+
 ## [1.80.1] — 2026-10-11
 
 Demande de Gersom : « update commit et merge » (`guest-list_69.csv`, seating-chart seatplan.io du 10/10 (5)).

@@ -219,6 +219,14 @@ Remplace entièrement le scénario « Thème clair/sombre — v1.20.0 » ci-dess
 - Toucher 🪑 → identique à l'ancien comportement du bouton unique 📍 (v1.48.8/v1.48.9) : met en évidence le/les siège(s) de cet invité sur le dessin en bas de la même page et y fait défiler. N'apparaît que si son nom correspond exactement à un siège connu de cette table.
 - Toucher ✅ → ouvre directement `/checkin/[invitationId]`, identique au tap sur le nom.
 
+## Installation Android sans blocage Play Protect — v1.81.0
+
+- Sur un Samsung (Android 14+), ouvrir `/login` dans **Samsung Internet** : le bouton affiche « ⬇ Installer via Chrome » ; le toucher montre l'explication Play Protect et « Ouvrir dans Chrome ». Le menu du navigateur ne doit pas être utilisé pour installer.
+- « Ouvrir dans Chrome » rouvre `/login` dans Chrome avec l'aide déjà ouverte ; « Installer » déclenche l'installation Chrome ; l'icône « Check-in » s'installe **sans** message Play Protect. L'URL ne garde pas `?install=chrome`.
+- Même parcours depuis un lien ouvert dans WhatsApp (navigateur intégré).
+- Sans Chrome installé : la fiche Play Store de Chrome s'ouvre.
+- Chrome Android : le bouton « ⬇ Installer l'app » déclenche directement l'installation (inchangé). iPhone : étapes Safari (inchangé).
+
 ## Contrôle de version avant merge
 
 - Vérifier `package.json`.

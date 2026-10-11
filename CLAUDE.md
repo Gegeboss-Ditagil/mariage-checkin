@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.80.1**
+**Version documentaire : 1.81.0**
 **Dernière mise à jour : 2026-10-11**
 
 Avant toute modification, lire dans cet ordre :
@@ -165,6 +165,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.79.3 : 0072 appliquée par Gersom (vérifié, 262 invitations). Migration `0073` (**à exécuter par Gersom dans l'éditeur SQL**) : guest-list_67 — Danyl Mbidi → 6, Pajos Mpapa → 13, les deux LeCaous → 27, Famille Doumbia ajoutée (table 26), Frank Mbonda supprimé, Famille Isolokele ramenée à Karl ; sauvegarde kind `v1.79.3_guest_list_67`. With Joy, le plan du 10/10 et l'app concordent, sauf Steven Kimbau (encore dans With Joy). `lib/floorPlanSeats.ts` : tous les sièges du plan correspondent à une personne de l'app.
 - v1.80.0 : guest-list_68 + plan seatplan du 10/10 (4) — migration `0074` appliquée et vérifiée en production le 11/10/2026 (sauvegarde `v1.80.0_guest_list_68`) : Luis & Gaby Dos Goncalves, Famille Mabata nommée (table 38) + Merline Mabata (table 40), Edoly Lukoki retirée, Eude Matondo ↔ Luzolo Patrick Menga (31/36). Le plan fait foi sur les placements (étiquettes With Joy restées anciennes pour 3 personnes). `lib/floorPlanSeats.ts` : 7 tables reprises du plan, table 39 remise à 10 cases. Ne pas réexécuter 0074 manuellement.
 - v1.80.1 : guest-list_69/70 + plan (5)/(6) — migrations `0075` et `0076` appliquées et vérifiées le 11/10/2026 : prénoms réels des Culumbu (table 7 : Epouse Gilie, Anderson, Merveille, Angelino, Juliana et Gloria — 7 places), « Dikalvin Mabata », Nedy Simao retirée. Eude Matondo (31) et Luzolo Patrick Menga (36) : plan et With Joy 70 concordent. 262 invitations, 0 table en surcapacité.
+- v1.81.0 : « Appli non sécurisée bloquée » (Play Protect) sur Android — l'APK de la PWA est fabriqué par le navigateur ; Samsung Internet & co. en produisent un trop ancien. `lib/installPlatform.ts` + `InstallAppButton` : hors Chrome sur Android, jamais de prompt natif, « Ouvrir dans Chrome » (`intent://`, `?install=chrome`). Manifest `id: "/"`. Ne jamais réactiver l'installation depuis Samsung Internet. Tests `tests/android-install.test.ts`. Aucune migration.
 
 ## Reprise rapide pour Claude AI
 
