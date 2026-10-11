@@ -116,7 +116,10 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   // pour admin. directeur n'a jamais adminPanel (donc jamais
   // Administration) : reste son SEUL point d'entrée vers managePasswords,
   // le lien lui reste donc visible, aucune régression d'accès.
-  const canManagePasswords = hasCapability(role, 'managePasswords') && !canAdmin;
+  // v1.81.0 : le directeur n'a plus un lien « Mots de passe » mais « Gestion
+  // des comptes » (/admin/users, mêmes actions que l'admin sauf sur un compte
+  // admin), juste sous « Mon mot de passe ». Admin y accède via Administration.
+  const canManageAccounts = hasCapability(role, 'manageAccounts') && !canAdmin;
 
   return (
     // En paysage, la barre de navigation devient une bande verticale collee
@@ -221,7 +224,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
                 "Mots de passe" ci-dessous (reinitialiser le compte
                 d'AUTRUI, reserve a managePasswords). */}
             <Link role="menuitem" href="/mon-mot-de-passe" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">🔑 Mon mot de passe</Link>
-            {canManagePasswords && <Link role="menuitem" href="/mots-de-passe" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">🔑 Mots de passe</Link>}
+            {canManageAccounts && <Link role="menuitem" href="/admin/users" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">👥 Gestion des comptes</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Administration</Link>}
           </div>
           <button role="menuitem" type="button" onClick={handleLogout} disabled={loggingOut} className="mt-2 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-status-over hover:bg-status-over/10 disabled:opacity-40">

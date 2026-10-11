@@ -57,12 +57,12 @@ test('menu du compte : chaque lien n’est montré qu’aux rôles qui peuvent l
   const menu = read('components/AccountMenu.tsx');
   assert.match(menu, /href="\/mon-mot-de-passe"/);
   assert.match(menu, /\{canHistory && <Link role="menuitem" href="\/history"/);
-  assert.match(menu, /\{canManagePasswords && <Link role="menuitem" href="\/mots-de-passe"/);
+  assert.match(menu, /\{canManageAccounts && <Link role="menuitem" href="\/admin\/users"/);
   assert.match(menu, /\{canAdmin && <Link role="menuitem" href="\/admin"/);
   for (const role of ROLES) {
     assert.ok(canAccessPath(role, '/mon-mot-de-passe'), `${role} : /mon-mot-de-passe interdit`);
     if (hasCapability(role, 'viewGuestApprovals')) assert.ok(canAccessPath(role, '/approbations'), role);
-    if (hasCapability(role, 'managePasswords')) assert.ok(canAccessPath(role, '/mots-de-passe'), role);
+    if (hasCapability(role, 'manageAccounts')) assert.ok(canAccessPath(role, '/admin/users'), role);
     if (hasCapability(role, 'adminPanel')) assert.ok(canAccessPath(role, '/admin'), role);
   }
 });
@@ -129,7 +129,6 @@ test('écrans d’écriture : ouverts seulement aux rôles que l’API acceptera
     ['/tables/add', 'addInvitation'],
     ['/tables/move/x', 'moveGuests'],
     ['/tables/overflow/x', 'manageOverflow'],
-    ['/mots-de-passe', 'managePasswords'],
     ['/agenda', 'viewAgenda'],
   ];
   for (const role of ROLES) {

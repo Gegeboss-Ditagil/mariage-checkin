@@ -3,6 +3,24 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.82.0] — 2026-10-11
+
+Demande de Gersom : le directeur de festin (Rémy et les autres) obtient « Gestion des comptes » au lieu du simple lien « Mots de passe ».
+
+### Changements
+- Menu du compte (haut à droite) : pour `directeur`, sous « Mon mot de passe », le lien « Mots de passe » est remplacé par « 👥 Gestion des comptes » → `/admin/users`. Admin inchangé (Administration → Comptes de l'équipe).
+- Nouvelle capacité `manageAccounts` (admin, directeur) et fonction `canManageAccount(actor, targetRole)` dans `lib/permissions.ts`, seule source de décision.
+- `/admin/users` et `/api/admin/users` (GET/POST/PATCH) ouverts au directeur : créer un compte, renommer, activer/désactiver, changer le rôle/PIN, réinitialiser (route `/api/passwords`, inchangée).
+- **Sauf pour les comptes admin** : le directeur les voit (« Réservé aux admins »), ne peut ni les modifier, ni en créer, ni promouvoir un compte en admin (refus 403 côté API, pas seulement dans l'écran). Le rôle admin n'apparaît pas dans ses listes de rôles.
+- Protection de son propre compte étendue : personne ne peut se désactiver ni changer son propre rôle (avant : seul le cas « admin rétrogradé »).
+- Écran : titre « Gestion des comptes » et retour vers le tableau de bord pour le directeur (il n'a pas accès à `/admin`).
+- **Page `/mots-de-passe` supprimée** (demande de Gersom : plus nécessaire) : « Réinitialiser » vit dans la fiche d'un compte sur `/admin/users`. L'API `POST /api/passwords` (capacité `managePasswords`) reste, c'est elle que ce bouton appelle.
+
+### Tests
+- `tests/password-management.test.ts` (nouveau test + 2 mis à jour), `tests/first-use-roles.test.ts`, `tests/qa-role-matrix.test.ts` (capacité `manageAccounts`, chemin `/admin/users`). 2 échecs préexistants sur `main`, sans lien (GuestArrivalPanel / surbrillance de siège).
+
+Aucune migration.
+
 ## [1.81.0] — 2026-10-11
 
 Demande de Gersom (capture « Google Play Protect — Appli non sécurisée bloquée — Cette application a été conçue pour une version plus ancienne d'Android », « Check-in ») : beaucoup d'utilisateurs Android ne peuvent pas installer l'app.

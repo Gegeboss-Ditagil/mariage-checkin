@@ -76,7 +76,6 @@ const LANDSCAPE_SHELL_PAGES = [
   // hauteur restante en une bande etroite, ecrasant le contenu de la page a un
   // sliver quasi invisible (retour de Gersom, capture d'ecran /mon-mot-de-passe).
   '../app/mon-mot-de-passe/page.tsx',
-  '../app/mots-de-passe/page.tsx',
 ];
 
 test("chaque ecran principal est ancre au viewport reel (position fixed + hauteur explicite 100svh) plutot que seulement dimensionne par h-dvh, sans changer le flex interne (BottomNav garde sa place, aucun padding a ajouter)", () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import { canAccessPath, canResetPassword, canViewPasswordHint, hasCapability } from '../lib/permissions.ts';
+import { existsSync, readFileSync } from 'node:fs';
+import { canAccessPath, canManageAccount, canResetPassword, canViewPasswordHint, hasCapability } from '../lib/permissions.ts';
 import { generateRandomPin, maskPinForHint } from '../lib/passwordReset.ts';
 import type { Role } from '../lib/types.ts';
 
@@ -59,13 +59,14 @@ test("canViewPasswordHint : réservé au compte is_super_admin, jamais à un adm
   assert.equal(canViewPasswordHint({}), false);
 });
 
-test("canAccessPath('/mots-de-passe') : admin et directeur seulement", () => {
-  assert.equal(canAccessPath('admin', '/mots-de-passe'), true);
-  assert.equal(canAccessPath('directeur', '/mots-de-passe'), true);
-  assert.equal(canAccessPath('placeur', '/mots-de-passe'), false);
-  assert.equal(canAccessPath('agent_checkin', '/mots-de-passe'), false);
-  assert.equal(canAccessPath('visibilite', '/mots-de-passe'), false);
+test("canAccessPath('/admin/users') : admin et directeur seulement", () => {
+  assert.equal(canAccessPath("admin", "/admin/users"), true);
+  assert.equal(canAccessPath("directeur", "/admin/users"), true);
+  assert.equal(canAccessPath("placeur", "/admin/users"), false);
+  assert.equal(canAccessPath("agent_checkin", "/admin/users"), false);
+  assert.equal(canAccessPath("visibilite", "/admin/users"), false);
 });
+
 
 test('generateRandomPin : toujours 4 chiffres, avec des zéros de tête', () => {
   for (let i = 0; i < 200; i++) {
@@ -154,10 +155,10 @@ test("/admin/users expose un bouton Réinitialiser dans la fiche d'édition (POS
   assert.match(adminUsersPageSource, /Nouveau PIN \(laisser vide pour ne pas changer\)/);
 });
 
-test('/admin/users : /mots-de-passe reste intact et atteignable -- directeur (managePasswords mais jamais adminPanel) n\'a aucun autre accès à la réinitialisation', () => {
+test('/admin/users (v1.81.0) : directeur y accède via manageAccounts, sans adminPanel ', () => {
   assert.equal(hasCapability('directeur', 'adminPanel'), false);
-  assert.equal(canAccessPath('directeur', '/admin/users'), false);
-  assert.equal(canAccessPath('directeur', '/mots-de-passe'), true);
+  assert.equal(canAccessPath('directeur', '/admin/users'), true);
+  assert.equal(canAccessPath('directeur', '/admin'), false);
 });
 
 const loginSource = readFileSync(new URL('../app/login/page.tsx', import.meta.url), 'utf8');
@@ -234,14 +235,36 @@ test("/mon-mot-de-passe demande le secret actuel ET une confirmation du nouveau 
 // ce lien comme son seul point d'entrée.
 const accountMenuSourceV2 = readFileSync(new URL('../components/AccountMenu.tsx', import.meta.url), 'utf8');
 
-test('AccountMenu : "Mots de passe" (réinitialiser AUTRUI) est masqué pour admin (doublon avec Administration), mais reste visible pour directeur (seul accès)', () => {
-  assert.match(accountMenuSourceV2, /const canManagePasswords = hasCapability\(role, 'managePasswords'\) && !canAdmin;/);
+test('AccountMenu (v1.81.0) : « Gestion des comptes » remplace « Mots de passe » pour directeur, masqué pour admin (Administration)', () => {
+  assert.match(accountMenuSourceV2, /const canManageAccounts = hasCapability\(role, 'manageAccounts'\) && !canAdmin;/);
   // "Mon mot de passe" (self-service) reste, lui, inconditionnel pour tous les rôles.
-  assert.doesNotMatch(accountMenuSourceV2, /canManagePasswords && <Link role="menuitem" href="\/mon-mot-de-passe"/);
-  assert.match(accountMenuSourceV2, /canManagePasswords && <Link role="menuitem" href="\/mots-de-passe"/);
+  assert.doesNotMatch(accountMenuSourceV2, /canManageAccounts && <Link role="menuitem" href="\/mon-mot-de-passe"/);
+  assert.match(accountMenuSourceV2, /canManageAccounts && <Link role="menuitem" href="\/admin\/users"/);
+  assert.doesNotMatch(accountMenuSourceV2, /href="\/mots-de-passe"/);
 });
 
-test("canAccessPath('/mots-de-passe') reste inchangé pour directeur (seul accès, jamais Administration)", () => {
-  assert.equal(canAccessPath('directeur', '/mots-de-passe'), true);
-  assert.equal(hasCapability('directeur', 'adminPanel'), false);
+test('Gestion des comptes (v1.81.0) : directeur gère tout compte sauf admin, API et page alignées', () => {
+  assert.equal(hasCapability('directeur', 'manageAccounts'), true);
+  assert.equal(hasCapability('placeur', 'manageAccounts'), false);
+  assert.equal(canManageAccount({ role: 'admin' }, 'admin'), true);
+  assert.equal(canManageAccount({ role: 'directeur' }, 'admin'), false);
+  for (const target of ['directeur', 'placeur', 'agent_checkin', 'visibilite'] as const) {
+    assert.equal(canManageAccount({ role: 'directeur' }, target), true, target);
+    assert.equal(canManageAccount({ role: 'placeur' }, target), false, target);
+  }
+  const api = readFileSync(new URL('../app/api/admin/users/route.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(api, /user\.role !== 'admin'/);
+  assert.equal((api.match(/hasCapability\(user\.role, 'manageAccounts'\)/g) || []).length, 3);
+  assert.match(api, /canManageAccount\(user, target\.role\)/);
+  assert.match(api, /canManageAccount\(user, role\)/);
+  const page = readFileSync(new URL('../app/admin/users/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /u\.locked/);
+  assert.match(page, /filter\(\(opt\) => opt\.value !== 'admin'\)/);
+});
+
+test("v1.82.0 : la page /mots-de-passe est supprimée (remplacée par /admin/users), l’API de réinitialisation reste", () => {
+  assert.equal(existsSync(new URL("../app/mots-de-passe/page.tsx", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../app/api/passwords/route.ts", import.meta.url)), true);
+  assert.equal(canAccessPath("directeur", "/mots-de-passe"), false);
+  assert.equal(hasCapability("directeur", "adminPanel"), false);
 });

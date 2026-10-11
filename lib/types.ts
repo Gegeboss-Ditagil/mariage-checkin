@@ -160,6 +160,8 @@ export interface UserRow {
   hint?: string | null;
   // v1.76.0 : le compte connecté -- jamais désactivable par lui-même.
   isSelf?: boolean;
+  // v1.81.0 : compte admin vu par un directeur -- affiché, jamais modifiable.
+  locked?: boolean;
 }
 
 export interface AuditLogRow {
