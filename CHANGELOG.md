@@ -3,6 +3,28 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.79.3] — 2026-10-11
+
+Demande de Gersom : « withjoy corrected go update » (`guest-list_67.csv`). With Joy suit désormais le plan seatplan.io du 10/10 sur les écarts restés ouverts en v1.79.2.
+
+### Données (migration 0073, à exécuter dans l'éditeur SQL)
+- Danyl Mbidi → table 6, Pajos Mpapa → table 13.
+- Jean-Clivens Le Caous et Cedrik LeCaous → table 27.
+- Frank Mbonda et Mademoissele Isokolele retirés de With Joy : fiche Frank Mbonda supprimée, « Famille Isolokele » ramenée à Karl Isolokele (1 place).
+- « Famille Doumbia » ajoutée (Aissatou, Mariame), table 26, comme sur le plan.
+- Tables 6, 13, 26 et 27 restent à 10/10 ; 262 invitations après exécution.
+- Sauvegarde `import_backups` (kind `v1.79.3_guest_list_67`) avant écriture ; idempotente. Simulée sur la base de production dans une transaction annulée : résultat conforme.
+- 0072 appliquée par Gersom le 11/10/2026 (vérifié).
+
+### Plan de chaque table
+- `lib/floorPlanSeats.ts` : les tables 6, 13, 26 et 27 n'ont plus de siège vide sur le dessin ; chaque siège nommé du plan correspond désormais à une personne de l'application.
+
+### Seul écart restant
+- Steven Kimbau : encore dans With Joy (table 31, Famille Kimbau), absent du plan et de l'application (retiré en v1.71.0). La table 31 est pleine.
+
+### Tests
+- `npm test`.
+
 ## [1.79.2] — 2026-10-11
 
 Demande de Gersom : « Ashnee Barclay, Famille Mwinba, Lina Kumpesa, Grâce Ndonga, Sister 1 Malungu : delete » + « mets à jour, j'ai corrigé les noms et invitations disparates, ajusté With Joy ou seatplan pour faire concorder » (`guest-list_66.csv` + plan seatplan.io du 10/10/2026, export _3).

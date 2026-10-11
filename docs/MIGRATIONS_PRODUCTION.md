@@ -1,6 +1,6 @@
 # Migrations : dépôt ↔ production
 
-**Version documentaire : 1.79.2**
+**Version documentaire : 1.79.3**
 **Dernière mise à jour : 2026-10-10**
 
 Une ligne par fichier de `supabase/migrations/`. `tests/migration-history.test.ts` échoue si un fichier manque ici : toute nouvelle migration doit dire si elle est appliquée en production.
@@ -89,7 +89,8 @@ Vérifié en production table par table (fonctions, colonnes, données). Toutes 
 | `0069_health_report_reset_fix_strict_overload.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL, script `supabase/manual/2026-10-10_appliquer_0069_et_nettoyer_historique.sql`) ; contrôle de santé vérifié vide |
 | `0070_reset_removes_test_surprise_guests.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; bouton rouge pressé en Mode test, effets vérifiés (invités surprise et scans effacés) |
 | `0071_remove_invitations_without_table_groups_1_3.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; vérifié (267 invitations, sauvegarde de 9 fiches) |
-| `0072_sync_guest_list_66_seatplan_20261010.sql` | **À exécuter par Gersom** dans l'éditeur SQL (v1.79.2), puis inscrire : `insert into supabase_migrations.schema_migrations (version, name, created_by) values ('0072', '0072_sync_guest_list_66_seatplan_20261010', 'editeur SQL, v1.79.2') on conflict (version) do nothing;` |
+| `0072_sync_guest_list_66_seatplan_20261010.sql` | Appliquée le 11/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; vérifié (262 invitations, Famille Moussaoui, sauvegarde présente) |
+| `0073_sync_guest_list_67.sql` | **À exécuter par Gersom** dans l'éditeur SQL (v1.79.3), puis inscrire : `insert into supabase_migrations.schema_migrations (version, name, created_by) values ('0073', '0073_sync_guest_list_67', 'editeur SQL, v1.79.3') on conflict (version) do nothing;` |
 
 ## Hors dépôt, trouvé en production
 

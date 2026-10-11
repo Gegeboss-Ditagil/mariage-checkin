@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.79.2**
+**Version documentaire : 1.79.3**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -162,6 +162,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.79.0 : la réinitialisation des données de test (`reset_test_event_data`, migration `0070`, **à exécuter par Gersom dans l'éditeur SQL**) efface aussi les invités surprise approuvés (note « Invité surprise approuvé… » ET `withjoy_party_id` nul) et les demandes d'approbation ; toujours refusée en mode `live`. `/admin` explique chaque mode et grise le bouton rouge en JOUR J. Les modes ne changent PAS ce que les agents peuvent faire : seul le bouton rouge en dépend. Test : `qa/functional/test-mode-reset.spec.ts`.
 - v1.79.1 : 0070 appliquée et bouton rouge pressé par Gersom (vérifié). Migration `0071` (**à exécuter par Gersom dans l'éditeur SQL**) supprime 9 invitations sans table demandées (groupes 1-3 : « ne viendra pas », Waku Menga, Flora Landu, fiche fantôme Odette Muzezenu mulumba — jamais « Odette Manuel », table 31), sauvegarde `import_backups` kind `v1.79.1_sans_table`. Comparaison `guest-list_65.csv` / plan seatplan.io du 10/10 / base : écarts listés dans CHANGELOG 1.79.1, **aucun placement modifié** sans décision de Gersom.
 - v1.79.2 : 0071 appliquée (vérifié). Migration `0072` (**à exécuter par Gersom dans l'éditeur SQL**) : synchronisation guest-list_66 + plan seatplan.io du 10/10 là où les deux sont d'accord (Lys Landu → 30, Roger Makongo → 41, Famille Pierrefitte → Famille Moussaoui, Allegria Mpilingi → Solena Marzollo, 9 corrections de noms) + suppression de 5 fiches sans table (Ashnee Barclay, Famille Mwinba, Lina Kumpesa, Grâce Ndonga, Sister 1 Malungu), sauvegarde kind `v1.79.2_sync_guest_list_66`. `lib/floorPlanSeats.ts` reconstruit depuis ce PDF. Écarts restants (6/13, 26/27, Doumbia, Steven Kimbau) : CHANGELOG 1.79.2.
+- v1.79.3 : 0072 appliquée par Gersom (vérifié, 262 invitations). Migration `0073` (**à exécuter par Gersom dans l'éditeur SQL**) : guest-list_67 — Danyl Mbidi → 6, Pajos Mpapa → 13, les deux LeCaous → 27, Famille Doumbia ajoutée (table 26), Frank Mbonda supprimé, Famille Isolokele ramenée à Karl ; sauvegarde kind `v1.79.3_guest_list_67`. With Joy, le plan du 10/10 et l'app concordent, sauf Steven Kimbau (encore dans With Joy). `lib/floorPlanSeats.ts` : tous les sièges du plan correspondent à une personne de l'app.
 
 ## Reprise rapide pour Claude AI
 

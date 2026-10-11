@@ -37,13 +37,10 @@
 // vide. Les autres tables, recomparees nom par nom avec ce PDF, sont
 // inchangees.
 // v1.79.2 (11/10/2026, export « seating-chart ... 2026-10-10_3.pdf » +
-// guest-list_66.csv) : reconstruit entierement depuis ce PDF (ordre des
+// guest-list_67.csv) : reconstruit entierement depuis ce PDF (ordre des
 // sieges depuis le haut, sens horaire) avec l'orthographe de l'application
-// apres la migration 0072. Restent `null` les sieges ou le plan et With Joy
-// ne sont pas encore d'accord : Danyl Mbidi / Pajos Mpapa (tables 6 et 13
-// inversees sur le plan), les deux LeCaous (plan : table 27, With Joy et
-// application : table 26), Aissatou et Mariame Doumbia (plan : table 26,
-// absentes de l'application).
+// apres les migrations 0072 et 0073. Chaque siege nomme du plan correspond a une
+// personne placee a la meme table dans l'application.
 export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   // Tables 1 et 42 : reserves excedentaires, vides sur le plan.
   1: [null, null, null, null, null, null, null, null, null, null],
@@ -51,14 +48,14 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   3: ["Leverry Kinzi", "Jonas Mpindi", "Henry Kiadi Ndiongo", "Sumali Ndiongo", "Diton Kiala Diamena", "Oredezo Blancky", "Costa Mvovi", "Maman Mvovi", "Edo Tukula", "Neves Kiombi Nzuzi"],
   4: ["Henri Onatshungu Momba", "Henriela Onatshungu Momba", "Thierry Mbiyavanga Mavinga", "Dorothée Deborah Nsingani", "Staicy Mbiyavanga Mavinga", "Kelcy Mbiyavanga Mavinga", "Jessy Buka Mbiyavanga Mavinga", "Taylor Mbiyavanga Mavinga", "Fiston Zola", "Michela Teka sanda"],
   5: ["Maria Mputuilu", "Graça Inacio", "Andre Neves", "Chantal Neves", "Papa David Lukau", "Maman Josefina Lukau", "David-Junior Lukau", "Eutyche Lukau", "Elisa Jean", "Alfred Jean"],
-  6: ["Helder Vemba", "Kupesa Lando Ferreira", "Eugenia Sengo chipala", "Destino Mbulu Esamba", "Tchecka Mbulu", "Adriano Vemba", "Merveille Makaya", "Emilia Mbidi", null, "Papy Mamona"],
+  6: ["Helder Vemba", "Kupesa Lando Ferreira", "Eugenia Sengo chipala", "Destino Mbulu Esamba", "Tchecka Mbulu", "Adriano Vemba", "Merveille Makaya", "Emilia Mbidi", "Danyl Mbidi", "Papy Mamona"],
   7: ["Bob Culumbu", "Nedy Simao", "Jessiline Mateus", "Filho 1 Culumbu", "Filho 3 Culumbu", "Filho 4 Culumbu", "Filho 5 Culumbu", "Femme Culumbu", "Tio Gilie Culumbu", "Julianna Matondo"],
   8: ["Mahjo Yezi", "Ya Lale Culumbu", "Seda Tahan", "Sarah Tahan", "Odette Culumbu", "Adriana Tsita", "Tata Julie Indanda", "Hadelin Yezi", "Deborah Yezi", "Celestina Yezi"],
   9: ["Lotine André", "Andre Nsiangangu", "Femme Nsiangangu", "Enfant Nsiangangu", "Maurice Ndani Ndoba", "Keyris Ndani", "Giresse Juliano Nzengo", "Grace Tshisungu", null, "Mamita Ndani"],
   10: ["Rose-marie Kumba", "Qeren Moba-Mbemba", "Naomie Ghansi", "Kevin GHANSI", "Josué Ghansi", "Fyra Biyoudi", "Chindelle Moba-Mbemba", "Christelle Lema", "Eric Lema", "Stephanie Buluka mituele"],
   11: ["Loïc Neves", "Gloire André", "Gabriel Skoty Sanda", "Andrea Neves", "Jonathan Ndani", "Bontee Tercia Ndani", "Ketsia Neves", "Teresa Ndani", "Diego Ramos", "Zoya Inacio"],
   12: ["Louise Ngonda Nsenga", "Nana Mabumba", "Felix Luboya", "Tatiana Bitumazala", "Diane Eberhorn", "Yvon Bitumazala", "Rose Bulisi", "Joana Lusuena", "Fifi Lusuena", "Sylvie Bulisi"],
-  13: ["Mona Guygson Vemba", "GISELE MAMBAKASA", "BIJOU MAMBAKASA", "Simon Mbidi", "Suzie Vemba", "Rolly Makaya Mvemba", null, "Johny Kiala", "Abeti Okito", "Johny Okito"],
+  13: ["Mona Guygson Vemba", "GISELE MAMBAKASA", "BIJOU MAMBAKASA", "Simon Mbidi", "Suzie Vemba", "Rolly Makaya Mvemba", "Pajos Mpapa", "Johny Kiala", "Abeti Okito", "Johny Okito"],
   14: ["Dorcas Massamba", "Hugo Massamba", "Imeon Massamba", "Ludovic Eckomband", "Sita Muzemba", "Stephenson Bulaki", "Gaelle Bulaki", "Carl Aye", "Enricka Aye", "Jordy Ungeli"],
   15: ["Babel Nzasi", "Alonso Isey (Godard)", "Sonia Ditutala", "Anjo Ditutala", "Bana Tia Sonia", "Bana Tia Sonia", "Acacia Nzasi", "Milda Nzasi", "Arcanjo Nzasi", "Prince Nzasi"],
   16: ["Yeze Zinga", "Sephora Tulomba", "Jessica Tulomba", "Silva Mvuemba", "Melissa Mvuemba", "Yomo Formosa", null, "Olivier Benga", "Denzu Laisana", "Djessus Steano Tulomba"],
@@ -71,8 +68,8 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   23: ["Josly Nuamosi-Mbambu", "Mélina Kiangala", "Lizéa Mbila", "Jerode Muzezenu", "Henriette Muzezenu", "Tsippora Miakukila", "Khezia Miakukila", "Erwann Kadina", "Helda Makuntima", "Miguel Bemvindo"],
   24: ["Rosie Unzitisa", "Sebastien Unzitisa", "Lily Nuamosi", "José Nuamosi", "Josian Nuamosi", "Joan Nuamosi", "Rosette Bolamba", "Koffi Bolamba", "Sevrine Lotisi", "Isaac Lotisi"],
   25: ["Jerry Muzezenu", "Chantale Muzezenu", "Jerry Junior Muzezenu", "Maguy Mawete Makinu", "Alain Nsakala", "Anita Nsakala", "Mifi Mbiki", "Serge Mbiki", "Etienne Mawete Makinu", "Odette Muzezenu"],
-  26: ["Wytney Da Veiga", null, null, "Maeva Lorsold", "Dylan Lorsold", "Cédric Tyller BELINGA", "Dan Elenga", "Mika Fleurival", "Anne Fuema", "Jonathan Kumbi"],
-  27: ["Karl Isolokele", null, null, "Sami Simon", "Jovany Germain", "Momo Sidibe", "Naomi SHANGO", "Vanilla TJOM", "Alyson Choy", "Kai Choy"],
+  26: ["Wytney Da Veiga", "Mariame Doumbia", "Aissatou Doumbia", "Maeva Lorsold", "Dylan Lorsold", "Cédric Tyller BELINGA", "Dan Elenga", "Mika Fleurival", "Anne Fuema", "Jonathan Kumbi"],
+  27: ["Karl Isolokele", "Jean-Clivens Le Caous", "Cedrik LeCaous", "Sami Simon", "Jovany Germain", "Momo Sidibe", "Naomi SHANGO", "Vanilla TJOM", "Alyson Choy", "Kai Choy"],
   28: ["Maguy Celestina Mundanda Nsita", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Tressy Mundanda Nsita", "Roger (Ami Eliano) Culumbu", "Artiste VIP Ango Stars", "Artiste Ango Stars", "Niveline Mbangu", "Nicole Mbangu", "Pauliana Mundanda Nsita"],
   29: ["Laura Humba", "Raphael Opetum Isei Ngalula", "Weplo Culumbu", "Sylvie Culumbu", "Nicole Tusevo", "Elvis Tusevo", "Safira Tusevo", "Dorcas Matembe", "Divine Simao", "Sergio Manuel"],
   30: ["Roger Landu", "Betty Jeanne Closse", "Lucien Closse", "Richard Landu", "Sem Landu", "Dorine Landu", "Lys Landu", "Rémy Landu", "Denise Landu", "Nadine Landu"],
