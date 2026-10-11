@@ -58,7 +58,9 @@ test('capacités affichées : 400 places officielles, réserves = tables 1 et 42
   const seats = read('../lib/floorPlanSeats.ts');
   assert.match(seats, /^\s*42: \[null, null, null, null, null, null, null, null, null, null\],/m);
   assert.match(seats, /"Lys Landu", "Rémy Landu"/);
-  assert.match(seats, /"Claudine Pello", "Luzolo Patrick Menga"/);
+  // v1.80.0 (plan du 10/10 (4), migration 0074) : Eude Matondo a la 31, Luzolo a la 36.
+  assert.match(seats, /"Claudine Pello", "Eude Matondo"/);
+  assert.match(seats, /"Herve Menga", "Luzolo Patrick Menga"/);
 });
 
 test('connectivité réduite : les lectures Supabase du navigateur ont un délai maximal (jamais « Chargement… » infini)', () => {

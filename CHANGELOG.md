@@ -3,6 +3,29 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.80.0] — 2026-10-11
+
+Demande de Gersom : « met à jour le nom et l'app » (`guest-list_68.csv`, name-tags et seating-chart seatplan.io du 10/10 (4)). Le plan seatplan.io fait foi sur les placements ; With Joy 68 n'apporte que des noms.
+
+### Données (migration 0074, appliquée et vérifiée en production le 11/10/2026)
+- « Famille Dos » (table 2) devient « Luis & Gaby Dos Goncalves » (membres renommés).
+- « Famille non-nommé » (table 38) devient « Famille Mabata » : Nadia, Sofiane, Mernad et Diklavin Mabata (les 3 « Accompagnant non-nommé » sont nommés).
+- « Merline Mabata » (même groupe With Joy) ajoutée à la table 40, où elle est assise sur le plan.
+- Edoly Lukoki retirée (With Joy et plan) : « Famille Lukoki » 5 → 4.
+- Eude Matondo → table 31, Luzolo Patrick Menga → table 36 (comme sur le plan).
+- Tables 2, 31, 36, 38 et 40 à 10/10 ; 263 invitations ; 0 table en surcapacité. Sauvegarde `import_backups` (`v1.80.0_guest_list_68`) avant écriture, simulation dans une transaction annulée avant application.
+
+### Écarts signalés (non modifiés)
+- With Joy écrit « Dikalvin Mabata », le plan « Diklavin » : l'application suit le plan.
+- Les étiquettes With Joy de Sofiane Mabata (T040), Eude Matondo (T036) et Luzolo Patrick Menga (T031) sont restées anciennes : l'application suit le plan.
+- Steven Kimbau n'est plus dans With Joy 68 (écart v1.79.3 résolu).
+
+### Plan de chaque table
+- `lib/floorPlanSeats.ts` : tables 2, 8, 31, 32, 36, 38 et 40 reprises du plan (siège N du plan = case N − 2, vérifié sur 378 sièges) ; la table 39 retrouve ses 10 cases (une manquait, Ahicam Damuna décalé).
+
+### Tests
+- `tests/floor-plan-seats.test.ts`, `tests/table1-reserve-v1-71.test.ts` : nouvelles positions ; `docs/MIGRATIONS_PRODUCTION.md` : 0073 et 0074 documentées.
+
 ## [1.79.3] — 2026-10-11
 
 Demande de Gersom : « withjoy corrected go update » (`guest-list_67.csv`). With Joy suit désormais le plan seatplan.io du 10/10 sur les écarts restés ouverts en v1.79.2.

@@ -1,7 +1,7 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.79.3**
-**Dernière mise à jour : 2026-10-10**
+**Version documentaire : 1.80.0**
+**Dernière mise à jour : 2026-10-11**
 
 Avant toute modification, lire dans cet ordre :
 
@@ -163,6 +163,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.79.1 : 0070 appliquée et bouton rouge pressé par Gersom (vérifié). Migration `0071` (**à exécuter par Gersom dans l'éditeur SQL**) supprime 9 invitations sans table demandées (groupes 1-3 : « ne viendra pas », Waku Menga, Flora Landu, fiche fantôme Odette Muzezenu mulumba — jamais « Odette Manuel », table 31), sauvegarde `import_backups` kind `v1.79.1_sans_table`. Comparaison `guest-list_65.csv` / plan seatplan.io du 10/10 / base : écarts listés dans CHANGELOG 1.79.1, **aucun placement modifié** sans décision de Gersom.
 - v1.79.2 : 0071 appliquée (vérifié). Migration `0072` (**à exécuter par Gersom dans l'éditeur SQL**) : synchronisation guest-list_66 + plan seatplan.io du 10/10 là où les deux sont d'accord (Lys Landu → 30, Roger Makongo → 41, Famille Pierrefitte → Famille Moussaoui, Allegria Mpilingi → Solena Marzollo, 9 corrections de noms) + suppression de 5 fiches sans table (Ashnee Barclay, Famille Mwinba, Lina Kumpesa, Grâce Ndonga, Sister 1 Malungu), sauvegarde kind `v1.79.2_sync_guest_list_66`. `lib/floorPlanSeats.ts` reconstruit depuis ce PDF. Écarts restants (6/13, 26/27, Doumbia, Steven Kimbau) : CHANGELOG 1.79.2.
 - v1.79.3 : 0072 appliquée par Gersom (vérifié, 262 invitations). Migration `0073` (**à exécuter par Gersom dans l'éditeur SQL**) : guest-list_67 — Danyl Mbidi → 6, Pajos Mpapa → 13, les deux LeCaous → 27, Famille Doumbia ajoutée (table 26), Frank Mbonda supprimé, Famille Isolokele ramenée à Karl ; sauvegarde kind `v1.79.3_guest_list_67`. With Joy, le plan du 10/10 et l'app concordent, sauf Steven Kimbau (encore dans With Joy). `lib/floorPlanSeats.ts` : tous les sièges du plan correspondent à une personne de l'app.
+- v1.80.0 : guest-list_68 + plan seatplan du 10/10 (4) — migration `0074` appliquée et vérifiée en production le 11/10/2026 (sauvegarde `v1.80.0_guest_list_68`) : Luis & Gaby Dos Goncalves, Famille Mabata nommée (table 38) + Merline Mabata (table 40), Edoly Lukoki retirée, Eude Matondo ↔ Luzolo Patrick Menga (31/36). Le plan fait foi sur les placements (étiquettes With Joy restées anciennes pour 3 personnes). `lib/floorPlanSeats.ts` : 7 tables reprises du plan, table 39 remise à 10 cases. Ne pas réexécuter 0074 manuellement.
 
 ## Reprise rapide pour Claude AI
 
