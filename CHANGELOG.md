@@ -3,6 +3,34 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.79.2] — 2026-10-11
+
+Demande de Gersom : « Ashnee Barclay, Famille Mwinba, Lina Kumpesa, Grâce Ndonga, Sister 1 Malungu : delete » + « mets à jour, j'ai corrigé les noms et invitations disparates, ajusté With Joy ou seatplan pour faire concorder » (`guest-list_66.csv` + plan seatplan.io du 10/10/2026, export _3).
+
+### Données (migration 0072, à exécuter dans l'éditeur SQL)
+Appliqué seulement là où With Joy et le plan sont maintenant d'accord :
+- Lys Landu → table 30, Roger Makongo → table 41 (échange, 10/10 inchangé sur les deux tables).
+- « Famille Pierrefitte » → « Famille Moussaoui » (Greg, Maeva, Julia Moussaoui), table 41.
+- Famille Landu (table 41) : Allegria Mpilingi → Solena Marzollo.
+- Noms : Maman Mvovi, Tata Julie Indanda, Ya Lale Culumbu, Acacia Nzasi, Famille Eliano (Roger (Ami Eliano) Culumbu, Artiste VIP Ango Stars, Artiste Ango Stars), Raphael Opetum Isei Ngalula, Maman Domingos, Kizomba Artist, Joeliane Elmacin Lumbu.
+- Supprimées (sans table, 0 arrivée) : Ashnee Barclay, Famille Mwinba, Lina Kumpesa, Grâce Ndonga, Sister 1 Malungu.
+- Sauvegarde `import_backups` (kind `v1.79.2_sync_guest_list_66`, 18 fiches) avant toute écriture ; idempotente. Simulée sur la base de production dans une transaction annulée : résultat conforme.
+
+### Plan de chaque table
+- `lib/floorPlanSeats.ts` reconstruit depuis le PDF du 10/10 (ordre des sièges depuis le haut, sens horaire), avec l'orthographe de l'application. 15 tables changent (3, 7, 8, 9, 15, 16, 26, 27, 28, 29, 30, 32, 35, 36, 41).
+
+### Encore différents entre With Joy et le plan (non touchés)
+- Danyl Mbidi / Pajos Mpapa : With Joy et l'app 13 / 6, plan 6 / 13.
+- Jean-Clivens Le Caous et Cedrik LeCaous : With Joy et l'app table 26, plan table 27.
+- Frank Mbonda et Mademoissele Isokolele : With Joy et l'app table 27, absents du plan.
+- Aissatou et Mariame Doumbia : plan et With Joy table 26 (réponse vide), absentes de l'app. With Joy compte 12 personnes à la table 26.
+- Steven Kimbau : encore dans With Joy (table 31), absent du plan et de l'app.
+- Orthographe seule (aucun effet sur l'app, qui suit With Joy) : Milo Bob Mabata / Bob Culumbu, Ya Lale Yezi / Ya Lale Culumbu, Weplo Antoine / Weplo Culumbu, Sylvie Weplo / Sylvie Culumbu, Jackie / Jacquie Menga, Nzuzi / Denzu Laisana, Tia Sonia Culumbu / Sonia Ditutala, Artiste VIP Angostars / Ango Stars.
+
+### Tests
+- `tests/floor-plan-seats.test.ts`, `tests/table1-reserve-v1-71.test.ts` mis à jour (Lys Landu table 30, Roger Makongo et Moussaoui table 41).
+- `npm test`.
+
 ## [1.79.1] — 2026-10-10
 
 Demande de Gersom : « Groupe 1 delete / groupe 2 delete / groupe 3 delete » + « voici le dernier export With Joy (`guest-list_65.csv`) et le dernier export seatplan.io (plan du 10/10/2026) : assure-toi que ça correspond, puis donne-moi les erreurs à corriger ».

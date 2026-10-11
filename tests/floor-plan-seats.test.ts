@@ -91,7 +91,9 @@ test('v1.68.2 : quelques sieges verifies correspondent aux vrais occupants de le
   // membres sont repartis ailleurs, voir en-tete du fichier) -- reste vide
   // ici plutot que de perdre toute entree.
   assert.ok(TABLE_SEAT_NAMES[1].every((seat) => seat === null));
-  // La famille Landu occupe desormais la table 41 (devenue une table
-  // normale, voir migration 0062) -- confirme par le PDF.
-  assert.equal(TABLE_SEAT_NAMES[41][1], 'Lys Landu');
+  // v1.79.2 (PDF du 10/10/2026, migration 0072) : Lys Landu a la table 30,
+  // Roger Makongo et la famille Moussaoui a la table 41.
+  assert.equal(TABLE_SEAT_NAMES[30][6], 'Lys Landu');
+  assert.equal(TABLE_SEAT_NAMES[41][4], 'Roger Makongo');
+  assert.equal(TABLE_SEAT_NAMES[41][2], 'Greg Moussaoui');
 });
