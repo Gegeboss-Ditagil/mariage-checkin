@@ -90,7 +90,8 @@ Vérifié en production table par table (fonctions, colonnes, données). Toutes 
 | `0070_reset_removes_test_surprise_guests.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; bouton rouge pressé en Mode test, effets vérifiés (invités surprise et scans effacés) |
 | `0071_remove_invitations_without_table_groups_1_3.sql` | Appliquée le 10/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; vérifié (267 invitations, sauvegarde de 9 fiches) |
 | `0072_sync_guest_list_66_seatplan_20261010.sql` | Appliquée le 11/10/2026 par Gersom (éditeur SQL) et inscrite à l'historique ; vérifié (262 invitations, Famille Moussaoui, sauvegarde présente) |
-| `0073_sync_guest_list_67.sql` | **À exécuter par Gersom** dans l'éditeur SQL (v1.79.3), puis inscrire : `insert into supabase_migrations.schema_migrations (version, name, created_by) values ('0073', '0073_sync_guest_list_67', 'editeur SQL, v1.79.3') on conflict (version) do nothing;` |
+| `0073_sync_guest_list_67.sql` | Appliquée (v1.79.3) — effets vérifiés le 11/10/2026 avant 0074 : sauvegarde `v1.79.3_guest_list_67` présente, Frank Mbonda retiré, 262 invitations |
+| `0074_sync_guest_list_68_name_tags.sql` | Appliquée par l'agent (MCP Supabase, `apply_migration`) le 11/10/2026 après simulation dans une transaction annulée ; effets vérifiés (263 invitations, 0 table en surcapacité, sauvegarde `v1.80.0_guest_list_68`) |
 
 ## Hors dépôt, trouvé en production
 

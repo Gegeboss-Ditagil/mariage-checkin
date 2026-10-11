@@ -82,10 +82,11 @@ test("toucher un siege sur le dessin de la table selectionnee surligne l'invitat
 test('v1.68.2 : quelques sieges verifies correspondent aux vrais occupants de leur table (nouveau PDF du 06/10/2026)', () => {
   assert.equal(TABLE_SEAT_NAMES[4][0], 'Henri Onatshungu Momba');
   assert.equal(TABLE_SEAT_NAMES[2][0], 'Erika Dos Goncalves');
-  assert.equal(TABLE_SEAT_NAMES[2][3], 'Maguy Malungu');
-  assert.equal(TABLE_SEAT_NAMES[2][4], 'Ruben Kinanga Malungu');
-  assert.equal(TABLE_SEAT_NAMES[32][8], 'Keren Malungu');
-  assert.equal(TABLE_SEAT_NAMES[32][9], 'Keziah Malungu');
+  // v1.80.0 (plan du 10/10 (4)) : sieges des tables 2 et 32 reordonnes.
+  assert.equal(TABLE_SEAT_NAMES[2][1], 'Maguy Malungu');
+  assert.equal(TABLE_SEAT_NAMES[2][2], 'Ruben Kinanga Malungu');
+  assert.equal(TABLE_SEAT_NAMES[32][6], 'Keren Malungu');
+  assert.equal(TABLE_SEAT_NAMES[32][7], 'Keziah Malungu');
   assert.equal(TABLE_SEAT_NAMES[29][4], 'Nicole Tusevo');
   // Table 1 : plus aucun occupant confirme sur ce nouveau PDF (ses anciens
   // membres sont repartis ailleurs, voir en-tete du fichier) -- reste vide

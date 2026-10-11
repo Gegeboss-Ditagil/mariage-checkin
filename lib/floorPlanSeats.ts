@@ -41,16 +41,21 @@
 // sieges depuis le haut, sens horaire) avec l'orthographe de l'application
 // apres les migrations 0072 et 0073. Chaque siege nomme du plan correspond a une
 // personne placee a la meme table dans l'application.
+// v1.80.0 (11/10/2026, name-tags + seating-chart du 10/10 (4) + guest-list_68.csv) :
+// tables 2, 8, 31, 32, 36, 38 et 40 reprises du plan (siege N = case N-2, verifie
+// sur 378 sieges) -- Luis/Gaby Dos Goncalves, Mabata nommes (Sofiane, Mernad,
+// Diklavin a la 38, Merline a la 40), Edoly Lukoki retiree, Eude Matondo (31) et
+// Luzolo Patrick Menga (36) echanges ; table 39 remise a 10 cases (une manquait).
 export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   // Tables 1 et 42 : reserves excedentaires, vides sur le plan.
   1: [null, null, null, null, null, null, null, null, null, null],
-  2: ["Erika Dos Goncalves", "Mona Vemba", "Isabel Vemba", "Maguy Malungu", "Ruben Kinanga Malungu", "Luis Dos", "Gaby Dos", "DeMbala Dos Goncalves", "Jael Dos Goncalves", "Nsimba Mambakasa"],
+  2: ["Erika Dos Goncalves", "Maguy Malungu", "Ruben Kinanga Malungu", "Mona Vemba", "Isabel Vemba", "Gaby Dos Goncalves", "Luis Dos Goncalves", "DeMbala Dos Goncalves", "Jael Dos Goncalves", "Nsimba Mambakasa"],
   3: ["Leverry Kinzi", "Jonas Mpindi", "Henry Kiadi Ndiongo", "Sumali Ndiongo", "Diton Kiala Diamena", "Oredezo Blancky", "Costa Mvovi", "Maman Mvovi", "Edo Tukula", "Neves Kiombi Nzuzi"],
   4: ["Henri Onatshungu Momba", "Henriela Onatshungu Momba", "Thierry Mbiyavanga Mavinga", "Dorothée Deborah Nsingani", "Staicy Mbiyavanga Mavinga", "Kelcy Mbiyavanga Mavinga", "Jessy Buka Mbiyavanga Mavinga", "Taylor Mbiyavanga Mavinga", "Fiston Zola", "Michela Teka sanda"],
   5: ["Maria Mputuilu", "Graça Inacio", "Andre Neves", "Chantal Neves", "Papa David Lukau", "Maman Josefina Lukau", "David-Junior Lukau", "Eutyche Lukau", "Elisa Jean", "Alfred Jean"],
   6: ["Helder Vemba", "Kupesa Lando Ferreira", "Eugenia Sengo chipala", "Destino Mbulu Esamba", "Tchecka Mbulu", "Adriano Vemba", "Merveille Makaya", "Emilia Mbidi", "Danyl Mbidi", "Papy Mamona"],
   7: ["Bob Culumbu", "Nedy Simao", "Jessiline Mateus", "Filho 1 Culumbu", "Filho 3 Culumbu", "Filho 4 Culumbu", "Filho 5 Culumbu", "Femme Culumbu", "Tio Gilie Culumbu", "Julianna Matondo"],
-  8: ["Mahjo Yezi", "Ya Lale Culumbu", "Seda Tahan", "Sarah Tahan", "Odette Culumbu", "Adriana Tsita", "Tata Julie Indanda", "Hadelin Yezi", "Deborah Yezi", "Celestina Yezi"],
+  8: ["Mahjo Yezi", "Adriana Tsita", "Seda Tahan", "Sarah Tahan", "Hadelin Yezi", "Deborah Yezi", "Odette Culumbu", "Ya Lale Culumbu", "Tata Julie Indanda", "Celestina Yezi"],
   9: ["Lotine André", "Andre Nsiangangu", "Femme Nsiangangu", "Enfant Nsiangangu", "Maurice Ndani Ndoba", "Keyris Ndani", "Giresse Juliano Nzengo", "Grace Tshisungu", null, "Mamita Ndani"],
   10: ["Rose-marie Kumba", "Qeren Moba-Mbemba", "Naomie Ghansi", "Kevin GHANSI", "Josué Ghansi", "Fyra Biyoudi", "Chindelle Moba-Mbemba", "Christelle Lema", "Eric Lema", "Stephanie Buluka mituele"],
   11: ["Loïc Neves", "Gloire André", "Gabriel Skoty Sanda", "Andrea Neves", "Jonathan Ndani", "Bontee Tercia Ndani", "Ketsia Neves", "Teresa Ndani", "Diego Ramos", "Zoya Inacio"],
@@ -73,16 +78,16 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   28: ["Maguy Celestina Mundanda Nsita", "Paul Mundanda Nsita", "Renense Mundanda Nsita", "Tressy Mundanda Nsita", "Roger (Ami Eliano) Culumbu", "Artiste VIP Ango Stars", "Artiste Ango Stars", "Niveline Mbangu", "Nicole Mbangu", "Pauliana Mundanda Nsita"],
   29: ["Laura Humba", "Raphael Opetum Isei Ngalula", "Weplo Culumbu", "Sylvie Culumbu", "Nicole Tusevo", "Elvis Tusevo", "Safira Tusevo", "Dorcas Matembe", "Divine Simao", "Sergio Manuel"],
   30: ["Roger Landu", "Betty Jeanne Closse", "Lucien Closse", "Richard Landu", "Sem Landu", "Dorine Landu", "Lys Landu", "Rémy Landu", "Denise Landu", "Nadine Landu"],
-  31: ["Nadine Kimbau", "Debest Pello", "Claudine Pello", "Luzolo Patrick Menga", "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya", "Odette Manuel"],
-  32: ["Maman Elima", "Guillaume Mayimakanda", "Lucie Nzuzi", "Maman Domingos", "Seba Domingos", "Clavert Domingos", "Charlene ELIMA", "Yves ELIMA", "Keren Malungu", "Keziah Malungu"],
+  31: ["Nadine Kimbau", "Debest Pello", "Claudine Pello", "Eude Matondo", "Antoinette Kimbau", "Cady Belida", "Marleine Bansimba", "Laetitia Bongo", "Youyou Lembe Tchiteya", "Odette Manuel"],
+  32: ["Guillaume Mayimakanda", "Maman Elima", "Yves ELIMA", "Charlene ELIMA", "Seba Domingos", "Lucie Nzuzi", "Keren Malungu", "Keziah Malungu", "Maman Domingos", "Clavert Domingos"],
   33: ["Esmeralda Vemba", "Plamedi Okito", "Darleine Okito", "Estelle Okito", "ANNE KAYLEE MAMBAKASA", "KHEIRA MAMBAKASA", "Domingas Ferreira", "Isabel Ferreira", "KENAYA MAMBAKASA", "Makaia Vemba Ferreira"],
   34: ["Jean-Claude Nsenda", "Noel Nsenda", "Moise Nsenda", "Aurelie Nsenda", "Augustin Nsenda", "Ruben Lopez", "Martinette Lopez", "Gladys Lopez", "Eden Lopez", "Veronique Nsenda"],
   35: ["Clement Luvuasi", "Maguy Luvuasi", "Kamal Bekka", "Kizomba Artist", "Denis Beijinho", "Samy Archange", "Dede DelaVille", "Marta Bekka", "Ines Bekka", "Geodray Luvuasi"],
-  36: ["Joeliane Elmacin Lumbu", "Lumbu Mabanza Joël", "Herve Menga", "Eude Matondo", "Francisco Matondo", "Huguette Matondo", "Tuzola SAVIERA", "Riffick Saviera", "Keith Saviera", "Mercia Saviera"],
+  36: ["Joeliane Elmacin Lumbu", "Lumbu Mabanza Joël", "Herve Menga", "Luzolo Patrick Menga", "Francisco Matondo", "Huguette Matondo", "Tuzola SAVIERA", "Riffick Saviera", "Keith Saviera", "Mercia Saviera"],
   37: ["Bangaly Souare", "Yannick Abdoul Camara", "Tiphaine Abdoul Camara", "Thomas Wandubula", "Jean-Claude Onokoko", "Cécile Mbila", "Jean Mbila", "Denise Nkoussou", "David Cairaschi", "Fatou Diaby"],
-  38: ["Lambert Menga", "Bana Menga", "Bana Menga", "Accompagnant non-nommé", "Accompagnant non-nommé", "Accompagnant non-nommé", "Nadia Mabata", "Joël Bembo", "Jennifer Bembo", "Jacquie Menga"],
-  39: ["Priscile Makuntima", "Barnabe Shungu", "Isidore Luyindula", "Glody Kambwa", "Lucien Shampe", "Léna Vinelle Nganga", "Jeanne Tona", "Helène Tona", "Ahicam Damuna"],
-  40: ["Gisele Bopima", "Michaud Mabata", "Edoly Lukoki", "Michelina Guilherme", "Simao Guilherme", "Raphael Da Silva", "Daryl Lukoki", "Gladys Lukoki", "Dany Lukoki", "Glavina Lukoki"],
+  38: ["Sofiane Mabata", "Mernad Mabata", "Bana Menga", "Bana Menga", "Lambert Menga", "Jacquie Menga", "Jennifer Bembo", "Joël Bembo", "Diklavin Mabata", "Nadia Mabata"],
+  39: ["Priscile Makuntima", "Barnabe Shungu", "Isidore Luyindula", "Glody Kambwa", "Lucien Shampe", "Léna Vinelle Nganga", "Jeanne Tona", "Helène Tona", null, "Ahicam Damuna"],
+  40: ["Simao Guilherme", "Michelina Guilherme", "Gisele Bopima", "Michaud Mabata", "Merline Mabata", "Glavina Lukoki", "Daryl Lukoki", "Gladys Lukoki", "Dany Lukoki", "Raphael Da Silva"],
   41: ["Brady Landu", "Julia Moussaoui", "Greg Moussaoui", "Maeva Moussaoui", "Roger Makongo", "Axel Tacita", "Solena Marzollo", "Daeve Landu", "Dylan Landu", "Victoria Landu"],
   42: [null, null, null, null, null, null, null, null, null, null],
 };
