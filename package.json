@@ -1,6 +1,6 @@
 {
   "name": "wedding-checkin",
-  "version": "1.80.1",
+  "version": "1.81.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -24,6 +24,7 @@
     "test:agendaform": "node --test tests/agenda-form.test.ts",
     "test:reservation": "node --test tests/guest-approval-reservation.test.ts",
     "test:seatwheel": "node --test tests/table-seat-wheel.test.ts",
+    "test:androidinstall": "node --test tests/android-install.test.ts",
     "test": "node --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "qa:db": "scripts/qa-stack/build-db.sh",
