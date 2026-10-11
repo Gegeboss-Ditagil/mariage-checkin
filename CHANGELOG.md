@@ -3,6 +3,30 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.80.1] — 2026-10-11
+
+Demande de Gersom : « update commit et merge » (`guest-list_69.csv`, seating-chart seatplan.io du 10/10 (5)).
+
+### Données (migration 0075, appliquée et vérifiée en production le 11/10/2026)
+- Table 7, Famille Culumbu : « Femme », « Filho 1/3/4 » deviennent Epouse Gilie, Anderson, Merveille et Angelino Culumbu (With Joy et plan concordent). « Filho 5 Culumbu » reste en attente : With Joy « Juliana », plan « Gloria » — Gersom corrige.
+- « Diklavin Mabata » devient « Dikalvin Mabata » (orthographe With Joy et du plan (5)).
+- Aucune table ni aucun nombre de places ne change. Sauvegarde `import_backups` (`v1.80.1_culumbu_dikalvin`).
+
+### Puis plan (6) + `guest-list_70.csv` (migration 0076, appliquée et vérifiée le 11/10/2026)
+- Nedy Simao retirée complètement (Gersom l'a aussi retirée de With Joy) : 0 arrivée, aucun scan, aucune ligne nominative.
+- Famille Culumbu (table 7) : « Filho 5 Culumbu » devient **Juliana Culumbu** et **Gloria Culumbu** est ajoutée (le plan montrait deux « Gloria » ; Gersom : « remplace une des deux Gloria par Juliana ») — 6 → 7 places. Gloria Culumbu n'est pas encore dans With Joy 70.
+- Julianna Matondo reste à la table 7, siège 2 du plan (6).
+- Table 7 à 10/10 ; 262 invitations ; 0 table en surcapacité. Sauvegarde `v1.80.1_table7_nedy`.
+
+### Décisions de Gersom
+- Eude Matondo (31) et Luzolo Patrick Menga (36) restent sur le plan ; With Joy 70 s'est aligné (T031, T036) — plus d'écart.
+
+### README
+- `README.md` et `ASSIGNATION_TABLES.md` : date documentaire et état de la liste (With Joy 70 + plan (6), 262 invitations) mis à jour.
+
+### Plan de chaque table
+- `lib/floorPlanSeats.ts` : table 38 (« Dikalvin ») et table 7 refaite sur le plan (6) (Julianna siège 2, Gloria siège 4, Juliana siège 8, sans Nedy Simao).
+
 ## [1.80.0] — 2026-10-11
 
 Demande de Gersom : « met à jour le nom et l'app » (`guest-list_68.csv`, name-tags et seating-chart seatplan.io du 10/10 (4)). Le plan seatplan.io fait foi sur les placements ; With Joy 68 n'apporte que des noms.

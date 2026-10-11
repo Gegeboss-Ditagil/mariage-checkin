@@ -1,12 +1,14 @@
 # Assignation des tables — méthode et résultat
 
-**Version documentaire : 1.68.2**
-**Dernière mise à jour : 2026-10-06**
+**Version documentaire : 1.80.1**
+**Dernière mise à jour : 2026-10-11**
 **Statut : appliqué en base et vérifié.**
 
 Import initial réalisé à partir de l'export With Joy `guestlist_8.csv`. Les places marquées `confirmée` viennent des labels With Joy; les places `provisoire` restent à valider. `/plan-table` reflète l'état courant de la base.
 
 **Depuis le 25/08/2026, la source de vérité des tables/placements n'est plus With Joy mais un tableur corrigé directement par la famille lors d'ateliers de réorganisation** (voir `docs/DATA_CHANGE_INSTRUCTIONS.md` section 6 et `CHANGELOG.md`, entrée « atelier famille »). With Joy reste utilisé uniquement pour les coordonnées de contact.
+
+**État de la liste au 11/10/2026 (v1.80.1)** : synchronisée avec With Joy `guest-list_70.csv` et le plan seatplan.io du 10/10 (6) — **262 invitations, 0 table en surcapacité**, réserves 1 et 42 vides. Le plan seatplan.io fait foi sur les placements et les sièges ; With Joy sert aux noms et aux contacts. Dernières migrations de données : `0074`, `0075`, `0076` (appliquées et vérifiées, voir `docs/MIGRATIONS_PRODUCTION.md`).
 
 ## Capacité cible actuelle
 

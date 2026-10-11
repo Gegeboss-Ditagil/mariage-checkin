@@ -46,6 +46,11 @@
 // sur 378 sieges) -- Luis/Gaby Dos Goncalves, Mabata nommes (Sofiane, Mernad,
 // Diklavin a la 38, Merline a la 40), Edoly Lukoki retiree, Eude Matondo (31) et
 // Luzolo Patrick Menga (36) echanges ; table 39 remise a 10 cases (une manquait).
+// v1.80.1 (plan du 10/10 (5) + guest-list_69) : table 7, prenoms reels des Culumbu
+// (Epouse Gilie, Anderson, Merveille, Angelino ; « Filho 5 » en attente de Gersom) ;
+// table 38, « Dikalvin Mabata » (orthographe With Joy et plan (5)).
+// Puis plan (6) + guest-list_70 : table 7 refaite (Julianna Matondo siege 2, Gloria
+// Culumbu siege 4, Juliana Culumbu siege 8, Nedy Simao retiree).
 export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   // Tables 1 et 42 : reserves excedentaires, vides sur le plan.
   1: [null, null, null, null, null, null, null, null, null, null],
@@ -54,7 +59,7 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   4: ["Henri Onatshungu Momba", "Henriela Onatshungu Momba", "Thierry Mbiyavanga Mavinga", "Dorothée Deborah Nsingani", "Staicy Mbiyavanga Mavinga", "Kelcy Mbiyavanga Mavinga", "Jessy Buka Mbiyavanga Mavinga", "Taylor Mbiyavanga Mavinga", "Fiston Zola", "Michela Teka sanda"],
   5: ["Maria Mputuilu", "Graça Inacio", "Andre Neves", "Chantal Neves", "Papa David Lukau", "Maman Josefina Lukau", "David-Junior Lukau", "Eutyche Lukau", "Elisa Jean", "Alfred Jean"],
   6: ["Helder Vemba", "Kupesa Lando Ferreira", "Eugenia Sengo chipala", "Destino Mbulu Esamba", "Tchecka Mbulu", "Adriano Vemba", "Merveille Makaya", "Emilia Mbidi", "Danyl Mbidi", "Papy Mamona"],
-  7: ["Bob Culumbu", "Nedy Simao", "Jessiline Mateus", "Filho 1 Culumbu", "Filho 3 Culumbu", "Filho 4 Culumbu", "Filho 5 Culumbu", "Femme Culumbu", "Tio Gilie Culumbu", "Julianna Matondo"],
+  7: ["Julianna Matondo", "Jessiline Mateus", "Gloria Culumbu", "Anderson Culumbu", "Merveille Culumbu", "Angelino Culumbu", "Juliana Culumbu", "Epouse Gilie Culumbu", "Tio Gilie Culumbu", "Bob Culumbu"],
   8: ["Mahjo Yezi", "Adriana Tsita", "Seda Tahan", "Sarah Tahan", "Hadelin Yezi", "Deborah Yezi", "Odette Culumbu", "Ya Lale Culumbu", "Tata Julie Indanda", "Celestina Yezi"],
   9: ["Lotine André", "Andre Nsiangangu", "Femme Nsiangangu", "Enfant Nsiangangu", "Maurice Ndani Ndoba", "Keyris Ndani", "Giresse Juliano Nzengo", "Grace Tshisungu", null, "Mamita Ndani"],
   10: ["Rose-marie Kumba", "Qeren Moba-Mbemba", "Naomie Ghansi", "Kevin GHANSI", "Josué Ghansi", "Fyra Biyoudi", "Chindelle Moba-Mbemba", "Christelle Lema", "Eric Lema", "Stephanie Buluka mituele"],
@@ -85,7 +90,7 @@ export const TABLE_SEAT_NAMES: Record<number, (string | null)[]> = {
   35: ["Clement Luvuasi", "Maguy Luvuasi", "Kamal Bekka", "Kizomba Artist", "Denis Beijinho", "Samy Archange", "Dede DelaVille", "Marta Bekka", "Ines Bekka", "Geodray Luvuasi"],
   36: ["Joeliane Elmacin Lumbu", "Lumbu Mabanza Joël", "Herve Menga", "Luzolo Patrick Menga", "Francisco Matondo", "Huguette Matondo", "Tuzola SAVIERA", "Riffick Saviera", "Keith Saviera", "Mercia Saviera"],
   37: ["Bangaly Souare", "Yannick Abdoul Camara", "Tiphaine Abdoul Camara", "Thomas Wandubula", "Jean-Claude Onokoko", "Cécile Mbila", "Jean Mbila", "Denise Nkoussou", "David Cairaschi", "Fatou Diaby"],
-  38: ["Sofiane Mabata", "Mernad Mabata", "Bana Menga", "Bana Menga", "Lambert Menga", "Jacquie Menga", "Jennifer Bembo", "Joël Bembo", "Diklavin Mabata", "Nadia Mabata"],
+  38: ["Sofiane Mabata", "Mernad Mabata", "Bana Menga", "Bana Menga", "Lambert Menga", "Jacquie Menga", "Jennifer Bembo", "Joël Bembo", "Dikalvin Mabata", "Nadia Mabata"],
   39: ["Priscile Makuntima", "Barnabe Shungu", "Isidore Luyindula", "Glody Kambwa", "Lucien Shampe", "Léna Vinelle Nganga", "Jeanne Tona", "Helène Tona", null, "Ahicam Damuna"],
   40: ["Simao Guilherme", "Michelina Guilherme", "Gisele Bopima", "Michaud Mabata", "Merline Mabata", "Glavina Lukoki", "Daryl Lukoki", "Gladys Lukoki", "Dany Lukoki", "Raphael Da Silva"],
   41: ["Brady Landu", "Julia Moussaoui", "Greg Moussaoui", "Maeva Moussaoui", "Roger Makongo", "Axel Tacita", "Solena Marzollo", "Daeve Landu", "Dylan Landu", "Victoria Landu"],
