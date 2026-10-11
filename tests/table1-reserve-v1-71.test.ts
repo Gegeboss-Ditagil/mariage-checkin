@@ -57,7 +57,7 @@ test('capacités affichées : 400 places officielles, réserves = tables 1 et 42
   assert.match(importPage, /en réserve \(tables 1 et 42, excédentaires\)/);
   const seats = read('../lib/floorPlanSeats.ts');
   assert.match(seats, /^\s*42: \[null, null, null, null, null, null, null, null, null, null\],/m);
-  assert.match(seats, /"Rémy Landu", "Roger Makongo"\]/);
+  assert.match(seats, /"Lys Landu", "Rémy Landu"/);
   assert.match(seats, /"Claudine Pello", "Luzolo Patrick Menga"/);
 });
 

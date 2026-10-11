@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.79.1**
+**Version documentaire : 1.79.2**
 **Dernière mise à jour : 2026-10-10**
 
 Avant toute modification, lire dans cet ordre :
@@ -161,6 +161,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.78.0 : changement de rôle effectif immédiatement — `getSessionUser()` est désormais **asynchrone** (`await getSessionUser()` partout) et relit rôle/actif en base (`lib/session.ts`, `lib/sessionRefresh.ts`, cache 3 s, `forgetAccountState` après modification) ; `components/SessionWatcher.tsx` + `/api/auth/me` (ouvert à tout compte connecté dans `middleware.ts`) rechargent la page d'un compte dont le rôle a changé ; entre rôles « PIN », le PIN est conservé. Test navigateur : `qa/functional/role-change.spec.ts`.
 - v1.79.0 : la réinitialisation des données de test (`reset_test_event_data`, migration `0070`, **à exécuter par Gersom dans l'éditeur SQL**) efface aussi les invités surprise approuvés (note « Invité surprise approuvé… » ET `withjoy_party_id` nul) et les demandes d'approbation ; toujours refusée en mode `live`. `/admin` explique chaque mode et grise le bouton rouge en JOUR J. Les modes ne changent PAS ce que les agents peuvent faire : seul le bouton rouge en dépend. Test : `qa/functional/test-mode-reset.spec.ts`.
 - v1.79.1 : 0070 appliquée et bouton rouge pressé par Gersom (vérifié). Migration `0071` (**à exécuter par Gersom dans l'éditeur SQL**) supprime 9 invitations sans table demandées (groupes 1-3 : « ne viendra pas », Waku Menga, Flora Landu, fiche fantôme Odette Muzezenu mulumba — jamais « Odette Manuel », table 31), sauvegarde `import_backups` kind `v1.79.1_sans_table`. Comparaison `guest-list_65.csv` / plan seatplan.io du 10/10 / base : écarts listés dans CHANGELOG 1.79.1, **aucun placement modifié** sans décision de Gersom.
+- v1.79.2 : 0071 appliquée (vérifié). Migration `0072` (**à exécuter par Gersom dans l'éditeur SQL**) : synchronisation guest-list_66 + plan seatplan.io du 10/10 là où les deux sont d'accord (Lys Landu → 30, Roger Makongo → 41, Famille Pierrefitte → Famille Moussaoui, Allegria Mpilingi → Solena Marzollo, 9 corrections de noms) + suppression de 5 fiches sans table (Ashnee Barclay, Famille Mwinba, Lina Kumpesa, Grâce Ndonga, Sister 1 Malungu), sauvegarde kind `v1.79.2_sync_guest_list_66`. `lib/floorPlanSeats.ts` reconstruit depuis ce PDF. Écarts restants (6/13, 26/27, Doumbia, Steven Kimbau) : CHANGELOG 1.79.2.
 
 ## Reprise rapide pour Claude AI
 
