@@ -31,7 +31,8 @@ export type Capability =
   | 'deleteGuestApproval'
   | 'exportData'
   | 'adminPanel'
-  | 'managePasswords';
+  | 'managePasswords'
+  | 'manageAccounts';
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
@@ -39,7 +40,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'messageContacts', 'contactGuests',
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
-  'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords',
+  'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords', 'manageAccounts',
 ];
 
 // viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
@@ -90,7 +91,11 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // pouvoir [appeler/texter] un invite, un peu comme les gens du staff" --
   // appeler/texter un INVITE (/search), distincte de callStaff/
   // messageContacts qui portent sur le STAFF (/staff, /plan-table).
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'contactGuests'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests'],
+  // manageAccounts (v1.81.0, retour de Gersom) : « Gestion des comptes »
+  // (/admin/users) pour le directeur de festin -- mêmes actions que l'admin
+  // (créer, renommer, activer/désactiver, changer rôle/PIN, réinitialiser)
+  // SAUF sur un compte admin : voir canManageAccount.
   // viewAgenda ajoutee le 14/09/2026 (retour de Gersom sur Agent001, verifie
   // en base -- role reellement `placeur` : la barre du bas calque
   // desormais le comportement contextuel de directeur -- voir
@@ -159,6 +164,15 @@ export function canResetPassword(actor: { role: Role; is_super_admin?: boolean }
   return targetRole !== 'admin';
 }
 
+// v1.81.0 : « Gestion des comptes ». Seul point de décision pour savoir qui
+// peut créer/modifier/(dés)activer quel compte -- jamais recréé dans l'API
+// ou la page. Un directeur ne touche jamais un compte admin (ni ne crée ou
+// promeut un admin) ; un admin garde tous ses droits.
+export function canManageAccount(actor: { role: Role }, targetRole: Role): boolean {
+  if (!hasCapability(actor.role, 'manageAccounts')) return false;
+  return actor.role === 'admin' || targetRole !== 'admin';
+}
+
 export function canViewPasswordHint(actor: { is_super_admin?: boolean }): boolean {
   return actor.is_super_admin === true;
 }
@@ -177,17 +191,14 @@ export function landingPathForRole(role: Role): string {
 // defaut du role, comme n'importe quel chemin hors matrice.
 // '/approbations' est aussi ouvert a visibilite : ce role peut approuver ou
 // refuser dans l'application, sans recevoir les autres droits operationnels.
-// '/mots-de-passe' ajoute le 03/10/2026 (directeur gagne managePasswords) --
-// reste filtre plus bas par hasCapability(role, 'managePasswords'), jamais
-// atteignable par placeur (meme liste) sans cette capacite.
+// (v1.82.0 : la page /mots-de-passe est supprimee -- reinitialiser se fait
+// dans /admin/users, ouvert a manageAccounts.)
 // '/mon-mot-de-passe' ajoute le 07/10/2026 : changer SON PROPRE mot de
 // passe/PIN, ouvert a TOUS les roles (present dans les trois listes de
-// prefixes ci-dessous) -- aucune capacite ne le filtre, contrairement a
-// '/mots-de-passe' (reinitialiser le mot de passe d'AUTRUI, reserve a
-// managePasswords).
+// prefixes ci-dessous) -- aucune capacite ne le filtre.
 const FULL_STAFF_PREFIXES = [
   '/scan', '/table', '/staff', '/checkin', '/search', '/dashboard', '/tables',
-  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/mots-de-passe', '/mon-mot-de-passe', '/api',
+  '/plan-table', '/exceptions', '/placement', '/approbations', '/agenda', '/mon-mot-de-passe', '/admin/users', '/api',
 ];
 
 // '/agenda' ajoute le 03/09/2026 (agent_checkin gagne viewAgenda en lecture
@@ -221,7 +232,7 @@ export function canAccessPath(role: Role, pathname: string): boolean {
 
   if (matchesPrefix(pathname, '/agenda') && !hasCapability(role, 'viewAgenda')) return false;
   if (matchesPrefix(pathname, '/approbations') && !hasCapability(role, 'viewGuestApprovals')) return false;
-  if (matchesPrefix(pathname, '/mots-de-passe') && !hasCapability(role, 'managePasswords')) return false;
+  if (matchesPrefix(pathname, '/admin/users') && !hasCapability(role, 'manageAccounts')) return false;
   // v1.72.1 (QA par rôle) : les écrans d'ÉCRITURE sous /tables étaient
   // ouverts à tout rôle ayant le préfixe /tables -- visibilité (lecture
   // seule) pouvait ouvrir /tables/add, /tables/move..., le placeur

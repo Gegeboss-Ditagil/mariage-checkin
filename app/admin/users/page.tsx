@@ -40,11 +40,16 @@ export default function UsersAdminPage() {
   // v1.67.4, retour de Gersom : "ajuster la fonction de réinitialisation...
   // pour qu'elle soit ajoutée à la page de gestion de compte... on peut
   // réinitialiser, on peut aussi modifier. On a le choix." -- même action
-  // que /mots-de-passe (POST /api/passwords, canResetPassword en seule
+  // qu'avant (POST /api/passwords, canResetPassword en seule
   // source de vérité), directement dans la fiche d'édition de ce compte,
-  // additif : /mots-de-passe reste la seule page atteignable par directeur
+  // (v1.82.0 : /mots-de-passe supprimee, ceci est desormais le seul point d'entree)
   // (sans accès à /admin/users), inchangée.
   const [canViewHints, setCanViewHints] = useState(false);
+  // v1.81.0 : « Gestion des comptes » ouverte au directeur de festin -- il ne
+  // peut ni créer/promouvoir un admin, ni modifier un compte admin.
+  const [viewerRole, setViewerRole] = useState<Role | null>(null);
+  const isAdminViewer = viewerRole === null || viewerRole === 'admin';
+  const roleOptions = isAdminViewer ? ROLE_OPTIONS : ROLE_OPTIONS.filter((opt) => opt.value !== 'admin');
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetResult, setResetResult] = useState<{ nom_affichage: string; pin: string } | null>(null);
@@ -55,13 +60,14 @@ export default function UsersAdminPage() {
       .then((d) => {
         setUsers(d.users || []);
         setCanViewHints(d.canViewHints === true);
+        if (d.viewerRole) setViewerRole(d.viewerRole);
       });
   }
 
   useEffect(load, []);
 
   async function resetPassword(u: UserRow) {
-    // v1.76.0 : même confirmation que /mots-de-passe -- jamais d'un seul toucher.
+    // v1.76.0 : même confirmation partout -- jamais d'un seul toucher.
     if (!window.confirm(`Générer un nouveau code pour « ${u.nom_affichage} » ? Son code actuel ne fonctionnera plus.`)) return;
     setResetError(null);
     setResettingId(u.id);
@@ -167,7 +173,7 @@ export default function UsersAdminPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title="Comptes de l'equipe" backHref="/admin" />
+      <TopBar title={isAdminViewer ? "Comptes de l'equipe" : 'Gestion des comptes'} backHref={isAdminViewer ? '/admin' : '/dashboard'} />
 
       <div className="flex-1 space-y-6 px-4 py-4">
         <form onSubmit={add} className="card space-y-3">
@@ -184,7 +190,7 @@ export default function UsersAdminPage() {
             value={role}
             onChange={(e) => setRole(e.target.value as Role)}
           >
-            {ROLE_OPTIONS.map((opt) => (
+            {roleOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -233,6 +239,9 @@ export default function UsersAdminPage() {
                   <p className="font-medium ">{u.nom_affichage}</p>
                   <p className="text-sm text-text-faint">{ROLE_LABELS[u.role] || u.role}</p>
                 </div>
+                {u.locked ? (
+                  <p className="text-xs text-text-faint">Réservé aux admins</p>
+                ) : (
                 <div className="flex items-center gap-2">
                   {/* v1.70.0 : meme crayon en verre que /agenda, TopBar et
                       /members (style uniforme) -- l'ancien bouton texte
@@ -261,9 +270,10 @@ export default function UsersAdminPage() {
                     <span aria-hidden className={'glass-toggle-thumb' + (u.active ? ' glass-toggle-thumb-on' : '')} />
                   </button>
                 </div>
+                )}
               </div>
 
-              {editingId === u.id && (
+              {editingId === u.id && !u.locked && (
                 (() => {
                   const roleChanged = editRole !== u.role;
                   // Rôle changé : le mode de connexion en dépend (email +
@@ -315,7 +325,7 @@ export default function UsersAdminPage() {
                           title={u.isSelf ? 'Votre propre rôle ne peut pas être changé ici' : undefined}
                           onChange={(e) => setEditRole(e.target.value as Role)}
                         >
-                          {ROLE_OPTIONS.map((opt) => (
+                          {roleOptions.map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
                         </select>

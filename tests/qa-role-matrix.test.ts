@@ -50,6 +50,7 @@ const EXPECTED: Record<Capability, [boolean, boolean, boolean, boolean, boolean]
   exportData: [Y, N, N, N, N],
   adminPanel: [Y, N, N, N, N],
   managePasswords: [Y, Y, N, N, N],
+  manageAccounts: [Y, Y, N, N, N], // v1.81.0 : Gestion des comptes (directeur sauf comptes admin)
 };
 
 test('QA rôles : chaque rôle a exactement les capacités attendues (aucune en trop, aucune en moins)', () => {
@@ -93,7 +94,6 @@ const PATHS: Record<string, [boolean, boolean, boolean, boolean, boolean]> = {
   '/approbations/abc/assign': [Y, Y, Y, Y, Y],
   '/agenda': [Y, Y, Y, Y, N],
   '/history': [Y, N, N, N, N],
-  '/mots-de-passe': [Y, Y, N, N, N],
   '/mon-mot-de-passe': [Y, Y, Y, Y, Y],
   '/tables/add': [Y, Y, N, N, N], // addInvitation
   '/tables/move-guest/abc': [Y, Y, Y, N, N],
@@ -101,7 +101,7 @@ const PATHS: Record<string, [boolean, boolean, boolean, boolean, boolean]> = {
   '/tables/move-multiple': [Y, Y, Y, N, N],
   '/tables/overflow/abc': [Y, Y, Y, N, N], // manageOverflow
   '/admin': [Y, N, N, N, N],
-  '/admin/users': [Y, N, N, N, N],
+  '/admin/users': [Y, Y, N, N, N], // v1.81.0 : directeur (manageAccounts)
   '/admin/import-withjoy': [Y, N, N, N, N],
   '/admin/exports': [Y, N, N, N, N],
   '/': [Y, Y, Y, Y, Y],

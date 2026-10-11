@@ -111,9 +111,10 @@ test.describe('parcours métier', () => {
     expect((await db<{ active: boolean }>(request, 'GET', '/users?select=active&nom_affichage=eq.QA%20Scanneur'))[0].active).toBe(true);
   });
 
-  test('directeur : « Réinitialiser » un code demande toujours confirmation', async ({ page, request }) => {
+  test('directeur : « Réinitialiser » un code demande toujours confirmation (Gestion des comptes)', async ({ page, request }) => {
     await quickLogin(page, role('directeur'));
-    await page.goto('/mots-de-passe');
+    await page.goto('/admin/users');
+    await page.getByRole('button', { name: /^Modifier / }).first().click();
     let asked = '';
     page.once('dialog', (d) => { asked = d.message(); void d.dismiss(); });
     await page.getByRole('button', { name: 'Réinitialiser' }).first().click();

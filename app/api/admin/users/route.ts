@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { forgetAccountState, getSessionUser } from '@/lib/session';
 import { hashSecret } from '@/lib/auth';
-import { canResetPassword, canViewPasswordHint } from '@/lib/permissions';
+import type { Role } from '@/lib/types';
+import { canManageAccount, canResetPassword, canViewPasswordHint, hasCapability } from '@/lib/permissions';
+
+const ROLES = ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibilite'];
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !hasCapability(user.role, 'manageAccounts')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -19,7 +22,7 @@ export async function GET() {
 
   // v1.67.4, retour de Gersom : "réinitialiser"/"modifier" doivent être le
   // même choix, au même endroit (/admin/users), plutôt que réinitialiser
-  // vivant seulement sur l'écran séparé /mots-de-passe -- mêmes fonctions
+  // vivant sur un écran séparé (supprimé en v1.82.0) -- mêmes fonctions
   // canResetPassword/canViewPasswordHint (lib/permissions.ts, seule source
   // de vérité) que cet autre écran, jamais recréées ici.
   const canViewHints = canViewPasswordHint(user);
@@ -33,17 +36,25 @@ export async function GET() {
     canReset: canResetPassword(user, row.role),
     hint: canViewHints ? row.pin_reset_hint : undefined,
     isSelf: row.id === user.id,
+    // v1.81.0 : un directeur voit les comptes admin mais ne peut pas les modifier.
+    locked: !canManageAccount(user, row.role),
   }));
-  return NextResponse.json({ users, canViewHints });
+  return NextResponse.json({ users, canViewHints, viewerRole: user.role });
 }
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !hasCapability(user.role, 'manageAccounts')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { nom_affichage, role, pin, email, password } = await req.json().catch(() => ({}));
   if (!nom_affichage || !role) {
     return NextResponse.json({ error: 'nom_affichage et role requis' }, { status: 400 });
+  }
+  if (!ROLES.includes(role)) {
+    return NextResponse.json({ error: 'Rôle invalide' }, { status: 400 });
+  }
+  if (!canManageAccount(user, role)) {
+    return NextResponse.json({ error: 'Seul un admin peut créer un compte admin' }, { status: 403 });
   }
 
   const insert: Record<string, unknown> = {
@@ -81,11 +92,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ user: data });
 }
 
-const ROLES = ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibilite'];
-
 export async function PATCH(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !hasCapability(user.role, 'manageAccounts')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { id, active, nom_affichage, email, pin, password, role } = await req.json().catch(() => ({}));
   if (!id) {
@@ -97,7 +106,7 @@ export async function PATCH(req: NextRequest) {
   // v1.76.0, trouvé par le balayage « clique partout » : un admin pouvait
   // désactiver ou rétrograder SON PROPRE compte d'un seul geste et ne plus
   // pouvoir se reconnecter (ni personne pour le réactiver s'il est le seul).
-  if (id === user.id && (active === false || (role !== undefined && role !== 'admin'))) {
+  if (id === user.id && (active === false || (role !== undefined && role !== user.role))) {
     return NextResponse.json({ error: 'Vous ne pouvez pas désactiver ni rétrograder votre propre compte' }, { status: 400 });
   }
 
@@ -109,6 +118,11 @@ export async function PATCH(req: NextRequest) {
     .eq('event_id', user.event_id)
     .maybeSingle();
   if (!target) return NextResponse.json({ error: 'Compte introuvable' }, { status: 404 });
+  // v1.81.0 : un directeur ne modifie jamais un compte admin, ni n'en crée
+  // un en changeant le rôle d'un autre compte (canManageAccount).
+  if (!canManageAccount(user, target.role) || (typeof role === 'string' && !canManageAccount(user, role as Role))) {
+    return NextResponse.json({ error: 'Seul un admin peut modifier un compte admin' }, { status: 403 });
+  }
 
   const updates: Record<string, unknown> = {};
   if (typeof active === 'boolean') updates.active = active;
