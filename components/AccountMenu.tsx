@@ -8,6 +8,7 @@ import { useSessionRole } from '@/hooks/useSessionRole';
 import { useTheme, ThemePref } from '@/hooks/useTheme';
 import { usePolling } from '@/hooks/usePolling';
 import { hasCapability } from '@/lib/permissions';
+import { PushNotificationButton } from '@/components/PushNotificationButton';
 import { ROLE_LABELS } from '@/lib/types';
 import { clearGuestApprovalsCache } from '@/lib/guestApprovalClientCache';
 import { fetchPendingApprovalsCount, onPendingApprovalsCount } from '@/lib/pendingApprovalsRequest';
@@ -223,6 +224,10 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
                 capacite -- changer SON PROPRE secret, distinct de
                 "Mots de passe" ci-dessous (reinitialiser le compte
                 d'AUTRUI, reserve a managePasswords). */}
+            {/* v1.83.0 : l'activation des notifications n'existait que sur
+                /approbations -- les placeurs/directeurs qui n'y passent
+                jamais ne s'abonnaient pas (0 abonnement constaté). */}
+            {hasCapability(role, 'viewGuestApprovals') && <div className="px-1 pt-1"><PushNotificationButton /></div>}
             <Link role="menuitem" href="/mon-mot-de-passe" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">🔑 Mon mot de passe</Link>
             {canManageAccounts && <Link role="menuitem" href="/admin/users" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">👥 Gestion des comptes</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Administration</Link>}

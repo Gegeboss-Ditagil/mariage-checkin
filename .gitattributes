@@ -1,0 +1,12 @@
+# v1.83.0 : fins de ligne identiques (LF) sur tous les postes, Windows compris.
+# Évite les alertes « CRLF will be replaced by LF » et les tests fragiles
+# (tests/approbations-ux-improvements.test.ts, tests/floor-plan-seats.test.ts).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.lnk binary

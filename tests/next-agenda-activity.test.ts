@@ -11,13 +11,13 @@ const componentSource = readFileSync(new URL('../components/NextAgendaActivity.t
 const scanPageSource = readFileSync(new URL('../app/scan/page.tsx', import.meta.url), 'utf8');
 const scannerSource = readFileSync(new URL('../components/QrScanner.tsx', import.meta.url), 'utf8');
 
-test("v1.82.3 : la prochaine activite suit l'heure de Montreal (lib/agendaSchedule.ts), les lignes cochees restent sautees", () => {
+test("v1.82.3 : la prochaine activite suit l'heure de Paris (lib/agendaSchedule.ts), les lignes cochees restent sautees", () => {
   // Remplace la regle du 02/09/2026 (premiere non cochee, jamais l'heure) :
   // retour de Gersom, « rendre basee sur l'heure ». Les activites apres minuit
   // sont gerees par la ligne de temps continue de lib/agendaSchedule.ts
   // (tests/agenda-schedule.test.ts), jamais par une simple comparaison de texte.
   assert.ok(componentSource.includes('pickNextActivity(items, nowMinutes)'));
-  assert.ok(componentSource.includes('montrealMinutes(new Date())'));
+  assert.ok(componentSource.includes('parisMinutes(new Date())'));
   assert.ok(!componentSource.includes('items.find((item) => !item.completed)'));
   assert.match(componentSource, /Chronogramme terminé/);
   assert.match(componentSource, /En cours/);

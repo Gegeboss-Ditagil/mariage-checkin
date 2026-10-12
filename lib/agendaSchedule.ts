@@ -5,7 +5,7 @@
 // "Avant 14:30", "23:30–00:00"). Le programme du jour J court de 06:00 jusqu'à
 // 05:00 le lendemain : on les remet sur une seule ligne de temps continue
 // (minutes depuis minuit du jour J, > 1440 après minuit) avant de comparer à
-// l'heure de Montréal. Une ligne cochée « terminé » est toujours sautée.
+// l'heure de Paris. Une ligne cochée « terminé » est toujours sautée.
 
 export type ScheduleItem = { time_label: string; completed: boolean };
 export type TimedScheduleItem<T> = T & { startMin: number; endMin: number };
@@ -75,10 +75,10 @@ export function withTimeline<T extends { time_label: string }>(items: T[]): Time
   return timed;
 }
 
-/** Minutes depuis minuit à Montréal (Chambly), quel que soit le fuseau de l'appareil. */
-export function montrealMinutes(date: Date): number {
+/** Minutes depuis minuit à Paris, quel que soit le fuseau de l'appareil. */
+export function parisMinutes(date: Date): number {
   const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'America/Toronto',
+    timeZone: 'Europe/Paris',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',

@@ -58,6 +58,18 @@ export function PushNotificationButton() {
         try {
           const registration = await navigator.serviceWorker.ready;
           const existing = await registration.pushManager.getSubscription();
+          if (existing) {
+            // v1.83.0 : l'appareil est abonné MAIS le serveur peut l'avoir
+            // perdu (abonnement supprimé après un 410, clés VAPID changées,
+            // table recréée). On renvoie l'abonnement existant (upsert par
+            // endpoint, idempotent) : le serveur retrouve cet appareil sans
+            // aucun geste. Un échec laisse l'état « activé » sans bloquer.
+            fetch('/api/push/subscribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(existing.toJSON()),
+            }).catch(() => {});
+          }
           if (!cancelled) setStatus(existing ? 'enabled' : 'idle');
         } catch (error) {
           console.error('Echec verification abonnement notifications push', error);

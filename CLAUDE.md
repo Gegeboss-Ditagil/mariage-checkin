@@ -1,7 +1,7 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.82.6**
-**Dernière mise à jour : 2026-10-11**
+**Version documentaire : 1.83.0**
+**Dernière mise à jour : 2026-10-12**
 
 Avant toute modification, lire dans cet ordre :
 
@@ -173,6 +173,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.82.5 : tests de l'agenda sur la base réelle puis verrouillés. `lib/agendaVisibility.ts` (`visibleAgendaItems`) extrait de `GET /api/agenda` : un rôle sans `manageAgenda` ne reçoit jamais une ligne privée (`tests/agenda-visibility.test.ts`). Simulation en base le 11/10/2026 : scanner et placeur voient 27 lignes sur 51 (16 en vert, 0 fuite aérodrome/Persan/hélicoptère), Rémy et Tuzola voient les 51 (12 en vert). `events.event_date` renseignée au 24/10/2026 (n'affecte que l'assistant de configuration). Les 2 échecs locaux (`GuestArrivalPanel`, surbrillance de siège) venaient des fins de ligne Windows : `tests/approbations-ux-improvements.test.ts` et `tests/floor-plan-seats.test.ts` normalisent maintenant les fins de ligne (CRLF → LF). Aucune migration.
 - v1.82.6 : « Famille Mpiassa » (4 personnes, RSVP Peut-être, sans table) marquée « ne viendra pas » sur demande de Gersom (migration `0079`, appliquée et vérifiée en production le 11/10/2026, ne pas réexécuter ; sauvegarde `v1.82.6_mpiassa`). Reste 10 invitations attendues sans table : 9 prestataires (photographes, DJ, traiteur) et « Nelly Dos Goncalves » (0 personne). Aucun code modifié.
 - v1.82.0 : « Gestion des comptes » pour le directeur de festin (demande de Gersom). Capacité `manageAccounts` (admin, directeur) + `canManageAccount` (`lib/permissions.ts`) : `/admin/users` et `/api/admin/users` ouverts au directeur, sauf sur les comptes admin (affichés « Réservé aux admins », refus 403 côté API, jamais de création/promotion en admin). Menu du compte : pour directeur, « Gestion des comptes » remplace « Mots de passe » sous « Mon mot de passe ». Personne ne peut se désactiver ni changer son propre rôle. La page `/mots-de-passe` est supprimée (l'API `/api/passwords` reste, appelée par « Réinitialiser » de `/admin/users`). Aucune migration.
+- v1.83.0 : lot de la liste de recommandations du 12/10/2026 (points 3, 4, 10, 12, 13, 15, 17). **Push** : cause réelle de « 0 abonnement » = aucune variable `VAPID_*` sur Vercel (`/api/push/vapid-public-key` répondait 503) — paire de clés générée et posée en production le 12/10/2026 (effet au prochain déploiement) ; en plus : `PushNotificationButton` renvoie l'abonnement existant au serveur à chaque ouverture (upsert idempotent) et est aussi dans le menu du compte (il n'existait que sur `/approbations`), `lib/webPush.ts` journalise (`app_logs`) VAPID absent et tout échec d'envoi non-410, `tests/web-push.test.ts` (comportement, faux client). **Heure de Paris** : `parisMinutes` (`Europe/Paris`) remplace `montrealMinutes` pour la bande « Prochaine activité » (CEST le 24/10, retour à l'heure d'hiver à 03:00 le 25/10 testé). `.gitattributes` (LF partout). `docs/BACKLOG.md` remis à jour. Aucune migration.
 
 ## Reprise rapide pour Claude AI
 

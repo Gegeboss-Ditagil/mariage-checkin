@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
 import { usePolling } from '@/hooks/usePolling';
-import { montrealMinutes, pickNextActivity } from '@/lib/agendaSchedule';
+import { parisMinutes, pickNextActivity } from '@/lib/agendaSchedule';
 import type { Role } from '@/lib/types';
 
 type AgendaItem = { id: string; time_label: string; title: string; completed: boolean };
@@ -20,21 +20,21 @@ type AgendaItem = { id: string; time_label: string; title: string; completed: bo
  *
  * "Prochaine activité" (v1.82.3, retour de Gersom : « basée sur l'heure ») =
  * la première activité du chronogramme, non cochée "terminé", qui n'est pas
- * déjà passée selon l'heure de Montréal -- voir lib/agendaSchedule.ts, qui
+ * déjà passée selon l'heure de Paris -- voir lib/agendaSchedule.ts, qui
  * gère les lignes après minuit (23:30–00:00, 00:40, 03:00, 05:00). Une
  * ligne déjà commencée s'affiche « En cours ». Cocher une ligne la saute
  * toujours, ce qui permet de rattraper un déroulement en avance.
  */
 export function NextAgendaActivity({ role }: { role: Role }) {
   const [items, setItems] = useState<AgendaItem[] | undefined>(undefined);
-  const [nowMinutes, setNowMinutes] = useState(() => montrealMinutes(new Date()));
+  const [nowMinutes, setNowMinutes] = useState(() => parisMinutes(new Date()));
 
   const loadNext = useCallback(async () => {
     const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
     if (!response?.ok) return;
     const data = await response.json();
     setItems((data.items || []) as AgendaItem[]);
-    setNowMinutes(montrealMinutes(new Date()));
+    setNowMinutes(parisMinutes(new Date()));
   }, []);
 
   const canPollAgenda = hasCapability(role, 'viewAgenda');

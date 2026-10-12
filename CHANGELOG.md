@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.83.0] — 2026-10-12
+
+Lot issu de la liste de recommandations (points 3, 4, 10, 12, 13, 15, 17).
+
+- **Notifications Push (point 3)** : cause réelle du « 0 abonnement » — les variables `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` n'existaient pas sur Vercel, donc `/api/push/vapid-public-key` répondait 503 et personne ne pouvait s'abonner. Paire de clés neuve posée en production le 12/10/2026 (aucun abonnement existant à invalider) ; **effective au prochain déploiement**. Corrections de code : l'abonnement déjà présent sur l'appareil est renvoyé au serveur à chaque ouverture (upsert par endpoint) ; le bouton d'activation est aussi dans le menu du compte ; `lib/webPush.ts` (`deliverPush`) journalise VAPID absent et tout échec d'envoi autre que 404/410 dans `app_logs`. `tests/web-push.test.ts` (4 tests de comportement).
+- **Heure de Paris (point 15)** : la bande « Prochaine activité » de `/scan` suit `Europe/Paris` (`parisMinutes`), plus Montréal ; le test couvre le passage à l'heure d'hiver du 25/10 à 03:00.
+- **`.gitattributes` (point 13)** : `* text=auto eol=lf`, fichiers existants renormalisés (changements de fins de ligne uniquement).
+- **`docs/BACKLOG.md` (point 12)** remis à jour (0073 appliquée, nouvelle liste du 12/10).
+- **Dette de tests (point 17)** : les modules touchés ont des tests de résultat (`tests/web-push.test.ts` avec faux client Supabase et faux émetteur Push ; `parisMinutes` jusqu'au passage à l'heure d'hiver). Les ~1 500 autres assertions « le code contient X » ne sont pas réécrites d'un coup : elles le sont au fil des modifications (BACKLOG #4).
+- Aucune migration.
+
 ## [1.82.6] — 2026-10-11
 
 Demande de Gersom : « Famille Mpiassa » (4 personnes, RSVP « Peut-être », sans table) est marquée « ne viendra pas ».
