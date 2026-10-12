@@ -58,7 +58,7 @@ test("/plan-table affiche ce panneau uniquement pour la table selectionnee, jama
 });
 
 test('reinitialise la surbrillance de siege a chaque changement de table (jamais collee sur une ancienne table)', () => {
-  const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8');
+  const pageSource = readFileSync(new URL('../app/plan-table/page.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   const setSelectedCalls = pageSource.match(/setSelectedTableId\([^)]*\);\n\s*setSelectedZone\([^)]*\);\n\s*setHighlightedSeats\(\[\]\);/g) || [];
   assert.ok(setSelectedCalls.length >= 2, 'selectTableByNumber et locateOnPlan doivent tous deux reinitialiser highlightedSeats');
 });

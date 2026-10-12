@@ -18,7 +18,8 @@ test('la migration 0058 ajoute is_private (boolean, defaut false) a agenda_items
 
 test('GET /api/agenda filtre les elements prives cote serveur pour tout role sans manageAgenda -- jamais un masquage client', () => {
   assert.match(apiSource, /const canManage = hasCapability\(user\.role, ['"]manageAgenda['"]\)/);
-  assert.match(apiSource, /canManage \? normalized : normalized\.filter\(\(item\) => !item\.is_private\)/);
+  // v1.82.5 : le filtre vit dans lib/agendaVisibility.ts (testé dans tests/agenda-visibility.test.ts).
+  assert.ok(apiSource.includes('visibleAgendaItems(normalized, canManage)'));
   // Le filtrage doit s'appliquer AVANT la reponse JSON -- jamais renvoyer
   // tous les items puis laisser le client trier (fuite reseau).
   assert.match(apiSource, /items: visible/);

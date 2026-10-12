@@ -3,6 +3,18 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.82.5] — 2026-10-11
+
+Tests de l'agenda sur la base réelle, puis verrouillés par des tests.
+
+- Simulation en production (lecture seule, vrais comptes) : un scanner (Damuna) et un placeur (Agent002) voient 27 lignes sur 51, 16 en vert, 0 fuite (aérodrome, Persan, hélicoptère, atterrissage) ; Rémy et Tuzola voient les 51 lignes, 12 en vert ; l'approbateur voit 27 lignes.
+- `lib/agendaVisibility.ts` (`visibleAgendaItems`) extrait de `GET /api/agenda` : un rôle sans `manageAgenda` ne reçoit jamais une ligne privée. `tests/agenda-visibility.test.ts` (3).
+- `events.event_date` renseignée au 24/10/2026 en production (n'affecte que l'assistant de configuration).
+- Les 2 échecs locaux (`GuestArrivalPanel`, surbrillance de siège) venaient des fins de ligne Windows : leurs tests normalisent maintenant CRLF → LF. 586 tests passent en local, 0 échec.
+- Revue des écarts du 1.68.1 : la plupart des personnes citées sont maintenant en base avec une table ; restent « VIP 1 » (absent) et « Famille Mpiassa » (4 personnes, RSVP « Peut-être », sans table).
+
+Aucune migration.
+
 ## [1.82.4] — 2026-10-11
 
 Test de la bande « Prochaine activité » minute par minute sur les 27 lignes publiques réelles de production (balayage 14:00 → 05:00 : jamais « null », aucune erreur) — deux défauts de logique trouvés et corrigés dans `lib/agendaSchedule.ts`.
