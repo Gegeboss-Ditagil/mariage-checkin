@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/session';
 import { hasCapability } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { visibleAgendaItems } from '@/lib/agendaVisibility';
 
 // Noms libres (ex: "Nourdine, electricien") en plus des comptes existants --
 // voir 0043_agenda_custom_assignees.sql. Nettoyage minimal cote serveur :
@@ -50,7 +51,7 @@ export async function GET() {
   // dans le JSON pour un element prive -- jamais un simple masquage cote
   // client, qui laisserait fuiter le contenu dans la reponse reseau.
   const normalized = (items || []).map(normalizeAgendaItem);
-  const visible = canManage ? normalized : normalized.filter((item) => !item.is_private);
+  const visible = visibleAgendaItems(normalized, canManage);
   return NextResponse.json(
     // currentUserId (v1.64.0) : permet au client de reconnaitre, pour
     // n'importe quel role, les elements ou son propre compte figure dans

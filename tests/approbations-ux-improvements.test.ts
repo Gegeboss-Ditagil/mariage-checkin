@@ -18,7 +18,7 @@ import test from 'node:test';
 //    prioritaire dans /approbations/[id]/assign ; fiche resserrée.
 
 const bottomNav = readFileSync(new URL('../components/BottomNav.tsx', import.meta.url), 'utf8');
-const guestArrivalPanel = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8');
+const guestArrivalPanel = readFileSync(new URL('../components/GuestArrivalPanel.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const checkinPage = readFileSync(new URL('../app/checkin/[invitationId]/page.tsx', import.meta.url), 'utf8');
 const guestApprovalsRoute = readFileSync(new URL('../app/api/guest-approvals/route.ts', import.meta.url), 'utf8');
 const approbationsPage = readFileSync(new URL('../app/approbations/page.tsx', import.meta.url), 'utf8');
