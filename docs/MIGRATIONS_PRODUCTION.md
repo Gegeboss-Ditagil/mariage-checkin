@@ -94,6 +94,7 @@ Vérifié en production table par table (fonctions, colonnes, données). Toutes 
 | `0074_sync_guest_list_68_name_tags.sql` | Appliquée par l'agent (MCP Supabase, `apply_migration`) le 11/10/2026 après simulation dans une transaction annulée ; effets vérifiés (263 invitations, 0 table en surcapacité, sauvegarde `v1.80.0_guest_list_68`) |
 | `0075_culumbu_names_dikalvin.sql` | Appliquée par l'agent (MCP Supabase, `apply_migration`) le 11/10/2026 ; effets vérifiés (notes Famille Culumbu et Famille Mabata, sauvegarde `v1.80.1_culumbu_dikalvin`) |
 | `0076_table7_gloria_juliana_remove_nedy.sql` | Appliquée par l'agent (MCP Supabase, `apply_migration`) le 11/10/2026 ; effets vérifiés (Nedy Simao supprimée, Famille Culumbu 7 places, table 7 à 10/10, 262 invitations, sauvegarde `v1.80.1_table7_nedy`) |
+| `0077_agenda_jour_j_programme_complet.sql` | **À exécuter par Gersom dans l'éditeur SQL** (contient un DELETE, bloqué côté agent) : remplace l'agenda par le programme du 24/10/2026 (47 activités), sauvegarde `v1.82.1_agenda_jour_j`. Puis inscrire `0077` à l'historique (voir règles ci-dessus) |
 
 ## Hors dépôt, trouvé en production
 

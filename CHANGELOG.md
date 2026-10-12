@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.82.1] — 2026-10-11
+
+Demande de Gersom : remplacer l'agenda par le programme complet du 24/10/2026 (accueil, DJ, directeur du festin).
+
+- Migration `0077_agenda_jour_j_programme_complet.sql` : 47 activités avec département, responsables (noms libres), et visibilité. Publique = ce dont l'accueil a besoin, texte neutre. Privée = coulisses et surprise (admin/directeur seulement). Sauvegarde `import_backups` (`v1.82.1_agenda_jour_j`) avant remplacement, idempotente. **À exécuter par Gersom** dans l'éditeur SQL (DELETE).
+- `tests/agenda-jour-j-migration.test.ts` : 47 lignes, aucune fuite de la surprise dans une ligne publique, sauvegarde avant suppression.
+- Choix par défaut en attente de relecture : responsables en noms libres, lignes 32 et 44 publiques.
+
+Aucun changement de code applicatif.
+
 ## [1.82.0] — 2026-10-11
 
 Demande de Gersom : le directeur de festin (Rémy et les autres) obtient « Gestion des comptes » au lieu du simple lien « Mots de passe ».
