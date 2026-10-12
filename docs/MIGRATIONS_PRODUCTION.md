@@ -95,6 +95,7 @@ Vérifié en production table par table (fonctions, colonnes, données). Toutes 
 | `0075_culumbu_names_dikalvin.sql` | Appliquée par l'agent (MCP Supabase, `apply_migration`) le 11/10/2026 ; effets vérifiés (notes Famille Culumbu et Famille Mabata, sauvegarde `v1.80.1_culumbu_dikalvin`) |
 | `0076_table7_gloria_juliana_remove_nedy.sql` | Appliquée par l'agent (MCP Supabase, `apply_migration`) le 11/10/2026 ; effets vérifiés (Nedy Simao supprimée, Famille Culumbu 7 places, table 7 à 10/10, 262 invitations, sauvegarde `v1.80.1_table7_nedy`) |
 | `0077_agenda_jour_j_programme_complet.sql` | Appliquée par l'agent (MCP Supabase, `execute_sql`, autorisée par Gersom) le 11/10/2026 ; inscrite à l'historique (`0077`) ; effets vérifiés (47 activités dont 23 privées, 0 fuite publique, 23 anciennes lignes sauvegardées dans `v1.82.1_agenda_jour_j`). Ne pas réexécuter |
+| `0078_agenda_jour_j_corrections.sql` | Appliquée par l'agent (MCP Supabase, `execute_sql`, autorisée par Gersom) le 11/10/2026 ; inscrite à l'historique (`0078`) ; effets vérifiés (51 activités dont 24 privées, 0 fuite publique, Rémy/Tuzola et 23 comptes d'accueil liés, 47 lignes sauvegardées dans `v1.82.2_agenda_corrections`). Ne pas réexécuter |
 
 ## Hors dépôt, trouvé en production
 

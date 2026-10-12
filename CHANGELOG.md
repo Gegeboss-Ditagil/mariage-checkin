@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.82.2] — 2026-10-11
+
+Corrections de l'agenda du jour J, décidées une par une avec Gersom après la revue des conflits d'horaires (migration `0078`, appliquée et vérifiée en production).
+
+- Départ des mariés par une autre sortie que le chapiteau ; Laura Humba annonce le départ des VIP puis le mégaphone dirige dehors ; nouvelle ligne privée « Retour des mariés au Festif » (~18:15) ; transitions publiques 19:00 et 19:35 ; chansons du repas 20:45–21:20 ; AngoStars 23:30–00:00 max ; bar fermé à 03:00 avec nettoyage en coulisses seulement ; nouvelle ligne « Arrivée des invités » 14:30–15:00.
+- Responsables liés à de vrais comptes : Rémy et Tuzola (« Directeur du festin »), agents scan et placeurs actifs (« Équipe d'accueil »).
+- 51 activités, 24 privées, 0 fuite publique. Sauvegarde `import_backups` `v1.82.2_agenda_corrections`, aucun DELETE.
+- `tests/agenda-jour-j-migration.test.ts` étendu (3 tests).
+
+Aucun changement de code applicatif.
+
 ## [1.82.1] — 2026-10-11
 
 Demande de Gersom : remplacer l'agenda par le programme complet du 24/10/2026 (accueil, DJ, directeur du festin).

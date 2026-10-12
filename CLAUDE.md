@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.82.1**
+**Version documentaire : 1.82.2**
 **Dernière mise à jour : 2026-10-11**
 
 Avant toute modification, lire dans cet ordre :
@@ -167,6 +167,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.80.1 : guest-list_69/70 + plan (5)/(6) — migrations `0075` et `0076` appliquées et vérifiées le 11/10/2026 : prénoms réels des Culumbu (table 7 : Epouse Gilie, Anderson, Merveille, Angelino, Juliana et Gloria — 7 places), « Dikalvin Mabata », Nedy Simao retirée. Eude Matondo (31) et Luzolo Patrick Menga (36) : plan et With Joy 70 concordent. 262 invitations, 0 table en surcapacité.
 - v1.81.0 : « Appli non sécurisée bloquée » (Play Protect) sur Android — l'APK de la PWA est fabriqué par le navigateur ; Samsung Internet & co. en produisent un trop ancien. `lib/installPlatform.ts` + `InstallAppButton` : hors Chrome sur Android, jamais de prompt natif, « Ouvrir dans Chrome » (`intent://`, `?install=chrome`). Manifest `id: "/"`. Ne jamais réactiver l'installation depuis Samsung Internet. Tests `tests/android-install.test.ts`. Aucune migration.
 - v1.82.1 : agenda du jour J remplacé par le programme complet du 24/10/2026 (migration `0077`, appliquée et vérifiée en production le 11/10/2026, ne pas réexécuter ; sauvegarde `v1.82.1_agenda_jour_j`) : 47 activités, responsables en noms libres (`custom_assignees`, à lier à de vrais comptes), publiques (accueil, texte neutre) ou privées (coulisses, surprise : aérodrome, hélicoptère, transport VIP). Verrou : `tests/agenda-jour-j-migration.test.ts` (aucune ligne publique ne cite aérodrome/Persan/hélicoptère).
+- v1.82.2 : corrections de l'agenda du jour J décidées une par une avec Gersom (migration `0078`, appliquée et vérifiée en production le 11/10/2026, ne pas réexécuter ; sauvegarde `v1.82.2_agenda_corrections`) : départ des mariés par une autre sortie que le chapiteau, Laura Humba annonce le départ des VIP puis le mégaphone, retour des mariés en voiture (~18:15), transitions 19:00/19:35, chansons du repas 20:45–21:20, AngoStars 23:30–00:00 max, nettoyage en coulisses seulement, arrivée des invités 14:30. Responsables = vrais comptes (Rémy + Tuzola ; agents scan + placeurs) : la mise en vert « Vous êtes assigné » fonctionne. 51 activités dont 24 privées. À faire ensuite (PR séparée) : bande « Prochaine activité » de `/scan` basée sur l'heure réelle.
 - v1.82.0 : « Gestion des comptes » pour le directeur de festin (demande de Gersom). Capacité `manageAccounts` (admin, directeur) + `canManageAccount` (`lib/permissions.ts`) : `/admin/users` et `/api/admin/users` ouverts au directeur, sauf sur les comptes admin (affichés « Réservé aux admins », refus 403 côté API, jamais de création/promotion en admin). Menu du compte : pour directeur, « Gestion des comptes » remplace « Mots de passe » sous « Mon mot de passe ». Personne ne peut se désactiver ni changer son propre rôle. La page `/mots-de-passe` est supprimée (l'API `/api/passwords` reste, appelée par « Réinitialiser » de `/admin/users`). Aucune migration.
 
 ## Reprise rapide pour Claude AI
