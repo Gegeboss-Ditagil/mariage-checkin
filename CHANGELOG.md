@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.82.6] — 2026-10-11
+
+Demande de Gersom : « Famille Mpiassa » (4 personnes, RSVP « Peut-être », sans table) est marquée « ne viendra pas ».
+
+- Migration `0079_mpiassa_ne_viendra_pas.sql`, appliquée et vérifiée en production : l'invitation sort des invités attendus et des calculs de capacité. Garde-fous (identifiant exact, sans table, 0 arrivée, aucun scan ni excédent), sauvegarde `import_backups` `v1.82.6_mpiassa`, idempotente. Réversible depuis l'app (décocher « ne viendra pas »).
+- Restent 10 invitations attendues sans table : 9 prestataires (photographes, DJ, traiteur) et « Nelly Dos Goncalves » (0 personne).
+
+Aucun changement de code applicatif.
+
 ## [1.82.5] — 2026-10-11
 
 Tests de l'agenda sur la base réelle, puis verrouillés par des tests.
