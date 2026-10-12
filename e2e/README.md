@@ -12,6 +12,13 @@ invitation jamais ouverte. Un rôle par compte de test.
    `E2E_<ROLE>_NAME` et `E2E_<ROLE>_PIN` pour `ADMIN`, `DIRECTEUR`, `PLACEUR`,
    `AGENT_CHECKIN`, `VISIBILITE`.
 
+### Comptes inutilisés réutilisables (état du 12/10/2026)
+Comptes sans nom propre, jamais attribués à une personne — à utiliser pour les tests plutôt que d'en créer :
+- `agent_checkin` : `Agent008` … `Agent016` et `Agent Test 1` (actuellement désactivés : les réactiver dans `/admin/users`).
+- `placeur` : `Agent003` … `Agent007` (actifs), `Placeur Test` (désactivé). Ne pas utiliser `Agent002` (PIN déjà changé par le système).
+- `admin`, `directeur`, `visibilite` : aucun compte inutilisé — à créer (ex. « Test Admin », « Test Directeur », « Test Approbateur »).
+Le PIN de chaque compte de test se saisit dans `/admin/users` (« Nouveau PIN ») puis se copie dans les secrets GitHub.
+
 ## Avant chaque passage
 1. Exécuter `scripts/sql-tests/02_e2e_fresh_invitation.sql` dans l'éditeur SQL
    Supabase ; copier l'id affiché dans le secret `E2E_FRESH_INVITATION_ID`.

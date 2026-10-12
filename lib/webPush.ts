@@ -1,7 +1,8 @@
 import webpush from 'web-push';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { hasCapability } from '@/lib/permissions';
-import type { Role } from '@/lib/types';
+import { hasCapability } from './permissions.ts';
+import { logServerEvent } from './serverLog.ts';
+import type { Role } from './types.ts';
 
 // v1.48.3 : même correctif que lib/twilio.ts (TWILIO_REQUEST_TIMEOUT_MS) --
 // ces envois Push sont best-effort (voir lib/guestApprovalDecide.ts et les
@@ -21,15 +22,67 @@ function configure(): boolean {
   return true;
 }
 
+// Clés VAPID absentes de Vercel = aucun Push possible (cas réel constaté le
+// 12/10/2026 : 0 abonnement). On le trace au lieu de se taire.
+async function ensureConfigured(eventId: string): Promise<boolean> {
+  if (configure()) return true;
+  await logServerEvent({ event_id: eventId, level: 'warn', path: 'lib/webPush', message: 'Push non configuré : VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY absentes' });
+  return false;
+}
+
 export function webPushPublicKey(): string | null {
   return process.env.VAPID_PUBLIC_KEY || null;
 }
 
+
+export interface PushSubscriptionRow { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }
+export type PushSender = (
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+  payload: string,
+  options: { timeout: number }
+) => Promise<unknown>;
+
+// v1.83.0 : envoi commun aux deux notifications. Un abonnement expiré (404/410)
+// est supprimé ; tout AUTRE échec (clé VAPID invalide, service Push injoignable…)
+// était avalé sans trace -- c'est ce qui a laissé « 0 abonnement, jamais testé »
+// passer inaperçu. Il est maintenant journalisé (app_logs, niveau warn) sans
+// jamais bloquer la décision. Retourne le nombre d'envois réussis.
+export async function deliverPush(
+  supabase: SupabaseClient,
+  eventId: string,
+  subscriptions: PushSubscriptionRow[],
+  payload: string,
+  sender: PushSender = (sub, body, options) => webpush.sendNotification(sub, body, options)
+): Promise<number> {
+  let sent = 0;
+  await Promise.allSettled(subscriptions.map(async (item) => {
+    try {
+      await sender({ endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } }, payload, { timeout: PUSH_REQUEST_TIMEOUT_MS });
+      sent += 1;
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number }).statusCode;
+      if (statusCode === 404 || statusCode === 410) {
+        await supabase.from('push_subscriptions').delete().eq('id', item.id);
+        return;
+      }
+      await logServerEvent({
+        event_id: eventId,
+        level: 'warn',
+        path: 'lib/webPush',
+        message: `Échec d'envoi Push (${statusCode ?? 'sans code'})`,
+        context: { subscription_id: item.id, status_code: statusCode ?? null, detail: String((error as Error)?.message || error).slice(0, 300) },
+      });
+    }
+  }));
+  return sent;
+}
+
 export async function notifyGuestApprovalReviewers(
   supabase: SupabaseClient,
-  request: { id: string; event_id: string; nom_invite: string; cote: string; nombre_invites: number }
+  request: { id: string; event_id: string; nom_invite: string; cote: string; nombre_invites: number },
+  sender?: PushSender
 ): Promise<void> {
-  if (!configure()) return;
+  if (!(await ensureConfigured(request.event_id))) return;
   const { data: subscriptions } = await supabase
     .from('push_subscriptions')
     .select('id, user_id, endpoint, p256dh, auth')
@@ -59,26 +112,16 @@ export async function notifyGuestApprovalReviewers(
     tag: `guest-approval-${request.id}`,
     badgeCount: badgeCount ?? 0,
   });
-  await Promise.allSettled(subscriptions.filter((item) => allowed.has(item.user_id)).map(async (item) => {
-    try {
-      await webpush.sendNotification(
-        { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } },
-        payload,
-        { timeout: PUSH_REQUEST_TIMEOUT_MS }
-      );
-    } catch (error) {
-      const statusCode = (error as { statusCode?: number }).statusCode;
-      if (statusCode === 404 || statusCode === 410) await supabase.from('push_subscriptions').delete().eq('id', item.id);
-    }
-  }));
+  await deliverPush(supabase, request.event_id, subscriptions.filter((item) => allowed.has(item.user_id)), payload, sender);
 }
 
 export async function notifyGuestApprovalPlaceurs(
   supabase: SupabaseClient,
   request: { id: string; event_id: string; nom_invite: string; nombre_invites: number },
-  tableNumber: number | null
+  tableNumber: number | null,
+  sender?: PushSender
 ): Promise<void> {
-  if (!configure()) return;
+  if (!(await ensureConfigured(request.event_id))) return;
   const { data: subscriptions } = await supabase
     .from('push_subscriptions')
     .select('id, user_id, endpoint, p256dh, auth')
@@ -95,16 +138,5 @@ export async function notifyGuestApprovalPlaceurs(
     url: tableNumber ? '/approbations' : `/approbations/${request.id}/assign`,
     tag: `guest-approval-placeur-${request.id}`,
   });
-  await Promise.allSettled(subscriptions.filter((item) => placeurs.has(item.user_id)).map(async (item) => {
-    try {
-      await webpush.sendNotification(
-        { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } },
-        payload,
-        { timeout: PUSH_REQUEST_TIMEOUT_MS }
-      );
-    } catch (error) {
-      const statusCode = (error as { statusCode?: number }).statusCode;
-      if (statusCode === 404 || statusCode === 410) await supabase.from('push_subscriptions').delete().eq('id', item.id);
-    }
-  }));
+  await deliverPush(supabase, request.event_id, subscriptions.filter((item) => placeurs.has(item.user_id)), payload, sender);
 }

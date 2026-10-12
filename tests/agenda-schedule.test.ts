@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { montrealMinutes, parseTimeLabel, pickNextActivity, withTimeline } from '../lib/agendaSchedule.ts';
+import { parisMinutes, parseTimeLabel, pickNextActivity, withTimeline } from '../lib/agendaSchedule.ts';
 
 const h = (hours: number, minutes = 0) => hours * 60 + minutes;
 const item = (time_label: string, title: string, completed = false) => ({ time_label, title, completed });
@@ -83,11 +83,15 @@ test('prochaine activité : libellés sans heure -> première ligne non terminé
   assert.equal(pickNextActivity(sansHeure, h(15))?.item.title, 'B');
 });
 
-test('montrealMinutes : heure de Montréal quel que soit le fuseau de l\'appareil (EDT en octobre)', () => {
-  assert.equal(montrealMinutes(new Date('2026-10-24T19:30:00Z')), h(15, 30));
-  assert.equal(montrealMinutes(new Date('2026-10-25T04:40:00Z')), h(0, 40));
-  // Après le passage à l'heure d'hiver (1er novembre 2026) : UTC-5.
-  assert.equal(montrealMinutes(new Date('2026-11-02T20:30:00Z')), h(15, 30));
+test('parisMinutes : heure de Paris quel que soit le fuseau de l\'appareil (CEST le jour J)', () => {
+  // 24/10/2026 : heure d'été (UTC+2).
+  assert.equal(parisMinutes(new Date('2026-10-24T19:30:00Z')), h(21, 30));
+  assert.equal(parisMinutes(new Date('2026-10-24T14:30:00Z')), h(16, 30));
+  // Passage à l'heure d'hiver dans la nuit du 25/10 à 03:00 : 00:30Z = 02:30 CEST, 01:30Z = 02:30 CET.
+  assert.equal(parisMinutes(new Date('2026-10-24T23:30:00Z')), h(1, 30));
+  assert.equal(parisMinutes(new Date('2026-10-25T00:30:00Z')), h(2, 30));
+  assert.equal(parisMinutes(new Date('2026-10-25T01:30:00Z')), h(2, 30));
+  assert.equal(parisMinutes(new Date('2026-10-25T04:40:00Z')), h(5, 40));
 });
 
 test('activité à heure unique : reste « en cours » jusqu\'à la suivante (au plus 30 min), jamais « Avant » qui précède l\'heure', () => {
