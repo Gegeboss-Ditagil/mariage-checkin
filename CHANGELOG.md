@@ -10,7 +10,7 @@ Demande de Gersom : la bande « Prochaine activité » de `/scan` suit l'heure r
 - `lib/agendaSchedule.ts` (nouveau) : les heures de l'agenda (`06:00`, `12:30–13:30`, `Avant 14:30`, `23:30–00:00`) sont remises sur une ligne de temps continue qui passe minuit, comparée à l'heure de Montréal (`America/Toronto`, indépendante du fuseau de l'appareil). Première activité non terminée dont la fin n'est pas passée ; « En cours » si elle a déjà commencé. Cocher « terminé » saute toujours une ligne.
 - `components/NextAgendaActivity.tsx` branché dessus ; ne dépend pas de `events.event_date` (nulle en production).
 - Correction d'une erreur de 1.82.1 : `/agenda` se rafraîchit toutes les 10 s, la bande toutes les 30 s ; les scanners n'ont pas à rouvrir l'app.
-- Historique des migrations : `0074`–`0076` inscrites sous des versions horodatées ; script de correction `supabase/manual/2026-10-11_renumeroter_historique_0074_0076.sql` à exécuter par Gersom (refus volontaire de l'outil agent sur l'historique partagé).
+- Historique des migrations : `0074`–`0076` inscrites sous des versions horodatées ; script `supabase/manual/2026-10-11_renumeroter_historique_0074_0076.sql` exécuté en production avec l'accord de Gersom (vérifié : 77 lignes, toutes à 4 chiffres).
 - Tests : `tests/agenda-schedule.test.ts` (8), `tests/next-agenda-activity.test.ts` mis à jour, parcours `qa/functional/business-flows.spec.ts` (horloge figée 16:30 et 18:30).
 
 Aucune migration.
