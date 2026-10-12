@@ -11,14 +11,16 @@ const componentSource = readFileSync(new URL('../components/NextAgendaActivity.t
 const scanPageSource = readFileSync(new URL('../app/scan/page.tsx', import.meta.url), 'utf8');
 const scannerSource = readFileSync(new URL('../components/QrScanner.tsx', import.meta.url), 'utf8');
 
-test("la prochaine activite est la premiere non terminee dans l'ordre du chronogramme, pas une comparaison a l'heure de l'appareil", () => {
-  // Comparer a l'heure de l'appareil casserait sur les activites apres
-  // minuit (01:00, 03:00, 05:00 dans le seed) et ne refleterait pas un
-  // deroulement en avance/en retard -- s'appuie sur `completed`, deja coche
-  // par le staff sur chaque activite (voir 0039_shared_agenda.sql).
-  assert.match(componentSource, /items\.find\(\(item\) => !item\.completed\)/);
-  assert.doesNotMatch(componentSource, /new Date\(\)/);
+test("v1.82.3 : la prochaine activite suit l'heure de Montreal (lib/agendaSchedule.ts), les lignes cochees restent sautees", () => {
+  // Remplace la regle du 02/09/2026 (premiere non cochee, jamais l'heure) :
+  // retour de Gersom, « rendre basee sur l'heure ». Les activites apres minuit
+  // sont gerees par la ligne de temps continue de lib/agendaSchedule.ts
+  // (tests/agenda-schedule.test.ts), jamais par une simple comparaison de texte.
+  assert.ok(componentSource.includes('pickNextActivity(items, nowMinutes)'));
+  assert.ok(componentSource.includes('montrealMinutes(new Date())'));
+  assert.ok(!componentSource.includes('items.find((item) => !item.completed)'));
   assert.match(componentSource, /Chronogramme terminé/);
+  assert.match(componentSource, /En cours/);
 });
 
 test("reservee a viewAgenda (memes roles que l'onglet Agenda) -- placeur/agent_checkin n'ont pas acces a /agenda", () => {
@@ -53,9 +55,9 @@ test("le composant reserve sa place des le montage (jamais 'return null' pendant
   // Seule la capacite (stable, connue des le rendu) doit encore renvoyer
   // null ; l'etat de chargement du fetch doit rester a l'interieur de la
   // meme carte, jamais faire disparaitre/reapparaitre le composant entier.
-  assert.doesNotMatch(componentSource, /next === undefined\) return null/);
+  assert.doesNotMatch(componentSource, /picked === undefined\) return null/);
   assert.match(componentSource, /if \(!hasCapability\(role, ['"]viewAgenda['"]\)\) return null;/);
-  assert.match(componentSource, /next === undefined \? \(/);
+  assert.ok(componentSource.includes('picked === undefined ? ('));
   assert.match(componentSource, /Chargement…/);
 });
 

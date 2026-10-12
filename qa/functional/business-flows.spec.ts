@@ -133,6 +133,20 @@ test.describe('parcours métier', () => {
     expect(problems).toEqual([]);
   });
 
+  test('/scan : la bande « Prochaine activité » suit l’heure de Montréal (v1.82.3)', async ({ page }) => {
+    await quickLogin(page, role('directeur'));
+    // 24/10/2026 16:30 à Montréal (EDT = UTC-4) : l'agenda de test a 17:00, 19:00, 21:00.
+    await page.clock.setFixedTime(new Date('2026-10-24T20:30:00Z'));
+    await page.goto('/scan');
+    await expect(page.getByText('Prochaine activité')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Accueil des invités').first()).toBeVisible();
+    // 18:30 à Montréal : la ligne de 17:00 est passée, la suivante est celle de 19:00.
+    await page.clock.setFixedTime(new Date('2026-10-24T22:30:00Z'));
+    await page.reload();
+    await expect(page.getByText('Entrée des mariés').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Accueil des invités')).toHaveCount(0);
+  });
+
   test('chaque rôle : déconnexion depuis le menu du compte', async ({ page }) => {
     for (const r of ROLES) {
       await page.context().clearCookies();
