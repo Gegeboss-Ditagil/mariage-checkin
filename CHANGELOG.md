@@ -7,7 +7,7 @@ Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.
 
 Demande de Gersom : remplacer l'agenda par le programme complet du 24/10/2026 (accueil, DJ, directeur du festin).
 
-- Migration `0077_agenda_jour_j_programme_complet.sql` : 47 activités avec département, responsables (noms libres), et visibilité. Publique = ce dont l'accueil a besoin, texte neutre. Privée = coulisses et surprise (admin/directeur seulement). Sauvegarde `import_backups` (`v1.82.1_agenda_jour_j`) avant remplacement, idempotente. **À exécuter par Gersom** dans l'éditeur SQL (DELETE).
+- Migration `0077_agenda_jour_j_programme_complet.sql` : 47 activités avec département, responsables (noms libres), et visibilité. Publique = ce dont l'accueil a besoin, texte neutre. Privée = coulisses et surprise (admin/directeur seulement). Sauvegarde `import_backups` (`v1.82.1_agenda_jour_j`) avant remplacement, idempotente. Appliquée et vérifiée en production le 11/10/2026 (47 activités, 23 privées, 0 fuite publique).
 - `tests/agenda-jour-j-migration.test.ts` : 47 lignes, aucune fuite de la surprise dans une ligne publique, sauvegarde avant suppression.
 - Choix par défaut en attente de relecture : responsables en noms libres, lignes 32 et 44 publiques.
 
