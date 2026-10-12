@@ -13,6 +13,12 @@ export type TimedScheduleItem<T> = T & { startMin: number; endMin: number };
 const DAY = 1440;
 // Un retour en arrière de plus de 12 h entre deux lignes = passage de minuit.
 const MIDNIGHT_DROP = 720;
+// Une activité à heure unique (« 15:55 », « 19:00 ») dure jusqu'au début de la
+// suivante, au plus ce nombre de minutes -- sinon elle disparaîtrait de la
+// bande dès la minute d'après alors que l'action est encore en cours.
+const POINT_GRACE_MIN = 30;
+// « Avant 14:30 » : préparation qui précède l'heure (pas d'activité qui la suit).
+const AVANT = /^[ \t]*avant(?![a-zà-ÿ])/i;
 const TIME_PATTERN = /(\d{1,2})\s*[:h]\s*(\d{2})/g;
 
 /** Heures d'un libellé : une heure ("Avant 14:30" -> 14:30) ou une plage. */
@@ -38,10 +44,12 @@ export function withTimeline<T extends { time_label: string }>(items: T[]): Time
   let offset = 0;
   let lastStart = 0;
   let lastEnd = 0;
+  const pointFlags: boolean[] = [];
   for (const item of items) {
     const parsed = parseTimeLabel(item.time_label);
     if (!parsed) {
       timed.push({ ...item, startMin: lastEnd, endMin: lastEnd });
+      pointFlags.push(false);
       continue;
     }
     let start = parsed.start + offset;
@@ -54,7 +62,16 @@ export function withTimeline<T extends { time_label: string }>(items: T[]): Time
     lastStart = start;
     lastEnd = end;
     timed.push({ ...item, startMin: start, endMin: end });
+    pointFlags.push(parsed.start === parsed.end && !AVANT.test(item.time_label));
   }
+  // Activités à heure unique : fin = début de la prochaine activité plus tardive
+  // (au plus POINT_GRACE_MIN). « Avant 14:30 » reste un instant : c'est une
+  // préparation qui précède l'heure, pas une activité qui la suit.
+  timed.forEach((entry, index) => {
+    if (!pointFlags[index] || entry.endMin !== entry.startMin) return;
+    const later = timed.slice(index + 1).map((other) => other.startMin).filter((other) => other > entry.startMin);
+    entry.endMin = Math.min(entry.startMin + POINT_GRACE_MIN, later.length > 0 ? Math.min(...later) : Infinity);
+  });
   return timed;
 }
 
@@ -72,8 +89,11 @@ export function montrealMinutes(date: Date): number {
 }
 
 /**
- * Première activité non terminée, dans l'ordre du chronogramme, qui n'est pas
- * déjà passée (fin >= maintenant). `inProgress` = elle a déjà commencé.
+ * Activité à afficher : parmi les non terminées qui ne sont pas passées (fin >=
+ * maintenant), celle en cours qui a commencé en dernier (c'est ce que l'équipe
+ * doit voir, ex. le rassemblement des VIP pendant la prestation de Laura
+ * Humba) ; sinon la prochaine à venir (début le plus proche, ordre du
+ * chronogramme en cas d'égalité). `inProgress` = elle a déjà commencé.
  * Avant la première heure du programme (ex. 02:00 du matin) on est dans la
  * partie « après minuit » de la veille si le programme passe minuit.
  */
@@ -92,7 +112,13 @@ export function pickNextActivity<T extends ScheduleItem>(
   const firstStart = Math.min(...dated.map((entry) => entry.startMin));
   const lastEnd = Math.max(...dated.map((entry) => entry.endMin));
   const now = nowMinutes < firstStart && nowMinutes + DAY <= lastEnd ? nowMinutes + DAY : nowMinutes;
-  const entry = timeline.find((candidate) => !candidate.completed && candidate.endMin >= now);
-  if (!entry) return null;
-  return { item: entry, inProgress: entry.startMin <= now };
+  const alive = timeline.filter((candidate) => !candidate.completed && candidate.endMin >= now);
+  if (alive.length === 0) return null;
+  const running = alive.filter((candidate) => candidate.startMin <= now);
+  if (running.length > 0) {
+    const latest = Math.max(...running.map((candidate) => candidate.startMin));
+    return { item: running.find((candidate) => candidate.startMin === latest)!, inProgress: true };
+  }
+  const soonest = Math.min(...alive.map((candidate) => candidate.startMin));
+  return { item: alive.find((candidate) => candidate.startMin === soonest)!, inProgress: false };
 }
