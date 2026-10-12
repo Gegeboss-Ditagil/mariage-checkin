@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.82.4] — 2026-10-11
+
+Test de la bande « Prochaine activité » minute par minute sur les 27 lignes publiques réelles de production (balayage 14:00 → 05:00 : jamais « null », aucune erreur) — deux défauts de logique trouvés et corrigés dans `lib/agendaSchedule.ts`.
+
+- Une activité à heure unique (« 15:55 Départ discret des mariés », « 19:00 », « 00:40 ») disparaissait dès la minute suivante alors que l'action dure encore : elle reste maintenant « En cours » jusqu'au début de la suivante, au plus 30 min. « Avant 14:30 » reste un instant.
+- Quand plusieurs activités sont en cours, la bande affiche celle qui a commencé en dernier (le rassemblement des VIP à 17:10 plutôt que la prestation de Laura Humba, commencée à 16:35) ; sinon la plus proche à venir.
+- Tests : `tests/agenda-schedule.test.ts` (11, dont les cas réels 15:56, 17:12, 00:50, 14:45).
+
+Aucune migration.
+
 ## [1.82.3] — 2026-10-11
 
 Demande de Gersom : la bande « Prochaine activité » de `/scan` suit l'heure réelle.
