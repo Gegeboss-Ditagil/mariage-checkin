@@ -140,3 +140,32 @@ export async function notifyGuestApprovalPlaceurs(
   });
   await deliverPush(supabase, request.event_id, subscriptions.filter((item) => placeurs.has(item.user_id)), payload, sender);
 }
+
+/**
+ * v1.84.0 : notification de TEST envoyée aux seuls appareils de la personne qui
+ * la demande (jamais aux autres comptes). Sert à prouver, sur un vrai
+ * téléphone, que le Push fonctionne de bout en bout avant le jour J : clés
+ * VAPID, abonnement enregistré, service Push, service worker.
+ */
+export async function sendPushTest(
+  supabase: SupabaseClient,
+  user: { id: string; event_id: string },
+  sender?: PushSender
+): Promise<{ configured: boolean; subscriptions: number; sent: number }> {
+  if (!(await ensureConfigured(user.event_id))) return { configured: false, subscriptions: 0, sent: 0 };
+  const { data } = await supabase
+    .from('push_subscriptions')
+    .select('id, user_id, endpoint, p256dh, auth')
+    .eq('event_id', user.event_id)
+    .eq('user_id', user.id);
+  const mine = (data || []) as PushSubscriptionRow[];
+  if (mine.length === 0) return { configured: true, subscriptions: 0, sent: 0 };
+  const payload = JSON.stringify({
+    title: 'Test de notification',
+    body: 'Si vous lisez ceci, les notifications fonctionnent sur cet appareil.',
+    url: '/scan',
+    tag: 'push-test',
+  });
+  const sent = await deliverPush(supabase, user.event_id, mine, payload, sender);
+  return { configured: true, subscriptions: mine.length, sent };
+}

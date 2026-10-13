@@ -34,6 +34,7 @@ const DENIED_INSTRUCTIONS: Record<ReturnType<typeof detectPlatform>, string> = {
 
 export function PushNotificationButton() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'enabled' | 'unsupported' | 'denied' | 'in_app'>('idle');
+  const [testState, setTestState] = useState<'idle' | 'sending' | 'ok' | 'none' | 'failed' | 'not_configured'>('idle');
 
   // v1.53.4, retour de Gersom : après avoir réellement autorisé les
   // notifications (et reçu une vraie alerte push sur son iPhone), le bouton
@@ -125,6 +126,28 @@ export function PushNotificationButton() {
     }
   }
 
+  // v1.84.0 : preuve de bout en bout sur CET appareil (voir lib/webPush.ts, sendPushTest).
+  async function sendTest() {
+    setTestState('sending');
+    try {
+      const response = await fetch('/api/push/test', { method: 'POST' });
+      if (!response.ok) { setTestState('failed'); return; }
+      const result = await response.json() as { configured: boolean; subscriptions: number; sent: number };
+      setTestState(!result.configured ? 'not_configured' : result.subscriptions === 0 ? 'none' : result.sent > 0 ? 'ok' : 'failed');
+    } catch {
+      setTestState('failed');
+    }
+  }
+
+  const testMessage: Record<typeof testState, string | null> = {
+    idle: null,
+    sending: null,
+    ok: 'Notification envoyée : elle doit apparaître dans quelques secondes. Si rien ne s’affiche, vérifiez les réglages de notifications du téléphone.',
+    none: 'Aucun appareil enregistré pour ce compte : fermez puis rouvrez l’app, puis réessayez.',
+    failed: 'L’envoi a échoué. Réessayez dans un instant ; si le problème continue, prévenez l’administrateur.',
+    not_configured: 'Les notifications ne sont pas configurées côté serveur : prévenez l’administrateur.',
+  };
+
   const label = status === 'enabled'
     ? 'Notifications activées'
     : status === 'loading'
@@ -151,6 +174,14 @@ export function PushNotificationButton() {
     <div className="mb-3">
       <button type="button" onClick={enable} disabled={status === 'loading' || status === 'enabled'} className="action-row text-sm disabled:opacity-60">🔔 {label}</button>
       {helpText && <p className="mt-1.5 px-1 text-xs text-text-faint">{helpText}</p>}
+      {status === 'enabled' && (
+        <>
+          <button type="button" onClick={sendTest} disabled={testState === 'sending'} className="action-row-muted mt-1.5 text-sm disabled:opacity-60">
+            {testState === 'sending' ? 'Envoi…' : '✉️ Envoyer une notification de test'}
+          </button>
+          {testMessage[testState] && <p className="mt-1.5 px-1 text-xs text-text-faint">{testMessage[testState]}</p>}
+        </>
+      )}
     </div>
   );
 }

@@ -57,7 +57,9 @@ export async function GET() {
     // n'importe quel role, les elements ou son propre compte figure dans
     // assignee_ids -- jamais les noms libres de custom_assignees, qui ne
     // correspondent a aucun compte.
-    { items: visible, people: users || [], canManage, currentUserId: user.id },
+    // serverTime (v1.84.0) : l'horloge du serveur, pour que la bande « Prochaine
+    // activité » ne dépende pas de l'heure (peut-être fausse) du téléphone.
+    { items: visible, people: users || [], canManage, currentUserId: user.id, serverTime: Date.now() },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
 }
