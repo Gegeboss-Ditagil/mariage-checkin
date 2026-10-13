@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parisMinutes, parseTimeLabel, pickNextActivity, withTimeline } from '../lib/agendaSchedule.ts';
+import { estimateClockOffset, parisMinutes, parseTimeLabel, pickNextActivity, withTimeline } from '../lib/agendaSchedule.ts';
 
 const h = (hours: number, minutes = 0) => hours * 60 + minutes;
 const item = (time_label: string, title: string, completed = false) => ({ time_label, title, completed });
@@ -120,4 +120,31 @@ test('plusieurs activités en cours : celle qui a commencé en dernier est affic
 test('plusieurs à venir : la plus proche dans le temps, ordre du chronogramme en cas d\'égalité', () => {
   const egalite = [item('18:00', 'A'), item('18:00', 'B'), item('19:00', 'C')];
   assert.equal(pickNextActivity(egalite, h(17))?.item.title, 'A');
+});
+
+// v1.84.0 : la bande suit l'horloge du SERVEUR, pas celle du téléphone.
+test('estimateClockOffset : un téléphone en retard ou en avance est recalé sur le serveur', () => {
+  // Réponse instantanée : le serveur dit 15:00:00, le téléphone 14:50:00 -> +10 min.
+  const serveur = Date.parse('2026-10-24T13:00:00Z');
+  assert.equal(estimateClockOffset(serveur, Date.parse('2026-10-24T12:50:00Z'), Date.parse('2026-10-24T12:50:00Z')), 10 * 60_000);
+  // Téléphone en avance de 5 min.
+  assert.equal(estimateClockOffset(serveur, Date.parse('2026-10-24T13:05:00Z'), Date.parse('2026-10-24T13:05:00Z')), -5 * 60_000);
+  // Latence : le serveur a daté au milieu de l'aller-retour (2 s).
+  assert.equal(estimateClockOffset(serveur, serveur - 1000, serveur + 1000), 0);
+});
+
+test('estimateClockOffset : sans heure serveur lisible, aucune correction', () => {
+  assert.equal(estimateClockOffset(undefined, 1000, 2000), 0);
+  assert.equal(estimateClockOffset('15:00', 1000, 2000), 0);
+  assert.equal(estimateClockOffset(Number.NaN, 1000, 2000), 0);
+});
+
+test('un téléphone réglé 40 min en retard affiche quand même la bonne activité une fois recalé', () => {
+  // Réel : 24/10/2026 18:20 à Paris (CEST, UTC+2) = 16:20 UTC. Le téléphone croit qu'il est 17:40 Paris.
+  const vrai = Date.parse('2026-10-24T16:20:00Z');
+  const telephone = vrai - 40 * 60_000;
+  const decalage = estimateClockOffset(vrai, telephone, telephone);
+  const items = [item('17:10', 'Rassemblement des invités VIP'), item('18:15–18:30', 'Retour des invités VIP')];
+  assert.equal(pickNextActivity(items, parisMinutes(new Date(telephone)))?.item.title, 'Rassemblement des invités VIP'); // sans correction : faux
+  assert.equal(pickNextActivity(items, parisMinutes(new Date(telephone + decalage)))?.item.title, 'Retour des invités VIP'); // corrigé
 });

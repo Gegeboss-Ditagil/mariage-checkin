@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import webpush from 'web-push';
-import { deliverPush, notifyGuestApprovalReviewers, notifyGuestApprovalPlaceurs } from '../lib/webPush.ts';
+import { deliverPush, notifyGuestApprovalReviewers, notifyGuestApprovalPlaceurs, sendPushTest } from '../lib/webPush.ts';
 
 // v1.83.0 : tests de comportement (pas de lecture du code source) -- faux
 // client Supabase + faux émetteur Push, aucune requête réseau.
@@ -67,4 +67,38 @@ test('sans clés VAPID : aucun envoi et aucune exception', async () => {
   let called = false;
   await notifyGuestApprovalReviewers(fakeSupabase({ push_subscriptions: subs, users }), request, async () => { called = true; });
   assert.equal(called, false);
+});
+
+// v1.84.0 : notification de test, envoyée aux seuls appareils du compte connecté.
+test('test Push : seuls les appareils de la personne qui le demande reçoivent la notification', async () => {
+  const keys = webpush.generateVAPIDKeys(); // paire jetable
+  process.env.VAPID_PUBLIC_KEY = keys.publicKey;
+  process.env.VAPID_PRIVATE_KEY = keys.privateKey;
+  const sentTo: string[] = [];
+  const supabase = fakeSupabase({ push_subscriptions: subs });
+  const result = await sendPushTest(supabase, { id: 'dir', event_id: 'e' }, async (sub, body) => {
+    sentTo.push(sub.endpoint);
+    assert.equal(JSON.parse(body).title, 'Test de notification');
+  });
+  assert.deepEqual(sentTo, ['https://push/1']);
+  assert.deepEqual(result, { configured: true, subscriptions: 1, sent: 1 });
+});
+
+test('test Push : aucun appareil enregistré -> 0 abonnement (jamais d\'envoi aux autres)', async () => {
+  const keys = webpush.generateVAPIDKeys();
+  process.env.VAPID_PUBLIC_KEY = keys.publicKey;
+  process.env.VAPID_PRIVATE_KEY = keys.privateKey;
+  let calls = 0;
+  const result = await sendPushTest(fakeSupabase({ push_subscriptions: subs }), { id: 'inconnu', event_id: 'e' }, async () => { calls += 1; });
+  assert.deepEqual(result, { configured: true, subscriptions: 0, sent: 0 });
+  assert.equal(calls, 0);
+});
+
+test('test Push : clés VAPID absentes -> configured=false, rien d\'envoyé', async () => {
+  delete process.env.VAPID_PUBLIC_KEY;
+  delete process.env.VAPID_PRIVATE_KEY;
+  let calls = 0;
+  const result = await sendPushTest(fakeSupabase({ push_subscriptions: subs }), { id: 'dir', event_id: 'e' }, async () => { calls += 1; });
+  assert.deepEqual(result, { configured: false, subscriptions: 0, sent: 0 });
+  assert.equal(calls, 0);
 });
