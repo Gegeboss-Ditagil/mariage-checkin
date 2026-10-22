@@ -41,16 +41,23 @@ test('API : la réinitialisation exige manageEventMode et reste refusée en mode
 
 test('page /admin : le directeur ne voit que le mode et la réinitialisation', () => {
   const page = read('app/admin/page.tsx');
-  assert.match(page, /isAdmin = hasCapability\(viewerRole, 'adminPanel'\)/);
+  assert.match(page, /isAdmin = viewerRole !== null && hasCapability\(viewerRole, 'adminPanel'\)/);
   const gated = page.slice(page.indexOf('{isAdmin && ('), page.indexOf('RÉINITIALISER') > 0 ? page.indexOf('<p className="mb-2 font-semibold">Mode test</p>') : 0);
   for (const marker of ['href="/admin/logs"', 'toggleTwilio', 'Santé de la base']) {
     assert.ok(gated.includes(marker), `${marker} doit rester dans le bloc réservé à l’admin`);
   }
-  assert.match(page, /<BottomNav role=\{viewerRole\} \/>/);
+  assert.match(page, /<BottomNav role=\{viewerRole \?\? 'admin'\} \/>/);
 });
 
 test('menu du compte : lien « Mode de l’événement » pour le directeur seulement', () => {
   const menu = read('components/AccountMenu.tsx');
   assert.match(menu, /canEventMode = hasCapability\(role, 'manageEventMode'\) && !canAdmin/);
   assert.match(menu, /\{canEventMode && <Link role="menuitem" href="\/admin"/);
+});
+
+test('page /admin : la santé de la base n’est demandée qu’après avoir su que le compte est admin (sinon 401 pour le directeur)', () => {
+  const page = read('app/admin/page.tsx');
+  assert.doesNotMatch(page, /useEffect\(\(\) => \{\s*void loadHealth\(\);\s*\}, \[\]\)/);
+  assert.match(page, /hasCapability\(d\.viewerRole, 'adminPanel'\)\) void loadHealth\(\)/);
+  assert.match(page, /useState<Role \| null>\(null\)/);
 });
