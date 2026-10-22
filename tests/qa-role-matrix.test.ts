@@ -52,7 +52,7 @@ const EXPECTED: Record<Capability, [boolean, boolean, boolean, boolean, boolean]
   managePasswords: [Y, Y, N, N, N],
   manageAccounts: [Y, Y, N, N, N], // v1.81.0 : Gestion des comptes (directeur sauf comptes admin)
   manageEventMode: [Y, Y, N, N, N], // v1.85.0 : mode de l'événement + réinitialisation (directeur)
-  deleteAccounts: [Y, N, N, N, N], // v1.86.0 : supprimer un compte, admin seul
+  deleteAccounts: [Y, Y, N, N, N], // v1.86.0 : supprimer un compte (admin ; directeur sauf comptes admin)
 };
 
 test('QA rôles : chaque rôle a exactement les capacités attendues (aucune en trop, aucune en moins)', () => {

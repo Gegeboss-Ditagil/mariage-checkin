@@ -94,7 +94,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // pouvoir [appeler/texter] un invite, un peu comme les gens du staff" --
   // appeler/texter un INVITE (/search), distincte de callStaff/
   // messageContacts qui portent sur le STAFF (/staff, /plan-table).
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests', 'manageEventMode'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests', 'manageEventMode', 'deleteAccounts'],
   // manageEventMode (v1.85.0, demande de Gersom : « le directeur de festin
   // devrait avoir la portion admin afin de reset les donnees de test et de
   // mettre l'application en mode live ») : changer le MODE de l'evenement
@@ -184,9 +184,11 @@ export function canManageAccount(actor: { role: Role }, targetRole: Role): boole
 
 // v1.86.0 (demande de Gersom : « supprimer des comptes aussi aux admins, au
 // lieu de juste créer ») : supprimer définitivement un compte est réservé à
-// l'admin (deleteAccounts). Jamais son propre compte, jamais l'admin
+// l'admin et, sur demande du même jour, au directeur (deleteAccounts). Jamais
+// son propre compte, jamais l'admin
 // principal (is_super_admin) ; un autre admin seulement par l'admin principal
-// (même règle que canResetPassword). Le directeur ne supprime jamais.
+// (même règle que canResetPassword) : le directeur supprime donc seulement
+// des comptes non admin.
 export function canDeleteAccount(
   actor: { id?: string; role: Role; is_super_admin?: boolean },
   target: { id: string; role: Role; is_super_admin?: boolean }

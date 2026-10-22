@@ -9,8 +9,8 @@ const ROLES: Role[] = ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibi
 
 // v1.86.0 : supprimer un compte, réservé aux admins.
 
-test('deleteAccounts : admin seulement', () => {
-  for (const role of ROLES) assert.equal(hasCapability(role, 'deleteAccounts'), role === 'admin', role);
+test('deleteAccounts : admin et directeur', () => {
+  for (const role of ROLES) assert.equal(hasCapability(role, 'deleteAccounts'), role === 'admin' || role === 'directeur', role);
 });
 
 test('canDeleteAccount : jamais soi-même, jamais l’admin principal, un admin seulement par l’admin principal', () => {
@@ -21,7 +21,11 @@ test('canDeleteAccount : jamais soi-même, jamais l’admin principal, un admin 
   assert.equal(canDeleteAccount(admin, { id: 'x', role: 'admin' }), false, 'autre admin par un admin ordinaire');
   assert.equal(canDeleteAccount(superAdmin, { id: 'x', role: 'admin' }), true, 'autre admin par l’admin principal');
   assert.equal(canDeleteAccount(superAdmin, { id: 'z', role: 'admin', is_super_admin: true }), false, 'l’admin principal');
-  assert.equal(canDeleteAccount({ id: 'd', role: 'directeur' }, { id: 'p', role: 'placeur' }), false, 'directeur');
+  const directeur = { id: 'd', role: 'directeur' as Role };
+  assert.equal(canDeleteAccount(directeur, { id: 'p', role: 'placeur' }), true, 'directeur : compte non admin');
+  assert.equal(canDeleteAccount(directeur, { id: 'x', role: 'admin' }), false, 'directeur : jamais un admin');
+  assert.equal(canDeleteAccount(directeur, { id: 'd', role: 'directeur' }), false, 'directeur : pas soi-même');
+  assert.equal(canDeleteAccount({ id: 'p', role: 'placeur' }, { id: 'a', role: 'agent_checkin' }), false, 'placeur');
 });
 
 test('API DELETE /api/admin/users : capacité, garde-fous et message pour les demandes liées', () => {

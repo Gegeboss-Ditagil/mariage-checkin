@@ -179,7 +179,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.85.0 : le directeur de festin ouvre `/admin` pour le MODE de l'événement et la réinitialisation des données de test seulement (capacité `manageEventMode`, admin + directeur ; `PATCH /api/admin/event` limité à `status` pour lui, le reste dont Twilio/import/logs/santé reste `adminPanel`). Menu du compte : « ⚙ Mode de l'événement ». La base refuse toujours la réinitialisation en mode `live`. Aucune migration.
 - v1.85.1 : `saveEdit` de `/admin/users` a un délai de 20 s et un `try/finally` (le bouton « Enregistrer » ne reste plus figé sur « … » après un changement de rôle + mot de passe). Cause serveur non reproduite. Aucune migration.
 - v1.85.2 : `/admin/users` affiche un titre neutre + « Chargement… » tant que liste et rôle ne sont pas connus (plus de bascule pour un directeur) et classe les comptes de A à Z ; l'écran vert « Bienvenue » de `/login` s'éteint vers le fond avant de naviguer, une seule fois. Aucune migration.
-- v1.86.0 : suppression définitive d'un compte depuis `/admin/users` (capacité `deleteAccounts`, admin seul ; `canDeleteAccount` : pas soi-même, pas l'admin principal, un admin seulement par l'admin principal ; refus 409 si le compte a des demandes d'invités surprise). Corbeille en verre. Aucune migration.
+- v1.86.0 : suppression définitive d'un compte depuis `/admin/users` (capacité `deleteAccounts`, admin + directeur (jamais un compte admin pour le directeur) ; `canDeleteAccount` : pas soi-même, pas l'admin principal, un admin seulement par l'admin principal ; refus 409 si le compte a des demandes d'invités surprise). Corbeille en verre. Aucune migration.
 
 ## Reprise rapide pour Claude AI
 
