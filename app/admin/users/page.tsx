@@ -6,7 +6,7 @@ import { CloseIcon, EditIcon } from '@/components/icons';
 import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 
 const inputClass =
-  'w-full rounded-xl2 border-2 border-hairline bg-surface px-3 py-2.5  placeholder:text-text-faint focus:border-accent focus:outline-none';
+  'w-full rounded-xl2 border-2 border-hairline bg-surface px-3 py-2.5 text-text placeholder:text-text-faint focus:border-accent focus:outline-none';
 
 // Liste partagée entre le formulaire de création et l'édition (changer de
 // rôle/accès, demande de Gersom le 02/09/2026) -- une seule source pour ne
