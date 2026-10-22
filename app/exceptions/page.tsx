@@ -96,7 +96,7 @@ export default function ExceptionsPage() {
         {showForm && (
           <form onSubmit={submit} className="space-y-3 border-b border-hairline px-4 py-4">
             <select
-              className="w-full rounded-xl2 border border-hairline px-4 py-3"
+              className="w-full rounded-xl2 border border-hairline bg-surface px-4 py-3 text-text"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
