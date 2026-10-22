@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TopBar } from '@/components/TopBar';
 import { CloseIcon, EditIcon } from '@/components/icons';
 import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
@@ -21,6 +21,8 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
 
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
+  // v1.85.2 : faux tant que la liste ET le rôle de l'utilisateur ne sont pas arrivés.
+  const [loaded, setLoaded] = useState(false);
   const [nomAffichage, setNomAffichage] = useState('');
   const [role, setRole] = useState<Role>('agent_checkin');
   const [pin, setPin] = useState('');
@@ -49,6 +51,11 @@ export default function UsersAdminPage() {
   // peut ni créer/promouvoir un admin, ni modifier un compte admin.
   const [viewerRole, setViewerRole] = useState<Role | null>(null);
   const isAdminViewer = viewerRole === null || viewerRole === 'admin';
+  // v1.85.2, retour de Gersom : comptes classés par ordre alphabétique (sans tenir compte des accents ni de la casse).
+  const sortedUsers = useMemo(
+    () => [...users].sort((a, b) => a.nom_affichage.localeCompare(b.nom_affichage, "fr", { sensitivity: "base" })),
+    [users]
+  );
   const roleOptions = isAdminViewer ? ROLE_OPTIONS : ROLE_OPTIONS.filter((opt) => opt.value !== 'admin');
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -61,7 +68,9 @@ export default function UsersAdminPage() {
         setUsers(d.users || []);
         setCanViewHints(d.canViewHints === true);
         if (d.viewerRole) setViewerRole(d.viewerRole);
-      });
+      })
+      .catch(() => undefined)
+      .finally(() => setLoaded(true));
   }
 
   useEffect(load, []);
@@ -173,8 +182,14 @@ export default function UsersAdminPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar title={isAdminViewer ? "Comptes de l'equipe" : 'Gestion des comptes'} backHref={isAdminViewer ? '/admin' : '/dashboard'} />
+      {/* v1.85.2 : titre neutre tant que le rôle de l'utilisateur n'est pas connu -- plus de bascule visible. */}
+      <TopBar title={!loaded ? 'Comptes' : isAdminViewer ? "Comptes de l'equipe" : 'Gestion des comptes'} backHref={!loaded || !isAdminViewer ? '/dashboard' : '/admin'} />
 
+      {!loaded ? (
+        <div className="flex-1 px-4 py-4">
+          <div className="card text-sm text-text-muted">Chargement…</div>
+        </div>
+      ) : (
       <div className="flex-1 space-y-6 px-4 py-4">
         <form onSubmit={add} className="card space-y-3">
           <p className="font-semibold ">Ajouter un compte</p>
@@ -232,7 +247,7 @@ export default function UsersAdminPage() {
         </form>
 
         <ul className="divide-y divide-hairline">
-          {users.map((u) => (
+          {sortedUsers.map((u) => (
             <li key={u.id} className="py-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -383,6 +398,7 @@ export default function UsersAdminPage() {
           ))}
         </ul>
       </div>
+      )}
 
       {resetResult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">

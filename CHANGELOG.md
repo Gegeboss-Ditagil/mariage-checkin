@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.85.2] — 2026-10-22
+
+Retours de Gersom sur le compte de Rémy (directeur) : flashs et ordre des comptes.
+
+- **`/admin/users`** : la page affichait d’abord le titre « Comptes de l’equipe », le retour vers `/admin` et l’option Admin (valeurs par défaut quand le rôle est inconnu), puis basculait pour un directeur. Titre neutre « Comptes » et carte « Chargement… » jusqu’à l’arrivée de la liste et du rôle, plus aucune bascule.
+- **Écran vert « Bienvenue, Rémy »** : toucher Continuer fondait le vert vif vers la page suivante (flash). L’écran s’éteint désormais vers la couleur de fond (220 ms) puis une seule navigation part ; le bouton et le minuteur de 2,2 s ne peuvent plus naviguer deux fois.
+- **Comptes classés par ordre alphabétique** (accents et casse ignorés), côté affichage.
+- Non vérifié sur un appareil ; le flash exact vu par Gersom n’a pas pu être reproduit ici.
+- Tests : `tests/accounts-flash-sort.test.ts`. Aucune migration.
+
 ## [1.85.0] — 2026-10-21
 
 Demande de Gersom : « le directeur de festin devrait avoir la portion admin afin de reset les données de test et de mettre l’application en mode live ».

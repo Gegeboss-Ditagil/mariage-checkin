@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTransitionRouter as useRouter } from 'next-view-transitions';
 import { GoldSeal } from '@/components/BrandMotif';
@@ -23,6 +23,9 @@ export default function LoginPage() {
   );
 }
 
+// Durée du fondu de sortie de l'écran « Bienvenue » (voir goNext).
+const LEAVE_MS = 220;
+
 function firstName(fullName: string): string {
   return fullName.trim().split(' ')[0] || fullName;
 }
@@ -39,14 +42,28 @@ function LoginForm() {
   const [nextHref, setNextHref] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
 
-  useEffect(() => {
-    if (!welcomeName || !nextHref) return;
-    const timer = setTimeout(() => {
+  // v1.85.2 (retour de Gersom : « un flash » en touchant Continuer sur l'écran
+  // vert « Bienvenue ») : le vert vif se fondait en 180 ms vers la page
+  // suivante, d'où le flash. L'écran s'éteint d'abord vers la couleur de fond
+  // (LEAVE_MS), puis une seule navigation part -- le bouton et le minuteur
+  // automatique ne peuvent plus naviguer deux fois.
+  const [leaving, setLeaving] = useState(false);
+  const navigated = useRef(false);
+  const goNext = useCallback(() => {
+    if (!nextHref || navigated.current) return;
+    navigated.current = true;
+    setLeaving(true);
+    setTimeout(() => {
       router.replace(nextHref);
       router.refresh();
-    }, 2200);
+    }, LEAVE_MS);
+  }, [nextHref, router]);
+
+  useEffect(() => {
+    if (!welcomeName || !nextHref) return;
+    const timer = setTimeout(goNext, 2200);
     return () => clearTimeout(timer);
-  }, [welcomeName, nextHref, router]);
+  }, [welcomeName, nextHref, goNext]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,20 +106,23 @@ function LoginForm() {
 
   if (welcomeName) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-status-complete px-6 text-center text-white">
-        <p className="font-display text-2xl font-bold">Bienvenue, {firstName(welcomeName)} !</p>
-        <p className="text-lg font-medium">Merci pour votre aide aujourd'hui 🙏</p>
-        <button
-          className="mt-6 rounded-xl2 border-2 border-white/70 px-6 py-2.5 text-sm font-semibold"
-          onClick={() => {
-            if (nextHref) {
-              router.replace(nextHref);
-              router.refresh();
-            }
-          }}
-        >
-          Continuer →
-        </button>
+      <div
+        className={
+          'flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center transition-colors duration-200 ' +
+          (leaving ? 'bg-bg text-text' : 'bg-status-complete text-white')
+        }
+      >
+        <div className={'flex flex-col items-center gap-4 transition-opacity duration-200 ' + (leaving ? 'opacity-0' : 'opacity-100')}>
+          <p className="font-display text-2xl font-bold">Bienvenue, {firstName(welcomeName)} !</p>
+          <p className="text-lg font-medium">Merci pour votre aide aujourd'hui 🙏</p>
+          <button
+            className="mt-6 rounded-xl2 border-2 border-white/70 px-6 py-2.5 text-sm font-semibold"
+            disabled={leaving}
+            onClick={goNext}
+          >
+            Continuer →
+          </button>
+        </div>
       </div>
     );
   }
