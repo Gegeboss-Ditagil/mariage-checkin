@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.79.0**
-**Dernière mise à jour : 2026-10-08**
+**Version documentaire : 1.86.0**
+**Dernière mise à jour : 2026-10-22**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -72,6 +72,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+| Mode de l'événement (Préparation/Test/JOUR J/Terminé) et réinitialisation des données de test (`/admin`, page limitée à ces deux blocs pour le directeur) — `manageEventMode`, v1.85.0 | Oui | Oui (statut seulement) | Non | Non | Non |
+| Supprimer définitivement un compte (corbeille de `/admin/users`) — `deleteAccounts`, v1.86.0 | Oui (jamais soi-même ni l'admin principal) | Oui (jamais un compte admin) | Non | Non | Non |
 | Réinitialiser le mot de passe/PIN d'AUTRUI (bouton « Réinitialiser » de `/admin/users` ; page `/mots-de-passe` supprimée en v1.82.0) | Oui (sauf voir ci-dessous) | Oui (sauf admin) | Non | Non | Non |
 | Gestion des comptes (`/admin/users` : créer, renommer, activer/désactiver, rôle, PIN) — `manageAccounts`, v1.81.0 | Oui | Oui (jamais un compte admin) | Non | Non | Non |
 | Modifier SON PROPRE mot de passe/PIN (`/mon-mot-de-passe`) | Oui | Oui | Oui | Oui | Oui |

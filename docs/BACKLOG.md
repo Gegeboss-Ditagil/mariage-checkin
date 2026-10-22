@@ -1,7 +1,7 @@
 # Backlog — limites connues et actions en attente
 
-**Version documentaire : 1.84.0**
-**Dernière mise à jour : 2026-10-13**
+**Version documentaire : 1.86.0**
+**Dernière mise à jour : 2026-10-22**
 
 Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » dans une PR ou le CHANGELOG est ajoutée ici, avec un responsable, puis retirée quand elle est traitée. Le CHANGELOG raconte ce qui a été fait ; ce fichier dit ce qui reste à faire. Les éléments terminés restent listés une version puis sont retirés.
 
@@ -37,3 +37,5 @@ Règle (v1.75.0, `docs/QE_QA_PROCESS.md` §6.6) : toute limite « signalée » d
 | 16 | Fuseau et horloge : la bande « Prochaine activité » suit l'heure de **Paris** (v1.83.0) et l'horloge du **serveur**, pas celle du téléphone (v1.84.0 : `serverTime` dans `GET /api/agenda`, écart estimé autour de la requête) | Fait |
 | 17 | `.gitattributes` (LF partout) | Fait en v1.83.0 |
 | 18 | Tables `canada_jets_*` supprimées, 0069/0070/0071/0072/0073 appliquées | Fait (10-11/10/2026, vérifié) |
+| 19 | Parcours navigateur (`qa/functional/business-flows.spec.ts`) pour v1.85.0 (directeur : mode + réinitialisation) et v1.86.0 (suppression de compte) — couverts seulement par des tests unitaires et le balayage « clique partout » | À écrire | Agent | À faire |
+| 20 | Sauvegarde du compte (`import_backups`) avant une suppression définitive (v1.86.0) : aujourd'hui l'historique est conservé mais le compte lui-même n'est pas restaurable | Décision de Gersom en attente | Gersom | À décider |
