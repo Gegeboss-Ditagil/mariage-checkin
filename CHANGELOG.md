@@ -3,6 +3,17 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.85.2] — 2026-10-22
+
+Retours de Gersom sur le compte de Rémy (directeur) : flashs et ordre des comptes.
+
+- **`/admin/users`** : la page affichait d’abord le titre « Comptes de l’equipe », le retour vers `/admin` et l’option Admin (valeurs par défaut quand le rôle est inconnu), puis basculait pour un directeur. Titre neutre « Comptes » et carte « Chargement… » jusqu’à l’arrivée de la liste et du rôle, plus aucune bascule.
+- **Écran vert « Bienvenue, Rémy »** : toucher Continuer fondait le vert vif vers la page suivante (flash). L’écran s’éteint désormais vers la couleur de fond (220 ms) puis une seule navigation part ; le bouton et le minuteur de 2,2 s ne peuvent plus naviguer deux fois.
+- **Comptes classés par ordre alphabétique** (accents et casse ignorés), côté affichage.
+- **Correctifs du check « fonctionnels »** : le menu du compte était plus haut que l’écran sur iPhone (« Se déconnecter » sous la barre du bas, non cliquable) — panneau borné (`max-h`) et défilable ; `/admin` ne demande plus `/api/admin/health` à un directeur (401) ; délai de 15 s sur la bande « Prochaine activité » du test de l’heure du serveur (CI lente).
+- Non vérifié sur un appareil ; le flash exact vu par Gersom n’a pas pu être reproduit ici.
+- Tests : `tests/accounts-flash-sort.test.ts`. Aucune migration.
+
 ## [1.85.1] — 2026-10-22
 
 Retour de Gersom : en gérant un compte, changer le rôle ET le mot de passe puis « Enregistrer » laissait le bouton sur « … » très longtemps.

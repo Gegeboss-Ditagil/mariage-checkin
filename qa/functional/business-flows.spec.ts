@@ -147,7 +147,7 @@ test.describe('parcours métier', () => {
     });
     await page.goto('/scan');
     await expect(page.getByText('Prochaine activité')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Accueil des invités').first()).toBeVisible();
+    await expect(page.getByText('Accueil des invités').first()).toBeVisible({ timeout: 15_000 });
     // 18:30 à Paris : la ligne de 17:00 est passée, la suivante est celle de 19:00.
     serverNow = '2026-10-24T16:30:00Z';
     await page.reload();
