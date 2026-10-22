@@ -178,7 +178,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
             // ecran vers la gauche). En variante non flottante (TopBar), le
             // conteneur est deja cale a droite de la colonne de contenu dans
             // les deux orientations : aucun changement necessaire.
-            'absolute top-12 w-64 overflow-hidden rounded-xl2 border border-hairline bg-glass p-3 text-left shadow-elev-2 backdrop-blur ' +
+            'absolute top-12 max-h-[calc(100dvh-9rem)] w-64 overflow-y-auto overscroll-contain rounded-xl2 border border-hairline bg-glass p-3 text-left shadow-elev-2 backdrop-blur ' +
             (floating ? 'right-0 landscape:right-auto landscape:left-0' : 'right-0')
           }
         >

@@ -31,3 +31,14 @@ test('écran « Bienvenue » : fondu vers le fond puis une seule navigation', ()
   assert.match(login, /onClick=\{goNext\}/);
   assert.equal((login.match(/router\.replace\(nextHref\)/g) ?? []).length, 1, 'une seule navigation vers nextHref');
 });
+
+test('menu du compte : panneau borné à l’écran et défilable (« Se déconnecter » jamais sous la barre du bas)', () => {
+  const menu = read('components/AccountMenu.tsx');
+  assert.match(menu, /absolute top-12 max-h-\[calc\(100dvh-9rem\)\] w-64 overflow-y-auto overscroll-contain/);
+  assert.doesNotMatch(menu, /absolute top-12 w-64 overflow-hidden/);
+});
+
+test('page /admin : la santé de la base n’est jamais demandée pour un directeur', () => {
+  const page = read('app/admin/page.tsx');
+  assert.match(page, /hasCapability\(d\.viewerRole, 'adminPanel'\)\) void loadHealth\(\)/);
+});
