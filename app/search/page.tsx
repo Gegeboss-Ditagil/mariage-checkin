@@ -322,7 +322,7 @@ function SearchInner() {
           {mode === 'telephone' && (
             <div className="space-y-2">
               <select
-                className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3  focus:border-accent focus:outline-none"
+                className="w-full rounded-xl2 border-2 border-hairline bg-surface px-4 py-3 text-text focus:border-accent focus:outline-none"
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
               >

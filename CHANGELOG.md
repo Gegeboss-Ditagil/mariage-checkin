@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.84.1] — 2026-10-21
+
+Demande de Gersom : dans le menu déroulant pour changer le rôle d'un utilisateur (`/admin/users`), le texte était blanc sur blanc.
+
+- **Cause** : le champ n'avait aucune couleur de texte (il héritait du blanc du thème sombre) alors que la liste ouverte du navigateur peut garder un fond clair. Le menu de choix du pays de `/search` et celui du type d'exception de `/exceptions` avaient le même défaut latent.
+- **Correctif** : `app/globals.css` fixe la couleur de `select` et le fond/texte de `select option, select optgroup` sur les couleurs du thème (clair ou sombre), et `text-text` est ajouté sur les trois menus (`/admin/users` formulaire de création et fiche d'édition, `/search`, `/exceptions`).
+- Tests : `tests/select-contrast.test.ts` (3).
+
+Aucune migration.
+
 ## [1.84.0] — 2026-10-13
 
 Suite des points 3 et 15 de la liste de recommandations : la v1.83.0 avait posé les clés Push et l'heure de Paris ; restait la preuve du Push sur un vrai appareil et l'horloge du téléphone.

@@ -116,6 +116,20 @@ body {
     placeholder:text-text-faint focus:border-accent focus:outline-none;
 }
 
+/* Menus déroulants natifs (v1.84.1, retour de Gersom : « blanc sur blanc » sur le
+   changement de rôle de /admin/users). Le texte héritait du blanc du thème sombre
+   alors que la liste ouverte du navigateur peut garder un fond clair : couleurs
+   explicites, opaques et issues du thème, pour que le choix reste lisible quel
+   que soit le thème (clair ou sombre) et le navigateur (iOS, Android, Chrome). */
+select {
+  color: var(--text);
+}
+select option,
+select optgroup {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
