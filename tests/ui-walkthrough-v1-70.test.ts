@@ -49,7 +49,7 @@ test('style uniforme : actions texte de la barre du haut en pastille de verre (.
 
 test('style uniforme : /admin/users utilise le crayon en verre (plus de bouton texte « Modifier »)', () => {
   const src = read('../app/admin/users/page.tsx');
-  assert.match(src, /import \{ CloseIcon, EditIcon \} from '@\/components\/icons';/);
+  assert.match(src, /import \{ CloseIcon, EditIcon, TrashIcon \} from '@\/components\/icons';/);
   assert.match(src, /className="glass-icon-button glass-icon-button-sm"/);
   assert.doesNotMatch(src, /\{editingId === u\.id \? 'Annuler' : 'Modifier'\}/);
 });

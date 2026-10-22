@@ -33,7 +33,8 @@ export type Capability =
   | 'adminPanel'
   | 'managePasswords'
   | 'manageAccounts'
-  | 'manageEventMode';
+  | 'manageEventMode'
+  | 'deleteAccounts';
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
@@ -42,7 +43,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
   'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords', 'manageAccounts',
-  'manageEventMode',
+  'manageEventMode', 'deleteAccounts',
 ];
 
 // viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
@@ -179,6 +180,21 @@ export function canResetPassword(actor: { role: Role; is_super_admin?: boolean }
 export function canManageAccount(actor: { role: Role }, targetRole: Role): boolean {
   if (!hasCapability(actor.role, 'manageAccounts')) return false;
   return actor.role === 'admin' || targetRole !== 'admin';
+}
+
+// v1.86.0 (demande de Gersom : « supprimer des comptes aussi aux admins, au
+// lieu de juste créer ») : supprimer définitivement un compte est réservé à
+// l'admin (deleteAccounts). Jamais son propre compte, jamais l'admin
+// principal (is_super_admin) ; un autre admin seulement par l'admin principal
+// (même règle que canResetPassword). Le directeur ne supprime jamais.
+export function canDeleteAccount(
+  actor: { id?: string; role: Role; is_super_admin?: boolean },
+  target: { id: string; role: Role; is_super_admin?: boolean }
+): boolean {
+  if (!hasCapability(actor.role, 'deleteAccounts')) return false;
+  if (actor.id !== undefined && actor.id === target.id) return false;
+  if (target.is_super_admin) return false;
+  return target.role !== 'admin' || actor.is_super_admin === true;
 }
 
 export function canViewPasswordHint(actor: { is_super_admin?: boolean }): boolean {
