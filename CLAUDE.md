@@ -1,6 +1,6 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.86.0**
+**Version documentaire : 1.86.1**
 **Dernière mise à jour : 2026-10-22**
 
 Avant toute modification, lire dans cet ordre :
@@ -180,6 +180,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.85.1 : `saveEdit` de `/admin/users` a un délai de 20 s et un `try/finally` (le bouton « Enregistrer » ne reste plus figé sur « … » après un changement de rôle + mot de passe). Cause serveur non reproduite. Aucune migration.
 - v1.85.2 : `/admin/users` affiche un titre neutre + « Chargement… » tant que liste et rôle ne sont pas connus (plus de bascule pour un directeur) et classe les comptes de A à Z ; l'écran vert « Bienvenue » de `/login` s'éteint vers le fond avant de naviguer, une seule fois. Aucune migration.
 - v1.86.0 : suppression définitive d'un compte depuis `/admin/users` (capacité `deleteAccounts`, admin + directeur (jamais un compte admin pour le directeur) ; `canDeleteAccount` : pas soi-même, pas l'admin principal, un admin seulement par l'admin principal ; refus 409 si le compte a des demandes d'invités surprise). Corbeille en verre. Aucune migration.
+- v1.86.1 : `/admin` n'affiche plus la vue directeur à l'admin (ni l'inverse) pendant le chargement : rôle lu du cookie `wc_role` puis confirmé par le serveur, carte « Chargement… » tant qu'il est inconnu. Aucune migration.
 
 ## Reprise rapide pour Claude AI
 

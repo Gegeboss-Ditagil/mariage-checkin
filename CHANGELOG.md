@@ -3,6 +3,13 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.86.1] — 2026-10-22
+
+Retour de Gersom (capture d'écran de `/admin`) : « la page qui apparaît en flash » — pour l'admin (compte Dos) la vue du directeur, et l'inverse pour Rémy.
+
+- `/admin` (v1.85.0) choisissait ses blocs selon le rôle, mais l'état de départ (rôle inconnu) affichait déjà l'une des deux vues avant la réponse du serveur, puis basculait. Le rôle est maintenant lu d'abord du cookie `wc_role` (au montage), confirmé ensuite par le serveur ; tant qu'il est inconnu, seule une carte « Chargement… » s'affiche.
+- Test : `tests/event-mode-director.test.ts`. Aucune migration.
+
 ## [1.86.0] — 2026-10-22
 
 Demande de Gersom : « supprimer des comptes aussi aux admins, au lieu de juste créer, et garder le style liquid glass ».

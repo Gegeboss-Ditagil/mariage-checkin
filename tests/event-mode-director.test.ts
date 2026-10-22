@@ -61,3 +61,11 @@ test('page /admin : la santé de la base n’est demandée qu’après avoir su 
   assert.match(page, /hasCapability\(d\.viewerRole, 'adminPanel'\)\) void loadHealth\(\)/);
   assert.match(page, /useState<Role \| null>\(null\)/);
 });
+
+test('v1.86.1 : /admin n’affiche ni la vue admin ni la vue directeur tant que le rôle est inconnu', () => {
+  const page = read('app/admin/page.tsx');
+  assert.match(page, /useSessionRole\(\)/);
+  assert.match(page, /const viewerRole = serverRole \?\? cookieRole/);
+  assert.match(page, /\{viewerRole === null \? \(/);
+  assert.match(page, /Chargement…/);
+});
