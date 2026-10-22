@@ -34,8 +34,8 @@ export default function AdminHome() {
   const [event, setEvent] = useState<EventRow | null>(null);
   const [busy, setBusy] = useState(false);
   // v1.85.0 : le directeur ouvre cette page pour le mode et la réinitialisation seulement.
-  const [viewerRole, setViewerRole] = useState<Role>('admin');
-  const isAdmin = hasCapability(viewerRole, 'adminPanel');
+  const [viewerRole, setViewerRole] = useState<Role | null>(null);
+  const isAdmin = viewerRole !== null && hasCapability(viewerRole, 'adminPanel');
   const [message, setMessage] = useState<string | null>(null);
   // v1.75.0 : contrôle de santé de la base (voir /api/admin/health).
   const [health, setHealth] = useState<{ check_name: string; ok: boolean; detail: string }[] | null>(null);
@@ -51,15 +51,13 @@ export default function AdminHome() {
   }
 
   useEffect(() => {
-    void loadHealth();
-  }, []);
-
-  useEffect(() => {
     fetch('/api/admin/event')
       .then((r) => r.json())
       .then((d) => {
         setEvent(d.event);
         if (d.viewerRole) setViewerRole(d.viewerRole);
+        // La santé de la base est réservée à l'admin (adminPanel) : jamais demandée pour un directeur (401).
+        if (d.viewerRole && hasCapability(d.viewerRole, 'adminPanel')) void loadHealth();
       });
   }, []);
 
@@ -220,7 +218,7 @@ export default function AdminHome() {
         </div>
 
       </div>
-      <BottomNav role={viewerRole} />
+      <BottomNav role={viewerRole ?? 'admin'} />
     </div>
   );
 }
