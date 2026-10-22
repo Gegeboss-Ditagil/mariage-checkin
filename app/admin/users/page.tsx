@@ -19,6 +19,9 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: 'admin', label: 'Admin' },
 ];
 
+// Délai maximal d'un enregistrement de compte (v1.85.1).
+const SAVE_TIMEOUT_MS = 20000;
+
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [nomAffichage, setNomAffichage] = useState('');
@@ -156,19 +159,36 @@ export default function UsersAdminPage() {
       body.pin = editPin;
     }
 
-    const res = await fetch('/api/admin/users', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    setSaving(false);
-    if (!res.ok) {
-      setEditError(data.error || 'Échec de la mise à jour');
-      return;
+    // v1.85.1 (retour de Gersom : rôle + mot de passe changés ensemble, le
+    // bouton restait sur « … » très longtemps) : délai maximal et
+    // try/finally -- une requête qui traîne, une coupure réseau ou une
+    // réponse qui n'est pas du JSON ne peuvent plus laisser le bouton figé.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SAVE_TIMEOUT_MS);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEditError(data.error || 'Échec de la mise à jour');
+        return;
+      }
+      setEditingId(null);
+      load();
+    } catch (err) {
+      setEditError(
+        err instanceof DOMException && err.name === 'AbortError'
+          ? 'Le serveur met trop de temps à répondre. Vérifiez la connexion, puis revérifiez le compte avant de réessayer.'
+          : 'Connexion interrompue : la modification n’a peut-être pas été enregistrée.'
+      );
+    } finally {
+      clearTimeout(timer);
+      setSaving(false);
     }
-    setEditingId(null);
-    load();
   }
 
   return (

@@ -52,3 +52,13 @@ test('/api/admin/users PATCH exige les nouveaux identifiants quand le rôle chan
   assert.match(routeSource, /updates\.email = null;/);
   assert.match(routeSource, /updates\.password_hash = null;/);
 });
+
+test('v1.85.1 : l’enregistrement d’un compte ne peut plus rester figé sur « … »', () => {
+  const source = readFileSync(new URL('../app/admin/users/page.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  const start = source.indexOf('async function saveEdit');
+  const block = source.slice(start, source.indexOf('return (', start));
+  assert.match(block, /new AbortController\(\)/);
+  assert.match(block, /signal: controller\.signal/);
+  assert.match(block, /finally \{[\s\S]*setSaving\(false\)/);
+  assert.match(block, /res\.json\(\)\.catch/);
+});
