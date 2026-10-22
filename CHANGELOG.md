@@ -3,6 +3,15 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.86.0] — 2026-10-22
+
+Demande de Gersom : « supprimer des comptes aussi aux admins, au lieu de juste créer, et garder le style liquid glass ».
+
+- Nouvelle capacité `deleteAccounts` (admin, directeur) et `canDeleteAccount` (`lib/permissions.ts`) : jamais son propre compte, jamais l’admin principal (`is_super_admin`), un autre admin seulement par l’admin principal ; le directeur supprime donc seulement des comptes non admin.
+- `DELETE /api/admin/users` (confirmation côté écran, journal `app_logs`). L’historique (arrivées, journaux, exceptions) est conservé, seule la référence au compte est vidée. Un compte qui a soumis ou assigné des demandes d’invités surprise n’est pas supprimable (clé étrangère) : message « désactivez-le plutôt » (409).
+- `/admin/users` : corbeille ronde en verre (`glass-icon-button`, comme le crayon) sur chaque ligne supprimable.
+- Tests : `tests/delete-accounts.test.ts`, matrice `tests/qa-role-matrix.test.ts`. Aucune migration. Docs mises à jour : BUSINESS_RULES (tableau des rôles), QA_SCENARIOS (14-15), BACKLOG (19-20).
+
 ## [1.85.2] — 2026-10-22
 
 Retours de Gersom sur le compte de Rémy (directeur) : flashs et ordre des comptes.

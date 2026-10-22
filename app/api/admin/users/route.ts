@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { forgetAccountState, getSessionUser } from '@/lib/session';
 import { hashSecret } from '@/lib/auth';
 import type { Role } from '@/lib/types';
-import { canManageAccount, canResetPassword, canViewPasswordHint, hasCapability } from '@/lib/permissions';
+import { logServerEvent } from '@/lib/serverLog';
+import { canDeleteAccount, canManageAccount, canResetPassword, canViewPasswordHint, hasCapability } from '@/lib/permissions';
 
 const ROLES = ['admin', 'directeur', 'placeur', 'agent_checkin', 'visibilite'];
 
@@ -14,7 +15,7 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('users')
-    .select('id, nom_affichage, role, email, active, created_at, pin_reset_hint')
+    .select('id, nom_affichage, role, email, active, created_at, pin_reset_hint, is_super_admin')
     .eq('event_id', user.event_id)
     .order('created_at');
 
@@ -36,6 +37,7 @@ export async function GET() {
     canReset: canResetPassword(user, row.role),
     hint: canViewHints ? row.pin_reset_hint : undefined,
     isSelf: row.id === user.id,
+    canDelete: canDeleteAccount(user, { id: row.id, role: row.role, is_super_admin: row.is_super_admin === true }),
     // v1.81.0 : un directeur voit les comptes admin mais ne peut pas les modifier.
     locked: !canManageAccount(user, row.role),
   }));
@@ -182,4 +184,51 @@ export async function PATCH(req: NextRequest) {
   // Effet immédiat : la prochaine requête de ce compte relit son rôle.
   forgetAccountState(id);
   return NextResponse.json({ user: data });
+}
+
+// v1.86.0 : suppression définitive d'un compte (admin seulement, voir
+// canDeleteAccount). Les journaux (checkins, audit_logs, exceptions...) gardent
+// leurs lignes, seule la référence au compte est vidée (ON DELETE SET NULL).
+// Un compte qui a soumis ou assigné des demandes d'invités surprise ne peut
+// pas être supprimé (clé étrangère sans suppression en cascade) : on propose de
+// le désactiver plutôt que de perdre ces demandes.
+export async function DELETE(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user || !hasCapability(user.role, 'deleteAccounts')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
+  const { id } = await req.json().catch(() => ({}));
+  if (!id || typeof id !== 'string') return NextResponse.json({ error: 'id requis' }, { status: 400 });
+  if (id === user.id) return NextResponse.json({ error: 'Vous ne pouvez pas supprimer votre propre compte' }, { status: 400 });
+
+  const supabase = createAdminClient();
+  const { data: target } = await supabase
+    .from('users')
+    .select('id, nom_affichage, role, is_super_admin')
+    .eq('id', id)
+    .eq('event_id', user.event_id)
+    .maybeSingle();
+  if (!target) return NextResponse.json({ error: 'Compte introuvable' }, { status: 404 });
+  if (!canDeleteAccount(user, { id: target.id, role: target.role, is_super_admin: target.is_super_admin === true })) {
+    return NextResponse.json({ error: 'Ce compte ne peut pas être supprimé par votre compte' }, { status: 403 });
+  }
+
+  const { error } = await supabase.from('users').delete().eq('id', id).eq('event_id', user.event_id);
+  if (error) {
+    if (error.code === '23503') {
+      return NextResponse.json(
+        { error: 'Ce compte a des demandes d’invités surprise : désactivez-le plutôt que de le supprimer.' },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  forgetAccountState(id);
+  await logServerEvent({
+    event_id: user.event_id,
+    level: 'info',
+    path: '/api/admin/users',
+    message: 'Compte supprimé',
+    context: { deleted_id: target.id, deleted_name: target.nom_affichage, deleted_role: target.role, by: user.id },
+  });
+  return NextResponse.json({ ok: true });
 }

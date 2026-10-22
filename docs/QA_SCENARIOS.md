@@ -1,7 +1,7 @@
 # Scénarios QA obligatoires
 
-**Version documentaire : 1.79.0**
-**Dernière mise à jour : 2026-10-10**
+**Version documentaire : 1.86.0**
+**Dernière mise à jour : 2026-10-22**
 
 Exécuter avant chaque push touchant aux rôles, à la navigation, aux formulaires, aux sessions, à la PWA ou aux données. Voir `docs/QE_QA_PROCESS.md` pour la méthode (QE avant merge, QA quand un bug est signalé) — cette liste est le contenu à vérifier, QE_QA_PROCESS.md est la façon de le faire.
 
@@ -297,3 +297,5 @@ Lancés automatiquement sur chaque PR (check « Qualité », `.github/workflows/
 | 11 | idem | Téléphone lent (processeur ×6), fiche check-in jamais ouverte | Aucun saut d'affichage (CLS < 0,1) |
 | 12 | `role-change.spec.ts` | Un admin change le rôle d'un compte connecté ailleurs (vers chaque rôle, vers admin et retour), puis le désactive | Nouveaux droits dès la requête suivante, PIN conservé entre rôles « PIN », session fermée si le mode de connexion change ou si le compte est désactivé ; l'appareil de la personne se met à jour seul |
 | 13 | `test-mode-reset.spec.ts` | Mode test : invité surprise approuvé + arrivée, puis bouton rouge ; puis mode JOUR J | Tout ce qui vient des essais est effacé, les invités importés et leurs tables restent ; en JOUR J le bouton est grisé et l'API refuse |
+| 14 | `tests/event-mode-director.test.ts` (unitaire ; parcours navigateur à ajouter à `business-flows.spec.ts`) | Directeur : ouvre `/admin`, change le mode, réinitialise ; ne voit ni Twilio, ni import, ni logs, ni santé de la base | Seuls le bloc de mode et le bouton rouge s'affichent ; aucun 401 ; le reste de l'administration renvoie à l'écran d'arrivée |
+| 15 | `tests/delete-accounts.test.ts` (unitaire ; parcours navigateur à ajouter) | Admin ou directeur supprime un compte ; tentative sur soi-même, sur l'admin principal, sur un admin (directeur) | Corbeille seulement quand permis, confirmation demandée, compte lié à des invités surprise refusé (409, « désactivez-le ») |

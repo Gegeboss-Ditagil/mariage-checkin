@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { TopBar } from '@/components/TopBar';
-import { CloseIcon, EditIcon } from '@/components/icons';
+import { CloseIcon, EditIcon, TrashIcon } from '@/components/icons';
 import { Role, ROLE_LABELS, UserRow } from '@/lib/types';
 
 const inputClass =
@@ -119,6 +119,35 @@ export default function UsersAdminPage() {
     setEmail('');
     setPassword('');
     load();
+  }
+
+  // v1.86.0 : suppression définitive (admin), confirmation obligatoire.
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  async function deleteAccount(u: UserRow) {
+    if (!window.confirm(`Supprimer définitivement le compte « ${u.nom_affichage} » ?
+
+Il ne pourra plus se connecter. L'historique de ses actions est conservé. Action irréversible.`)) return;
+    setDeleteError(null);
+    setDeletingId(u.id);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: u.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(data.error || 'Suppression impossible');
+        return;
+      }
+      if (editingId === u.id) setEditingId(null);
+      load();
+    } catch {
+      setDeleteError('Connexion interrompue : le compte n’a peut-être pas été supprimé.');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function toggleActive(u: UserRow) {
@@ -266,6 +295,7 @@ export default function UsersAdminPage() {
           </button>
         </form>
 
+        {deleteError && <p className="text-sm text-status-over">{deleteError}</p>}
         <ul className="divide-y divide-hairline">
           {sortedUsers.map((u) => (
             <li key={u.id} className="py-3">
@@ -289,6 +319,18 @@ export default function UsersAdminPage() {
                   >
                     {editingId === u.id ? <CloseIcon className="h-4 w-4" /> : <EditIcon className="h-4 w-4" />}
                   </button>
+                  {/* v1.86.0 : corbeille en verre (même recette que le crayon). */}
+                  {u.canDelete && (
+                    <button
+                      type="button"
+                      aria-label={'Supprimer ' + u.nom_affichage}
+                      className="glass-icon-button glass-icon-button-sm text-status-over disabled:opacity-50"
+                      disabled={deletingId === u.id}
+                      onClick={() => deleteAccount(u)}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                   {/* Bascule verre liquide (theme iOS) au lieu de l'ancien
                       badge texte cliquable -- demande de Gersom le
                       02/09/2026. */}

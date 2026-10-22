@@ -162,6 +162,8 @@ export interface UserRow {
   isSelf?: boolean;
   // v1.81.0 : compte admin vu par un directeur -- affiché, jamais modifiable.
   locked?: boolean;
+  // v1.86.0 : suppression définitive permise (canDeleteAccount), calculée côté serveur.
+  canDelete?: boolean;
 }
 
 export interface AuditLogRow {

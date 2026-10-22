@@ -1,7 +1,7 @@
 # Règles métier — Check-in Mariage Nelly & Gersom
 
-**Version documentaire : 1.79.0**
-**Dernière mise à jour : 2026-10-08**
+**Version documentaire : 1.86.0**
+**Dernière mise à jour : 2026-10-22**
 
 Ce document est la source de vérité fonctionnelle. Toute modification de rôle, navigation, formulaire, API ou donnée doit le respecter et l'ajuster dans le même lot/version.
 
@@ -72,6 +72,8 @@ Ce document est la source de vérité fonctionnelle. Toute modification de rôle
 | Exceptions | Oui | Oui | Oui | Oui | Non |
 | Exporter les données | Oui | Non | Non | Non | Non |
 | Panneau admin/import/comptes/configuration | Oui | Non | Non | Non | Non |
+| Mode de l'événement (Préparation/Test/JOUR J/Terminé) et réinitialisation des données de test (`/admin`, page limitée à ces deux blocs pour le directeur) — `manageEventMode`, v1.85.0 | Oui | Oui (statut seulement) | Non | Non | Non |
+| Supprimer définitivement un compte (corbeille de `/admin/users`) — `deleteAccounts`, v1.86.0 | Oui (jamais soi-même ni l'admin principal) | Oui (jamais un compte admin) | Non | Non | Non |
 | Réinitialiser le mot de passe/PIN d'AUTRUI (bouton « Réinitialiser » de `/admin/users` ; page `/mots-de-passe` supprimée en v1.82.0) | Oui (sauf voir ci-dessous) | Oui (sauf admin) | Non | Non | Non |
 | Gestion des comptes (`/admin/users` : créer, renommer, activer/désactiver, rôle, PIN) — `manageAccounts`, v1.81.0 | Oui | Oui (jamais un compte admin) | Non | Non | Non |
 | Modifier SON PROPRE mot de passe/PIN (`/mon-mot-de-passe`) | Oui | Oui | Oui | Oui | Oui |
@@ -92,7 +94,10 @@ Depuis v1.67.1, un rôle avec `manageAgenda` doit explicitement toucher le bouto
 Depuis v1.55.0, un élément d'agenda peut être marqué `is_private` (`agenda_items.is_private`, migration `0058`) — `GET /api/agenda` retire alors cette ligne de la réponse JSON pour tout rôle sans `manageAgenda` (agent scan, agent placeur) : un filtrage réel côté serveur, jamais un simple masquage visuel côté client. Aucune nouvelle capacité : la restriction réutilise `manageAgenda`, déjà réservée à `admin`/`directeur`.
 
 **Mise à jour v1.81.x/1.82.0 : `/admin/users` est désormais ouvert au directeur (capacité `manageAccounts`, `canManageAccount`) pour tout compte SAUF admin ; le menu du directeur affiche « Gestion des comptes » au lieu de « Mots de passe » — les phrases ci-dessous sur `/admin/users` réservé à admin décrivent l'état antérieur.**
-nDepuis v1.85.0, la capacité `manageEventMode` (admin, directeur) ouvre `/admin` (la page seulement, jamais ses sous-pages) au directeur de festin pour changer le mode de l'événement (Préparation / Test / JOUR J / Terminé) et réinitialiser les données de test. Le directeur ne peut modifier que `status` via `PATCH /api/admin/event` ; nom, date, capacité de réserve et Twilio restent `adminPanel`. La réinitialisation reste refusée par la base en mode `live`.
+
+Depuis v1.85.0, la capacité `manageEventMode` (admin, directeur) ouvre `/admin` (la page seulement, jamais ses sous-pages) au directeur de festin pour changer le mode de l'événement (Préparation / Test / JOUR J / Terminé) et réinitialiser les données de test. Le directeur ne peut modifier que `status` via `PATCH /api/admin/event` ; nom, date, capacité de réserve et Twilio restent `adminPanel`. La réinitialisation reste refusée par la base en mode `live`.
+
+Depuis v1.86.0, la capacité `deleteAccounts` (admin, directeur) permet de supprimer définitivement un compte depuis `/admin/users` (`DELETE /api/admin/users`, règle `canDeleteAccount`) : jamais son propre compte, jamais l'admin principal ; un compte admin n'est supprimable que par l'admin principal, donc le directeur de festin supprime uniquement les comptes non admin. L'historique est conservé (références vidées) ; un compte lié à des demandes d'invités surprise se désactive au lieu de se supprimer.
 
 Depuis v1.65.0 (03/10/2026), un écran dédié `/mots-de-passe` (capacité `managePasswords`, admin/directeur) permet de réinitialiser le PIN d'un autre compte en générant un code à 4 chiffres aléatoire — jamais une saisie manuelle, jamais consultable en clair une fois généré. La portée exacte (`lib/permissions.ts`, `canResetPassword`) : un admin ou un directeur « normal » peut réinitialiser n'importe quel compte **sauf un autre admin** ; un seul compte admin (`users.is_super_admin`, migration `0059`, confirmé explicitement par Gersom comme le compte « Admin » / gersomdos@gmail.com — son compte personnel « Dos » reste un admin ordinaire, séparation volontaire des pouvoirs) peut réinitialiser n'importe qui, y compris un autre admin, **et** consulter un indice anonymisé (`pin_reset_hint`, seulement les deux derniers chiffres, le reste en astérisques) du dernier code généré pour un compte — jamais le PIN réel ni une valeur réversible, uniquement pour rappeler un code déjà communiqué avant de réinitialiser pour de bon. `/admin/users` (création de compte, changement de rôle, édition libre du PIN/email/mot de passe) reste réservé à `role === 'admin'` (directeur n'y a jamais accès, `adminPanel` lui manque — `/mots-de-passe` reste donc sa SEULE porte d'entrée vers la réinitialisation). **Depuis v1.69.1**, le lien « 🔑 Mots de passe » du menu du compte (`components/AccountMenu.tsx`) n'est plus affiché pour `admin` (retour de Gersom : « doublon... deux clés dans ce menu-là ») — pour ce rôle, la fiche d'édition d'un compte sur `/admin/users` (bouton « Réinitialiser », v1.67.4) fait exactement la même chose ; `directeur` garde le lien, n'ayant aucun autre accès. La route `/mots-de-passe` elle-même, sa capacité `managePasswords` et `canResetPassword` restent entièrement inchangés — seule la visibilité du lien dans le menu change. Sur `/login`, un bouton « Mot de passe oublié ? » révèle un texte statique renvoyant vers un directeur de festin — aucun flux de réinitialisation en libre-service. Depuis v1.65.1, ce texte nomme explicitement Rémy Landu et Tuzola Saviera (demande de Gersom), plutôt que le terme générique « les directeurs de festin ».
 

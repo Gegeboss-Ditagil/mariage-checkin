@@ -33,7 +33,8 @@ export type Capability =
   | 'adminPanel'
   | 'managePasswords'
   | 'manageAccounts'
-  | 'manageEventMode';
+  | 'manageEventMode'
+  | 'deleteAccounts';
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
@@ -42,7 +43,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
   'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords', 'manageAccounts',
-  'manageEventMode',
+  'manageEventMode', 'deleteAccounts',
 ];
 
 // viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
@@ -93,7 +94,7 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // pouvoir [appeler/texter] un invite, un peu comme les gens du staff" --
   // appeler/texter un INVITE (/search), distincte de callStaff/
   // messageContacts qui portent sur le STAFF (/staff, /plan-table).
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests', 'manageEventMode'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests', 'manageEventMode', 'deleteAccounts'],
   // manageEventMode (v1.85.0, demande de Gersom : « le directeur de festin
   // devrait avoir la portion admin afin de reset les donnees de test et de
   // mettre l'application en mode live ») : changer le MODE de l'evenement
@@ -179,6 +180,23 @@ export function canResetPassword(actor: { role: Role; is_super_admin?: boolean }
 export function canManageAccount(actor: { role: Role }, targetRole: Role): boolean {
   if (!hasCapability(actor.role, 'manageAccounts')) return false;
   return actor.role === 'admin' || targetRole !== 'admin';
+}
+
+// v1.86.0 (demande de Gersom : « supprimer des comptes aussi aux admins, au
+// lieu de juste créer ») : supprimer définitivement un compte est réservé à
+// l'admin et, sur demande du même jour, au directeur (deleteAccounts). Jamais
+// son propre compte, jamais l'admin
+// principal (is_super_admin) ; un autre admin seulement par l'admin principal
+// (même règle que canResetPassword) : le directeur supprime donc seulement
+// des comptes non admin.
+export function canDeleteAccount(
+  actor: { id?: string; role: Role; is_super_admin?: boolean },
+  target: { id: string; role: Role; is_super_admin?: boolean }
+): boolean {
+  if (!hasCapability(actor.role, 'deleteAccounts')) return false;
+  if (actor.id !== undefined && actor.id === target.id) return false;
+  if (target.is_super_admin) return false;
+  return target.role !== 'admin' || actor.is_super_admin === true;
 }
 
 export function canViewPasswordHint(actor: { is_super_admin?: boolean }): boolean {
