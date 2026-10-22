@@ -158,7 +158,9 @@ test("/admin/users expose un bouton Réinitialiser dans la fiche d'édition (POS
 test('/admin/users (v1.81.0) : directeur y accède via manageAccounts, sans adminPanel ', () => {
   assert.equal(hasCapability('directeur', 'adminPanel'), false);
   assert.equal(canAccessPath('directeur', '/admin/users'), true);
-  assert.equal(canAccessPath('directeur', '/admin'), false);
+  // v1.85.0 : la page /admin elle-même s'ouvre (mode + réinitialisation), jamais ses sous-pages.
+  assert.equal(canAccessPath('directeur', '/admin'), true);
+  assert.equal(canAccessPath('directeur', '/admin/logs'), false);
 });
 
 const loginSource = readFileSync(new URL('../app/login/page.tsx', import.meta.url), 'utf8');

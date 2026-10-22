@@ -32,7 +32,8 @@ export type Capability =
   | 'exportData'
   | 'adminPanel'
   | 'managePasswords'
-  | 'manageAccounts';
+  | 'manageAccounts'
+  | 'manageEventMode';
 
 const ALL_CAPABILITIES: Capability[] = [
   'scan', 'search', 'viewDashboard', 'viewTables', 'viewStaff', 'viewAllStaff', 'checkin', 'placement',
@@ -41,6 +42,7 @@ const ALL_CAPABILITIES: Capability[] = [
   'markNoShow', 'addInvitation', 'viewHistory', 'resolveExceptions',
   'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval',
   'deleteGuestApproval', 'exportData', 'adminPanel', 'managePasswords', 'manageAccounts',
+  'manageEventMode',
 ];
 
 // viewHistory (journal /history) n'est PAS dans OPERATIONAL_CAPABILITIES --
@@ -91,7 +93,13 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   // pouvoir [appeler/texter] un invite, un peu comme les gens du staff" --
   // appeler/texter un INVITE (/search), distincte de callStaff/
   // messageContacts qui portent sur le STAFF (/staff, /plan-table).
-  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests'],
+  directeur: [...OPERATIONAL_CAPABILITIES, 'viewAllStaff', 'callStaff', 'manageTags', 'viewGuestApprovals', 'viewAgenda', 'manageAgenda', 'submitGuestApproval', 'reviewGuestApproval', 'assignGuestApproval', 'deleteGuestApproval', 'addInvitation', 'managePasswords', 'manageAccounts', 'contactGuests', 'manageEventMode'],
+  // manageEventMode (v1.85.0, demande de Gersom : « le directeur de festin
+  // devrait avoir la portion admin afin de reset les donnees de test et de
+  // mettre l'application en mode live ») : changer le MODE de l'evenement
+  // (statut seulement) et reinitialiser les donnees de test, depuis /admin
+  // qui n'affiche alors que ces deux blocs. Le reste de l'administration
+  // (Twilio, import, logs, exports, sante) reste adminPanel.
   // manageAccounts (v1.81.0, retour de Gersom) : « Gestion des comptes »
   // (/admin/users) pour le directeur de festin -- mêmes actions que l'admin
   // (créer, renommer, activer/désactiver, changer rôle/PIN, réinitialiser)
@@ -220,6 +228,8 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 export function canAccessPath(role: Role, pathname: string): boolean {
   if (role === 'admin') return true;
   if (pathname === '/') return true;
+  // /admin lui-meme (jamais ses sous-pages) : mode de l'evenement + reset.
+  if (pathname === '/admin') return hasCapability(role, 'manageEventMode');
 
   const prefixes =
     role === 'directeur' || role === 'placeur'

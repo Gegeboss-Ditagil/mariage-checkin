@@ -1,7 +1,7 @@
 # Instructions Claude Code et autres agents IA
 
-**Version documentaire : 1.84.0**
-**Dernière mise à jour : 2026-10-12**
+**Version documentaire : 1.85.0**
+**Dernière mise à jour : 2026-10-21**
 
 Avant toute modification, lire dans cet ordre :
 
@@ -175,6 +175,7 @@ Ne modifiez jamais Supabase ou Google Sheets en production sans autorisation exp
 - v1.82.0 : « Gestion des comptes » pour le directeur de festin (demande de Gersom). Capacité `manageAccounts` (admin, directeur) + `canManageAccount` (`lib/permissions.ts`) : `/admin/users` et `/api/admin/users` ouverts au directeur, sauf sur les comptes admin (affichés « Réservé aux admins », refus 403 côté API, jamais de création/promotion en admin). Menu du compte : pour directeur, « Gestion des comptes » remplace « Mots de passe » sous « Mon mot de passe ». Personne ne peut se désactiver ni changer son propre rôle. La page `/mots-de-passe` est supprimée (l'API `/api/passwords` reste, appelée par « Réinitialiser » de `/admin/users`). Aucune migration.
 - v1.83.0 : lot de la liste de recommandations du 12/10/2026 (points 3, 4, 10, 12, 13, 15, 17). **Push** : cause réelle de « 0 abonnement » = aucune variable `VAPID_*` sur Vercel (`/api/push/vapid-public-key` répondait 503) — paire de clés générée et posée en production le 12/10/2026 (effet au prochain déploiement) ; en plus : `PushNotificationButton` renvoie l'abonnement existant au serveur à chaque ouverture (upsert idempotent) et est aussi dans le menu du compte (il n'existait que sur `/approbations`), `lib/webPush.ts` journalise (`app_logs`) VAPID absent et tout échec d'envoi non-410, `tests/web-push.test.ts` (comportement, faux client). **Heure de Paris** : `parisMinutes` (`Europe/Paris`) remplace `montrealMinutes` pour la bande « Prochaine activité » (CEST le 24/10, retour à l'heure d'hiver à 03:00 le 25/10 testé). `.gitattributes` (LF partout). `docs/BACKLOG.md` remis à jour. Aucune migration.
 - v1.84.0 : (1) la bande « Prochaine activité » suit l'horloge du SERVEUR : `GET /api/agenda` renvoie `serverTime`, `estimateClockOffset` (`lib/agendaSchedule.ts`) estime l'écart autour de la requête (milieu de l'aller-retour) et la bande l'applique ; un téléphone mal réglé n'affiche plus la mauvaise activité (test : téléphone 40 min en retard, `tests/agenda-schedule.test.ts` ; parcours `qa/functional/business-flows.spec.ts` avec un téléphone volontairement faux et `serverTime` intercepté). (2) Notification Push de test : `POST /api/push/test` (même droit que l'abonnement, `viewGuestApprovals`) + `sendPushTest` (`lib/webPush.ts`) envoient au seul appareil du compte connecté ; bouton « ✉️ Envoyer une notification de test » sous « Notifications activées » (`PushNotificationButton`). Vérifié le 13/10/2026 : clés VAPID posées à 02:13 UTC, déployées à 02:21 UTC (PR #160). (3) La v1.83.0 avait déjà fait le Push (clés VAPID), l'heure de Paris, `.gitattributes` et le BACKLOG ; **le lieu est en France (Chambly 60, aérodrome de Persan), pas au Québec : une hypothèse « Montréal » de v1.82.3 a été corrigée en v1.83.0**. Aucune migration.
+- v1.85.0 : le directeur de festin ouvre `/admin` pour le MODE de l'événement et la réinitialisation des données de test seulement (capacité `manageEventMode`, admin + directeur ; `PATCH /api/admin/event` limité à `status` pour lui, le reste dont Twilio/import/logs/santé reste `adminPanel`). Menu du compte : « ⚙ Mode de l'événement ». La base refuse toujours la réinitialisation en mode `live`. Aucune migration.
 
 ## Reprise rapide pour Claude AI
 

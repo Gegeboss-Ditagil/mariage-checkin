@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/session';
+import { hasCapability } from '@/lib/permissions';
 
 export async function GET() {
   const user = await getSessionUser();
@@ -9,14 +10,22 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase.from('events').select('*').eq('id', user.event_id).maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ event: data });
+  return NextResponse.json({ event: data, viewerRole: user.role });
 }
 
 export async function PATCH(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  if (!user || !hasCapability(user.role, 'manageEventMode')) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
-  const { status, name, event_date, reserve_table_capacity, twilio_enabled } = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
+  const { status, name, event_date, reserve_table_capacity, twilio_enabled } = body;
+
+  // v1.85.0 : le directeur ne change que le mode (statut) ; nom, date,
+  // capacité de réserve et Twilio restent réservés à l'admin (adminPanel).
+  const onlyStatus = Object.keys(body).every((key) => key === 'status');
+  if (!onlyStatus && !hasCapability(user.role, 'adminPanel')) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+  }
 
   const patch: Record<string, unknown> = {};
   if (status !== undefined) {

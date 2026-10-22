@@ -147,6 +147,14 @@ const HIDDEN_BY_CAPABILITY: Record<string, Parameters<typeof hasCapability>[1]> 
   '/tables/overflow': 'moveGuests',
   '/tables/move': 'moveGuests',
   '/tables/move-multiple': 'moveGuests',
+  // v1.85.0 : /admin s'ouvre au directeur, qui n'y voit que le mode et la
+  // réinitialisation ; ces liens sont dans le bloc {isAdmin && (...)}.
+  '/admin/wizard': 'adminPanel',
+  '/admin/tables': 'adminPanel',
+  '/admin/import-withjoy': 'adminPanel',
+  '/admin/exports': 'adminPanel',
+  '/admin/logs': 'adminPanel',
+  '/history': 'adminPanel',
 };
 
 test('aucun lien d’un écran ne mène un rôle vers une page qu’il ne peut pas ouvrir', () => {

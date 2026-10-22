@@ -108,6 +108,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
   if (!name) return null;
   const canHistory = hasCapability(role, 'viewHistory');
   const canAdmin = hasCapability(role, 'adminPanel');
+  const canEventMode = hasCapability(role, 'manageEventMode') && !canAdmin;
   const canGuestApproval = hasCapability(role, 'viewGuestApprovals');
   // v1.69.1, retour de Gersom (capture d'écran du menu, compte admin) :
   // "c'est comme un doublon... avoir deux clés dans ce menu-là" -- pour
@@ -230,6 +231,7 @@ export function AccountMenu({ floating = false }: { floating?: boolean }) {
             {hasCapability(role, 'viewGuestApprovals') && <div className="px-1 pt-1"><PushNotificationButton /></div>}
             <Link role="menuitem" href="/mon-mot-de-passe" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">🔑 Mon mot de passe</Link>
             {canManageAccounts && <Link role="menuitem" href="/admin/users" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">👥 Gestion des comptes</Link>}
+            {canEventMode && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Mode de l'événement</Link>}
             {canAdmin && <Link role="menuitem" href="/admin" onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-medium text-text hover:bg-accent-tint">⚙ Administration</Link>}
           </div>
           <button role="menuitem" type="button" onClick={handleLogout} disabled={loggingOut} className="mt-2 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-status-over hover:bg-status-over/10 disabled:opacity-40">

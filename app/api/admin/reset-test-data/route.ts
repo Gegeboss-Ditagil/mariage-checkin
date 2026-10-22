@@ -10,7 +10,7 @@ import { hasCapability } from '@/lib/permissions';
  */
 export async function POST() {
   const user = await getSessionUser();
-  if (!user || !hasCapability(user.role, 'adminPanel')) {
+  if (!user || !hasCapability(user.role, 'manageEventMode')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
