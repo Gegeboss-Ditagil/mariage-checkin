@@ -33,7 +33,7 @@ test('/plan-table : ouvrir le plan de salle se fait en transition (bouton réact
 });
 
 test('style uniforme : flèche Retour sur /admin, /history et /exceptions', () => {
-  assert.match(read('../app/admin/page.tsx'), /<TopBar title="Administration" backHref="\/dashboard" \/>/);
+  assert.match(read('../app/admin/page.tsx'), /<TopBar title=\{isAdmin \? "Administration" : "Mode de l'événement"\} backHref="\/dashboard" \/>/);
   assert.match(read('../app/history/page.tsx'), /<TopBar title="Historique" backHref="\/admin" \/>/);
   assert.match(read('../app/exceptions/page.tsx'), /title="Exceptions"\s*\r?\n\s*backHref="\/scan"/);
 });

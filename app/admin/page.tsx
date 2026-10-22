@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'next-view-transitions';
 import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
-import { EventRow } from '@/lib/types';
+import { EventRow, Role } from '@/lib/types';
+import { hasCapability } from '@/lib/permissions';
 
 const STATUS_LABELS: Record<string, string> = {
   setup: 'Préparation',
@@ -32,6 +33,9 @@ const RESET_ERRORS: Record<string, string> = {
 export default function AdminHome() {
   const [event, setEvent] = useState<EventRow | null>(null);
   const [busy, setBusy] = useState(false);
+  // v1.85.0 : le directeur ouvre cette page pour le mode et la réinitialisation seulement.
+  const [viewerRole, setViewerRole] = useState<Role>('admin');
+  const isAdmin = hasCapability(viewerRole, 'adminPanel');
   const [message, setMessage] = useState<string | null>(null);
   // v1.75.0 : contrôle de santé de la base (voir /api/admin/health).
   const [health, setHealth] = useState<{ check_name: string; ok: boolean; detail: string }[] | null>(null);
@@ -53,7 +57,10 @@ export default function AdminHome() {
   useEffect(() => {
     fetch('/api/admin/event')
       .then((r) => r.json())
-      .then((d) => setEvent(d.event));
+      .then((d) => {
+        setEvent(d.event);
+        if (d.viewerRole) setViewerRole(d.viewerRole);
+      });
   }, []);
 
   async function setStatus(status: string) {
@@ -110,7 +117,7 @@ export default function AdminHome() {
   return (
     <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar title="Administration" backHref="/dashboard" />
+        <TopBar title={isAdmin ? "Administration" : "Mode de l'événement"} backHref="/dashboard" />
 
         <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
           <div className="card">
@@ -134,6 +141,8 @@ export default function AdminHome() {
             {message && <p className="mt-2 text-sm text-text-muted">{message}</p>}
           </div>
 
+          {isAdmin && (
+          <>
           <nav className="grid grid-cols-2 gap-3">
             <AdminLink href="/admin/wizard" label="Assistant de préparation" icon="✓" />
             <AdminLink href="/admin/tables" label="Gérer les tables" icon="▦" />
@@ -191,6 +200,9 @@ export default function AdminHome() {
             )}
           </div>
 
+          </>
+          )}
+
           <div className="card">
             <p className="mb-2 font-semibold">Mode test</p>
             <p className="mb-3 text-sm text-text-faint">
@@ -208,7 +220,7 @@ export default function AdminHome() {
         </div>
 
       </div>
-      <BottomNav role="admin" />
+      <BottomNav role={viewerRole} />
     </div>
   );
 }

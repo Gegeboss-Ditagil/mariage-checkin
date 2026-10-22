@@ -3,6 +3,16 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.85.0] — 2026-10-21
+
+Demande de Gersom : « le directeur de festin devrait avoir la portion admin afin de reset les données de test et de mettre l’application en mode live ».
+
+- Nouvelle capacité `manageEventMode` (admin, directeur). `/admin` s’ouvre au directeur (jamais ses sous-pages) mais n’y affiche que le choix du mode (Préparation / Test / JOUR J / Terminé) et le bouton « Réinitialiser les données de test » ; Twilio, import, logs, exports, santé de la base et liens d’administration restent réservés à l’admin (`adminPanel`).
+- `PATCH /api/admin/event` : le directeur ne peut modifier que `status` (403 sur tout autre champ) ; `POST /api/admin/reset-test-data` exige `manageEventMode` ; la base refuse toujours la réinitialisation en mode `live`.
+- Menu du compte du directeur : « ⚙ Mode de l’événement ».
+- Tests : `tests/event-mode-director.test.ts`, matrice `tests/qa-role-matrix.test.ts`.
+- Aucune migration.
+
 ## [1.84.1] — 2026-10-21
 
 Demande de Gersom : dans le menu déroulant pour changer le rôle d'un utilisateur (`/admin/users`), le texte était blanc sur blanc.

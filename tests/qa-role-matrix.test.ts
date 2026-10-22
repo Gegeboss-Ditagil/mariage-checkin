@@ -51,6 +51,7 @@ const EXPECTED: Record<Capability, [boolean, boolean, boolean, boolean, boolean]
   adminPanel: [Y, N, N, N, N],
   managePasswords: [Y, Y, N, N, N],
   manageAccounts: [Y, Y, N, N, N], // v1.81.0 : Gestion des comptes (directeur sauf comptes admin)
+  manageEventMode: [Y, Y, N, N, N], // v1.85.0 : mode de l'événement + réinitialisation (directeur)
 };
 
 test('QA rôles : chaque rôle a exactement les capacités attendues (aucune en trop, aucune en moins)', () => {
@@ -100,7 +101,7 @@ const PATHS: Record<string, [boolean, boolean, boolean, boolean, boolean]> = {
   '/tables/move/abc': [Y, Y, Y, N, N], // moveGuests
   '/tables/move-multiple': [Y, Y, Y, N, N],
   '/tables/overflow/abc': [Y, Y, Y, N, N], // manageOverflow
-  '/admin': [Y, N, N, N, N],
+  '/admin': [Y, Y, N, N, N], // v1.85.0 : directeur (manageEventMode), page limitée au mode + réinitialisation
   '/admin/users': [Y, Y, N, N, N], // v1.81.0 : directeur (manageAccounts)
   '/admin/import-withjoy': [Y, N, N, N, N],
   '/admin/exports': [Y, N, N, N, N],
