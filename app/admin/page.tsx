@@ -6,6 +6,7 @@ import { TopBar } from '@/components/TopBar';
 import { BottomNav } from '@/components/BottomNav';
 import { EventRow, Role } from '@/lib/types';
 import { hasCapability } from '@/lib/permissions';
+import { useSessionRole } from '@/hooks/useSessionRole';
 
 const STATUS_LABELS: Record<string, string> = {
   setup: 'Préparation',
@@ -34,7 +35,12 @@ export default function AdminHome() {
   const [event, setEvent] = useState<EventRow | null>(null);
   const [busy, setBusy] = useState(false);
   // v1.85.0 : le directeur ouvre cette page pour le mode et la réinitialisation seulement.
-  const [viewerRole, setViewerRole] = useState<Role | null>(null);
+  // v1.86.1 (retour de Gersom : « la page qui apparaît en flash » pour l'admin comme pour le directeur) :
+  // le rôle vient d'abord du cookie wc_role (lu au montage), confirmé ensuite par le serveur ;
+  // tant qu'il est inconnu, aucun des deux affichages n'apparaît (carte « Chargement… »).
+  const cookieRole = useSessionRole();
+  const [serverRole, setViewerRole] = useState<Role | null>(null);
+  const viewerRole = serverRole ?? cookieRole;
   const isAdmin = viewerRole !== null && hasCapability(viewerRole, 'adminPanel');
   const [message, setMessage] = useState<string | null>(null);
   // v1.75.0 : contrôle de santé de la base (voir /api/admin/health).
@@ -115,8 +121,13 @@ export default function AdminHome() {
   return (
     <div className="fixed inset-x-0 top-0 flex h-[100svh] flex-col overflow-hidden bg-bg landscape:flex-row landscape:h-[calc(100svh-env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar title={isAdmin ? "Administration" : "Mode de l'événement"} backHref="/dashboard" />
+        <TopBar title={viewerRole === null ? 'Administration' : isAdmin ? 'Administration' : "Mode de l'événement"} backHref="/dashboard" />
 
+        {viewerRole === null ? (
+          <div className="flex-1 px-4 py-4">
+            <div className="card text-sm text-text-muted">Chargement…</div>
+          </div>
+        ) : (
         <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
           <div className="card">
             <p className="text-sm font-semibold text-text-faint">Statut de l'événement</p>
@@ -216,6 +227,7 @@ export default function AdminHome() {
             )}
           </div>
         </div>
+        )}
 
       </div>
       <BottomNav role={viewerRole ?? 'admin'} />
