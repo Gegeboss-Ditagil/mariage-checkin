@@ -75,3 +75,20 @@ test('en paysage, la camera devient carree a gauche et les trois cartes une colo
   assert.match(scannerSource, /landscape:aspect-square landscape:h-full landscape:w-auto/);
   assert.match(scanPageSource, /landscape:aspect-square landscape:h-full landscape:w-auto/);
 });
+
+// v1.84.0 : horloge du serveur (un téléphone mal réglé ne fausse plus la bande).
+test("la bande se cale sur l'heure du serveur : GET /api/agenda renvoie serverTime, le composant en déduit l'écart", () => {
+  const route = readFileSync(new URL('../app/api/agenda/route.ts', import.meta.url), 'utf8');
+  assert.ok(route.includes('serverTime: Date.now()'));
+  assert.ok(componentSource.includes('estimateClockOffset(data.serverTime, requestStart, Date.now())'));
+  assert.ok(componentSource.includes('new Date(Date.now() + clockOffsetRef.current)'));
+});
+
+test("POST /api/push/test : réservé à un compte connecté qui peut s'abonner, n'envoie qu'à ses propres appareils", () => {
+  const route = readFileSync(new URL('../app/api/push/test/route.ts', import.meta.url), 'utf8');
+  assert.ok(route.includes("hasCapability(user.role, 'viewGuestApprovals')"));
+  assert.ok(route.includes('{ id: user.id, event_id: user.event_id }'));
+  const button = readFileSync(new URL('../components/PushNotificationButton.tsx', import.meta.url), 'utf8');
+  assert.ok(button.includes("fetch('/api/push/test', { method: 'POST' })"));
+  assert.ok(button.includes("status === 'enabled' && ("));
+});

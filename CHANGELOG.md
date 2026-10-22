@@ -3,6 +3,19 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.84.0] — 2026-10-13
+
+Suite des points 3 et 15 de la liste de recommandations : la v1.83.0 avait posé les clés Push et l'heure de Paris ; restait la preuve du Push sur un vrai appareil et l'horloge du téléphone.
+
+- **Bande « Prochaine activité » : horloge du serveur (point 15).** `GET /api/agenda` renvoie `serverTime` ; `estimateClockOffset` (`lib/agendaSchedule.ts`) estime l'écart serveur/téléphone au milieu de l'aller-retour, la bande l'applique. Un téléphone mal réglé (ou une date modifiée à la main) n'affiche plus la mauvaise activité. Sans heure serveur lisible : aucune correction.
+- **Notification de test (point 3).** `POST /api/push/test` + `sendPushTest` (`lib/webPush.ts`) envoient une notification au seul appareil du compte connecté ; bouton « ✉️ Envoyer une notification de test » sous « Notifications activées » (menu du compte et `/approbations`), avec un message clair pour chaque issue (envoyée, aucun appareil enregistré, échec, non configuré). Permet de prouver le Push de bout en bout sur un vrai téléphone avant le jour J.
+- **Vérifié le 13/10/2026** : les clés VAPID ont été posées sur Vercel à 02:13 UTC, le déploiement de la v1.83.0 (PR #160) est passé en production à 02:21 UTC ; la base compte toujours 0 abonnement (personne n'a encore activé).
+- Points 12 (BACKLOG) et 13 (`.gitattributes`) : déjà faits en 1.83.0 ; le BACKLOG est mis à jour avec les nouveaux éléments.
+- Rappel : le lieu est en France (Chambly 60 / aérodrome de Persan), d'où `Europe/Paris` ; l'hypothèse « Montréal » de la 1.82.3 était fausse.
+- Tests : `tests/agenda-schedule.test.ts` (3 nouveaux dont téléphone 40 min en retard), `tests/web-push.test.ts` (3 nouveaux, faux client), `tests/next-agenda-activity.test.ts` (2 nouveaux), parcours `qa/functional/business-flows.spec.ts` réécrit (téléphone faux, `serverTime` intercepté ; **non exécuté en local, validé par le check « fonctionnels »**). 601 tests passent en local.
+
+Aucune migration.
+
 ## [1.83.0] — 2026-10-12
 
 Lot issu de la liste de recommandations (points 3, 4, 10, 12, 13, 15, 17).

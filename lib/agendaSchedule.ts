@@ -122,3 +122,15 @@ export function pickNextActivity<T extends ScheduleItem>(
   const soonest = Math.min(...alive.map((candidate) => candidate.startMin));
   return { item: alive.find((candidate) => candidate.startMin === soonest)!, inProgress: false };
 }
+
+/**
+ * Écart entre l'horloge du serveur et celle de l'appareil (ms, positif = le
+ * téléphone est en retard), mesuré autour d'une requête : le serveur a daté sa
+ * réponse au milieu de l'aller-retour. Un téléphone mal réglé (ou une date
+ * réglée à la main) ne fausse donc plus la bande « Prochaine activité ».
+ * Sans heure serveur lisible, aucune correction (0).
+ */
+export function estimateClockOffset(serverTimeMs: unknown, requestStartMs: number, responseEndMs: number): number {
+  if (typeof serverTimeMs !== 'number' || !Number.isFinite(serverTimeMs)) return 0;
+  return Math.round(serverTimeMs - (requestStartMs + responseEndMs) / 2);
+}

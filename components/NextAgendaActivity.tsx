@@ -1,11 +1,11 @@
 'use client';
 
 import { Link } from 'next-view-transitions';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StaffIcon } from '@/components/icons';
 import { hasCapability } from '@/lib/permissions';
 import { usePolling } from '@/hooks/usePolling';
-import { parisMinutes, pickNextActivity } from '@/lib/agendaSchedule';
+import { estimateClockOffset, parisMinutes, pickNextActivity } from '@/lib/agendaSchedule';
 import type { Role } from '@/lib/types';
 
 type AgendaItem = { id: string; time_label: string; title: string; completed: boolean };
@@ -27,14 +27,19 @@ type AgendaItem = { id: string; time_label: string; title: string; completed: bo
  */
 export function NextAgendaActivity({ role }: { role: Role }) {
   const [items, setItems] = useState<AgendaItem[] | undefined>(undefined);
+  // Écart horloge serveur - horloge de l'appareil (v1.84.0) : un téléphone mal
+  // réglé n'affiche plus la mauvaise activité.
+  const clockOffsetRef = useRef(0);
   const [nowMinutes, setNowMinutes] = useState(() => parisMinutes(new Date()));
 
   const loadNext = useCallback(async () => {
+    const requestStart = Date.now();
     const response = await fetch('/api/agenda', { cache: 'no-store' }).catch(() => null);
     if (!response?.ok) return;
     const data = await response.json();
+    clockOffsetRef.current = estimateClockOffset(data.serverTime, requestStart, Date.now());
     setItems((data.items || []) as AgendaItem[]);
-    setNowMinutes(parisMinutes(new Date()));
+    setNowMinutes(parisMinutes(new Date(Date.now() + clockOffsetRef.current)));
   }, []);
 
   const canPollAgenda = hasCapability(role, 'viewAgenda');

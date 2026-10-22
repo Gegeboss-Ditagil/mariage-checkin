@@ -133,15 +133,23 @@ test.describe('parcours métier', () => {
     expect(problems).toEqual([]);
   });
 
-  test('/scan : la bande « Prochaine activité » suit l’heure de Paris (v1.82.3)', async ({ page }) => {
+  test('/scan : la bande « Prochaine activité » suit l’heure du SERVEUR (Paris), même si le téléphone est mal réglé (v1.84.0)', async ({ page }) => {
     await quickLogin(page, role('directeur'));
-    // 24/10/2026 16:30 à Paris (CEST = UTC+2) : l'agenda de test a 17:00, 19:00, 21:00.
-    await page.clock.setFixedTime(new Date('2026-10-24T14:30:00Z'));
+    // Téléphone volontairement faux : il croit être le 24/10/2026 à 05:00 Paris.
+    await page.clock.setFixedTime(new Date('2026-10-24T03:00:00Z'));
+    // Le serveur, lui, dit l'heure réelle : on lui fait dater sa réponse (l'agenda de test a 17:00, 19:00, 21:00).
+    let serverNow = '2026-10-24T14:30:00Z'; // 16:30 à Paris (CEST = UTC+2)
+    await page.route('**/api/agenda', async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      body.serverTime = Date.parse(serverNow);
+      await route.fulfill({ response, json: body });
+    });
     await page.goto('/scan');
     await expect(page.getByText('Prochaine activité')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Accueil des invités').first()).toBeVisible();
     // 18:30 à Paris : la ligne de 17:00 est passée, la suivante est celle de 19:00.
-    await page.clock.setFixedTime(new Date('2026-10-24T16:30:00Z'));
+    serverNow = '2026-10-24T16:30:00Z';
     await page.reload();
     await expect(page.getByText('Entrée des mariés').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Accueil des invités')).toHaveCount(0);
