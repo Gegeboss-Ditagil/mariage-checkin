@@ -3,6 +3,14 @@
 Toutes les évolutions fonctionnelles significatives de l'application sont consignées ici.
 Le projet suit Semantic Versioning (`MAJOR.MINOR.PATCH`). Voir `docs/VERSIONING.md`.
 
+## [1.85.1] — 2026-10-22
+
+Retour de Gersom : en gérant un compte, changer le rôle ET le mot de passe puis « Enregistrer » laissait le bouton sur « … » très longtemps.
+
+- `saveEdit` (`app/admin/users/page.tsx`) n’avait ni délai maximal ni `try/finally` : une requête lente, une coupure réseau ou une réponse non JSON laissait `saving` à vrai indéfiniment. Délai de 20 s, message d’erreur explicite, bouton toujours rétabli.
+- Cause côté serveur non reproduite (aucun déclencheur en base sur `users`, `app_logs` vide, journaux Vercel Hobby limités à 1 h) ; si le délai de 20 s s’affiche encore, la requête est réellement lente et il faudra des journaux de ce moment.
+- Test : `tests/admin-users.test.ts`. Aucune migration.
+
 ## [1.85.0] — 2026-10-21
 
 Demande de Gersom : « le directeur de festin devrait avoir la portion admin afin de reset les données de test et de mettre l’application en mode live ».
